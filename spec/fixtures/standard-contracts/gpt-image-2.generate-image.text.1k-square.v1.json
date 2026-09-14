@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "capabilityId": "gpt-image-2.generate-image.text.1k-square",
+  "builderInput": {
+    "model": "openai/gpt-image-2",
+    "prompt": "A quiet observatory above a sea of clouds",
+    "parameters": {
+      "resolution": "1K",
+      "aspect_ratio": "1:1",
+      "n": 1
+    },
+    "routing": {
+      "preference": "cost",
+      "fallback": true
+    },
+    "webhookUrl": "https://example.com/webhooks/yir"
+  },
+  "quoteRequest": {
+    "model": "openai/gpt-image-2",
+    "input": {
+      "type": "text",
+      "prompt": "A quiet observatory above a sea of clouds"
+    },
+    "parameters": {
+      "resolution": "1K",
+      "aspect_ratio": "1:1",
+      "n": 1
+    },
+    "routing": {
+      "preference": "cost",
+      "fallback": true
+    }
+  },
+  "generationRequest": {
+    "model": "openai/gpt-image-2",
+    "input": {
+      "type": "text",
+      "prompt": "A quiet observatory above a sea of clouds"
+    },
+    "parameters": {
+      "resolution": "1K",
+      "aspect_ratio": "1:1",
+      "n": 1
+    },
+    "routing": {
+      "preference": "cost",
+      "fallback": true
+    },
+    "webhook_url": "https://example.com/webhooks/yir"
+  },
+  "canonicalTaskSpec": {
+    "schema_version": 2,
+    "requested_model_id": "openai/gpt-image-2",
+    "canonical_model_id": "openai/gpt-image-2",
+    "operation": "generate_image",
+    "input_mode": "text",
+    "input": {
+      "content_ref": "input.prompt",
+      "content_digest": "sha256:727bd74b16cc52ba16efcd99cdbb4640682673dcf449db22ad72a6b96d5328af"
+    },
+    "specification": {
+      "output_count": 1,
+      "resolution": "1k",
+      "aspect_ratio": "1:1"
+    }
+  },
+  "routingIdentity": {
+    "preference": "cost",
+    "fallback": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "version": "yir-standard-webhook-signature-v1",
+  "testOnlySecret": "yir_whsec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "id": "yir_evt_94101",
+  "timestamp": "1785974442",
+  "rawBody": "{\"id\":\"7001\",\"status\":\"succeeded\"}",
+  "signature": "v1=2pffXiNzTL0gKjgAuOBzh3SNfJUSCNEhgWv6NzzrJ7c="
+}

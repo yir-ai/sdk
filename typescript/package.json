@@ -1,0 +1,68 @@
+{
+  "name": "@yir/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "packageManager": "pnpm@10.30.1",
+  "files": [
+    "dist",
+    "src",
+    "examples"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "import": "./dist/browser/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared/index.d.ts",
+      "import": "./dist/shared/index.js"
+    },
+    "./pricing": {
+      "types": "./dist/shared/pricing.d.ts",
+      "import": "./dist/shared/pricing.js"
+    },
+    "./model-contracts": {
+      "types": "./dist/shared/model-contracts.d.ts",
+      "import": "./dist/shared/model-contracts.js"
+    },
+    "./vercel": {
+      "types": "./dist/server/vercel.d.ts",
+      "import": "./dist/server/vercel.js"
+    }
+  },
+  "scripts": {
+    "clean": "node ./scripts/clean-dist.mjs",
+    "build": "pnpm run clean && tsc -p ./tsconfig.json",
+    "test": "pnpm run build && node --test --test-concurrency=2 ./tests/*.test.mjs",
+    "test:types": "tsc -p ./tsconfig.type-tests.json",
+    "test:package": "pnpm run build && node ./scripts/check-package.mjs",
+    "generate:model-contracts": "node ../spec/scripts/generate-model-contracts.mjs",
+    "check:model-contracts": "node ../spec/scripts/generate-model-contracts.mjs --check",
+    "check": "pnpm check:model-contracts && pnpm test && pnpm test:types && pnpm test:package"
+  },
+  "devDependencies": {
+    "ai": "7.0.97",
+    "esbuild": "0.28.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@ai-sdk/provider": "4.0.13",
+    "@types/json-schema": "^7.0.15"
+  },
+  "description": "Yir image and video API SDK with server and browser-safe entry points",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sungerine/yir-sdk.git",
+    "directory": "typescript"
+  }
+}

@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "validCases": [
+    {
+      "name": "explicit_channel_variant",
+      "input": { "only": ["apimart"], "variants": { "apimart": "face" } },
+      "canonicalIdentity": "{\"variants\":{\"apimart\":\"face\"},\"only\":[\"apimart\"]}"
+    },
+    {
+      "name": "preference_with_only",
+      "input": {
+        "preference": "cost",
+        "only": [
+          "kie",
+          "apimart"
+        ],
+        "fallback": true
+      },
+      "canonicalIdentity": "{\"preference\":\"cost\",\"only\":[\"apimart\",\"kie\"],\"fallback\":true}"
+    },
+    {
+      "name": "sixteen_provider_only_range",
+      "input": {
+        "only": [
+          "provider-16",
+          "provider-15",
+          "provider-14",
+          "provider-13",
+          "provider-12",
+          "provider-11",
+          "provider-10",
+          "provider-09",
+          "provider-08",
+          "provider-07",
+          "provider-06",
+          "provider-05",
+          "provider-04",
+          "provider-03",
+          "provider-02",
+          "provider-01"
+        ]
+      },
+      "canonicalIdentity": "{\"only\":[\"provider-01\",\"provider-02\",\"provider-03\",\"provider-04\",\"provider-05\",\"provider-06\",\"provider-07\",\"provider-08\",\"provider-09\",\"provider-10\",\"provider-11\",\"provider-12\",\"provider-13\",\"provider-14\",\"provider-15\",\"provider-16\"]}"
+    }
+  ],
+  "invalidCases": [
+    {
+      "name": "unknown_routing_field",
+      "input": {
+        "credential": "must-not-be-request-selectable"
+      },
+      "reason": "unknown_field",
+      "field": "credential"
+    },
+    {
+      "name": "unknown_preference",
+      "input": {
+        "preference": "speed"
+      },
+      "reason": "invalid_preference",
+      "field": "preference"
+    },
+    {
+      "name": "invalid_fallback_type",
+      "input": {
+        "fallback": "true"
+      },
+      "reason": "invalid_json",
+      "field": ""
+    },
+    {
+      "name": "null_fallback",
+      "input": {
+        "fallback": null
+      },
+      "reason": "null_value",
+      "field": "fallback"
+    },
+    {
+      "name": "preference_with_order",
+      "input": {
+        "preference": "cost",
+        "order": [
+          "kie"
+        ]
+      },
+      "reason": "unknown_field",
+      "field": "order"
+    },
+    {
+      "name": "order_outside_only",
+      "input": {
+        "only": [
+          "kie"
+        ],
+        "order": [
+          "apimart"
+        ]
+      },
+      "reason": "unknown_field",
+      "field": "order"
+    },
+    {
+      "name": "duplicate_only_provider",
+      "input": {
+        "only": [
+          "kie",
+          "kie"
+        ]
+      },
+      "reason": "duplicate_provider",
+      "field": "only"
+    },
+    {
+      "name": "duplicate_order_provider",
+      "input": {
+        "order": [
+          "kie",
+          "kie"
+        ]
+      },
+      "reason": "unknown_field",
+      "field": "order"
+    },
+    {
+      "name": "seventeen_provider_only_range",
+      "input": {
+        "only": [
+          "provider-01",
+          "provider-02",
+          "provider-03",
+          "provider-04",
+          "provider-05",
+          "provider-06",
+          "provider-07",
+          "provider-08",
+          "provider-09",
+          "provider-10",
+          "provider-11",
+          "provider-12",
+          "provider-13",
+          "provider-14",
+          "provider-15",
+          "provider-16",
+          "provider-17"
+        ]
+      },
+      "reason": "too_many_providers",
+      "field": "only"
+    },
+    {
+      "name": "four_provider_order_prefix",
+      "input": {
+        "order": [
+          "kie",
+          "apimart",
+          "fal",
+          "wavespeed"
+        ]
+      },
+      "reason": "unknown_field",
+      "field": "order"
+    },
+    {
+      "name": "uppercase_provider_code",
+      "input": {
+        "only": [
+          "KIE"
+        ]
+      },
+      "reason": "invalid_provider_code",
+      "field": "only"
+    },
+    {
+      "name": "provider_code_with_whitespace",
+      "input": {
+        "only": [
+          " kie"
+        ]
+      },
+      "reason": "invalid_provider_code",
+      "field": "only"
+    },
+    {
+      "name": "order_with_only",
+      "input": {
+        "only": [
+          "kie",
+          "apimart",
+          "fal"
+        ],
+        "order": [
+          "fal",
+          "kie"
+        ],
+        "fallback": false
+      },
+      "reason": "unknown_field",
+      "field": "order"
+    },
+    {
+      "name": "system_extendable_order_prefix",
+      "input": {
+        "order": [
+          "kie",
+          "apimart"
+        ]
+      },
+      "reason": "unknown_field",
+      "field": "order"
+    }
+  ]
+}

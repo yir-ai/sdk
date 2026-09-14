@@ -1,0 +1,20 @@
+[
+  {
+    "name": "image-quality",
+    "operation": "generate_image",
+    "request": {"model":"openai/gpt-image-2","input":{"type":"text","prompt":"fixture"},"parameters":{"resolution":"2K","aspect_ratio":"16:9","quality":"high","n":1}},
+    "expected": {"model":"openai/gpt-image-2","operation":"generate_image","version":"fixture-v1","parameters":{"resolution":"2k","aspect_ratio":"16:9","quality":"high","n":1,"input_mode":"text","source_image_count":0,"first_frame_count":0,"last_frame_count":0,"reference_image_count":0,"reference_video_count":0,"reference_audio_count":0}}
+  },
+  {
+    "name": "image-reference-count",
+    "operation": "generate_image",
+    "request": {"model":"bytedance/seedream-5.0-pro","input":{"type":"image","prompt":"fixture","references":[{"role":"reference_image","url":"https://fixture.invalid/one.png"},{"role":"reference_image","url":"https://fixture.invalid/two.png"}]},"parameters":{"resolution":"1K","aspect_ratio":"1:1","n":1}},
+    "expected": {"model":"bytedance/seedream-5.0-pro","operation":"generate_image","version":"fixture-v1","parameters":{"resolution":"1k","aspect_ratio":"1:1","quality":"","n":1,"input_mode":"image","source_image_count":0,"first_frame_count":0,"last_frame_count":0,"reference_image_count":2,"reference_video_count":0,"reference_audio_count":0}}
+  },
+  {
+    "name": "video-default-output-count",
+    "operation": "generate_video",
+    "request": {"model":"klingai/kling-2.6","input":{"type":"text","prompt":"fixture"},"parameters":{"resolution":"720p","aspect_ratio":"16:9","duration":5,"generate_audio":false}},
+    "expected": {"model":"klingai/kling-2.6","operation":"generate_video","version":"fixture-v1","parameters":{"resolution":"720p","aspect_ratio":"16:9","duration":5,"generate_audio":false,"n":1,"input_mode":"text","source_image_count":0,"first_frame_count":0,"last_frame_count":0,"reference_image_count":0,"reference_video_count":0,"reference_audio_count":0}}
+  }
+]

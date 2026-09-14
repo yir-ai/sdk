@@ -1,0 +1,2037 @@
+[
+  {
+    "name": "five-seconds",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "500",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "ten-seconds",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 10,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "1000",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "audio-not-priced",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": true
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "duration-not-priced",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 7,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "missing-audio",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "extra-dimension",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false,
+        "resolution": "4K"
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "boolean-not-string",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": "false"
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "number-not-string",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": "5",
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "wrong-model",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "old-system/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "wrong-operation",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_image",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "stale-version",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "old",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "version_mismatch"
+    }
+  },
+  {
+    "name": "overlap",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        },
+        {
+          "id": "overlap",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "ambiguous_match"
+    }
+  },
+  {
+    "name": "duplicate-id",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        },
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "unknown-format",
+    "table": {
+      "format": "future",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "empty-table",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": []
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "no_match"
+    }
+  },
+  {
+    "name": "empty-values",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": []
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "duplicate-values",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false,
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "quantity-not-constrained",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "n",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "quantity-negative",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              -1
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "fractional-parameter",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5.5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_input"
+    }
+  },
+  {
+    "name": "object-parameter",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": {
+          "value": false
+        }
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_input"
+    }
+  },
+  {
+    "name": "null-parameter",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": null
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_input"
+    }
+  },
+  {
+    "name": "unsafe-number-parameter",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 9007199254740992,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_input"
+    }
+  },
+  {
+    "name": "nonlinear-fixed-total",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "USD",
+      "scale": 1000000,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              8
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "total",
+            "amount": "472500"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 8,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "472500",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "USD",
+      "scale": 1000000
+    }
+  },
+  {
+    "name": "reference-surcharge-expanded",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "USD",
+      "scale": 1000000,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "resolution": [
+              "1K"
+            ],
+            "reference_count": [
+              10
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "total",
+            "amount": "46800"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "resolution": "1K",
+        "reference_count": 10
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "46800",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "USD",
+      "scale": 1000000
+    }
+  },
+  {
+    "name": "real-zero",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "0",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "0",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "large-integer",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "total",
+            "amount": "9007199254740993"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "9007199254740993",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "int64-limit",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "total",
+            "amount": "9223372036854775807"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "9223372036854775807",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "overflow",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "9223372036854775807",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "overflow"
+    }
+  },
+  {
+    "name": "invalid-amount-negative",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "-1",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "invalid-amount-decimal",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "0.1",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "invalid-amount-leading-zero",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "01",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "invalid-amount-too-large",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "9223372036854775808",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "zero-denominator",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "0",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "invalid-rounding",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "round"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "half-boundary-ceil",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "1",
+            "quantity": "duration",
+            "per": "2",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "3",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "half-boundary-floor",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "1",
+            "quantity": "duration",
+            "per": "2",
+            "rounding": "floor"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "2",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "half-boundary-half-up",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "1",
+            "quantity": "duration",
+            "per": "2",
+            "rounding": "half-up"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "exact",
+      "amount": "3",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100
+    }
+  },
+  {
+    "name": "token-output-estimate",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "yir-cost",
+      "unit": "USD",
+      "scale": 1000000,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "estimate",
+          "price": {
+            "type": "total",
+            "amount": "6963"
+          },
+          "description": "Output only: 272 estimated tokens; input excluded."
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "estimate",
+      "amount": "6963",
+      "rowId": "video",
+      "version": "retail-v1",
+      "purpose": "yir-cost",
+      "unit": "USD",
+      "scale": 1000000,
+      "description": "Output only: 272 estimated tokens; input excluded."
+    }
+  },
+  {
+    "name": "estimate-without-scope",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 100,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "estimate",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "scale-zero",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 0,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  },
+  {
+    "name": "scale-unsafe",
+    "table": {
+      "format": "yir-price-table-v1",
+      "version": "retail-v1",
+      "purpose": "retail",
+      "unit": "credit",
+      "scale": 9007199254740992,
+      "rows": [
+        {
+          "id": "video",
+          "model": "demo/video",
+          "operation": "generate_video",
+          "conditions": {
+            "duration": [
+              5,
+              10
+            ],
+            "audio": [
+              false
+            ]
+          },
+          "kind": "exact",
+          "price": {
+            "type": "unit",
+            "amount": "100",
+            "quantity": "duration",
+            "per": "1",
+            "rounding": "ceil"
+          }
+        }
+      ]
+    },
+    "input": {
+      "model": "demo/video",
+      "operation": "generate_video",
+      "version": "retail-v1",
+      "parameters": {
+        "duration": 5,
+        "audio": false
+      }
+    },
+    "expected": {
+      "kind": "unavailable",
+      "reason": "invalid_table"
+    }
+  }
+]

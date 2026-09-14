@@ -1,0 +1,1788 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Yir Standard Async AIGC API",
+    "version": "1.0.0-preview",
+    "description": "Yir-owned asynchronous image and video Quote, generation, file, model and Job contracts. Only operations currently registered in the v1 Router and reviewed for public documentation are included."
+  },
+  "servers": [
+    {
+      "url": "https://gateway.yir.ai",
+      "description": "Yir Bearer-only asynchronous compute gateway"
+    }
+  ],
+  "security": [{ "BearerAuth": [] }],
+  "tags": [
+    { "name": "Images" },
+    { "name": "Videos" },
+    { "name": "Files" },
+    { "name": "Models" },
+    { "name": "Jobs" }
+  ],
+  "paths": {
+    "/v1/images/prices": {
+      "post": {
+        "operationId": "compareImagePrices", "summary": "Compare complete fixed public prices without requiring executable supply", "tags": ["Images"], "security": [{ "BearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceRequest" } } } },
+        "responses": {
+          "200": { "description": "Advisory public price comparison in USD", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceComparison" } } } },
+          "400": { "$ref": "#/components/responses/InvalidRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/videos/prices": {
+      "post": {
+        "operationId": "compareVideoPrices", "summary": "Compare complete fixed public prices without requiring executable supply", "tags": ["Videos"], "security": [{ "BearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceRequest" } } } },
+        "responses": {
+          "200": { "description": "Advisory public price comparison in USD", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceComparison" } } } },
+          "400": { "$ref": "#/components/responses/InvalidRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/images/quotes": {
+      "post": {
+        "operationId": "quoteImageGeneration",
+        "summary": "Quote an image generation request without creating a job or reserving funds",
+        "tags": ["Images"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StandardImageQuoteRequest" },
+              "example": {
+                "model": "openai/gpt-image-2",
+                "input": { "type": "text", "prompt": "A quiet observatory above a sea of clouds" },
+                "parameters": { "resolution": "1K", "aspect_ratio": "1:1", "n": 1 },
+                "routing": { "preference": "cost", "fallback": true }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current advisory quote",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Quote" } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/images/generations": {
+      "post": {
+        "operationId": "submitImageGeneration",
+        "summary": "Submit an asynchronous image generation job",
+        "tags": ["Images"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StandardImageGenerationRequest" },
+              "example": {
+                "model": "openai/gpt-image-2",
+                "input": { "type": "text", "prompt": "A quiet observatory above a sea of clouds" },
+                "parameters": { "resolution": "1K", "aspect_ratio": "1:1", "n": 1 },
+                "routing": { "preference": "cost", "fallback": true },
+                "webhook_url": "https://example.com/webhooks/yir"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "$ref": "#/components/responses/JobAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/InsufficientBalance" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/videos/quotes": {
+      "post": {
+        "operationId": "quoteVideoGeneration",
+        "summary": "Quote a video generation request without creating a job or reserving funds",
+        "tags": ["Videos"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StandardVideoQuoteRequest" },
+              "example": {
+                "model": "bytedance/seedance-2.0",
+                "input": { "type": "text", "prompt": "A paper boat crossing a rain-covered city street" },
+                "parameters": { "duration": 5, "resolution": "720p", "aspect_ratio": "16:9", "generate_audio": false, "n": 1 },
+                "routing": { "preference": "cost", "fallback": true }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current advisory quote",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Quote" } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/videos/generations": {
+      "post": {
+        "operationId": "submitVideoGeneration",
+        "summary": "Submit an asynchronous video generation job",
+        "tags": ["Videos"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StandardVideoGenerationRequest" },
+              "example": {
+                "model": "bytedance/seedance-2.0",
+                "input": {
+                  "type": "image",
+                  "prompt": "The subject turns toward the sunrise",
+                  "references": [{ "role": "first_frame", "url": "https://example.com/first-frame.png" }]
+                },
+                "parameters": { "duration": 4, "resolution": "480p", "aspect_ratio": "16:9", "generate_audio": false, "n": 1 },
+                "routing": { "preference": "cost", "fallback": true },
+                "webhook_url": "https://example.com/webhooks/yir"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "$ref": "#/components/responses/JobAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/InsufficientBalance" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/files": {
+      "post": {
+        "operationId": "createFiles",
+        "summary": "Create one or more input-file upload plans",
+        "tags": ["Files"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateFilesRequest" },
+              "example": {
+                "files": [{ "name": "first-frame.png", "media_type": "image/png", "size": 1024 }],
+                "upload_mode": "auto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Upload plans created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateFilesResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/files/{id}/complete": {
+      "post": {
+        "operationId": "completeFile",
+        "summary": "Confirm completion of an input-file upload",
+        "tags": ["Files"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/FileID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompleteFileRequest" },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current file snapshot",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/File" } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "410": { "$ref": "#/components/responses/Gone" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/files/{id}": {
+      "get": {
+        "operationId": "getFile",
+        "summary": "Get an input-file snapshot",
+        "tags": ["Files"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/FileID" }],
+        "responses": {
+          "200": {
+            "description": "Current file snapshot",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/File" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/files/{id}/content": {
+      "get": {
+        "operationId": "getFileContent",
+        "summary": "Redirect to short-lived input-file content",
+        "tags": ["Files"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/FileID" }],
+        "responses": {
+          "307": {
+            "description": "Temporary redirect to a short-lived signed URL",
+            "headers": {
+              "Location": { "required": true, "schema": { "type": "string", "format": "uri" } }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "410": { "$ref": "#/components/responses/Gone" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/models/{creator}/{model}": {
+      "get": {
+        "operationId": "getModel",
+        "summary": "Get model detail or caller-scoped local price tables",
+        "description": "Without query parameters returns the existing Market detail. For SDK pricing, supply view=pricing, operation and input_mode. Optional resolution and reference_count filters narrow the finite specification space before the 512-item limit. Coverage applies only to the echoed filter, not the entire model. Pricing uses the API Key default routing policy and exposes no channels. Truncated coverage is partial; enumerated does not mean every combination has a known price. Input-media-dependent prices remain unavailable. Cache separately by customer, effective routing policy, model, operation, input mode and filter. Independently fetched ranges are observations, not one atomic price snapshot, and do not lock prices or authorize spending.",
+        "tags": ["Models"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ModelCreator" },
+          { "$ref": "#/components/parameters/ModelName" },
+          { "name": "view", "in": "query", "schema": { "type": "string", "enum": ["pricing"] }, "description": "Requires operation and input_mode; unknown or repeated query parameters are rejected." },
+          { "name": "operation", "in": "query", "schema": { "type": "string", "enum": ["generate_image", "generate_video"] }, "description": "Required with view=pricing." },
+          { "name": "input_mode", "in": "query", "schema": { "type": "string", "enum": ["text", "image", "reference"] }, "description": "Required with view=pricing. Multimodal reference mode currently requires request-level Quote (422)." },
+          { "name": "resolution", "in": "query", "schema": { "type": "string", "minLength": 1, "maxLength": 32 }, "description": "Optional pricing filter; must match a declared model resolution. Case-insensitive, echoed lowercase. Invalid filters return 400." },
+          { "name": "reference_count", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 512 }, "description": "Optional pricing filter for image input only, within the model reference limits. Canonical decimal integer, no leading zeros. Counts all input references." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Model detail, or SDK price tables when view=pricing",
+            "content": { "application/json": { "schema": { "oneOf": [{ "$ref": "#/components/schemas/ModelDetail" }, { "$ref": "#/components/schemas/ModelPrices" }] } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "description": "Local pricing unavailable for this model/operation/input mode; use request-level Quote.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/jobs/{id}": {
+      "get": {
+        "operationId": "getJob",
+        "summary": "Get the current safe snapshot of a job",
+        "description": "A job snapshot stays readable for 90 days from creation, the same window as summary log retention. After that window the endpoint answers 404 exactly as it does for an unknown job id, and the response never discloses which of the two cases applies.",
+        "tags": ["Jobs"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/JobID" }],
+        "responses": {
+          "200": {
+            "description": "Current job snapshot",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/jobs/{id}/cancel": {
+      "post": {
+        "operationId": "cancelJob",
+        "summary": "Cancel before submit or stop future attempts after submit",
+        "tags": ["Jobs"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/JobID" }],
+        "responses": {
+          "200": {
+            "description": "Current job snapshot after applying cancellation semantics",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "YIR_API_KEY" }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "Optional on the wire. Replaying the same key with an identical standardized request returns the original result instead of creating a second one; reusing a key with a changed request is rejected; a request without a key always creates a new resource. Production integrations should persist one key per logical request before submitting. The TypeScript and Go SDKs require a caller-persisted key instead of generating one, so their callers must supply it.",
+        "schema": { "type": "string", "minLength": 1, "maxLength": 200 }
+      },
+      "JobID": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+      },
+      "FileID": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "$ref": "#/components/schemas/FileID" }
+      },
+      "ModelCreator": {
+        "name": "creator",
+        "in": "path",
+        "required": true,
+        "schema": { "$ref": "#/components/schemas/ModelPathSegment" }
+      },
+      "ModelName": {
+        "name": "model",
+        "in": "path",
+        "required": true,
+        "schema": { "$ref": "#/components/schemas/ModelPathSegment" }
+      }
+    },
+    "responses": {
+      "JobAccepted": {
+        "description": "Job accepted",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } }
+      },
+      "InvalidRequest": { "$ref": "#/components/responses/StandardError" },
+      "Unauthorized": { "$ref": "#/components/responses/StandardError" },
+      "InsufficientBalance": { "$ref": "#/components/responses/StandardError" },
+      "Conflict": { "$ref": "#/components/responses/StandardError" },
+      "NoExecutableRoute": { "$ref": "#/components/responses/StandardError" },
+      "RateLimited": { "$ref": "#/components/responses/StandardError" },
+      "NotFound": { "$ref": "#/components/responses/StandardError" },
+      "Gone": { "$ref": "#/components/responses/StandardError" },
+      "TemporarilyUnavailable": { "$ref": "#/components/responses/StandardError" },
+      "StandardError": {
+        "description": "Stable Yir Standard error",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      }
+    },
+    "schemas": {
+      "ModelPathSegment": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100,
+        "pattern": "^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$"
+      },
+      "FileID": {
+        "type": "string",
+        "pattern": "^file_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "RoutingOverride": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Request-scoped routing intent. only is an unordered Provider allowlist; selection and recovery stay within this set and any retained account restrictions. A single item supports targeted testing. Custom order is not supported. preference and fallback remain optional.",
+        "properties": {
+          "variants": {
+            "type": "object", "minProperties": 1, "maxProperties": 16,
+            "description": "Provider-to-channel-variant selection. Omitted providers use their existing default variant. Keys must belong to only when only is supplied. Unknown or unavailable variants never fall back to another variant of the same provider.",
+            "propertyNames": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" },
+            "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" }
+          },
+          "preference": { "type": "string", "enum": ["balanced", "cost"] },
+          "only": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" } },
+          "fallback": { "type": "boolean" }
+        }
+      },
+      "StandardImageTextInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "prompt"],
+        "properties": {
+          "type": { "type": "string", "const": "text" },
+          "prompt": { "type": "string", "minLength": 1, "maxLength": 20000, "pattern": "\\S" }
+        }
+      },
+      "StandardImageReferenceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "prompt",
+          "references"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "image"
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000,
+            "pattern": "\\S"
+          },
+          "references": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "reference_image"
+                  ]
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "pattern": "^https://"
+                },
+                "file_id": {
+                  "$ref": "#/components/schemas/FileID"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "url"
+                  ]
+                },
+                {
+                  "required": [
+                    "file_id"
+                  ]
+                }
+              ]
+            },
+            "description": "Ordered references. Model contracts determine counts and required roles."
+          }
+        }
+      },
+      "StandardImageGenerationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input",
+          "parameters"
+        ],
+        "properties": {
+          "max_cost": {
+            "$ref": "#/components/schemas/MaxCost"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StandardImageTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardImageReferenceInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 1000,
+            "pattern": "^https://"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "resolution": {
+                "type": "string",
+                "minLength": 1
+              },
+              "aspect_ratio": {
+                "type": "string",
+                "minLength": 1
+              },
+              "n": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "description": "Portable image request shape. The current Go model contract validates each model, input mode and parameter combination, and Admission fails closed when no executable route is available."
+      },
+      "StandardImageQuoteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input",
+          "parameters"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StandardImageTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardImageReferenceInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "resolution": {
+                "type": "string",
+                "minLength": 1
+              },
+              "aspect_ratio": {
+                "type": "string",
+                "minLength": 1
+              },
+              "n": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "description": "The image Generation request contract without webhook_url or max_cost. Quote creates no execution or financial facts."
+      },
+      "GPTImage2GenerationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input",
+          "parameters"
+        ],
+        "properties": {
+          "max_cost": {
+            "$ref": "#/components/schemas/MaxCost"
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "openai/gpt-image-2",
+              "gpt-image-2"
+            ]
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StandardImageTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardImageReferenceInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 1000,
+            "pattern": "^https://"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "resolution": {
+                "type": "string",
+                "enum": [
+                  "1K",
+                  "2K",
+                  "4K",
+                  "1k",
+                  "2k",
+                  "4k"
+                ]
+              },
+              "aspect_ratio": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "1:1",
+                  "3:2",
+                  "2:3",
+                  "4:3",
+                  "3:4",
+                  "5:4",
+                  "4:5",
+                  "16:9",
+                  "9:16",
+                  "2:1",
+                  "1:2",
+                  "3:1",
+                  "1:3",
+                  "21:9",
+                  "9:21"
+                ]
+              },
+              "n": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "description": "The public GPT Image 2 parameter space. Ordered image references each select one HTTPS URL or one ready File ID. Current route availability is validated by Admission. Unknown fields are rejected."
+      },
+      "GPTImage2QuoteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input",
+          "parameters"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "enum": [
+              "openai/gpt-image-2",
+              "gpt-image-2"
+            ]
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StandardImageTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardImageReferenceInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "resolution": {
+                "type": "string",
+                "enum": [
+                  "1K",
+                  "2K",
+                  "4K",
+                  "1k",
+                  "2k",
+                  "4k"
+                ]
+              },
+              "aspect_ratio": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "1:1",
+                  "3:2",
+                  "2:3",
+                  "4:3",
+                  "3:4",
+                  "5:4",
+                  "4:5",
+                  "16:9",
+                  "9:16",
+                  "2:1",
+                  "1:2",
+                  "3:1",
+                  "1:3",
+                  "21:9",
+                  "9:21"
+                ]
+              },
+              "n": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "description": "The image Generation request contract without webhook_url or max_cost. Quote creates no execution or financial facts."
+      },
+      "StandardVideoTextInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "prompt"],
+        "properties": {
+          "type": { "type": "string", "const": "text" },
+          "prompt": { "type": "string", "minLength": 1, "maxLength": 20000, "pattern": "\\S" }
+        }
+      },
+      "StandardVideoImageInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "prompt",
+          "references"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "image"
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000,
+            "pattern": "\\S"
+          },
+          "references": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "first_frame",
+                    "last_frame"
+                  ]
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "pattern": "^https://"
+                },
+                "file_id": {
+                  "$ref": "#/components/schemas/FileID"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "url"
+                  ]
+                },
+                {
+                  "required": [
+                    "file_id"
+                  ]
+                }
+              ]
+            },
+            "description": "Ordered references. Model contracts determine counts and required roles."
+          }
+        }
+      },
+      "StandardVideoReferenceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "prompt",
+          "references"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "reference"
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000,
+            "pattern": "\\S"
+          },
+          "references": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "reference_image",
+                    "reference_video",
+                    "reference_audio"
+                  ]
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "pattern": "^https://"
+                },
+                "file_id": {
+                  "$ref": "#/components/schemas/FileID"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "url"
+                  ]
+                },
+                {
+                  "required": [
+                    "file_id"
+                  ]
+                }
+              ]
+            },
+            "description": "Ordered references. Model contracts determine counts and required roles."
+          }
+        }
+      },
+      "StandardVideoGenerationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input",
+          "parameters"
+        ],
+        "properties": {
+          "max_cost": {
+            "$ref": "#/components/schemas/MaxCost"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StandardVideoTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardVideoImageInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardVideoReferenceInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 1000,
+            "pattern": "^https://"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "duration": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "resolution": {
+                "type": "string",
+                "minLength": 1
+              },
+              "aspect_ratio": {
+                "type": "string",
+                "minLength": 1
+              },
+              "generate_audio": {
+                "type": "boolean"
+              },
+              "n": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "description": "Portable video request shape. The current Go model contract validates each model, input mode and parameter combination, and Admission fails closed when no executable route is available."
+      },
+      "StandardVideoQuoteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input",
+          "parameters"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StandardVideoTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardVideoImageInput"
+              },
+              {
+                "$ref": "#/components/schemas/StandardVideoReferenceInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "duration": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "resolution": {
+                "type": "string",
+                "minLength": 1
+              },
+              "aspect_ratio": {
+                "type": "string",
+                "minLength": 1
+              },
+              "generate_audio": {
+                "type": "boolean"
+              },
+              "n": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "description": "The video Generation request contract without webhook_url or max_cost. Quote creates no execution or financial facts."
+      },
+      "MaxCost": {
+        "type": "string",
+        "pattern": "^[0-9]{1,13}(\\.[0-9]{1,6})?$",
+        "maxLength": 20,
+        "description": "Whole-job authorization limit in USD, up to 9223372036854.775807. Omission uses the highest single-attempt user price upper bound among admission candidates. One Job hold is shared across attempts, never summed; an explicit limit does not reserve its whole amount. New Jobs charge only the successfully delivered result and release unused funds at the terminal state. Failed and late upstream costs are absorbed by Yir without additional customer charges. Routes exceeding the existing hold or authorization are skipped. Below-primary limits are rejected. Historical jobs retain their recorded billing terms."
+      },
+      "Quote": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "supply",
+          "object",
+          "model",
+          "operation",
+          "input_mode",
+          "parameters",
+          "currency",
+          "single_attempt_upper_bound",
+          "has_verifiable_upper_bound",
+          "expires_at",
+          "primary",
+          "max",
+          "official"
+        ],
+        "properties": {
+          "parameter_notices": { "type": "array", "items": { "$ref": "#/components/schemas/ParameterNotice" }, "description": "Expected primary-channel handling; actual handling is reported by the successful Job." },
+          "parameter_handling_may_vary": { "type": "boolean", "description": "Fallback may handle parameters differently." },
+          "supply": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["available", "issues"],
+            "properties": {
+              "available": { "type": "boolean" },
+              "issues": { "type": "array", "items": { "type": "string", "enum": ["no_matching_supply"] } }
+            },
+            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
+          },
+          "object": {
+            "type": "string",
+            "const": "quote"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "generate_image",
+              "generate_video"
+            ]
+          },
+          "input_mode": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image",
+              "reference"
+            ]
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/QuoteParameters"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD"
+          },
+          "single_attempt_upper_bound": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/Decimal" },
+              { "type": "null" }
+            ]
+          },
+          "has_verifiable_upper_bound": {
+            "type": "boolean"
+          },
+          "expires_at": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "primary": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/OutputQuoteEstimate" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "amount"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "fixed"
+                  },
+                  "amount": {
+                    "$ref": "#/components/schemas/Decimal"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "amount",
+                  "reason"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "unavailable"
+                  },
+                  "amount": {
+                    "type": "null"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          },
+          "max": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/OutputQuoteEstimate" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "amount"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "fixed"
+                  },
+                  "amount": {
+                    "$ref": "#/components/schemas/Decimal"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "amount",
+                  "reason"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "unavailable"
+                  },
+                  "amount": {
+                    "type": "null"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          },
+          "official": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/OutputQuoteEstimate" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "amount"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "fixed"
+                  },
+                  "amount": {
+                    "$ref": "#/components/schemas/Decimal"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "amount",
+                  "reason"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "unavailable"
+                  },
+                  "amount": {
+                    "type": "null"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "OutputQuoteEstimate": {
+        "type": "object", "additionalProperties": false,
+        "description": "Generated output only. Input and other charges are excluded. Not an authorization ceiling.",
+        "required": ["kind", "amount", "estimate"],
+        "properties": {
+          "kind": { "const": "estimate" },
+          "amount": { "$ref": "#/components/schemas/Decimal" },
+          "estimate": {
+            "type": "object", "additionalProperties": false,
+            "required": ["scope", "output_tokens"],
+            "properties": {
+              "scope": { "const": "output_only" },
+              "output_tokens": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+            }
+          }
+        }
+      },
+      "ReferencePrice": {
+        "type": "object", "additionalProperties": false,
+        "required": ["amount", "source_url"],
+        "properties": {
+          "amount": { "$ref": "#/components/schemas/Decimal" },
+          "source_url": { "type": "string", "format": "uri" }
+        }
+      },
+      "PriceRequest": {
+        "type": "object", "additionalProperties": false,
+        "description": "Public price conditions only. No prompt, file, routing policy or generation is required. Only exact published specifications return complete fixed prices; unmatched conditions return an empty comparison.",
+        "required": ["model", "input_mode", "resolution", "aspect_ratio", "n", "reference_count"],
+        "properties": {
+          "model": { "type": "string", "minLength": 1 },
+          "input_mode": { "type": "string", "enum": ["text", "image"] },
+          "resolution": { "type": "string", "minLength": 1 },
+          "aspect_ratio": { "type": "string", "minLength": 1 },
+          "n": { "type": "integer", "minimum": 1 },
+          "reference_count": { "type": "integer", "minimum": 0 },
+          "duration": { "type": "integer", "minimum": 0 },
+          "generate_audio": { "type": "boolean" }
+        }
+      },
+      "PriceComparison": {
+        "type": "object", "additionalProperties": false,
+        "description": "Advisory complete fixed prices for the exact request, in quote currency. Null means no proven complete fixed price, including dynamic usage tariffs. Independent of routing restrictions; does not assert execution eligibility or reserve prices.",
+        "required": ["official_price", "channels"],
+        "properties": {
+          "official_price": { "oneOf": [{ "$ref": "#/components/schemas/ReferencePrice" }, { "type": "null" }] },
+          "official_price_unavailable_reason": { "type": "string", "enum": ["conditional_price", "dynamic_price", "missing_price"], "description": "Why no complete comparable official fixed price is available. Omitted when official_price is present." },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "object", "additionalProperties": false,
+              "required": ["provider", "public_price", "user_amount"],
+              "properties": {
+                "provider": { "type": "string", "minLength": 1 },
+                "channel_variant": { "type": "string", "minLength": 1 },
+                "public_price": { "oneOf": [{ "$ref": "#/components/schemas/ReferencePrice" }, { "type": "null" }] },
+                "user_amount": { "oneOf": [{ "$ref": "#/components/schemas/Decimal" }, { "type": "null" }] }
+              }
+            }
+          }
+        }
+      },
+      "QuoteParameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["duration", "resolution", "aspect_ratio", "generate_audio", "n"],
+        "properties": {
+          "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"] },
+          "duration": { "type": "integer", "minimum": 0 },
+          "resolution": { "type": "string", "minLength": 1 },
+          "aspect_ratio": { "type": "string", "minLength": 1 },
+          "generate_audio": { "type": "boolean" },
+          "n": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "retryable"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "YIR_INVALID_REQUEST", "YIR_UNAUTHORIZED", "YIR_INVALID_ROUTING_OVERRIDE",
+              "YIR_ROUTING_OVERRIDE_NOT_ALLOWED", "YIR_INSUFFICIENT_BALANCE", "YIR_BUDGET_EXCEEDED", "YIR_JOB_NOT_FOUND",
+              "YIR_FILE_NOT_FOUND", "YIR_FILE_NOT_READY", "YIR_FILE_EXPIRED", "YIR_MODEL_NOT_FOUND",
+              "YIR_IDEMPOTENCY_CONFLICT", "YIR_JOB_NOT_CANCELLABLE", "YIR_NO_EXECUTABLE_ROUTE",
+              "YIR_RATE_LIMITED", "YIR_TEMPORARILY_UNAVAILABLE", "YIR_EXECUTION_FAILED",
+              "YIR_OUTCOME_TIMEOUT", "result_delivery_failed"
+            ]
+          },
+          "message": { "type": "string", "minLength": 1 },
+          "retryable": { "type": "boolean" },
+          "action": { "type": "string", "enum": ["fix_request", "add_funds", "retry_later", "contact_support"] }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error", "request_id"],
+        "properties": {
+          "error": { "$ref": "#/components/schemas/Error" },
+          "request_id": { "type": "string", "minLength": 1 }
+        }
+      },
+      "Job": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "object", "status", "model", "error", "created_at"],
+        "properties": {
+          "parameter_notices": { "type": "array", "items": { "$ref": "#/components/schemas/ParameterNotice" }, "description": "Actual handling from the successful attempt snapshot; omitted before success." },
+          "id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+          "object": { "type": "string", "const": "job" },
+          "final_provider": { "type": "string", "minLength": 1, "description": "Provider of the adopted result, present only for successful jobs. Does not expose candidate routes." },
+          "status": { "type": "string", "enum": ["queued", "running", "delivering", "succeeded", "failed", "cancelled"] },
+          "model": { "type": "string", "minLength": 1 },
+          "urls": { "$ref": "#/components/schemas/JobURLs" },
+          "result": { "$ref": "#/components/schemas/Result" },
+          "usage": { "$ref": "#/components/schemas/JobUsage" },
+          "billing": { "$ref": "#/components/schemas/Billing" },
+          "error": { "oneOf": [{ "$ref": "#/components/schemas/Error" }, { "type": "null" }] },
+          "cancellation": { "$ref": "#/components/schemas/Cancellation" },
+          "created_at": { "type": "integer", "format": "int64", "minimum": 1 },
+          "completed_at": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "JobURLs": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["get", "cancel"],
+        "properties": {
+          "get": { "type": "string", "pattern": "^/v1/jobs/[1-9][0-9]*$" },
+          "cancel": { "type": "string", "pattern": "^/v1/jobs/[1-9][0-9]*/cancel$" }
+        }
+      },
+      "Result": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["availability"],
+        "properties": {
+          "availability": { "type": "string", "enum": ["available", "expired"] },
+          "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ResultFile" } }
+        },
+        "oneOf": [
+          { "properties": { "availability": { "const": "available" } }, "required": ["files"] },
+          { "properties": { "availability": { "const": "expired" } }, "not": { "required": ["files"] } }
+        ]
+      },
+      "ResultFile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url", "media_type", "expires_at"],
+        "properties": {
+          "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "media_type": { "type": "string", "minLength": 3 },
+          "width": { "type": "integer", "minimum": 0 },
+          "height": { "type": "integer", "minimum": 0 },
+          "expires_at": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "JobUsage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["outputs"],
+        "properties": { "outputs": { "type": "integer", "minimum": 0 } }
+      },
+      "Cancellation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "requested_at"],
+        "properties": {
+          "status": { "type": "string", "enum": ["cancelled", "stop_requested"] },
+          "effect": { "type": "string", "enum": ["stop_future_attempts"] },
+          "requested_at": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "Billing": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["currency", "compute_charges", "gateway_fee", "total_charged_by_yir"],
+        "properties": {
+          "currency": { "type": "string", "const": "USD" },
+          "compute_charges": { "type": "array", "items": { "$ref": "#/components/schemas/ComputeCharge" } },
+          "gateway_fee": { "$ref": "#/components/schemas/GatewayFee" },
+          "total_charged_by_yir": { "$ref": "#/components/schemas/Decimal" },
+          "max_cost": { "$ref": "#/components/schemas/MaxCost" },
+          "savings": { "$ref": "#/components/schemas/Savings" },
+          "official_comparison": { "$ref": "#/components/schemas/OfficialComparison" }
+        }
+      },
+      "ComputeCharge": {
+        "type": "object",
+        "description": "Read-only billing facts. New Yir Cloud jobs use managed supply only. Historical jobs may retain byok/provider/external facts; these values do not enable BYOK submission.",
+        "additionalProperties": false,
+        "required": ["supply_type", "billed_by", "amount", "amount_basis", "status"],
+        "properties": {
+          "supply_type": { "type": "string", "enum": ["managed", "byok"], "description": "managed for new Cloud jobs; byok is retained only for historical billing records." },
+          "billed_by": { "type": "string", "enum": ["yir", "provider"] },
+          "amount": { "oneOf": [{ "$ref": "#/components/schemas/Decimal" }, { "type": "null" }] },
+          "amount_basis": { "type": "string", "enum": ["provider_reported", "yir_price_rule", "public_price_estimate", "unknown"] },
+          "usage": { "type": "array", "items": { "$ref": "#/components/schemas/Usage" } },
+          "status": { "type": "string", "enum": ["settled", "external", "waived"] }
+        }
+      },
+      "Usage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["metric", "quantity", "unit"],
+        "properties": {
+          "metric": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "quantity": { "$ref": "#/components/schemas/Decimal" },
+          "unit": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+        }
+      },
+      "GatewayFee": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount", "status"],
+        "properties": {
+          "amount": { "$ref": "#/components/schemas/Decimal" },
+          "status": { "type": "string", "enum": ["settled", "waived"] }
+        }
+      },
+      "OfficialComparison": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Successful jobs only. Complete fixed USD official price frozen at admission for the exact request. Savings is baseline minus all Yir charges, including recovery attempts; it may be negative. Omitted for historical jobs, dynamic prices, missing baselines and external billing.",
+        "required": ["baseline_amount", "savings_amount", "source_url"],
+        "properties": {
+          "baseline_amount": { "$ref": "#/components/schemas/Decimal" },
+          "savings_amount": { "type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$" },
+          "source_url": { "type": "string", "format": "uri" }
+        }
+      },
+      "Savings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount", "kind", "baseline_amount", "actual_user_charge"],
+        "properties": {
+          "amount": { "type": "string", "pattern": "^-?(0|[0-9]+)(\\.[0-9]+)?$" },
+          "kind": { "type": "string", "enum": ["actual", "estimated"] },
+          "baseline_amount": { "$ref": "#/components/schemas/Decimal" },
+          "actual_user_charge": { "$ref": "#/components/schemas/Decimal" }
+        }
+      },
+      "Decimal": { "type": "string", "pattern": "^(0|[0-9]+)(\\.[0-9]+)?$" },
+      "CreateFilesRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["files"],
+        "properties": {
+          "files": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/components/schemas/CreateFile" } },
+          "upload_mode": { "type": "string", "enum": ["auto", "multipart"], "default": "auto" }
+        }
+      },
+      "CreateFile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "media_type", "size"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "media_type": { "type": "string", "enum": ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "audio/mpeg", "audio/wav"] },
+          "size": { "type": "integer", "format": "int64", "minimum": 1, "maximum": 2147483648 }
+        }
+      },
+      "CreateFilesResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["files"],
+        "properties": { "files": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/components/schemas/File" } } }
+      },
+      "CompleteFileRequest": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "File": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "object", "status", "name", "media_type", "size"],
+        "properties": {
+          "id": { "$ref": "#/components/schemas/FileID" },
+          "object": { "type": "string", "const": "file" },
+          "status": { "type": "string", "enum": ["pending_upload", "ready", "expired", "failed"] },
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "media_type": { "type": "string" },
+          "size": { "type": "integer", "format": "int64", "minimum": 1 },
+          "upload": { "$ref": "#/components/schemas/FileUpload" },
+          "url": { "type": "string" },
+          "expires_at": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "FileUpload": {
+        "type": "object",
+        "description": "Every new upload receives a multipart plan, and the Yir SDKs accept multipart only. Replaying a batch created before the multipart migration can still return the retired single-PUT plan, whose shape is outside this schema (type \"single\" with method, url, and headers); such batches cannot be resumed through the SDKs and should be created again.",
+        "additionalProperties": false,
+        "required": ["type", "parts", "expires_at"],
+        "properties": {
+          "type": { "type": "string", "enum": ["multipart"] },
+          "parts": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/UploadPart" } },
+          "expires_at": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "UploadPart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["part_number", "size", "url"],
+        "properties": {
+          "part_number": { "type": "integer", "minimum": 1 },
+          "size": { "type": "integer", "format": "int64", "minimum": 1 },
+          "url": { "type": "string", "format": "uri" }
+        }
+      },
+      "ModelPrices": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "object", "operation", "input_mode", "contract_version", "coverage", "issues", "prices"],
+        "properties": {
+          "channel_parameters": { "type": "array", "items": { "$ref": "#/components/schemas/ChannelParameters" } },
+          "id": { "type": "string" }, "object": { "const": "model_prices" },
+          "operation": { "enum": ["generate_image", "generate_video"] },
+          "input_mode": { "enum": ["text", "image", "reference"] },
+          "contract_version": { "type": "string", "minLength": 1 },
+          "filter": { "type": "object", "additionalProperties": false, "minProperties": 1, "properties": {
+            "resolution": { "type": "string", "minLength": 1, "maxLength": 32 },
+            "reference_count": { "type": "integer", "minimum": 1, "maximum": 512 }
+          }, "description": "Requested pricing scope. Coverage and prices apply only to this filter. Omitted for an unfiltered request." },
+          "coverage": { "enum": ["enumerated", "partial"] },
+          "issues": { "type": "array", "items": { "type": "string" } },
+          "prices": {
+            "type": "object", "additionalProperties": false, "required": ["primary", "max", "expires_at", "unavailable"],
+            "properties": {
+              "primary": { "$ref": "#/components/schemas/SDKPriceTable" },
+              "max": { "$ref": "#/components/schemas/SDKPriceTable" },
+              "expires_at": { "type": "integer", "minimum": 1 },
+              "unavailable": { "type": "array", "items": { "$ref": "#/components/schemas/SDKPriceUnavailable" } }
+            }
+          }
+        }
+      },
+      "SDKPriceConditions": {
+        "type": "object",
+        "description": "Complete normalized pricing dimensions. Every key must match, including explicit zero media-role counts. Unknown or missing keys do not match; never infer a price from a nearby row.",
+        "additionalProperties": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "oneOf": [{ "type": "string" }, { "type": "boolean" }, { "type": "integer", "minimum": -9007199254740991, "maximum": 9007199254740991 }] } }
+      },
+      "SDKPriceTable": {
+        "type": "object", "additionalProperties": false,
+        "required": ["format", "version", "purpose", "unit", "scale", "rows"],
+        "properties": {
+          "format": { "const": "yir-price-table-v1" }, "version": { "type": "string", "minLength": 1 },
+          "purpose": { "const": "yir-cost" }, "unit": { "const": "USD" }, "scale": { "const": 1000000 },
+          "rows": { "type": "array", "maxItems": 512, "items": { "$ref": "#/components/schemas/SDKPriceRow" } }
+        }
+      },
+      "SDKPriceRow": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "model", "operation", "conditions", "kind", "price"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 }, "model": { "type": "string" }, "operation": { "type": "string" },
+          "conditions": { "$ref": "#/components/schemas/SDKPriceConditions" }, "kind": { "const": "exact" },
+          "description": { "type": "string" },
+          "price": { "type": "object", "additionalProperties": false, "required": ["type", "amount"], "properties": { "type": { "const": "total" }, "amount": { "type": "string", "pattern": "^(0|[1-9][0-9]{0,18})$", "description": "Complete total in integer USD micros, at most 9223372036854775807. Do not multiply this total by output count or duration again." } } }
+        }
+      },
+      "SDKPriceUnavailable": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "model", "operation", "conditions", "basis", "reason"],
+        "properties": {
+          "id": { "type": "string" }, "model": { "type": "string" }, "operation": { "type": "string" },
+          "conditions": { "$ref": "#/components/schemas/SDKPriceConditions" }, "basis": { "enum": ["primary", "max"] }, "reason": { "type": "string", "minLength": 1 }
+        }
+      },
+      "ParameterNotice": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "disposition", "reason", "message"],
+        "properties": {
+          "name": { "type": "string", "const": "quality" },
+          "disposition": { "type": "string", "const": "ignored" },
+          "reason": { "type": "string", "enum": ["channel_parameter_unsupported", "quality_requires_official_channel"] },
+          "message": { "type": "string" }
+        }
+      },
+      "ChannelParameters": {
+        "type": "object", "additionalProperties": false,
+        "required": ["provider", "channel_variant", "operation", "input_mode", "parameter_rules"],
+        "description": "Declared public parameter handling, separate from runtime eligibility.",
+        "properties": {
+          "provider": { "type": "string" },
+          "channel_variant": { "type": "string" },
+          "operation": { "enum": ["generate_image", "generate_video"] },
+          "input_mode": { "enum": ["text", "image", "reference"] },
+          "parameter_rules": { "type": "object", "additionalProperties": false,
+            "properties": { "quality": { "$ref": "#/components/schemas/ParameterRule" } } }
+        }
+      },
+      "ParameterRule": {
+        "type": "object", "additionalProperties": false,
+        "required": ["behavior", "description"],
+        "properties": {
+          "behavior": { "enum": ["supported", "ignored", "rejected"] },
+          "values": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+          "reason": { "type": "string" },
+          "description": { "type": "object", "additionalProperties": false, "required": ["zh", "en"],
+            "properties": { "zh": { "type": "string" }, "en": { "type": "string" } } }
+        }
+      },
+      "ModelDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "object", "specifications"],
+        "properties": {
+          "channel_parameters": { "type": "array", "items": { "$ref": "#/components/schemas/ChannelParameters" } },
+          "id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
+          "object": { "type": "string", "const": "model" },
+          "specifications": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ModelSpecification" } }
+        }
+      },
+      "ModelSpecification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_model_id", "operation", "input_mode", "specification_label", "currency", "channels"],
+        "properties": {
+		  "request_model_id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
+          "operation": { "type": "string", "enum": ["generate_image", "generate_video"] },
+		  "input_mode": { "type": "string", "enum": ["text", "image", "reference"] },
+          "specification_label": { "type": "string", "minLength": 1 },
+          "currency": { "type": "string", "const": "USD" },
+          "channels": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ModelChannelPrice" } }
+        }
+      },
+      "ModelChannelPrice": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["provider_code", "provider_label", "availability", "estimated", "specification_label"],
+        "properties": {
+          "provider_code": { "type": "string", "minLength": 1 },
+          "provider_label": { "type": "string", "minLength": 1 },
+          "amount_micros": { "type": "integer", "format": "int64", "minimum": 0 },
+          "availability": { "type": "string", "enum": ["available", "unavailable"] },
+          "estimated": { "type": "boolean" },
+          "specification_label": { "type": "string", "minLength": 1 }
+        }
+      },
+      "ModelContractCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "schema_ref", "models"],
+        "properties": {
+          "schema_version": { "type": "string", "const": "v1" },
+          "schema_ref": { "type": "string", "const": "./standard-openapi.json#/components/schemas/ModelContractCatalog" },
+          "models": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/StaticModelContract" } }
+        },
+        "description": "Language-neutral static model contracts generated with this Standard OpenAPI release. Runtime price, health, authorization and route facts are excluded."
+      },
+      "StaticModelContract": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "aliases", "locales", "operations"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
+          "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+          "locales": { "$ref": "#/components/schemas/ModelContractLocales" },
+          "operations": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/StaticModelOperationContract" } }
+        }
+      },
+      "StaticModelOperationContract": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["operation", "input_modes", "input_constraints", "request_schema", "parameters"],
+        "properties": {
+          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "upscale_image"] },
+          "input_modes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["text", "image", "reference"] } },
+          "input_constraints": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/components/schemas/StaticModelInputConstraint" }
+          },
+          "request_schema": { "type": "string", "pattern": "^#/components/schemas/[A-Za-z0-9]+$" },
+          "parameters": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/StaticModelParameterContract" } }
+        }
+      },
+      "StaticModelInputConstraint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["min_references", "max_references", "allowed_reference_roles"],
+        "properties": {
+          "min_references": { "type": "integer", "minimum": 0 },
+          "max_references": { "type": "integer", "minimum": 0 },
+          "allowed_reference_roles": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
+          },
+          "required_reference_roles": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
+          },
+          "max_duration_by_reference_role": {
+            "type": "object",
+            "additionalProperties": { "type": "integer", "minimum": 1 }
+          }
+        }
+      },
+      "StaticModelParameterContract": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "type", "required", "control", "locales"],
+        "properties": {
+          "policy": { "type": "object", "additionalProperties": false, "required": ["only_provider", "reason", "message"], "properties": {
+            "only_provider": { "type": "string", "minLength": 1, "description": "The parameter is ignored unless routing.only contains exactly this provider." },
+            "reason": { "type": "string", "minLength": 1 },
+            "message": { "type": "string", "minLength": 1, "description": "Safe static SDK warning; contains no request values." }
+          } },
+          "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "type": { "type": "string", "enum": ["string", "integer", "number", "boolean"] },
+          "required": { "type": "boolean" },
+          "values": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/components/schemas/ModelParameterValue" } },
+          "default": { "$ref": "#/components/schemas/ModelParameterValue" },
+          "minimum": { "type": "number" },
+          "maximum": { "type": "number" },
+          "control": { "type": "string", "enum": ["select", "aspect_ratio", "number", "toggle", "file", "text"] },
+          "locales": { "$ref": "#/components/schemas/ModelContractLocales" }
+        }
+      },
+      "ModelParameterValue": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" }
+        ]
+      },
+      "ModelContractLocales": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": { "$ref": "#/components/schemas/ModelContractLocale" }
+      },
+      "ModelContractLocale": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "description"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
