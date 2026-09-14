@@ -2988,7 +2988,7 @@ export const generatedModelContractCatalog = {
           "input_constraints": {
             "image": {
               "min_references": 1,
-              "max_references": 10,
+              "max_references": 14,
               "allowed_reference_roles": [
                 "reference_image"
               ]
@@ -3007,7 +3007,8 @@ export const generatedModelContractCatalog = {
               "required": true,
               "values": [
                 "2K",
-                "3K"
+                "3K",
+                "4K"
               ],
               "default": "2K",
               "control": "select",

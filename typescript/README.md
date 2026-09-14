@@ -83,6 +83,8 @@ Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported.
 
 ## Contract update (unreleased)
 
+Seedream 5.0 text and image contracts now accept `4K`; image input allows up to 14 references. Other parameters are unchanged. This contract update does not establish live 4K availability, pricing or exact output dimensions; those remain subject to server integration and quotes.
+
 This working revision adds optional `parameters.web_search` and `parameters.image_search` for Nano Banana 2 text and image requests. Both default to false; `image_search: true` requires `web_search: true`. Other models reject these fields, including explicit false. Validation preserves the caller's parameters. Search requires an explicitly supported supply and a valid quote; static support does not establish availability or free search. This is not included in the published `0.1.0` package.
 
 Reference validation also enforces the bundled per-role counts, required alternative roles, output-duration limits and duplicate-reference rejection. Keep complete requests unchanged between quote, saved authorization and submission.
