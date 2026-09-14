@@ -18,7 +18,7 @@ Go 1.25 及以上，在应用的模块目录执行：
 go get github.com/yir-ai/sdk/go@v0.1.0
 ```
 
-TypeScript 包**尚未发布到 npm**，请按 [TypeScript 安装说明](../../../typescript/docs/zh-CN/README.md#安装) 构建并安装本地归档。GitHub 仓库是公开的，npm 发布单独进行。
+TypeScript 使用 `pnpm add @yir/sdk@0.1.0` 安装。入口和本地归档安装方式见 [TypeScript 指南](../../../typescript/docs/zh-CN/README.md#安装)。
 
 ## 安全的生成流程
 

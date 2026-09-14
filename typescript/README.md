@@ -6,7 +6,13 @@ One `@yir/sdk` package for image and video generation. Use a Node runtime with n
 
 ## Install
 
-There is no npm release yet. From a checkout of this repository:
+Install from npm:
+
+```sh
+pnpm add @yir/sdk@0.1.0
+```
+
+To build a local archive instead, from a checkout of this repository:
 
 ```sh
 cd typescript
@@ -21,7 +27,7 @@ Then, in your application's directory, install the archive (adjust the absolute 
 pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-sdk-0.1.0.tgz
 ```
 
-Do not install the repository root as a Node package. The package is configured for public npm publication; use the archive until the registry release is available. The package is ESM.
+Do not install the repository root as a Node package. The package is ESM.
 
 ## Entry points
 

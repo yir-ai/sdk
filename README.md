@@ -18,7 +18,7 @@ Go 1.25 or later, from your application's module:
 go get github.com/yir-ai/sdk/go@v0.1.0
 ```
 
-The TypeScript package is **not published to npm yet**. Build and install a local archive using the [TypeScript installation instructions](typescript/README.md#install). The GitHub repository is public; npm publication is a separate step.
+Install TypeScript with `pnpm add @yir/sdk@0.1.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
 
 ## Safe generation lifecycle
 
