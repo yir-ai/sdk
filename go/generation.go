@@ -2,6 +2,7 @@ package yir
 
 import (
 	"fmt"
+	"math/big"
 	"net/url"
 	"regexp"
 	"strings"
@@ -70,8 +71,13 @@ func ValidateGeneration(operation string, request GenerationRequest) error {
 		return &ParameterError{"input.references", "invalid_reference_count"}
 	}
 	roles := make(map[string]int)
+	seenReferences := make(map[Reference]bool)
 	for i, reference := range request.Input.References {
 		path := fmt.Sprintf("input.references[%d]", i)
+		if seenReferences[reference] {
+			return &ParameterError{"input.references", "duplicate_reference"}
+		}
+		seenReferences[reference] = true
 		if !containsString(constraint.AllowedReferenceRoles, reference.Role) {
 			return &ParameterError{path + ".role", "invalid_reference_role"}
 		}
@@ -98,6 +104,35 @@ func ValidateGeneration(operation string, request GenerationRequest) error {
 	}
 	if err := validateParameters(contract.Parameters, request.Parameters); err != nil {
 		return err
+	}
+	for role, limit := range constraint.ReferenceCountsByRole {
+		if roles[role] < limit.Minimum || roles[role] > limit.Maximum {
+			return &ParameterError{"input.references", "invalid_reference_role_count"}
+		}
+	}
+	if len(constraint.RequiredAnyReferenceRoles) > 0 {
+		found := false
+		for _, role := range constraint.RequiredAnyReferenceRoles {
+			found = found || roles[role] > 0
+		}
+		if !found {
+			return &ParameterError{"input.references", "required_reference_role"}
+		}
+	}
+	var duration any = request.Parameters["duration"]
+	if duration == nil {
+		for _, parameter := range contract.Parameters {
+			if parameter.Name == "duration" {
+				duration = parameter.Default
+			}
+		}
+	}
+	normalizedDuration, _ := normalizeParameter(duration)
+	seconds, hasDuration := parameterInteger(normalizedDuration)
+	for role, maximum := range constraint.MaxDurationByReferenceRole {
+		if roles[role] > 0 && hasDuration && seconds.Cmp(big.NewInt(int64(maximum))) > 0 {
+			return &ParameterError{"parameters.duration", "reference_duration_limit"}
+		}
 	}
 	return validateRouting(request.Routing)
 }

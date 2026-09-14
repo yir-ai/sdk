@@ -3,6 +3,7 @@ package yir
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strings"
 )
 
@@ -25,11 +26,18 @@ type ModelParameterContract struct {
 }
 
 type ModelInputConstraint struct {
-	MinReferences              int            `json:"min_references"`
-	MaxReferences              int            `json:"max_references"`
-	AllowedReferenceRoles      []string       `json:"allowed_reference_roles"`
-	RequiredReferenceRoles     []string       `json:"required_reference_roles,omitempty"`
-	MaxDurationByReferenceRole map[string]int `json:"max_duration_by_reference_role,omitempty"`
+	MinReferences              int                            `json:"min_references"`
+	MaxReferences              int                            `json:"max_references"`
+	AllowedReferenceRoles      []string                       `json:"allowed_reference_roles"`
+	RequiredReferenceRoles     []string                       `json:"required_reference_roles,omitempty"`
+	MaxDurationByReferenceRole map[string]int                 `json:"max_duration_by_reference_role,omitempty"`
+	ReferenceCountsByRole      map[string]ReferenceCountRange `json:"reference_counts_by_role,omitempty"`
+	RequiredAnyReferenceRoles  []string                       `json:"required_any_reference_roles,omitempty"`
+}
+
+type ReferenceCountRange struct {
+	Minimum int `json:"minimum"`
+	Maximum int `json:"maximum"`
 }
 
 type ParameterPolicy struct {
@@ -168,6 +176,8 @@ func cloneModelOperationContract(source ModelOperationContract) ModelOperationCo
 	for inputMode, constraint := range source.InputConstraints {
 		constraint.AllowedReferenceRoles = append([]string(nil), constraint.AllowedReferenceRoles...)
 		constraint.RequiredReferenceRoles = append([]string(nil), constraint.RequiredReferenceRoles...)
+		constraint.ReferenceCountsByRole = maps.Clone(constraint.ReferenceCountsByRole)
+		constraint.RequiredAnyReferenceRoles = append([]string(nil), constraint.RequiredAnyReferenceRoles...)
 		constraint.MaxDurationByReferenceRole = cloneStringIntMap(constraint.MaxDurationByReferenceRole)
 		result.InputConstraints[inputMode] = constraint
 	}

@@ -52,6 +52,10 @@ Set `SubmitRequest.WebhookURL` for callbacks. `VerifyWebhookSignature` takes `Se
 
 `GetModelPrices` retrieves validated model prices. Cache by account/policy/model/operation/input mode/filter and respect expiry. Local pricing helpers consume tables without network calls. Preserve decimal strings and table scale; estimates, holds and static model metadata are not final billing or guaranteed live supply. A missing price row is not a free price or proof of unsupported input. Customer retail pricing, balances and authorization remain separate from Yir procurement cost. See [pricing examples](pricing_example_test.go) and [public contracts](https://github.com/yir-ai/sdk/blob/main/spec/README.md).
 
+## Contract update (unreleased)
+
+This working revision accepts optional boolean `web_search` and `image_search` in Nano Banana 2 `Parameters` for text and image input. Both default to false; image search requires web search. Other models reject these fields, including explicit false. The validator preserves the request and enforces per-role reference counts, required alternatives, output-duration limits and duplicate-reference rejection. Search availability and charges require a supported supply and a valid quote. These updates are not in the published `v0.1.0` module.
+
 ## Verify
 
 From this directory, run `go test -p 2 ./...` with `GOWORK=off` and `GOMAXPROCS=2` for isolated module verification. Examples without an `Output` directive are compiled but not executed. Optional external price-fixture tests skip when their input is absent. No Node installation is needed.

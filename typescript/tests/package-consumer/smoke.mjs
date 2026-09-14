@@ -7,6 +7,11 @@ import {preparePricedRequest,previewCost} from './price-preview.mjs';
 import {publishRetailTable,priceOrder} from './retail-table.mjs';
 import { getModelContract } from "@yir-ai/sdk/model-contracts";
 import { createYirAIProvider } from "@yir-ai/sdk/vercel";
+import { validateModelParameters, getModelOperationContract } from "@yir-ai/sdk/browser";
+
+validateModelParameters("google/nano-banana-2", "generate_image", "text", { web_search: true, image_search: true });
+assert.throws(() => validateModelParameters("google/nano-banana-2", "generate_image", "text", { image_search: true }), { code: "parameter_dependency" });
+assert.equal(getModelOperationContract("bytedance/seedance-2", "generate_video", "reference").input_constraints.reference.reference_counts_by_role.reference_image.maximum, 9);
 
 const consumer = path.dirname(fileURLToPath(import.meta.url));
 for (const name of ["@yir-ai/sdk", "@yir-ai/sdk/model-contracts", "@yir-ai/sdk/vercel", "@yir-ai/sdk/pricing", "@yir-ai/sdk/server", "@yir-ai/sdk/browser", "@yir-ai/sdk/shared"]) {

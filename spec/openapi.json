@@ -538,6 +538,8 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
+              "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",
                 "minLength": 1
@@ -588,6 +590,8 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
+              "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",
                 "minLength": 1
@@ -1308,6 +1312,8 @@
         "required": ["duration", "resolution", "aspect_ratio", "generate_audio", "n"],
         "properties": {
           "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"] },
+          "web_search": { "type": "boolean" },
+          "image_search": { "type": "boolean" },
           "duration": { "type": "integer", "minimum": 0 },
           "resolution": { "type": "string", "minLength": 1 },
           "aspect_ratio": { "type": "string", "minLength": 1 },
@@ -1737,7 +1743,23 @@
           },
           "max_duration_by_reference_role": {
             "type": "object",
+            "description": "Maximum generated video duration in seconds when a reference of the keyed role is present; not input media duration.",
             "additionalProperties": { "type": "integer", "minimum": 1 }
+          },
+          "reference_counts_by_role": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object", "additionalProperties": false,
+              "required": ["minimum", "maximum"],
+              "properties": {
+                "minimum": { "type": "integer", "minimum": 0 },
+                "maximum": { "type": "integer", "minimum": 0 }
+              }
+            }
+          },
+          "required_any_reference_roles": {
+            "type": "array", "uniqueItems": true,
+            "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
           }
         }
       },

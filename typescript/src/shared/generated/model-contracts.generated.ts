@@ -1032,7 +1032,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "reference": {
               "min_references": 1,
@@ -1908,7 +1918,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "text": {
               "min_references": 0,
@@ -2061,7 +2081,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "reference": {
               "min_references": 1,
@@ -2070,6 +2100,24 @@ export const generatedModelContractCatalog = {
                 "reference_image",
                 "reference_video",
                 "reference_audio"
+              ],
+              "reference_counts_by_role": {
+                "reference_audio": {
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "reference_image": {
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "reference_video": {
+                  "minimum": 0,
+                  "maximum": 3
+                }
+              },
+              "required_any_reference_roles": [
+                "reference_image",
+                "reference_video"
               ]
             },
             "text": {
@@ -2222,7 +2270,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "reference": {
               "min_references": 1,
@@ -2231,6 +2289,10 @@ export const generatedModelContractCatalog = {
                 "reference_image",
                 "reference_video",
                 "reference_audio"
+              ],
+              "required_any_reference_roles": [
+                "reference_image",
+                "reference_video"
               ]
             },
             "text": {
@@ -2388,7 +2450,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "reference": {
               "min_references": 1,
@@ -2397,6 +2469,10 @@ export const generatedModelContractCatalog = {
                 "reference_image",
                 "reference_video",
                 "reference_audio"
+              ],
+              "required_any_reference_roles": [
+                "reference_image",
+                "reference_video"
               ]
             },
             "text": {
@@ -2552,7 +2628,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "reference": {
               "min_references": 1,
@@ -2561,6 +2647,10 @@ export const generatedModelContractCatalog = {
                 "reference_image",
                 "reference_video",
                 "reference_audio"
+              ],
+              "required_any_reference_roles": [
+                "reference_image",
+                "reference_video"
               ]
             },
             "text": {
@@ -3471,7 +3561,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "reference": {
               "min_references": 1,
@@ -3651,6 +3751,48 @@ export const generatedModelContractCatalog = {
                 "zh-CN": {
                   "label": "画幅",
                   "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "web_search",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Web search",
+                  "description": "Use web search when supported by the selected supply. Check the quote for availability and cost."
+                },
+                "zh-CN": {
+                  "label": "网页搜索",
+                  "description": "由支持的供应渠道执行网页搜索，可用性与费用以报价为准。"
+                }
+              }
+            },
+            {
+              "name": "image_search",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Image search",
+                  "description": "Use image search together with web_search=true. Check the quote for supply availability and cost."
+                },
+                "zh-CN": {
+                  "label": "图片搜索",
+                  "description": "图片搜索必须同时启用 web_search；供应可用性与费用以报价为准。"
                 }
               }
             },
@@ -4558,7 +4700,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             },
             "text": {
               "min_references": 0,
@@ -5349,7 +5501,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             }
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
@@ -5738,7 +5900,17 @@ export const generatedModelContractCatalog = {
               "allowed_reference_roles": [
                 "first_frame",
                 "last_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             }
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
