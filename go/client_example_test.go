@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	yir "github.com/sungerine/yir-sdk/go"
+	yir "github.com/yir-ai/sdk/go"
 )
 
 // This example is compile-checked; without an Output directive, go test does not

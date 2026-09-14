@@ -2,7 +2,7 @@ package yir_test
 
 import (
 	"fmt"
-	yir "github.com/sungerine/yir-sdk/go"
+	yir "github.com/yir-ai/sdk/go"
 )
 
 func ExampleCalculatePrice() {

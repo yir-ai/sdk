@@ -62,7 +62,8 @@
   "description": "Yir image and video API SDK with server and browser-safe entry points",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sungerine/yir-sdk.git",
+    "url": "git+https://github.com/yir-ai/sdk.git",
     "directory": "typescript"
-  }
+  },
+  "license": "MIT"
 }

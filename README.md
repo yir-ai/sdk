@@ -1,8 +1,8 @@
 # Yir SDK
 
-单仓库维护多语言 SDK；各语言独立安装、测试和版本。当前准备首次公开发布；尚未发布 npm 包。
+单仓库维护多语言 SDK；各语言独立安装、测试和版本。公开源码仓库：https://github.com/yir-ai/sdk 。采用 MIT 许可证；尚未发布 npm 包。
 
-- **go/**：Go 服务端 SDK，候选模块 github.com/sungerine/yir-sdk/go。
+- **go/**：Go 服务端 SDK，模块 github.com/yir-ai/sdk/go。
 - **typescript/**：一个 @yir/sdk 包；server 负责密钥客户端和 Webhook，browser 提供浏览器安全能力，shared 复用纯逻辑和类型。
 - **spec/**：跨语言公共规范、模型合同、测试向量与生成器；不包含服务端实现。
 
@@ -27,6 +27,6 @@ createYirClient(transport) 保留显式传输层合同；createNodeYirClient({ap
 
 Yir 私有仓库从同一提交导出公开 OpenAPI 和模型合同到 spec/openapi.json、spec/models.json；在 typescript/ 执行 pnpm generate:model-contracts 和 pnpm check:model-contracts。生成器只消费公开快照，不访问私有服务端。公开规范和 SDK 静态参数不保证实时供给或最终计费。
 
-Go 子模块版本使用 go/vX.Y.Z；TS 使用 package.json 版本，独立发布。公开前确认仓库名称、许可证与包名，并验证匿名下载；Pilio 正式依赖暂不切换。
+Go 子模块版本使用 go/vX.Y.Z；TS 使用 package.json 版本，独立发布。npm 包名与发布单独管理；Pilio 正式依赖暂不切换。
 
 GitHub 仓库公开与 npm 发包分别进行；npm 包目前保留 private:true，避免误发布。
