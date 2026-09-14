@@ -1,7 +1,8 @@
 import { buildImageQuoteRequest } from '@yir/sdk/server';
 
-// 服务端先报价。返回值和幂等键必须一起持久化，提交/恢复只读取保存的请求。
-// 此模块不自动生成、不创建临时幂等键，也不承担客户的账户/订单授权。
+// Quote on the server. Persist the returned request with a stable idempotency key.
+// Submission and recovery must read that saved record.
+// The application owns budget approval and storage; importing this module does not generate.
 export async function prepareImage(client, input) {
   const request = buildImageQuoteRequest(input);
   const quote = await client.quoteImage(request);
@@ -19,8 +20,8 @@ export async function submitSavedImage(client, saved) {
   return client.submitImage(saved.request, saved.idempotencyKey);
 }
 
-// 集成顺序：
+// Integration order:
 // 1. prepareImage(client, { model, prompt, parameters })
-// 2. 客户后端核准预算，将 request 与稳定 idempotencyKey 保存到自己的订单/任务记录。
+// 2. Approve the budget and persist request + stable idempotencyKey in your task record.
 // 3. submitSavedImage(client, storedRecord)
-// 恢复时重复步骤 3；不得重新报价替换已有 request 或重新生成幂等键。
+// Recover by repeating step 3 with the saved request and key; never replace either.

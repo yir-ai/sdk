@@ -1,7 +1,13 @@
-# 公共规范
+# Public specifications
 
-openapi.json 和 models.json 是同一批公开协议快照；模型目录 schema_ref 指向 ./openapi.json#/components/schemas/ModelContractCatalog。更新时保持该引用与本目录文件名一致。
+English | [简体中文](docs/zh-CN/spec.md) · [Repository](../README.md)
 
-在 ../typescript/ 执行 pnpm generate:model-contracts，生成 TS/Go 随包制品；pnpm check:model-contracts 检测漂移。生成器不访问私有服务端。fixtures/ 只存人工合同向量，不放实时价格或用户数据；Go 下载用户所需向量随 go/testdata/ 打包。
+[openapi.json](openapi.json) and [models.json](models.json) are public protocol snapshots exported together from the same server revision. The model catalog's `schema_ref` points to `./openapi.json#/components/schemas/ModelContractCatalog`; preserve that reference when updating files.
 
-服务端负责从业务定义导出公开规范，SDK 仓库负责基于公开规范生成、测试和发布；跨服务端验证仍在私有仓库进行。
+From `typescript/`, run `pnpm generate:model-contracts` to generate the packaged TypeScript and Go contracts, and `pnpm check:model-contracts` to detect drift. The generator consumes only public snapshots and never accesses the private server. Preserve existing bilingual model metadata, stable error codes and billing semantics.
+
+[fixtures/](fixtures/) contains synthetic contract vectors, not live prices or user data. Go's required vectors are also packaged under `go/testdata/`, so downloaded modules can test without this directory. Optional external price fixtures retain their existing skip behavior.
+
+The server owns exporting business definitions; this repository owns SDK generation, tests and releases from those public definitions. Cross-server validation remains in the private repository. Static specifications do not guarantee live supply or final charges. See the [Go](../go/README.md) and [TypeScript](../typescript/README.md) guides for runtime quote and recovery behavior.
+
+Keep translations paired with their English documents and maintain links in both directions. The Chinese repository overview lives under `spec/docs/zh-CN/` to keep the root clean; language-specific translations live under each SDK's `docs/zh-CN/`.

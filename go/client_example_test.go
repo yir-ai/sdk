@@ -27,10 +27,13 @@ func ExampleClient() {
 	if err != nil {
 		panic(err)
 	}
-	if !quote.HasVerifiableUpperBound {
+	if !quote.Supply.Available || quote.Primary.Kind != "fixed" ||
+		!quote.HasVerifiableUpperBound || quote.SingleAttemptUpperBound == nil {
 		return
 	}
-	// Persist this key and request in the application's task record.
+	// Integration requirement: approve the customer budget and durably save the
+	// full SubmitRequest and key below before calling SubmitImage.
+	// This sketch omits application-specific authorization and storage.
 	key := "application-task-123-slot-1"
 	job, err := client.SubmitImage(ctx, yir.SubmitRequest{
 		GenerationRequest: request, MaxCost: quote.SingleAttemptUpperBound,

@@ -1,4 +1,4 @@
-import {buildPriceInput, calculatePrice, getModelOperationContract} from '@yir/sdk';
+import {buildPriceInput, calculatePrice, getModelOperationContract} from '@yir/sdk/browser';
 
 // Customer-side helper: persist/submit THIS request, not the original form data.
 // Explicit defaults keep the priced parameters stable across server updates.

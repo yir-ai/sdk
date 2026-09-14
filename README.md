@@ -1,32 +1,46 @@
 # Yir SDK
 
-单仓库维护多语言 SDK；各语言独立安装、测试和版本。公开源码仓库：https://github.com/yir-ai/sdk 。采用 MIT 许可证；尚未发布 npm 包。
+English | [简体中文](spec/docs/zh-CN/README.md)
 
-- **go/**：Go 服务端 SDK，模块 github.com/yir-ai/sdk/go。
-- **typescript/**：一个 @yir/sdk 包；server 负责密钥客户端和 Webhook，browser 提供浏览器安全能力，shared 复用纯逻辑和类型。
-- **spec/**：跨语言公共规范、模型合同、测试向量与生成器；不包含服务端实现。
+Official Go and TypeScript SDKs for the Yir image and video API. Public source: [yir-ai/sdk](https://github.com/yir-ai/sdk). Licensed under [MIT](LICENSE).
 
-## TypeScript
+| Package | Start here | Scope |
+| --- | --- | --- |
+| Go | [Go guide](go/README.md) | Server client, quotes, jobs, files and Webhooks |
+| TypeScript | [TypeScript guide](typescript/README.md) | One `@yir/sdk` package with server, browser and shared entry points; Vercel AI SDK adapter |
+| Specification | [Public contracts](spec/README.md) | OpenAPI, model contracts, fixtures and generation tools |
 
-在 typescript/ 运行 pnpm install --frozen-lockfile，然后 pnpm check。Node 配置、依赖与临时产物只放在该子目录，不在根目录安装。
+## Install
 
-```ts
-import { createNodeYirClient } from '@yir/sdk/server';
-import { calculatePrice, getModelContract } from '@yir/sdk/browser';
-import type { Job } from '@yir/sdk/shared';
-import { createYirAIProvider } from '@yir/sdk/vercel';
+Go 1.25 or later, from your application's module:
+
+```sh
+go get github.com/yir-ai/sdk/go@v0.0.0-20260914123335-1848f94304c9
 ```
 
-createYirClient(transport) 保留显式传输层合同；createNodeYirClient({apiKey}) 提供服务端 HTTP 客户端。浏览器不得持有 Yir Key，密钥客户端在浏览器中拒绝运行。原根入口及 pricing、model-contracts 子入口保留兼容，新代码优先显式 server/browser 入口。
+The TypeScript package is **not published to npm yet**. Build and install a local archive using the [TypeScript installation instructions](typescript/README.md#install). `private: true` prevents accidental npm publication; the GitHub repository is public.
 
-## Go
+## Safe generation lifecycle
 
-在 go/ 运行 go test -p 2 ./...。Go SDK 随模块包含必要测试向量；不要求 Node 或整个仓库可用。
+1. Build an explicit request and obtain a quote. Check supply and a verifiable single-attempt upper bound.
+2. Have your application approve the budget. Persist the exact submit request, including `max_cost`, and a stable idempotency key before submitting.
+3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID.
+4. Reconcile terminal billing once and copy available result files before their URLs expire.
 
-## 合同维护
+A quote or static price table does not authorize a purchase or guarantee current supply or final billing. Customer pricing, account authorization, balances and persistence belong to your application. Keep Yir API keys on the server; the browser entry exposes only pure helpers and types.
 
-Yir 私有仓库从同一提交导出公开 OpenAPI 和模型合同到 spec/openapi.json、spec/models.json；在 typescript/ 执行 pnpm generate:model-contracts 和 pnpm check:model-contracts。生成器只消费公开快照，不访问私有服务端。公开规范和 SDK 静态参数不保证实时供给或最终计费。
+See the [TypeScript examples](typescript/examples/README.md) and [Go example guide](go/examples/README.md) for the full workflow.
 
-Go 子模块版本使用 go/vX.Y.Z；TS 使用 package.json 版本，独立发布。npm 包名与发布单独管理；Pilio 正式依赖暂不切换。
+## Development
 
-GitHub 仓库公开与 npm 发包分别进行；npm 包目前保留 private:true，避免误发布。
+Run Node commands only inside `typescript/`:
+
+```sh
+cd typescript
+pnpm install --frozen-lockfile
+pnpm check
+```
+
+From `go/`, run `go test -p 2 ./...` with `GOWORK=off` and `GOMAXPROCS=2` when testing this module in isolation. Go includes its required test fixtures and does not need Node or the root `spec/` directory. External price-fixture tests may skip when their optional input is absent.
+
+Keep the root limited to `go/`, `typescript/`, `spec/`, this README, LICENSE and necessary Git files. Node dependencies, configuration, locks and build artifacts belong under `typescript/`. See [contract maintenance](spec/README.md) for snapshot generation. Go releases use `go/vX.Y.Z` tags; TypeScript versions are managed in its own `package.json`. Publication and release tags are separate operations.
