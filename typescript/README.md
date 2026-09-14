@@ -21,7 +21,7 @@ Then, in your application's directory, install the archive (adjust the absolute 
 pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-sdk-0.1.0.tgz
 ```
 
-Do not install the repository root as a Node package. `private: true` remains intentional until npm publication is approved. The package is ESM.
+Do not install the repository root as a Node package. The package is configured for public npm publication; use the archive until the registry release is available. The package is ESM.
 
 ## Entry points
 

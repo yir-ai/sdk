@@ -15,10 +15,10 @@ Official Go and TypeScript SDKs for the Yir image and video API. Public source: 
 Go 1.25 or later, from your application's module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.0.0-20260914123335-1848f94304c9
+go get github.com/yir-ai/sdk/go@v0.1.0
 ```
 
-The TypeScript package is **not published to npm yet**. Build and install a local archive using the [TypeScript installation instructions](typescript/README.md#install). `private: true` prevents accidental npm publication; the GitHub repository is public.
+The TypeScript package is **not published to npm yet**. Build and install a local archive using the [TypeScript installation instructions](typescript/README.md#install). The GitHub repository is public; npm publication is a separate step.
 
 ## Safe generation lifecycle
 

@@ -15,10 +15,10 @@ Yir 图像与视频 API 的官方 Go 和 TypeScript SDK。公开源码：[yir-ai
 Go 1.25 及以上，在应用的模块目录执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.0.0-20260914123335-1848f94304c9
+go get github.com/yir-ai/sdk/go@v0.1.0
 ```
 
-TypeScript 包**尚未发布到 npm**，请按 [TypeScript 安装说明](../../../typescript/docs/zh-CN/README.md#安装) 构建并安装本地归档。`private: true` 用于防止误发 npm 包，GitHub 仓库是公开的。
+TypeScript 包**尚未发布到 npm**，请按 [TypeScript 安装说明](../../../typescript/docs/zh-CN/README.md#安装) 构建并安装本地归档。GitHub 仓库是公开的，npm 发布单独进行。
 
 ## 安全的生成流程
 

@@ -21,7 +21,7 @@ pnpm pack --pack-destination ./artifacts
 pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-sdk-0.1.0.tgz
 ```
 
-不要将仓库根目录作为 Node 包安装。批准 npm 发布前保留 `private: true`。此包使用 ESM。
+不要将仓库根目录作为 Node 包安装。包已配置为公开 npm 发布；registry 版本可用前请使用归档。此包使用 ESM。
 
 ## 入口
 

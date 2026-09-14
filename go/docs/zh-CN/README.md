@@ -9,10 +9,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.0.0-20260914123335-1848f94304c9
+go get github.com/yir-ai/sdk/go@v0.1.0
 ```
 
-这是基于提交的伪版本，无需发布标签。未来模块标签使用 `go/vX.Y.Z`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.1.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
