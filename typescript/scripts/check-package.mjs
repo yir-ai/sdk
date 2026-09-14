@@ -29,7 +29,7 @@ try {
   // Install the actual archive and its runtime dependencies. A fresh CI runner
   // may need registry metadata even after a frozen-lockfile install. Prefer the
   // cache without requiring it; no lifecycle hooks, workspace links or publish.
-  runPnpm(["--ignore-workspace", "add", "--offline", "--ignore-scripts", path.join(directory, archives[0])], consumer);
+  runPnpm(["--ignore-workspace", "add", "--prefer-offline", "--ignore-scripts", path.join(directory, archives[0])], consumer);
   // Read examples from the installed archive too: missing packaged examples
   // must fail even if the workspace happens to contain them.
   for (const name of ["price-preview.mjs", "retail-table.mjs"]) {
