@@ -2,14 +2,14 @@
 
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
-One `@yir/sdk` package for image and video generation. Use a Node runtime with native `fetch`, Web Crypto and `Blob` (Node 22+ is a practical baseline); development uses pnpm 10.30.1.
+One `@yir-ai/sdk` package for image and video generation. Use a Node runtime with native `fetch`, Web Crypto and `Blob` (Node 22+ is a practical baseline); development uses pnpm 10.30.1.
 
 ## Install
 
 Install from npm:
 
 ```sh
-pnpm add @yir/sdk@0.1.0
+pnpm add @yir-ai/sdk@0.1.0
 ```
 
 To build a local archive instead, from a checkout of this repository:
@@ -24,7 +24,7 @@ pnpm pack --pack-destination ./artifacts
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-sdk-0.1.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.1.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -33,17 +33,17 @@ Do not install the repository root as a Node package. The package is ESM.
 
 | Import | Use |
 | --- | --- |
-| `@yir/sdk/server` | `createNodeYirClient`, custom transport client, jobs, files, Webhook verification |
-| `@yir/sdk/browser` | Model contracts, parameter validation, request builders and pure price calculations; no network or secrets |
-| `@yir/sdk/shared` | Shared types and pure logic |
-| `@yir/sdk/vercel` | Server-side Vercel AI SDK 7 / Provider V4 adapter |
+| `@yir-ai/sdk/server` | `createNodeYirClient`, custom transport client, jobs, files, Webhook verification |
+| `@yir-ai/sdk/browser` | Model contracts, parameter validation, request builders and pure price calculations; no network or secrets |
+| `@yir-ai/sdk/shared` | Shared types and pure logic |
+| `@yir-ai/sdk/vercel` | Server-side Vercel AI SDK 7 / Provider V4 adapter |
 
 Server and browser depend on shared; shared does not depend on either. The root entry remains a compatible server entry. `pricing` and `model-contracts` subpaths remain available. Prefer explicit server/browser imports for new code. Never send a Yir Key to the browser; the key client rejects browser execution without an override switch. Have your browser call your own authenticated backend.
 
 ```ts
-import { createNodeYirClient } from '@yir/sdk/server';
-import { calculatePrice, getModelContract } from '@yir/sdk/browser';
-import type { Job } from '@yir/sdk/shared';
+import { createNodeYirClient } from '@yir-ai/sdk/server';
+import { calculatePrice, getModelContract } from '@yir-ai/sdk/browser';
+import type { Job } from '@yir-ai/sdk/shared';
 
 // Reads YIR_API_KEY; YIR_BASE_URL optionally overrides the default gateway.
 const client = createNodeYirClient();
@@ -75,7 +75,7 @@ Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ sec
 
 ## Vercel AI SDK
 
-Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces.
+Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces.
 
 Every generation call requires `providerOptions.yir.idempotencyKey`; pass your saved `maxCost`, `parameters` and optional `routing` there too. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references are uploaded with keys derived from the saved generation key; preserve the same bytes on recovery.
 

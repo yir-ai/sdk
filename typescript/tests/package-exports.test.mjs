@@ -13,9 +13,9 @@ test("all public package entry points resolve to built JavaScript and declaratio
     const exports = await import(name);
     assert.ok(Object.keys(exports).length > 0);
   }
-  const root = await import("@yir/sdk");
-  const contracts = await import("@yir/sdk/model-contracts");
-  const vercel = await import("@yir/sdk/vercel");
+  const root = await import("@yir-ai/sdk");
+  const contracts = await import("@yir-ai/sdk/model-contracts");
+  const vercel = await import("@yir-ai/sdk/vercel");
   assert.equal(root.getModelContract, contracts.getModelContract);
   assert.equal(typeof vercel.createYirAIProvider, "function");
 });

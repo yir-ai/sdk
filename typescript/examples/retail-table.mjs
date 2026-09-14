@@ -1,4 +1,4 @@
-import { calculatePrice, isPriceTable } from '@yir/sdk/pricing';
+import { calculatePrice, isPriceTable } from '@yir-ai/sdk/pricing';
 
 // Customer backend example, not a Yir tariff policy: 25% markup,
 // 100 credits per USD, rounded UP once per complete specification.

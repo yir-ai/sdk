@@ -1,4 +1,4 @@
-import { calculatePrice } from '@yir/sdk/pricing';
+import { calculatePrice } from '@yir-ai/sdk/pricing';
 
 // Customer-owned retail prices; these are not Yir procurement rates or real model IDs.
 export const models = {

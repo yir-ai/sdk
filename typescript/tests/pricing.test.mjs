@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { calculatePrice, isPriceTable } from '@yir/sdk/pricing';
+import { calculatePrice, isPriceTable } from '@yir-ai/sdk/pricing';
 
 const fixtures = JSON.parse(readFileSync(new URL('../../go/testdata/price-table-v1.json', import.meta.url), 'utf8'));
 for (const fixture of fixtures) {

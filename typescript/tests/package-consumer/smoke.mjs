@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { createYirClient, buildPriceInput } from "@yir/sdk";
-import { calculatePrice } from "@yir/sdk/pricing";
+import { createYirClient, buildPriceInput } from "@yir-ai/sdk";
+import { calculatePrice } from "@yir-ai/sdk/pricing";
 import {preparePricedRequest,previewCost} from './price-preview.mjs';
 import {publishRetailTable,priceOrder} from './retail-table.mjs';
-import { getModelContract } from "@yir/sdk/model-contracts";
-import { createYirAIProvider } from "@yir/sdk/vercel";
+import { getModelContract } from "@yir-ai/sdk/model-contracts";
+import { createYirAIProvider } from "@yir-ai/sdk/vercel";
 
 const consumer = path.dirname(fileURLToPath(import.meta.url));
-for (const name of ["@yir/sdk", "@yir/sdk/model-contracts", "@yir/sdk/vercel", "@yir/sdk/pricing", "@yir/sdk/server", "@yir/sdk/browser", "@yir/sdk/shared"]) {
+for (const name of ["@yir-ai/sdk", "@yir-ai/sdk/model-contracts", "@yir-ai/sdk/vercel", "@yir-ai/sdk/pricing", "@yir-ai/sdk/server", "@yir-ai/sdk/browser", "@yir-ai/sdk/shared"]) {
   const resolved = fileURLToPath(import.meta.resolve(name));
   assert.ok(resolved.startsWith(path.join(consumer, "node_modules") + path.sep), "Entry must resolve from the installed archive");
   assert.ok(resolved.endsWith(".js"));
@@ -59,9 +59,9 @@ assert.equal(previewCost(undefined,'generate_video',video,99).state,'load_requir
 assert.equal(previewCost(loaded,'generate_video',video,100).state,'refresh_required');
 assert.throws(()=>priceOrder(trusted,{...priceInput,version:'expired'}),/price_version_expired/);
 
-const browser = await import('@yir/sdk/browser');
-const shared = await import('@yir/sdk/shared');
-const server = await import('@yir/sdk/server');
+const browser = await import('@yir-ai/sdk/browser');
+const shared = await import('@yir-ai/sdk/shared');
+const server = await import('@yir-ai/sdk/server');
 assert.equal(browser.calculatePrice, calculatePrice);
 assert.equal(shared.getModelContract, getModelContract);
 assert.equal(server.createYirClient, createYirClient);

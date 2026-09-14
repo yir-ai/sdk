@@ -1,4 +1,4 @@
-import { buildImageQuoteRequest } from '@yir/sdk/server';
+import { buildImageQuoteRequest } from '@yir-ai/sdk/server';
 
 // Quote on the server. Persist the returned request with a stable idempotency key.
 // Submission and recovery must read that saved record.

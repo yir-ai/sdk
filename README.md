@@ -7,7 +7,7 @@ Official Go and TypeScript SDKs for the Yir image and video API. Public source: 
 | Package | Start here | Scope |
 | --- | --- | --- |
 | Go | [Go guide](go/README.md) | Server client, quotes, jobs, files and Webhooks |
-| TypeScript | [TypeScript guide](typescript/README.md) | One `@yir/sdk` package with server, browser and shared entry points; Vercel AI SDK adapter |
+| TypeScript | [TypeScript guide](typescript/README.md) | One `@yir-ai/sdk` package with server, browser and shared entry points; Vercel AI SDK adapter |
 | Specification | [Public contracts](spec/README.md) | OpenAPI, model contracts, fixtures and generation tools |
 
 ## Install
@@ -18,7 +18,7 @@ Go 1.25 or later, from your application's module:
 go get github.com/yir-ai/sdk/go@v0.1.0
 ```
 
-Install TypeScript with `pnpm add @yir/sdk@0.1.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
+Install TypeScript with `pnpm add @yir-ai/sdk@0.1.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
 
 ## Safe generation lifecycle
 

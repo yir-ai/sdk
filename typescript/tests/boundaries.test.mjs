@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
-import * as browser from '@yir/sdk/browser';
-import * as shared from '@yir/sdk/shared';
-import {createNodeHttpTransport, createNodeYirClient} from '@yir/sdk/server';
+import * as browser from '@yir-ai/sdk/browser';
+import * as shared from '@yir-ai/sdk/shared';
+import {createNodeHttpTransport, createNodeYirClient} from '@yir-ai/sdk/server';
 
 test('browser/shared 导出纯逻辑并共享同一实现',()=>{
   assert.equal(browser.calculatePrice,shared.calculatePrice);

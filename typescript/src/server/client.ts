@@ -131,7 +131,7 @@ function warnParameterPolicies(operation: "generate_image" | "generate_video", r
     console.warn(`[Yir] ${notice.message}`);
   }
 }
-export const DEFAULT_USER_AGENT = "@yir/sdk/0.1.0";
+export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.1.0";
 export const DEFAULT_POLL_INTERVAL_MS = 2000;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 

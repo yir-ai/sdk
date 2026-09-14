@@ -33,7 +33,7 @@ try {
   // Read examples from the installed archive too: missing packaged examples
   // must fail even if the workspace happens to contain them.
   for (const name of ["price-preview.mjs", "retail-table.mjs"]) {
-    await copyFile(path.join(consumer,"node_modules/@yir/sdk/examples",name),path.join(consumer,name));
+    await copyFile(path.join(consumer,"node_modules/@yir-ai/sdk/examples",name),path.join(consumer,name));
   }
   execFileSync(process.execPath, ["smoke.mjs"], { cwd: consumer, stdio: "inherit" });
   execFileSync(process.execPath, [path.join(packageRoot, "node_modules/typescript/bin/tsc"), "-p", "tsconfig.json"], { cwd: consumer, stdio: "inherit" });
