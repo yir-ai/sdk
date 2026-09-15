@@ -53,6 +53,7 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 			code       string
 		}{
 			{map[string]any{}, ""}, {map[string]any{"return_last_frame": false}, ""}, {map[string]any{"return_last_frame": true}, ""},
+			{map[string]any{"aspect_ratio": "adaptive", "return_last_frame": true}, ""},
 			{map[string]any{"image_search": false}, "unknown_parameter"}, {map[string]any{"return_last_frame": true, "image_search": true}, "unknown_parameter"},
 			{map[string]any{"return_last_frame": "true"}, "invalid_type"}, {map[string]any{"return_last_frame": nil}, "invalid_type"},
 		} {

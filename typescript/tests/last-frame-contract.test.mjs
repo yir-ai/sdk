@@ -8,12 +8,15 @@ test("Seedance 2 last-frame intent survives quote and submit for every input mod
   const model = "bytedance/seedance-2";
   const contract = getModelOperationContract(model, "generate_video", "text");
   const rule = contract.parameters.find(p => p.name === "return_last_frame");
+  const ratio = contract.parameters.find(p => p.name === "aspect_ratio");
+  assert.equal(ratio.default, "16:9");
+  assert.deepEqual(ratio.values, ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16", "adaptive"]);
   assert.equal(rule.type, "boolean");
   assert.equal(rule.required, false);
   assert.equal(rule.default, false);
   for (const mode of contract.input_modes) {
     const input = { type: mode, prompt: "fixture", ...(mode === "text" ? {} : { references: [{ role: mode === "image" ? "first_frame" : "reference_image", url: "https://example.com/image.png" }] }) };
-    for (const parameters of [{}, { return_last_frame: false }, { return_last_frame: true }]) {
+    for (const parameters of [{}, { return_last_frame: false }, { return_last_frame: true }, ...ratio.values.map(aspect_ratio => ({ aspect_ratio, return_last_frame: true }))]) {
       const request = { model, input, parameters };
       const before = structuredClone(request);
       const calls = [];

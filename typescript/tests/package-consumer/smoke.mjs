@@ -11,6 +11,7 @@ import { validateModelParameters, getModelOperationContract } from "@yir-ai/sdk/
 
 validateModelParameters("google/nano-banana-2", "generate_image", "text", { web_search: true, image_search: true });
 validateModelParameters("bytedance/seedance-2.0", "generate_video", "text", { return_last_frame: true });
+validateModelParameters("bytedance/seedance-2.0", "generate_video", "text", { aspect_ratio: "adaptive", return_last_frame: true });
 assert.throws(() => validateModelParameters("google/nano-banana-2", "generate_image", "text", { return_last_frame: false }), { code: "parameter_unknown" });
 for (const mode of ["text", "image"]) {
   validateModelParameters("google/nano-banana-pro", "generate_image", mode, { web_search: true });

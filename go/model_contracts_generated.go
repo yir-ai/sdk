@@ -2180,7 +2180,8 @@ const generatedModelContractCatalogJSON = `{
                 "4:3",
                 "1:1",
                 "3:4",
-                "9:16"
+                "9:16",
+                "adaptive"
               ],
               "default": "16:9",
               "control": "aspect_ratio",
