@@ -5670,10 +5670,26 @@ export const generatedModelContractCatalog = {
           "input_constraints": {
             "reference": {
               "min_references": 1,
-              "max_references": 5,
+              "max_references": 15,
               "allowed_reference_roles": [
-                "reference_image"
-              ]
+                "reference_image",
+                "reference_video",
+                "reference_audio"
+              ],
+              "reference_counts_by_role": {
+                "reference_audio": {
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "reference_image": {
+                  "minimum": 0,
+                  "maximum": 9
+                },
+                "reference_video": {
+                  "minimum": 0,
+                  "maximum": 3
+                }
+              }
             }
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",

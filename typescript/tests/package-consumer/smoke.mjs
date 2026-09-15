@@ -7,7 +7,8 @@ import {preparePricedRequest,previewCost} from './price-preview.mjs';
 import {publishRetailTable,priceOrder} from './retail-table.mjs';
 import { getModelContract } from "@yir-ai/sdk/model-contracts";
 import { createYirAIProvider } from "@yir-ai/sdk/vercel";
-import { validateModelParameters, getModelOperationContract } from "@yir-ai/sdk/browser";
+import { validateGeneration, validateModelParameters, getModelOperationContract } from "@yir-ai/sdk/browser";
+validateGeneration("generate_video", { model: "minimax/minimax-h3", input: { type: "reference", prompt: "fixture", references: [{ role: "reference_audio", url: "https://example.com/audio.mp3" }] }, parameters: {} });
 import { createNodeYirClient } from "@yir-ai/sdk/server";
 
 for (const availability of ["available", "expired"]) for (const warned of [false, true]) {
