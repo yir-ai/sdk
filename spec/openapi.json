@@ -1398,7 +1398,8 @@
         "required": ["availability"],
         "properties": {
           "availability": { "type": "string", "enum": ["available", "expired"] },
-          "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ResultFile" } }
+          "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ResultFile" } },
+          "warnings": { "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["additional_results_unavailable"] }, "description": "The primary result was delivered, but an optional additional result could not be delivered. Derived from frozen delivery facts; does not change Job success or authorize regeneration. Omitted when no delivery warning exists, including historical results." }
         },
         "oneOf": [
           { "properties": { "availability": { "const": "available" } }, "required": ["files"] },

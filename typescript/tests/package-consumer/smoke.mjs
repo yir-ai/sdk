@@ -8,6 +8,20 @@ import {publishRetailTable,priceOrder} from './retail-table.mjs';
 import { getModelContract } from "@yir-ai/sdk/model-contracts";
 import { createYirAIProvider } from "@yir-ai/sdk/vercel";
 import { validateModelParameters, getModelOperationContract } from "@yir-ai/sdk/browser";
+import { createNodeYirClient } from "@yir-ai/sdk/server";
+
+for (const availability of ["available", "expired"]) for (const warned of [false, true]) {
+  const result = { availability, ...(availability === "available" ? { files: [{ url: "https://example.com/video.mp4", media_type: "video/mp4", expires_at: 1900000000 }] } : {}), ...(warned ? { warnings: ["additional_results_unavailable"] } : {}) };
+  const payload = { object: "job", id: "1", status: "succeeded", result, error: null, created_at: 1 };
+  let calls = 0;
+  const installedClient = createNodeYirClient({ apiKey: "fixture", baseURL: "https://example.com", fetch: async (_url, options) => {
+    calls++;
+    assert.equal(options.method, "GET");
+    return new Response(JSON.stringify(payload), { headers: { "content-type": "application/json" } });
+  } });
+  assert.deepEqual(await installedClient.waitForJob("1"), payload);
+  assert.equal(calls, 1);
+}
 
 validateModelParameters("google/nano-banana-2", "generate_image", "text", { web_search: true, image_search: true });
 validateModelParameters("bytedance/seedance-2.0", "generate_video", "text", { return_last_frame: true });
