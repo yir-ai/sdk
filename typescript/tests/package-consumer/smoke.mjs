@@ -7,6 +7,33 @@ import {preparePricedRequest,previewCost} from './price-preview.mjs';
 import {publishRetailTable,priceOrder} from './retail-table.mjs';
 import { getModelContract } from "@yir-ai/sdk/model-contracts";
 import { createYirAIProvider } from "@yir-ai/sdk/vercel";
+import { validateGeneration, validateModelParameters, getModelOperationContract } from "@yir-ai/sdk/browser";
+validateGeneration("generate_video", { model: "minimax/minimax-h3", input: { type: "reference", prompt: "fixture", references: [{ role: "reference_audio", url: "https://example.com/audio.mp3" }] }, parameters: {} });
+import { createNodeYirClient } from "@yir-ai/sdk/server";
+
+for (const availability of ["available", "expired"]) for (const warned of [false, true]) {
+  const result = { availability, ...(availability === "available" ? { files: [{ url: "https://example.com/video.mp4", media_type: "video/mp4", expires_at: 1900000000 }] } : {}), ...(warned ? { warnings: ["additional_results_unavailable"] } : {}) };
+  const payload = { object: "job", id: "1", status: "succeeded", result, error: null, created_at: 1 };
+  let calls = 0;
+  const installedClient = createNodeYirClient({ apiKey: "fixture", baseURL: "https://example.com", fetch: async (_url, options) => {
+    calls++;
+    assert.equal(options.method, "GET");
+    return new Response(JSON.stringify(payload), { headers: { "content-type": "application/json" } });
+  } });
+  assert.deepEqual(await installedClient.waitForJob("1"), payload);
+  assert.equal(calls, 1);
+}
+
+validateModelParameters("google/nano-banana-2", "generate_image", "text", { web_search: true, image_search: true });
+validateModelParameters("bytedance/seedance-2.0", "generate_video", "text", { return_last_frame: true });
+validateModelParameters("bytedance/seedance-2.0", "generate_video", "text", { aspect_ratio: "adaptive", return_last_frame: true });
+assert.throws(() => validateModelParameters("google/nano-banana-2", "generate_image", "text", { return_last_frame: false }), { code: "parameter_unknown" });
+for (const mode of ["text", "image"]) {
+  validateModelParameters("google/nano-banana-pro", "generate_image", mode, { web_search: true });
+  assert.throws(() => validateModelParameters("google/nano-banana-pro", "generate_image", mode, { image_search: false }), { code: "parameter_unknown" });
+}
+assert.throws(() => validateModelParameters("google/nano-banana-2", "generate_image", "text", { image_search: true }), { code: "parameter_dependency" });
+assert.equal(getModelOperationContract("bytedance/seedance-2", "generate_video", "reference").input_constraints.reference.reference_counts_by_role.reference_image.maximum, 9);
 
 const consumer = path.dirname(fileURLToPath(import.meta.url));
 for (const name of ["@yir-ai/sdk", "@yir-ai/sdk/model-contracts", "@yir-ai/sdk/vercel", "@yir-ai/sdk/pricing", "@yir-ai/sdk/server", "@yir-ai/sdk/browser", "@yir-ai/sdk/shared"]) {

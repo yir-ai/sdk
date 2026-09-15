@@ -66,7 +66,10 @@ type JobCancellation struct {
 type JobResult struct {
 	Availability string       `json:"availability"`
 	Files        []ResultFile `json:"files,omitempty"`
+	Warnings     []string     `json:"warnings,omitempty"`
 }
+
+const ResultWarningAdditionalResultsUnavailable = "additional_results_unavailable"
 
 type ResultFile struct {
 	URL       string `json:"url"`

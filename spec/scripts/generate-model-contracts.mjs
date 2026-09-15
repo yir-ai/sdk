@@ -103,6 +103,18 @@ function validateOperation(model, operation, specification) {
     for (const role of constraint.required_reference_roles ?? []) {
       assert(constraint.allowed_reference_roles.includes(role), `${model.id}.${inputMode} required role is not allowed`);
     }
+    for (const [role, limit] of Object.entries(constraint.reference_counts_by_role ?? {})) {
+      assert(constraint.allowed_reference_roles.includes(role), `${model.id}.${inputMode} count role is not allowed`);
+      assert(Number.isSafeInteger(limit.minimum) && limit.minimum >= 0 && Number.isSafeInteger(limit.maximum) && limit.maximum >= limit.minimum,
+        `${model.id}.${inputMode} role count range invalid`);
+    }
+    for (const role of constraint.required_any_reference_roles ?? []) {
+      assert(constraint.allowed_reference_roles.includes(role), `${model.id}.${inputMode} alternative role is not allowed`);
+    }
+    for (const [role, maximum] of Object.entries(constraint.max_duration_by_reference_role ?? {})) {
+      assert(constraint.allowed_reference_roles.includes(role) && Number.isSafeInteger(maximum) && maximum > 0,
+        `${model.id}.${inputMode} reference duration limit invalid`);
+    }
   }
   assert(Array.isArray(operation.parameters) && operation.parameters.length > 0, `${model.id} needs parameters`);
 

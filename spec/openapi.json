@@ -538,6 +538,8 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
+              "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",
                 "minLength": 1
@@ -588,6 +590,8 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
+              "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",
                 "minLength": 1
@@ -960,6 +964,11 @@
               "generate_audio": {
                 "type": "boolean"
               },
+              "return_last_frame": {
+                "type": "boolean",
+                "default": false,
+                "description": "Seedance 2.0 only. Return the last frame with the video; requires a route supporting this option."
+              },
               "n": {
                 "type": "integer",
                 "enum": [
@@ -1019,6 +1028,11 @@
               },
               "generate_audio": {
                 "type": "boolean"
+              },
+              "return_last_frame": {
+                "type": "boolean",
+                "default": false,
+                "description": "Seedance 2.0 only. Return the last frame with the video; requires a route supporting this option."
               },
               "n": {
                 "type": "integer",
@@ -1308,6 +1322,9 @@
         "required": ["duration", "resolution", "aspect_ratio", "generate_audio", "n"],
         "properties": {
           "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"] },
+          "web_search": { "type": "boolean" },
+          "image_search": { "type": "boolean" },
+          "return_last_frame": { "type": "boolean" },
           "duration": { "type": "integer", "minimum": 0 },
           "resolution": { "type": "string", "minLength": 1 },
           "aspect_ratio": { "type": "string", "minLength": 1 },
@@ -1381,7 +1398,8 @@
         "required": ["availability"],
         "properties": {
           "availability": { "type": "string", "enum": ["available", "expired"] },
-          "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ResultFile" } }
+          "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ResultFile" } },
+          "warnings": { "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["additional_results_unavailable"] }, "description": "The primary result was delivered, but an optional additional result could not be delivered. Derived from frozen delivery facts; does not change Job success or authorize regeneration. Omitted when no delivery warning exists, including historical results." }
         },
         "oneOf": [
           { "properties": { "availability": { "const": "available" } }, "required": ["files"] },
@@ -1737,7 +1755,23 @@
           },
           "max_duration_by_reference_role": {
             "type": "object",
+            "description": "Maximum generated video duration in seconds when a reference of the keyed role is present; not input media duration.",
             "additionalProperties": { "type": "integer", "minimum": 1 }
+          },
+          "reference_counts_by_role": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object", "additionalProperties": false,
+              "required": ["minimum", "maximum"],
+              "properties": {
+                "minimum": { "type": "integer", "minimum": 0 },
+                "maximum": { "type": "integer", "minimum": 0 }
+              }
+            }
+          },
+          "required_any_reference_roles": {
+            "type": "array", "uniqueItems": true,
+            "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
           }
         }
       },

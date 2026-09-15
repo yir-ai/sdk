@@ -17,7 +17,7 @@ type ParameterError struct {
 func (e *ParameterError) Error() string { return fmt.Sprintf("%s: %s", e.Path, e.Code) }
 
 // ValidateModelParameters validates only the parameters against bundled rules.
-// Media and cross-parameter validation belong to complete request validation.
+// Search dependencies are checked here; media validation needs a complete request.
 // Defaults satisfy omitted parameters but this function never mutates the input.
 func ValidateModelParameters(model, operation, inputMode string, parameters map[string]any) error {
 	contract, ok := GetModelOperationContract(model, operation, inputMode)
@@ -28,6 +28,7 @@ func ValidateModelParameters(model, operation, inputMode string, parameters map[
 }
 
 func validateParameters(rules []ModelParameterContract, parameters map[string]any) error {
+	var webSearch, imageSearch bool
 	known := make(map[string]bool, len(rules))
 	for _, rule := range rules {
 		known[rule.Name] = true
@@ -64,8 +65,15 @@ func validateParameters(rules []ModelParameterContract, parameters map[string]an
 				return &ParameterError{path, "invalid_type"}
 			}
 		case "boolean":
-			if _, ok := normalized.(bool); !ok {
+			value, ok := normalized.(bool)
+			if !ok {
 				return &ParameterError{path, "invalid_type"}
+			}
+			switch rule.Name {
+			case "web_search":
+				webSearch = value
+			case "image_search":
+				imageSearch = value
 			}
 		case "integer":
 			number, ok := parameterInteger(normalized)
@@ -103,6 +111,9 @@ func validateParameters(rules []ModelParameterContract, parameters map[string]an
 				return &ParameterError{path, "invalid_enum"}
 			}
 		}
+	}
+	if imageSearch && !webSearch {
+		return &ParameterError{"parameters.image_search", "parameter_dependency"}
 	}
 	return nil
 }
