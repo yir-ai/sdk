@@ -83,6 +83,8 @@ const client = createNodeYirClient();
 
 ## 合同更新（尚未发布）
 
+Seedance 2.0 支持可选布尔参数 `return_last_frame`（默认 false），其他模型拒绝该参数。请求尾帧需要覆盖完整费用的有效报价，不得套用普通视频价格；真实尾帧交付仍待验证。
+
 Seedream 5.0 的文本和图片合同现接受 `4K`，图片输入最多允许 14 张参考图，其他参数不变。此合同更新不代表 4K 已在线可用，也不确认价格或精确输出尺寸；这些仍需服务端集成与报价确认。
 
 当前工作版本为 Nano Banana 2 的文本和图片输入增加可选的 `parameters.web_search`、`parameters.image_search`，默认均为 false；`image_search: true` 要求 `web_search: true`。Nano Banana Pro 的文本和图片输入仅接受可选布尔值 `web_search`（默认 false），拒绝 `image_search`，包括显式 false；其余模型拒绝这两个字段。供应商搜索执行仍待实证，本次元数据更新不改变价格或开放供应。校验保留调用者的参数。搜索需要明确支持该能力的供应和有效报价，静态支持不代表当前可用或免费。本更新尚未包含在已发布的 `0.1.0` 包中。

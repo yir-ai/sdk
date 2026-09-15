@@ -964,6 +964,11 @@
               "generate_audio": {
                 "type": "boolean"
               },
+              "return_last_frame": {
+                "type": "boolean",
+                "default": false,
+                "description": "Seedance 2.0 only. Return the last frame with the video; requires a route supporting this option."
+              },
               "n": {
                 "type": "integer",
                 "enum": [
@@ -1023,6 +1028,11 @@
               },
               "generate_audio": {
                 "type": "boolean"
+              },
+              "return_last_frame": {
+                "type": "boolean",
+                "default": false,
+                "description": "Seedance 2.0 only. Return the last frame with the video; requires a route supporting this option."
               },
               "n": {
                 "type": "integer",
@@ -1314,6 +1324,7 @@
           "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"] },
           "web_search": { "type": "boolean" },
           "image_search": { "type": "boolean" },
+          "return_last_frame": { "type": "boolean" },
           "duration": { "type": "integer", "minimum": 0 },
           "resolution": { "type": "string", "minLength": 1 },
           "aspect_ratio": { "type": "string", "minLength": 1 },

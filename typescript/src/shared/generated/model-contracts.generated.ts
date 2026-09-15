@@ -2195,6 +2195,27 @@ export const generatedModelContractCatalog = {
               }
             },
             {
+              "name": "return_last_frame",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Return last frame",
+                  "description": "Return the final video frame as an additional image when supported by the selected supply."
+                },
+                "zh-CN": {
+                  "label": "返回尾帧",
+                  "description": "由支持的供应渠道返回视频最后一帧图片。"
+                }
+              }
+            },
+            {
               "name": "generate_audio",
               "type": "boolean",
               "required": true,
