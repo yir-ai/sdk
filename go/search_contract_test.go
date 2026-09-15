@@ -73,6 +73,9 @@ func TestNanoSearchContract(t *testing.T) {
 		for _, operation := range model.Operations {
 			for _, mode := range operation.InputModes {
 				for _, name := range []string{"web_search", "image_search"} {
+					if model.ID == "google/nano-banana-pro" && operation.Operation == "generate_image" && name == "web_search" {
+						continue
+					}
 					err := ValidateModelParameters(model.ID, operation.Operation, mode, map[string]any{name: false})
 					var parameter *ParameterError
 					if !errors.As(err, &parameter) || parameter.Code != "unknown_parameter" || parameter.Path != "parameters."+name {

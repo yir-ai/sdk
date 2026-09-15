@@ -538,7 +538,7 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
-              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
               "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",
@@ -590,7 +590,7 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
-              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
               "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",

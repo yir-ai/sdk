@@ -50,16 +50,56 @@ test("Nano2 search defaults and dependencies are shared by text and image client
   }
 });
 
-test("all other models reject search fields, including explicit false", () => {
+test("models reject unsupported search fields, including explicit false", () => {
   for (const contract of listModelContracts()) {
     if (contract.id === model) continue;
     for (const operation of contract.operations) {
       for (const mode of operation.input_modes) {
         for (const name of ["web_search", "image_search"]) {
+          if (contract.id === "google/nano-banana-pro" && operation.operation === "generate_image" && name === "web_search") continue;
           assert.throws(() => validateModelParameters(contract.id, operation.operation, mode, { [name]: false }),
             { code: "parameter_unknown", path: `parameters.${name}` });
         }
       }
+    }
+  }
+});
+
+test("Nano Pro supports only web search for text and image clients", async () => {
+  const pro = "google/nano-banana-pro";
+  for (const mode of ["text", "image"]) {
+    const contract = getModelOperationContract(pro, "generate_image", mode);
+    const rule = contract.parameters.find(p => p.name === "web_search");
+    assert.equal(rule.type, "boolean");
+    assert.equal(rule.required, false);
+    assert.equal(rule.default, false);
+    assert.equal(contract.parameters.some(p => p.name === "image_search"), false);
+    for (const parameters of [{}, { web_search: false }, { web_search: true }]) {
+      const request = { model: pro, input: input(mode), parameters };
+      const before = structuredClone(request);
+      const calls = [];
+      const client = createYirClient(async call => {
+        calls.push(structuredClone(call));
+        return call.path.endsWith("/quotes") ? quoteFixture(call.body) : { object: "job", id: "1", status: "queued" };
+      });
+      await client.quoteImage(request);
+      await client.submitImage(request, "pro-key");
+      assert.deepEqual(calls.map(c => c.body.parameters), [parameters, parameters]);
+      assert.equal(calls[1].headers["Idempotency-Key"], "pro-key");
+      assert.deepEqual(request, before);
+    }
+    for (const [parameters, code] of [
+      [{ image_search: false }, "parameter_unknown"],
+      [{ web_search: true, image_search: true }, "parameter_unknown"],
+      [{ web_search: "true" }, "parameter_type"],
+      [{ web_search: null }, "parameter_type"],
+    ]) {
+      let calls = 0;
+      const client = createYirClient(async () => { calls++; throw new Error("unexpected transport"); });
+      const request = { model: pro, input: input(mode), parameters };
+      assert.throws(() => client.quoteImage(request), { code });
+      assert.throws(() => client.submitImage(request, "pro-key"), { code });
+      assert.equal(calls, 0);
     }
   }
 });

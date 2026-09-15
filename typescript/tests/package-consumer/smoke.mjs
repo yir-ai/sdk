@@ -10,6 +10,10 @@ import { createYirAIProvider } from "@yir-ai/sdk/vercel";
 import { validateModelParameters, getModelOperationContract } from "@yir-ai/sdk/browser";
 
 validateModelParameters("google/nano-banana-2", "generate_image", "text", { web_search: true, image_search: true });
+for (const mode of ["text", "image"]) {
+  validateModelParameters("google/nano-banana-pro", "generate_image", mode, { web_search: true });
+  assert.throws(() => validateModelParameters("google/nano-banana-pro", "generate_image", mode, { image_search: false }), { code: "parameter_unknown" });
+}
 assert.throws(() => validateModelParameters("google/nano-banana-2", "generate_image", "text", { image_search: true }), { code: "parameter_dependency" });
 assert.equal(getModelOperationContract("bytedance/seedance-2", "generate_video", "reference").input_constraints.reference.reference_counts_by_role.reference_image.maximum, 9);
 

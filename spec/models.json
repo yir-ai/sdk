@@ -3914,6 +3914,27 @@
               }
             },
             {
+              "name": "web_search",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Web search",
+                  "description": "Use web search when supported by the selected supply. Check the quote for availability and cost."
+                },
+                "zh-CN": {
+                  "label": "网页搜索",
+                  "description": "由支持的供应渠道执行网页搜索，可用性与费用以报价为准。"
+                }
+              }
+            },
+            {
               "name": "n",
               "type": "integer",
               "required": true,
