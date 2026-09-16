@@ -23,3 +23,10 @@ import { calculatePrice as browserPrice } from '@yir-ai/sdk/browser';
 import { createNodeYirClient } from '@yir-ai/sdk/server';
 const jobID = (job: Job) => job.id;
 void [jobID, browserPrice, createNodeYirClient];
+import type { Job as WarningJob } from "@yir-ai/sdk";
+const warningResults: NonNullable<WarningJob["result"]>[] = [
+  { availability: "available", files: [], warnings: ["additional_results_unavailable"] },
+  { availability: "expired", warnings: ["additional_results_unavailable"] },
+  { availability: "expired" },
+];
+void warningResults;

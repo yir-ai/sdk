@@ -45,8 +45,8 @@ export type Job = {
     readonly requested_at: number;
   };
   readonly result?:
-    | { readonly availability: "available"; readonly files: readonly JobResultFile[] }
-    | { readonly availability: "expired" };
+    | { readonly availability: "available"; readonly files: readonly JobResultFile[]; readonly warnings?: readonly "additional_results_unavailable"[] }
+    | { readonly availability: "expired"; readonly warnings?: readonly "additional_results_unavailable"[] };
   readonly billing?: {
     readonly official_comparison?: { readonly baseline_amount: string; readonly savings_amount: string; readonly source_url: string };
     readonly currency: "USD";

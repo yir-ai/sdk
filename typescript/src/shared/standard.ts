@@ -131,6 +131,9 @@ export function validateModelParameters(
       throw new YirSDKValidationError("parameter_value", path);
     }
   }
+  if (values.image_search === true && values.web_search !== true) {
+    throw new YirSDKValidationError("parameter_dependency", "parameters.image_search");
+  }
 }
 
 /** Shared Quote/Submit preflight; availability and pricing remain server facts. */
@@ -154,6 +157,7 @@ export function validateGeneration(operation: "generate_image" | "generate_video
     throw new YirSDKValidationError("reference_count", "input.references");
   }
   const roles = new Map<string, number>();
+  const seenReferences = new Set<string>();
   for (const [index, value] of references.entries()) {
     const path = `input.references.${index}`;
     const reference = requireObject(value, path);
@@ -162,6 +166,9 @@ export function validateGeneration(operation: "generate_image" | "generate_video
       throw new YirSDKValidationError("reference_role_invalid", `${path}.role`);
     }
     roles.set(reference.role, (roles.get(reference.role) ?? 0) + 1);
+    const identity = JSON.stringify([reference.role, reference.url ?? null, reference.file_id ?? null]);
+    if (seenReferences.has(identity)) throw new YirSDKValidationError("duplicate_reference", "input.references");
+    seenReferences.add(identity);
     if (Object.hasOwn(reference, "url") === Object.hasOwn(reference, "file_id")) {
       throw new YirSDKValidationError("reference_source_invalid", path);
     }
@@ -173,6 +180,22 @@ export function validateGeneration(operation: "generate_image" | "generate_video
   }
   for (const role of constraint.required_reference_roles ?? []) {
     if (!roles.has(role)) throw new YirSDKValidationError("reference_role_required", "input.references");
+  }
+  for (const [role, limit] of Object.entries(constraint.reference_counts_by_role ?? {})) {
+    const count = roles.get(role) ?? 0;
+    if (count < limit.minimum || count > limit.maximum) {
+      throw new YirSDKValidationError("reference_role_count", "input.references");
+    }
+  }
+  if (constraint.required_any_reference_roles?.length && !constraint.required_any_reference_roles.some(role => roles.has(role))) {
+    throw new YirSDKValidationError("reference_role_required", "input.references");
+  }
+  const durationRule = contract.parameters.find(parameter => parameter.name === "duration");
+  const duration = (body.parameters as Record<string, unknown> | undefined)?.duration ?? durationRule?.default;
+  for (const [role, maximum] of Object.entries(constraint.max_duration_by_reference_role ?? {})) {
+    if (roles.has(role) && typeof duration === "number" && duration > maximum) {
+      throw new YirSDKValidationError("reference_duration_limit", "parameters.duration");
+    }
   }
   if (operation === "generate_video" && input.type === "image" &&
       (roles.get("first_frame") !== 1 || (roles.get("last_frame") ?? 0) > 1)) {

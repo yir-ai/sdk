@@ -32,6 +32,8 @@ export type ModelInputConstraint = {
   )[];
   readonly required_reference_roles?: readonly ModelInputConstraint["allowed_reference_roles"][number][];
   readonly max_duration_by_reference_role?: Readonly<Record<string, number>>;
+  readonly reference_counts_by_role?: Readonly<Record<string, { readonly minimum: number; readonly maximum: number }>>;
+  readonly required_any_reference_roles?: readonly string[];
 };
 
 export type ModelOperationContract = {
