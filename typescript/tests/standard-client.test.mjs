@@ -9,7 +9,10 @@ import {
   buildImageQuoteRequest,
   createYirClient,
   normalizeRoutingOverride,
+  waitForJob,
+  YirJobError,
   YirSDKValidationError,
+  YirTimeoutError,
 } from "../dist/index.js";
 
 test("public SDK surface exposes generated static contracts without the removed runtime registry", () => {
@@ -219,6 +222,7 @@ test("the client delegates auth to a transport and fixes the public paths", asyn
   await client.quoteVideo(videoBody);
   await client.submitVideo(videoBody, "playground-video-7002");
   await client.getJob("7001");
+  await client.getJobStatus("7001");
 	await client.cancelJob("7001");
 
   assert.deepEqual(calls, [
@@ -245,6 +249,7 @@ test("the client delegates auth to a transport and fixes the public paths", asyn
       body: videoBody,
     },
     { method: "GET", path: "/v1/jobs/7001" },
+    { method: "GET", path: "/v1/jobs/7001/status" },
 		{ method: "POST", path: "/v1/jobs/7001/cancel" },
   ]);
 });
@@ -285,4 +290,203 @@ test("image Quote and Submit share one normalized request contract", () => {
 	assert.equal("webhook_url" in quote, false);
 	assert.equal("max_cost" in quote, false);
 	assert.deepEqual(buildImageQuoteRequest({ ...input, maxCost: "0.250001" }), quote);
+});
+
+test("getJobStatus sends GET request to /v1/jobs/:id/status", async () => {
+  const calls = [];
+  const client = createYirClient(async request => {
+    calls.push(request);
+    return { id: "101", status: "running", error: null };
+  });
+
+  const status = await client.getJobStatus("101");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, "GET");
+  assert.equal(calls[0].path, "/v1/jobs/101/status");
+  assert.equal(status.id, "101");
+  assert.equal(status.status, "running");
+  assert.equal(status.error, null);
+});
+
+test("waitForJob polls status and only fetches full job detail upon terminal status", async () => {
+  const calls = [];
+  let pollCount = 0;
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path === "/v1/jobs/202/status") {
+      pollCount++;
+      if (pollCount === 1) {
+        return { id: "202", status: "queued", error: null };
+      }
+      if (pollCount === 2) {
+        return { id: "202", status: "running", error: null };
+      }
+      return { id: "202", status: "succeeded", error: null };
+    }
+    if (request.path === "/v1/jobs/202") {
+      return {
+        id: "202",
+        object: "job",
+        model: "openai/gpt-image-2",
+        status: "succeeded",
+        error: null,
+        created_at: 1786000000,
+        result: { availability: "available", files: [{ url: "https://assets.example/result.png", media_type: "image/png", expires_at: 1786100000 }] },
+        billing: { total_charged_by_yir: "0.02" },
+      };
+    }
+    throw new Error(`Unexpected request path: ${request.path}`);
+  });
+
+  const polledStatuses = [];
+  const job = await waitForJob(client, "202", {
+    pollIntervalMs: 1,
+    onPoll: status => {
+      polledStatuses.push(status.status);
+    },
+  });
+
+  assert.equal(job.id, "202");
+  assert.equal(job.status, "succeeded");
+  assert.equal(job.billing?.total_charged_by_yir, "0.02");
+
+  // 3 status calls + 1 detail call
+  assert.equal(calls.length, 4);
+  assert.equal(calls[0].path, "/v1/jobs/202/status");
+  assert.equal(calls[1].path, "/v1/jobs/202/status");
+  assert.equal(calls[2].path, "/v1/jobs/202/status");
+  assert.equal(calls[3].path, "/v1/jobs/202");
+
+  assert.deepEqual(polledStatuses, ["queued", "running", "succeeded"]);
+});
+
+test("waitForJob throws YirJobError with full detail on terminal failure", async () => {
+  const calls = [];
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path === "/v1/jobs/303/status") {
+      return { id: "303", status: "failed", error: { code: "YIR_CONTENT_POLICY_VIOLATION", message: "Policy violation", retryable: false } };
+    }
+    if (request.path === "/v1/jobs/303") {
+      return {
+        id: "303",
+        object: "job",
+        model: "openai/gpt-image-2",
+        status: "failed",
+        error: { code: "YIR_CONTENT_POLICY_VIOLATION", message: "Policy violation", retryable: false },
+        created_at: 1786000000,
+      };
+    }
+    throw new Error(`Unexpected path: ${request.path}`);
+  });
+
+  await assert.rejects(
+    async () => {
+      await waitForJob(client, "303", { pollIntervalMs: 1 });
+    },
+    (err) => {
+      assert.ok(err instanceof YirJobError);
+      assert.equal(err.code, "YIR_CONTENT_POLICY_VIOLATION");
+      assert.equal(err.job.id, "303");
+      return true;
+    },
+  );
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].path, "/v1/jobs/303/status");
+  assert.equal(calls[1].path, "/v1/jobs/303");
+});
+
+test("waitForJob times out and includes lastStatus on timeout", async () => {
+  const client = createYirClient(async () => {
+    return { id: "404", status: "running", error: null };
+  });
+
+  await assert.rejects(
+    async () => {
+      await waitForJob(client, "404", { pollIntervalMs: 5, timeoutMs: 15 });
+    },
+    (err) => {
+      assert.ok(err instanceof YirTimeoutError);
+      assert.equal(err.jobId, "404");
+      assert.equal(err.lastStatus?.status, "running");
+      return true;
+    },
+  );
+});
+
+test("waitForJob rejects terminal status detail mismatch with job_state_inconsistent", async () => {
+  const client = createYirClient(async request => {
+    if (request.path === "/v1/jobs/405/status") {
+      return { id: "405", status: "succeeded", error: null };
+    }
+    if (request.path === "/v1/jobs/405") {
+      return { id: "405", object: "job", status: "running", error: null, created_at: 1 };
+    }
+    throw new Error(`unexpected path: ${request.path}`);
+  });
+
+  await assert.rejects(
+    () => waitForJob(client, "405", { pollIntervalMs: 1 }),
+    /job_state_inconsistent/,
+  );
+});
+
+test("waitForJob does not fetch detail when onPoll aborts", async () => {
+  const controller = new AbortController();
+  let detailCalls = 0;
+  const client = {
+    getJobStatus: async id => ({ id, status: "succeeded", error: null }),
+    getJob: async () => {
+      detailCalls++;
+      return { id: "505", status: "succeeded" };
+    },
+  };
+
+  await assert.rejects(
+    () => waitForJob(client, "505", {
+      signal: controller.signal,
+      onPoll: () => controller.abort(new Error("caller_aborted")),
+    }),
+    /caller_aborted/,
+  );
+  assert.equal(detailCalls, 0);
+});
+
+test("waitForJob applies the same deadline to terminal detail", async () => {
+  let detailSignal;
+  const client = {
+    getJobStatus: async id => ({ id, status: "succeeded", error: null }),
+    getJob: async (_id, options) => {
+      detailSignal = options?.signal;
+      return new Promise(resolve => setTimeout(() => resolve({ id: "506", status: "succeeded" }), 30));
+    },
+  };
+
+  await assert.rejects(
+    () => waitForJob(client, "506", { timeoutMs: 10 }),
+    error => error instanceof YirTimeoutError && error.jobId === "506",
+  );
+  assert.equal(detailSignal?.aborted, true);
+});
+
+test("waitForJob status 404 does not silently fallback to detail", async () => {
+  let detailCalls = 0;
+  const client = {
+    getJobStatus: async () => {
+      const err = new Error("Job not found");
+      err.status = 404;
+      throw err;
+    },
+    getJob: async () => {
+      detailCalls++;
+      return { id: "999", status: "succeeded" };
+    },
+  };
+
+  await assert.rejects(
+    () => waitForJob(client, "999", { pollIntervalMs: 1 }),
+    err => err.status === 404,
+  );
+  assert.equal(detailCalls, 0);
 });

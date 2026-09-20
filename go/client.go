@@ -175,6 +175,18 @@ func (c *Client) GetJob(ctx context.Context, id string) (Job, error) {
 	return job, err
 }
 
+func (c *Client) GetJobStatus(ctx context.Context, id string) (JobStatusResponse, error) {
+	var status JobStatusResponse
+	if !jobIDPattern.MatchString(id) {
+		return status, errors.New("job_id_invalid")
+	}
+	err := c.do(ctx, http.MethodGet, "/v1/jobs/"+id+"/status", "", nil, &status)
+	if err == nil && (status.ID != id || !validJobStatus(status.Status)) {
+		err = errors.New("response_invalid")
+	}
+	return status, err
+}
+
 func (c *Client) CancelJob(ctx context.Context, id string) (Job, error) {
 	var job Job
 	if !jobIDPattern.MatchString(id) {

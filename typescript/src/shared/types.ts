@@ -30,6 +30,19 @@ export type ComputeCharge = {
   }[];
 };
 
+export type JobCancellation = {
+  readonly status: "cancelled" | "stop_requested";
+  readonly effect?: "stop_future_attempts";
+  readonly requested_at: number;
+};
+
+export type JobStatusResponse = {
+  readonly id: string;
+  readonly status: JobStatus;
+  readonly error: YirPublicError | null;
+  readonly cancellation?: JobCancellation;
+};
+
 export type Job = {
   readonly parameter_notices?: readonly ParameterNotice[];
   readonly final_provider?: string;
@@ -39,11 +52,7 @@ export type Job = {
   readonly model: string;
   readonly urls?: { readonly get: string; readonly cancel: string };
   readonly usage?: { readonly outputs: number };
-  readonly cancellation?: {
-    readonly status: "cancelled" | "stop_requested";
-    readonly effect?: "stop_future_attempts";
-    readonly requested_at: number;
-  };
+  readonly cancellation?: JobCancellation;
   readonly result?:
     | { readonly availability: "available"; readonly files: readonly JobResultFile[]; readonly warnings?: readonly "additional_results_unavailable"[] }
     | { readonly availability: "expired"; readonly warnings?: readonly "additional_results_unavailable"[] };

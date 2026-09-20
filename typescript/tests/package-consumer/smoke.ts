@@ -18,11 +18,12 @@ client.getModelPrices('openai/gpt-image-2','generate_image','image',{filter});
 const table:PriceTable={format:'yir-price-table-v1',version:'v1',purpose:'retail',unit:'credit',scale:100,rows:[]};
 calculatePrice(table,buildPriceInput('generate_image',request,table.version));
 
-import type { Job } from '@yir-ai/sdk/shared';
+import type { Job, JobStatusResponse } from '@yir-ai/sdk/shared';
 import { calculatePrice as browserPrice } from '@yir-ai/sdk/browser';
 import { createNodeYirClient } from '@yir-ai/sdk/server';
 const jobID = (job: Job) => job.id;
-void [jobID, browserPrice, createNodeYirClient];
+const statusID = (status: JobStatusResponse) => status.id;
+void [jobID, statusID, browserPrice, createNodeYirClient];
 import type { Job as WarningJob } from "@yir-ai/sdk";
 const warningResults: NonNullable<WarningJob["result"]>[] = [
   { availability: "available", files: [], warnings: ["additional_results_unavailable"] },

@@ -177,7 +177,7 @@ test("createNodeHttpTransport handles plain text error responses as YirAPIError"
 });
 
 test("waitForJob validates inputs", async () => {
-  const dummyClient = { getJob: async () => ({}) };
+  const dummyClient = { getJob: async () => ({}), getJobStatus: async () => ({}) };
 
   await assert.rejects(
     () => waitForJob(dummyClient, "invalid-job-id"),
@@ -210,15 +210,19 @@ test("waitForJob returns immediately if job is already succeeded", async () => {
   };
 
   const client = {
-    getJob: async (id) => {
+    getJobStatus: async (id) => {
       polled.push(id);
+      return { id, status: "succeeded", error: null };
+    },
+    getJob: async (id) => {
       return succeededJob;
     },
   };
 
   const result = await waitForJob(client, "2001", {
-    onPoll: (job) => {
-      assert.equal(job.id, "2001");
+    onPoll: (status) => {
+      assert.equal(status.id, "2001");
+      assert.equal(status.status, "succeeded");
     },
   });
 
@@ -229,34 +233,40 @@ test("waitForJob returns immediately if job is already succeeded", async () => {
 test("waitForJob polls sequentially until succeeded", async () => {
   const states = ["queued", "running", "delivering", "succeeded"];
   const onPollHistory = [];
-  let callCount = 0;
+  let statusCallCount = 0;
+  let detailCallCount = 0;
 
   const client = {
+    getJobStatus: async (id) => {
+      const status = states[Math.min(statusCallCount, states.length - 1)];
+      statusCallCount += 1;
+      return { id, status, error: null };
+    },
     getJob: async (id) => {
-      const status = states[Math.min(callCount, states.length - 1)];
-      callCount += 1;
+      detailCallCount += 1;
       return {
         id,
         object: "job",
-        status,
+        status: "succeeded",
         model: "openai/gpt-image-2",
         error: null,
         created_at: 1785974400,
-        completed_at: status === "succeeded" ? 1785974415 : undefined,
+        completed_at: 1785974415,
       };
     },
   };
 
   const result = await waitForJob(client, "3001", {
     pollIntervalMs: 10,
-    onPoll: (job) => {
-      onPollHistory.push(job.status);
+    onPoll: (status) => {
+      onPollHistory.push(status.status);
     },
   });
 
   assert.equal(result.status, "succeeded");
   assert.deepEqual(onPollHistory, ["queued", "running", "delivering", "succeeded"]);
-  assert.equal(callCount, 4);
+  assert.equal(statusCallCount, 4);
+  assert.equal(detailCallCount, 1);
 });
 
 test("waitForJob throws YirJobError on failure by default", async () => {
@@ -276,6 +286,7 @@ test("waitForJob throws YirJobError on failure by default", async () => {
   };
 
   const client = {
+    getJobStatus: async (id) => ({ id, status: "failed", error: failedJob.error }),
     getJob: async () => failedJob,
   };
 
@@ -309,6 +320,7 @@ test("waitForJob returns terminal job on failure when throwOnFailure is false", 
   };
 
   const client = {
+    getJobStatus: async (id) => ({ id, status: "failed", error: failedJob.error }),
     getJob: async () => failedJob,
   };
 
@@ -332,6 +344,7 @@ test("waitForJob handles cancelled jobs properly", async () => {
   };
 
   const client = {
+    getJobStatus: async (id) => ({ id, status: "cancelled", error: null }),
     getJob: async () => cancelledJob,
   };
 
@@ -353,17 +366,9 @@ test("waitForJob handles cancelled jobs properly", async () => {
 });
 
 test("waitForJob throws YirTimeoutError when timeout expires", async () => {
-  const runningJob = {
-    id: "5001",
-    object: "job",
-    status: "running",
-    model: "openai/gpt-image-2",
-    error: null,
-    created_at: 1785974400,
-  };
-
   const client = {
-    getJob: async () => runningJob,
+    getJobStatus: async (id) => ({ id, status: "running", error: null }),
+    getJob: async (id) => ({ id, object: "job", status: "running", error: null, created_at: 1 }),
   };
 
   await assert.rejects(
@@ -372,19 +377,20 @@ test("waitForJob throws YirTimeoutError when timeout expires", async () => {
       assert.ok(error instanceof YirTimeoutError);
       assert.equal(error.jobId, "5001");
       assert.equal(error.timeoutMs, 50);
-      assert.deepEqual(error.lastJob, runningJob);
+      assert.equal(error.lastStatus?.status, "running");
       return true;
     },
   );
 });
 
-test("waitForJob aborts an in-flight getJob request when timeout expires", async () => {
+test("waitForJob aborts an in-flight getJobStatus request when timeout expires", async () => {
   let requestSignal;
   const client = {
-    getJob: async (_id, options) => {
+    getJobStatus: async (_id, options) => {
       requestSignal = options.signal;
       return new Promise(() => {});
     },
+    getJob: async () => ({}),
   };
 
   await assert.rejects(
@@ -396,14 +402,12 @@ test("waitForJob aborts an in-flight getJob request when timeout expires", async
 
 test("waitForJob respects AbortSignal", async () => {
   const client = {
-    getJob: async () => ({
-      id: "6001",
-      object: "job",
+    getJobStatus: async (id) => ({
+      id,
       status: "running",
-      model: "openai/gpt-image-2",
       error: null,
-      created_at: 1785974400,
     }),
+    getJob: async () => ({}),
   };
 
   const controller = new AbortController();
@@ -439,4 +443,40 @@ test("createNodeYirClient provides client.waitForJob convenience method", async 
   const job = await client.waitForJob("7001", { pollIntervalMs: 10 });
   assert.equal(job.id, "7001");
   assert.equal(job.status, "succeeded");
+});
+
+test("getJobStatus validates returned id and 6 statuses over HTTP transport", async () => {
+  for (const invalidBody of [
+    { id: "wrong_id", status: "running", error: null },
+    { id: "8001", status: "invalid_status", error: null },
+    null,
+    "not_an_object",
+  ]) {
+    const client = createNodeYirClient({
+      apiKey: "test_key",
+      baseURL: "https://example.com",
+      fetch: async () => new Response(JSON.stringify(invalidBody), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    });
+    await assert.rejects(
+      () => client.getJobStatus("8001"),
+      /response_invalid/,
+    );
+  }
+
+  for (const validStatus of ["queued", "running", "delivering", "succeeded", "failed", "cancelled"]) {
+    const client = createNodeYirClient({
+      apiKey: "test_key",
+      baseURL: "https://example.com",
+      fetch: async () => new Response(JSON.stringify({ id: "8001", status: validStatus, error: null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    });
+    const result = await client.getJobStatus("8001");
+    assert.equal(result.id, "8001");
+    assert.equal(result.status, validStatus);
+  }
 });
