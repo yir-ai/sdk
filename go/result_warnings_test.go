@@ -19,13 +19,22 @@ func TestResultWarningsHTTPAndWaitCompatibility(t *testing.T) {
 			if warned {
 				result["warnings"] = []string{ResultWarningAdditionalResultsUnavailable}
 			}
-			calls := 0
+			statusCalls := 0
+			detailCalls := 0
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				calls++
 				if r.Method != "GET" {
 					t.Error("unexpected mutation")
 				}
-				json.NewEncoder(w).Encode(map[string]any{"object": "job", "id": "1", "status": "succeeded", "result": result, "error": nil})
+				switch r.URL.Path {
+				case "/v1/jobs/1/status":
+					statusCalls++
+					json.NewEncoder(w).Encode(map[string]any{"id": "1", "status": "succeeded", "error": nil})
+				case "/v1/jobs/1":
+					detailCalls++
+					json.NewEncoder(w).Encode(map[string]any{"object": "job", "id": "1", "status": "succeeded", "result": result, "error": nil})
+				default:
+					t.Errorf("unexpected path: %s", r.URL.Path)
+				}
 			}))
 			client, err := NewClient("fixture", ClientOptions{BaseURL: server.URL})
 			if err != nil {
@@ -59,8 +68,8 @@ func TestResultWarningsHTTPAndWaitCompatibility(t *testing.T) {
 				}
 			}
 			server.Close()
-			if calls != 2 {
-				t.Fatalf("unexpected extra polling: %d", calls)
+			if statusCalls != 1 || detailCalls != 2 {
+				t.Fatalf("unexpected calls: status=%d detail=%d", statusCalls, detailCalls)
 			}
 		}
 	}

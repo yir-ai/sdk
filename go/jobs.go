@@ -89,6 +89,22 @@ func (job Job) IsTerminal() bool {
 	return job.Status == "succeeded" || job.Status == "failed" || job.Status == "cancelled"
 }
 
+type JobStatusResponse struct {
+	ID           string           `json:"id"`
+	Status       string           `json:"status"`
+	Error        *APIError        `json:"error"`
+	Cancellation *JobCancellation `json:"cancellation,omitempty"`
+}
+
+func (s JobStatusResponse) IsTerminal() bool {
+	return s.Status == "succeeded" || s.Status == "failed" || s.Status == "cancelled"
+}
+
+// ErrJobStateInconsistent indicates that the terminal status summary and the
+// one full Job read disagree. The detail response is authoritative for the
+// returned Job, so WaitJob returns no partial Job in this case.
+var ErrJobStateInconsistent = errors.New("job_state_inconsistent")
+
 func validJobStatus(status string) bool {
 	return status == "queued" || status == "running" || status == "delivering" || status == "succeeded" || status == "failed" || status == "cancelled"
 }
@@ -101,7 +117,7 @@ func (e *JobError) Error() string {
 
 type WaitOptions struct {
 	PollInterval time.Duration
-	OnPoll       func(Job)
+	OnPoll       func(JobStatusResponse)
 }
 
 // WaitJob only polls. Cancelling its context never sends a Job cancellation or
@@ -114,17 +130,22 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 	if interval < 0 {
 		return Job{}, errors.New("poll_interval_invalid")
 	}
-	var last Job
 	for {
-		job, err := c.GetJob(ctx, id)
+		status, err := c.GetJobStatus(ctx, id)
 		if err != nil {
-			return last, err
+			return Job{}, err
 		}
-		last = job
 		if options.OnPoll != nil {
-			options.OnPoll(job)
+			options.OnPoll(status)
 		}
-		if job.IsTerminal() {
+		if status.IsTerminal() {
+			job, err := c.GetJob(ctx, id)
+			if err != nil {
+				return Job{}, err
+			}
+			if job.Status != status.Status || !job.IsTerminal() {
+				return Job{}, fmt.Errorf("%w: status summary reported %q but job detail returned %q", ErrJobStateInconsistent, status.Status, job.Status)
+			}
 			if job.Status == "succeeded" {
 				return job, nil
 			}
@@ -134,7 +155,7 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return last, ctx.Err()
+			return Job{}, ctx.Err()
 		case <-timer.C:
 		}
 	}

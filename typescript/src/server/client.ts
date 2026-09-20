@@ -12,8 +12,8 @@ import type {
   StandardVideoQuoteRequest,
 } from "../shared/standard.js";
 
-export type { JobStatus, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote } from "../shared/types.js";
-import type { JobStatus, Job, Quote, YirPublicError } from "../shared/types.js";
+export type { JobStatus, JobCancellation, JobStatusResponse, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote } from "../shared/types.js";
+import type { JobStatus, JobCancellation, JobStatusResponse, Job, Quote, YirPublicError } from "../shared/types.js";
 
 export type YirTransportRequest = {
   readonly method: "GET" | "POST";
@@ -36,6 +36,7 @@ export type YirClient = YirFileClient & {
   quoteVideo(request: StandardVideoQuoteRequest): Promise<Quote>;
   submitVideo(request: StandardVideoGenerationRequest, idempotencyKey: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
+  getJobStatus(id: string, options?: YirRequestOptions): Promise<JobStatusResponse>;
   cancelJob(id: string): Promise<Job>;
 };
 
@@ -108,7 +109,30 @@ export function createYirClient(transport: YirTransport): YirClient {
       if (options?.signal !== undefined) {
         request.signal = options.signal;
       }
-      return transport<Job>(request);
+      return transport<Job>(request).then(job => {
+        if (typeof job !== "object" || job === null || job.id !== normalizedID || !validJobStatus(job.status)) {
+          throw new Error("response_invalid");
+        }
+        return job;
+      });
+    },
+    getJobStatus(id, options) {
+      options?.signal?.throwIfAborted();
+      const normalizedID = id.trim();
+      if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
+      const request: { method: "GET"; path: string; signal?: AbortSignal } = {
+        method: "GET",
+        path: `/v1/jobs/${normalizedID}/status`,
+      };
+      if (options?.signal !== undefined) {
+        request.signal = options.signal;
+      }
+      return transport<JobStatusResponse>(request).then(status => {
+        if (typeof status !== "object" || status === null || status.id !== normalizedID || !validJobStatus(status.status)) {
+          throw new Error("response_invalid");
+        }
+        return status;
+      });
     },
     cancelJob(id) {
       const normalizedID = id.trim();
@@ -136,6 +160,17 @@ export const DEFAULT_POLL_INTERVAL_MS = 2000;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 
 export const TERMINAL_JOB_STATUSES = Object.freeze(["succeeded", "failed", "cancelled"] as const);
+
+function validJobStatus(status: unknown): status is JobStatus {
+  return typeof status === "string" && (
+    status === "queued" ||
+    status === "running" ||
+    status === "delivering" ||
+    status === "succeeded" ||
+    status === "failed" ||
+    status === "cancelled"
+  );
+}
 
 export function isTerminalJobStatus(status: JobStatus): boolean {
   return status === "succeeded" || status === "failed" || status === "cancelled";
@@ -189,14 +224,14 @@ export class YirJobError extends Error {
 export class YirTimeoutError extends Error {
   readonly jobId: string;
   readonly timeoutMs: number;
-  readonly lastJob?: Job;
+  readonly lastStatus?: JobStatusResponse;
 
-  constructor(jobId: string, timeoutMs: number, lastJob?: Job) {
+  constructor(jobId: string, timeoutMs: number, lastStatus?: JobStatusResponse) {
     super(`Timed out after ${timeoutMs}ms waiting for job ${jobId}`);
     this.name = "YirTimeoutError";
     this.jobId = jobId;
     this.timeoutMs = timeoutMs;
-    this.lastJob = lastJob;
+    this.lastStatus = lastStatus;
   }
 }
 
@@ -214,7 +249,7 @@ export type WaitForJobOptions = {
   /**
    * Callback invoked immediately after each poll response is received.
    */
-  readonly onPoll?: (job: Job) => void | Promise<void>;
+  readonly onPoll?: (status: JobStatusResponse) => void | Promise<void>;
   /**
    * Whether to throw a YirJobError if the job completes with 'failed' or 'cancelled' status.
    * Defaults to true. If set to false, returns the terminal Job object instead of throwing.
@@ -227,7 +262,7 @@ export type WaitForJobOptions = {
 };
 
 export async function waitForJob(
-  client: Pick<YirClient, "getJob">,
+  client: Pick<YirClient, "getJob" | "getJobStatus">,
   jobId: string,
   options: WaitForJobOptions = {},
 ): Promise<Job> {
@@ -242,7 +277,7 @@ export async function waitForJob(
   const throwOnFailure = options.throwOnFailure ?? true;
   const startTime = Date.now();
 
-  let lastJob: Job | undefined;
+  let lastStatus: JobStatusResponse | undefined;
 
   while (true) {
     if (options.signal?.aborted) {
@@ -250,18 +285,39 @@ export async function waitForJob(
     }
 
     if (hasTimeout && Date.now() - startTime >= timeout) {
-      throw new YirTimeoutError(normalizedID, timeout, lastJob);
+      throw new YirTimeoutError(normalizedID, timeout, lastStatus);
     }
 
     const remaining = hasTimeout ? timeout - (Date.now() - startTime) : undefined;
-    const job = await getJobWithDeadline(client, normalizedID, options.signal, remaining, timeout, lastJob);
-    lastJob = job;
+    const status = await getJobStatusWithDeadline(client, normalizedID, options.signal, remaining, timeout, lastStatus);
+    lastStatus = status;
 
     if (options.onPoll) {
-      await options.onPoll(job);
+      await options.onPoll(status);
     }
 
-    if (isTerminalJobStatus(job.status)) {
+    if (options.signal?.aborted) {
+      throw options.signal.reason ?? new Error("aborted");
+    }
+
+    if (hasTimeout && Date.now() - startTime >= timeout) {
+      throw new YirTimeoutError(normalizedID, timeout, lastStatus);
+    }
+
+    if (isTerminalJobStatus(status.status)) {
+      const remainingForDetail = hasTimeout ? timeout - (Date.now() - startTime) : undefined;
+      if (hasTimeout && (remainingForDetail === undefined || remainingForDetail <= 0)) {
+        throw new YirTimeoutError(normalizedID, timeout, lastStatus);
+      }
+      const job = await getJobWithDeadline(client, normalizedID, options.signal, remainingForDetail, timeout, lastStatus);
+      if (hasTimeout && Date.now() - startTime >= timeout) {
+        throw new YirTimeoutError(normalizedID, timeout, lastStatus);
+      }
+      if (job.status !== status.status || !isTerminalJobStatus(job.status)) {
+        throw new Error(
+          `job_state_inconsistent: status summary reported '${status.status}' but job detail returned '${job.status}'`,
+        );
+      }
       if (job.status === "succeeded") {
         return job;
       }
@@ -275,7 +331,7 @@ export async function waitForJob(
       const elapsed = Date.now() - startTime;
       const remaining = timeout - elapsed;
       if (remaining <= 0) {
-        throw new YirTimeoutError(normalizedID, timeout, lastJob);
+        throw new YirTimeoutError(normalizedID, timeout, lastStatus);
       }
       const sleepMs = Math.min(interval, remaining);
       await sleep(sleepMs, options.signal);
@@ -285,13 +341,51 @@ export async function waitForJob(
   }
 }
 
+async function getJobStatusWithDeadline(
+  client: Pick<YirClient, "getJobStatus">,
+  jobId: string,
+  signal: AbortSignal | undefined,
+  remainingMs: number | undefined,
+  timeoutMs: number,
+  lastStatus: JobStatusResponse | undefined,
+): Promise<JobStatusResponse> {
+  const controller = new AbortController();
+  let timedOut = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const abortFromCaller = () => controller.abort(signal?.reason ?? new Error("aborted"));
+  signal?.addEventListener("abort", abortFromCaller, { once: true });
+  if (remainingMs !== undefined) {
+    timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort(new YirTimeoutError(jobId, timeoutMs, lastStatus));
+    }, Math.max(0, remainingMs));
+  }
+  const aborted = new Promise<never>((_, reject) => {
+    controller.signal.addEventListener(
+      "abort",
+      () => reject(controller.signal.reason ?? new Error("aborted")),
+      { once: true },
+    );
+  });
+  try {
+    return await Promise.race([client.getJobStatus(jobId, { signal: controller.signal }), aborted]);
+  } catch (error) {
+    if (timedOut) throw new YirTimeoutError(jobId, timeoutMs, lastStatus);
+    if (signal?.aborted) throw signal.reason ?? new Error("aborted");
+    throw error;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    signal?.removeEventListener("abort", abortFromCaller);
+  }
+}
+
 async function getJobWithDeadline(
   client: Pick<YirClient, "getJob">,
   jobId: string,
   signal: AbortSignal | undefined,
   remainingMs: number | undefined,
   timeoutMs: number,
-  lastJob: Job | undefined,
+  lastStatus: JobStatusResponse | undefined,
 ): Promise<Job> {
   const controller = new AbortController();
   let timedOut = false;
@@ -301,7 +395,7 @@ async function getJobWithDeadline(
   if (remainingMs !== undefined) {
     timer = setTimeout(() => {
       timedOut = true;
-      controller.abort(new YirTimeoutError(jobId, timeoutMs, lastJob));
+      controller.abort(new YirTimeoutError(jobId, timeoutMs, lastStatus));
     }, Math.max(0, remainingMs));
   }
   const aborted = new Promise<never>((_, reject) => {
@@ -314,7 +408,7 @@ async function getJobWithDeadline(
   try {
     return await Promise.race([client.getJob(jobId, { signal: controller.signal }), aborted]);
   } catch (error) {
-    if (timedOut) throw new YirTimeoutError(jobId, timeoutMs, lastJob);
+    if (timedOut) throw new YirTimeoutError(jobId, timeoutMs, lastStatus);
     if (signal?.aborted) throw signal.reason ?? new Error("aborted");
     throw error;
   } finally {

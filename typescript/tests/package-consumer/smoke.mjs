@@ -21,7 +21,7 @@ for (const availability of ["available", "expired"]) for (const warned of [false
     return new Response(JSON.stringify(payload), { headers: { "content-type": "application/json" } });
   } });
   assert.deepEqual(await installedClient.waitForJob("1"), payload);
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
 }
 
 validateModelParameters("google/nano-banana-2", "generate_image", "text", { web_search: true, image_search: true });

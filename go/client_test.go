@@ -172,35 +172,58 @@ func TestClientMapsStructuredErrorsWithoutEchoingRawBodies(t *testing.T) {
 	}
 }
 
-func TestWaitJobPreservesStopRequestedUntilSuccess(t *testing.T) {
-	var calls int
+func TestClientGetJobStatus(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
+		if r.Method != "GET" || r.URL.Path != "/v1/jobs/1/status" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		io.WriteString(w, `{"id":"1","status":"running","error":null}`)
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	status, err := client.GetJobStatus(context.Background(), "1")
+	if err != nil || status.ID != "1" || status.Status != "running" {
+		t.Fatalf("status: %+v %v", status, err)
+	}
+}
+
+func TestWaitJobPreservesStopRequestedUntilSuccess(t *testing.T) {
+	var statusCalls, detailCalls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
 			t.Error("wait mutated job")
 		}
-		if calls == 1 {
-			io.WriteString(w, `{"id":"1","status":"running","cancellation":{"status":"stop_requested","effect":"stop_future_attempts"}}`)
-			return
+		switch r.URL.Path {
+		case "/v1/jobs/1/status":
+			statusCalls++
+			if statusCalls == 1 {
+				io.WriteString(w, `{"id":"1","status":"running","cancellation":{"status":"stop_requested","effect":"stop_future_attempts"}}`)
+				return
+			}
+			io.WriteString(w, `{"id":"1","status":"succeeded"}`)
+		case "/v1/jobs/1":
+			detailCalls++
+			io.WriteString(w, `{"id":"1","status":"succeeded","billing":{"currency":"USD","total_charged_by_yir":"0.02"},"result":{"availability":"available","files":[{"url":"https://example.com/result.png"}]}}`)
+		default:
+			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
-		io.WriteString(w, `{"id":"1","status":"succeeded","billing":{"currency":"USD","total_charged_by_yir":"0.02"},"result":{"availability":"available","files":[{"url":"https://example.com/result.png"}]}}`)
 	}))
 	defer server.Close()
 	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	job, err := client.WaitJob(ctx, "1", WaitOptions{PollInterval: time.Millisecond})
-	if err != nil || job.Status != "succeeded" || job.Billing.TotalChargedByYir != "0.02" || calls != 2 {
-		t.Fatalf("job: %+v %v", job, err)
+	if err != nil || job.Status != "succeeded" || job.Billing.TotalChargedByYir != "0.02" || statusCalls != 2 || detailCalls != 1 {
+		t.Fatalf("job: %+v %v statusCalls=%d detailCalls=%d", job, err, statusCalls, detailCalls)
 	}
 }
 
-func TestWaitCancellationReturnsLastJobWithoutCancellingRemote(t *testing.T) {
+func TestWaitCancellationReturnsZeroJobAndSavesLastStatusViaOnPollWithoutCancellingRemote(t *testing.T) {
 	var calls atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
-		if r.Method != "GET" {
-			t.Error("wait cancelled remote")
+		if r.Method != "GET" || r.URL.Path != "/v1/jobs/1/status" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		io.WriteString(w, `{"id":"1","status":"running"}`)
 	}))
@@ -208,9 +231,13 @@ func TestWaitCancellationReturnsLastJobWithoutCancellingRemote(t *testing.T) {
 	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	job, err := client.WaitJob(ctx, "1", WaitOptions{OnPoll: func(Job) { cancel() }})
-	if !errors.Is(err, context.Canceled) || job.Status != "running" || calls.Load() != 1 {
-		t.Fatalf("job: %+v %v", job, err)
+	var lastStatus JobStatusResponse
+	job, err := client.WaitJob(ctx, "1", WaitOptions{OnPoll: func(s JobStatusResponse) {
+		lastStatus = s
+		cancel()
+	}})
+	if !errors.Is(err, context.Canceled) || job.Status != "" || lastStatus.Status != "running" || calls.Load() != 1 {
+		t.Fatalf("job: %+v %v lastStatus: %+v", job, err, lastStatus)
 	}
 }
 
@@ -250,7 +277,14 @@ func TestWaitRejectsMismatchedJobAndInvalidStatus(t *testing.T) {
 
 func TestWaitReturnsFailedJobWithPublicError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, `{"id":"1","status":"failed","error":{"code":"YIR_OUTCOME_TIMEOUT"},"billing":{"currency":"USD","total_charged_by_yir":"0.00"}}`)
+		switch r.URL.Path {
+		case "/v1/jobs/1/status":
+			io.WriteString(w, `{"id":"1","status":"failed","error":{"code":"YIR_OUTCOME_TIMEOUT"}}`)
+		case "/v1/jobs/1":
+			io.WriteString(w, `{"id":"1","status":"failed","error":{"code":"YIR_OUTCOME_TIMEOUT"},"billing":{"currency":"USD","total_charged_by_yir":"0.00"}}`)
+		default:
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
 	}))
 	defer server.Close()
 	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
@@ -258,5 +292,24 @@ func TestWaitReturnsFailedJobWithPublicError(t *testing.T) {
 	var jobError *JobError
 	if !errors.As(err, &jobError) || job.Error.Code != "YIR_OUTCOME_TIMEOUT" || job.Billing.TotalChargedByYir != "0.00" {
 		t.Fatalf("job=%+v err=%v", job, err)
+	}
+}
+
+func TestWaitRejectsTerminalStatusDetailMismatch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/jobs/1/status":
+			io.WriteString(w, `{"id":"1","status":"succeeded"}`)
+		case "/v1/jobs/1":
+			io.WriteString(w, `{"id":"1","status":"running"}`)
+		default:
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	_, err := client.WaitJob(context.Background(), "1", WaitOptions{})
+	if !errors.Is(err, ErrJobStateInconsistent) {
+		t.Fatalf("error=%v", err)
 	}
 }

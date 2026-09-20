@@ -1,4 +1,12 @@
-import type { Job, StandardImageGenerationRequest, StandardMediaSource, StandardVideoGenerationRequest } from "../../src/index.js";
+import type {
+  Job,
+  JobCancellation,
+  JobStatusResponse,
+  StandardImageGenerationRequest,
+  StandardMediaSource,
+  StandardVideoGenerationRequest,
+} from "../../src/index.js";
+import { YirTimeoutError } from "../../src/index.js";
 
 const source: StandardMediaSource = { file_id: "file_11111111-1111-4111-8111-111111111111" };
 const image: StandardImageGenerationRequest = {
@@ -22,4 +30,15 @@ function readJob(job: Job) {
   return { count, effect, charges, fee: job.billing?.gateway_fee.amount };
 }
 
-void [video, ambiguousSource, emptySource, readJob];
+function readStatus(status: JobStatusResponse) {
+  const id: string = status.id;
+  const cancellation: JobCancellation | undefined = status.cancellation;
+  return { id, status: status.status, cancellation };
+}
+
+function checkTimeout(err: YirTimeoutError) {
+  const lastStatus: JobStatusResponse | undefined = err.lastStatus;
+  return { jobId: err.jobId, lastStatus };
+}
+
+void [video, ambiguousSource, emptySource, readJob, readStatus, checkTimeout];

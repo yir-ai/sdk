@@ -63,7 +63,7 @@ const client = createNodeYirClient();
 
 ## 任务和恢复
 
-保存返回的 `job.id`。使用 `getJob(id)`、Node 客户端的 `waitForJob(id, options)`，或自定义传输客户端的 `waitForJob(client, id, options)`。默认每 2 秒轮询，5 分钟超时。`YirTimeoutError` 保留任务 ID；超时和 abort 只停止本地等待，不取消任务或代表退款。用保存的 ID 恢复；提交未返回 ID 时，重交完全相同的请求与键。
+保存返回的 `job.id`。`getJob(id)` 查询完整任务详情，`getJobStatus(id)` 查询轻量状态摘要 `JobStatusResponse`。使用 `waitForJob(id, options)`（Node 客户端）或 `waitForJob(client, id, options)`（自定义传输客户端）。默认每 2 秒轮询状态摘要，5 分钟超时，进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符抛出 `job_state_inconsistent` 错误。`YirTimeoutError` 保留任务 ID 与 `lastStatus`；超时和 abort 只停止本地等待，不取消任务或代表退款。用保存的 ID 恢复；提交未返回 ID 时，重交完全相同的请求与键。
 
 `YirJobError` 包含失败或取消的终态任务。`YirAPIError` 在可用时提供 status、code、retryable、action 和 requestId。应用逻辑应依赖稳定错误码。`cancelJob(id)` 显式申请取消，需检查 cancellation 和终态账单，不能假定立即取消或零费用。每个任务的 `billing.total_charged_by_yir` 只结算一次。结果 URL 会过期，应检查 `result.availability` 并及时复制到自己的资源库。
 
@@ -92,6 +92,8 @@ Seedance 2.0 支持可选布尔参数 `return_last_frame`（默认 false），�
 Seedream 5.0 的文本和图片合同现接受 `4K`，图片输入最多允许 14 张参考图，其他参数不变。此合同更新不代表 4K 已在线可用，也不确认价格或精确输出尺寸；这些仍需服务端集成与报价确认。
 
 当前工作版本为 Nano Banana 2 的文本和图片输入增加可选的 `parameters.web_search`、`parameters.image_search`，默认均为 false；`image_search: true` 要求 `web_search: true`。Nano Banana Pro 的文本和图片输入仅接受可选布尔值 `web_search`（默认 false），拒绝 `image_search`，包括显式 false；其余模型拒绝这两个字段。供应商搜索执行仍待实证，本次元数据更新不改变价格或开放供应。校验保留调用者的参数。搜索需要明确支持该能力的供应和有效报价，静态支持不代表当前可用或免费。本更新尚未包含在已发布的 `0.1.0` 包中。
+
+当前开发分支新增 `getJobStatus`（`GET /v1/jobs/{id}/status`），并将 `waitForJob` 改造为两阶段轮询：先轮询轻量状态摘要 `JobStatusResponse`，进入终态（`succeeded`、`failed`、`cancelled`）后再读取一次完整 `Job`；终态状态不一致时抛出 `job_state_inconsistent` 错误。`WaitForJobOptions.onPoll` 接收类型由完整 `Job` 改为 `JobStatusResponse` 摘要，`YirTimeoutError.lastJob` 迁移为 `lastStatus`。等待异常（包括 abort、超时与传输异常）不伪造残缺任务。查询 status 遇到 404 错误时不静默回退到详情接口。已交付结果保留可选 `result.warnings`。上述状态轮询及错误结构属于新契约，未包含在已发布的 `0.1.0` 中；在 `0.x` 规范下，后续包含不兼容变更的正式发布需提升 minor 版本，本轮不修改发布版本号。
 
 引用校验同时执行随包合同中的角色数量、必选角色组合、输出时长限制，并拒绝重复引用。报价、保存授权与提交之间应保留完整请求。
 

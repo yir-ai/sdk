@@ -325,6 +325,25 @@
         }
       }
     },
+    "/v1/jobs/{id}/status": {
+      "get": {
+        "operationId": "getJobStatus",
+        "summary": "Get a lightweight status summary of a job",
+        "description": "Returns a minimal status projection without loading attempts, billing ledgers, or result assets. Follows the same 90-day retention window as job snapshots.",
+        "tags": ["Jobs"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/JobID" }],
+        "responses": {
+          "200": {
+            "description": "Current job status summary",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobStatusResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
     "/v1/jobs/{id}/cancel": {
       "post": {
         "operationId": "cancelJob",
@@ -1381,6 +1400,17 @@
           "cancellation": { "$ref": "#/components/schemas/Cancellation" },
           "created_at": { "type": "integer", "format": "int64", "minimum": 1 },
           "completed_at": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "JobStatusResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "error"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+          "status": { "type": "string", "enum": ["queued", "running", "delivering", "succeeded", "failed", "cancelled"] },
+          "error": { "oneOf": [{ "$ref": "#/components/schemas/Error" }, { "type": "null" }] },
+          "cancellation": { "$ref": "#/components/schemas/Cancellation" }
         }
       },
       "JobURLs": {
