@@ -1,5 +1,11 @@
 # SDK 代码审查台账
 
+## 2026-09-26：PR #4 完整 CI 与适配器修复
+
+- 首轮 CI `36238176016` 在 `502d7180a1ae7bd0c12759b6bfea4a3b794c76df` 发现四项失败。`SDK-CONTRACT-20260926-06` / P2：AI SDK 适配器预校验未传递显式 modelContracts；`-07` / P3：浏览器边界测试仍要求已删除的 calculatePrice。修复 `0d298f3c2638e699f8408a7bea72b758bd8badb4` 补传可选合同并更新显式测试夹具/导出断言，相关 18 项测试通过。
+- 独立 AGY `review-muian8hx-4bbeba14` 审查 `502d7180a1ae7bd0c12759b6bfea4a3b794c76df..0d298f3c2638e699f8408a7bea72b758bd8badb4`，Approve、无新增问题，独立 18 项测试通过（609.8ms），两项关闭。
+- 同一修复 SHA 的完整 GitHub Actions [36238275792](https://github.com/yir-ai/sdk/actions/runs/36238275792) 成功（44s）：合同生成、全部 TS 测试、类型检查、归档安装、独立 Go 模块测试全部通过。候选 PR 为 [#4](https://github.com/yir-ai/sdk/pull/4)。建议下一版 0.2.0，迁移说明见 PR；尚未合并、发包或打标签，客户正式依赖锁定仍待发布。
+
 ## 2026-09-26：外部参数合同与实时报价候选（独立复审通过，CI 待完成）
 
 - 原审查方 AGY `review-mui8vouy-ab3f03ad` 复核 `2fe4aaef66570a9f1c7b8dcef536b1a107cff16e..19256626b350bf4e72755f5650c48e18be8b49b0`，结论 **Approve**，无新增可操作问题。`SDK-CONTRACT-20260926-01/02/03` 修复关闭；规范 ID 详情与批量错误码两项建议按服务端代码和回归测试驳回。独立定向 Go 测试通过（1.086s）。报告所称价差用例名称有笔误，实际新增用例为 `TestQuotePriceDifferenceMetadata`，包含在其 `TestQuote` 选择范围中。
