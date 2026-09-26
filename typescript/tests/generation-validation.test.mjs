@@ -1,7 +1,8 @@
+import { createYirClient, validateGeneration, validateModelParameters } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { quoteFixture } from "./quote-fixture.mjs";
-import { createYirClient, validateGeneration, validateModelParameters, YirSDKValidationError } from "../dist/index.js";
+import { YirSDKValidationError } from "../dist/index.js";
 
 const image = () => ({
   model: "openai/gpt-image-2",

@@ -6,7 +6,7 @@ English | [简体中文](../docs/zh-CN/examples.md) · [Go guide](../README.md)
 
 The example has no `Output` directive, so `go test` compiles it without executing API calls. Copying it into an application and calling it can submit paid work; only do so after implementing the approval/persistence step. A timeout does not prove failure or imply a refund. Reconcile terminal billing once, including `JobError` paths, and copy result files before expiry.
 
-[pricing_example_test.go](../pricing_example_test.go) demonstrates local price helpers; prices are calculation inputs rather than generation authorization or customer billing policy.
+Use `GetModelContracts` for current parameter metadata and `QuoteImage`, `QuoteVideo` or `QuoteBatch` for prices. Local price-table helpers have been removed; customer retail pricing remains application-owned.
 
 From `go/`, focused verification (with `GOWORK=off` and `GOMAXPROCS=2`):
 

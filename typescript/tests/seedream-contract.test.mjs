@@ -1,6 +1,7 @@
+import { validateGeneration } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validateGeneration } from "../dist/browser/index.js";
+
 
 test("Seedream 5.0 accepts 4K with up to 14 images without extending other parameters", () => {
   for (const mode of ["text", "image"]) {

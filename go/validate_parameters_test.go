@@ -7,7 +7,7 @@ import (
 )
 
 func TestValidateDynamicParameters(t *testing.T) {
-	min, max := 1, 4
+	min, max := 1.0, 4.0
 	rules := []ModelParameterContract{
 		{Name: "n", Type: "integer", Required: true, Minimum: &min, Maximum: &max},
 		{Name: "quality", Type: "string", Default: "high", Values: []any{"high", "low"}},

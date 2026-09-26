@@ -36,8 +36,8 @@ func TestNanoSearchContract(t *testing.T) {
 			{map[string]any{"web_search": true}, ""},
 			{map[string]any{"web_search": true, "image_search": false}, ""},
 			{map[string]any{"web_search": true, "image_search": true}, ""},
-			{map[string]any{"image_search": true}, "parameter_dependency"},
-			{map[string]any{"web_search": false, "image_search": true}, "parameter_dependency"},
+			{map[string]any{"image_search": true}, ""},
+			{map[string]any{"web_search": false, "image_search": true}, ""},
 			{map[string]any{"web_search": "true"}, "invalid_type"},
 			{map[string]any{"web_search": true, "image_search": nil}, "invalid_type"},
 		} {
@@ -112,7 +112,7 @@ func TestNanoSearchQuoteAndSubmit(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	client, err := NewClient("fixture", ClientOptions{BaseURL: server.URL})
+	client, err := NewClient("fixture", ClientOptions{BaseURL: server.URL, ModelContracts: testModelContracts()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestNanoSearchQuoteAndSubmit(t *testing.T) {
 		}
 	}
 	before := len(calls)
-	bad := GenerationRequest{Model: "google/nano-banana-2", Input: GenerationInput{Type: "text", Prompt: "fixture"}, Parameters: map[string]any{"image_search": true}}
+	bad := GenerationRequest{Model: "google/nano-banana-2", Input: GenerationInput{Type: "text", Prompt: "fixture"}, Parameters: map[string]any{"image_search": "true"}}
 	if _, err := client.QuoteImage(context.Background(), bad); err == nil {
 		t.Fatal("invalid quote accepted")
 	}

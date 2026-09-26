@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"strconv"
 )
 
 // ParameterError identifies a local contract violation without echoing input values.
@@ -17,7 +18,7 @@ type ParameterError struct {
 func (e *ParameterError) Error() string { return fmt.Sprintf("%s: %s", e.Path, e.Code) }
 
 // ValidateModelParameters validates only the parameters against bundled rules.
-// Search dependencies are checked here; media validation needs a complete request.
+// Model-specific semantic dependencies remain Gateway-owned.
 // Defaults satisfy omitted parameters but this function never mutates the input.
 func ValidateModelParameters(model, operation, inputMode string, parameters map[string]any) error {
 	contract, ok := GetModelOperationContract(model, operation, inputMode)
@@ -28,7 +29,6 @@ func ValidateModelParameters(model, operation, inputMode string, parameters map[
 }
 
 func validateParameters(rules []ModelParameterContract, parameters map[string]any) error {
-	var webSearch, imageSearch bool
 	known := make(map[string]bool, len(rules))
 	for _, rule := range rules {
 		known[rule.Name] = true
@@ -65,26 +65,29 @@ func validateParameters(rules []ModelParameterContract, parameters map[string]an
 				return &ParameterError{path, "invalid_type"}
 			}
 		case "boolean":
-			value, ok := normalized.(bool)
+			_, ok := normalized.(bool)
 			if !ok {
 				return &ParameterError{path, "invalid_type"}
 			}
-			switch rule.Name {
-			case "web_search":
-				webSearch = value
-			case "image_search":
-				imageSearch = value
-			}
-		case "integer":
-			number, ok := parameterInteger(normalized)
-			if !ok {
+		case "integer", "number":
+			number, ok := parameterNumber(normalized)
+			if !ok || (rule.Type == "integer" && !number.IsInt()) {
 				return &ParameterError{path, "invalid_type"}
 			}
-			if rule.Minimum != nil && number.Cmp(big.NewInt(int64(*rule.Minimum))) < 0 {
-				return &ParameterError{path, "below_minimum"}
-			}
-			if rule.Maximum != nil && number.Cmp(big.NewInt(int64(*rule.Maximum))) > 0 {
-				return &ParameterError{path, "above_maximum"}
+			for index, bound := range []*float64{rule.Minimum, rule.Maximum} {
+				if bound == nil {
+					continue
+				}
+				limit, valid := new(big.Rat).SetString(strconv.FormatFloat(*bound, 'g', -1, 64))
+				if !valid {
+					return &ParameterError{path, "unsupported_contract_range"}
+				}
+				if index == 0 && number.Cmp(limit) < 0 {
+					return &ParameterError{path, "below_minimum"}
+				}
+				if index == 1 && number.Cmp(limit) > 0 {
+					return &ParameterError{path, "above_maximum"}
+				}
 			}
 		default:
 			return &ParameterError{path, "unsupported_contract_type"}
@@ -96,9 +99,9 @@ func validateParameters(rules []ModelParameterContract, parameters map[string]an
 				if err != nil {
 					continue
 				}
-				if rule.Type == "integer" {
-					a, aOK := parameterInteger(normalized)
-					b, bOK := parameterInteger(candidate)
+				if rule.Type == "integer" || rule.Type == "number" {
+					a, aOK := parameterNumber(normalized)
+					b, bOK := parameterNumber(candidate)
 					matched = aOK && bOK && a.Cmp(b) == 0
 				} else {
 					matched = normalized == candidate
@@ -112,10 +115,15 @@ func validateParameters(rules []ModelParameterContract, parameters map[string]an
 			}
 		}
 	}
-	if imageSearch && !webSearch {
-		return &ParameterError{"parameters.image_search", "parameter_dependency"}
-	}
 	return nil
+}
+
+func parameterNumber(value any) (*big.Rat, bool) {
+	number, ok := value.(json.Number)
+	if !ok {
+		return nil, false
+	}
+	return new(big.Rat).SetString(string(number))
 }
 
 func normalizeParameter(value any) (any, error) {

@@ -1,5 +1,7 @@
 # Yir Go SDK
 
+> 0.2.0 protocol / 协议升级：模型参数来自 API，SDK 不再以内置模型清单限制请求；旧全量价格表与客户端计价已移除。升级前阅读 [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md)。
+
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
 Server-side image and video API client. Requires Go 1.25+. Module: `github.com/yir-ai/sdk/go`. [MIT](LICENSE).
@@ -9,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.1.0
+go get github.com/yir-ai/sdk/go@v0.2.0
 ```
 
-Module release tags use `go/vX.Y.Z`; this version is tagged `go/v0.1.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version is tagged `go/v0.2.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -50,9 +52,8 @@ Set `SubmitRequest.WebhookURL` for callbacks. `VerifyWebhookSignature` takes `Se
 
 ## Pricing and contracts
 
-`GetModelPrices` retrieves validated model prices. Cache by account/policy/model/operation/input mode/filter and respect expiry. Local pricing helpers consume tables without network calls. Preserve decimal strings and table scale; estimates, holds and static model metadata are not final billing or guaranteed live supply. A missing price row is not a free price or proof of unsupported input. Customer retail pricing, balances and authorization remain separate from Yir procurement cost. See [pricing examples](pricing_example_test.go) and [public contracts](https://github.com/yir-ai/sdk/blob/main/spec/README.md).
 
-## Contract update (unreleased)
+## Contract updates in 0.2.0
 
 H3 reference input accepts 1–15 references: up to 9 images, 3 videos and 3 audio files, including audio-only input, preserving URLs and order. Image-to-video remains adaptive-only. The KIE integration verified on 2026-09-16 supports mixed references within those limits, but requires at least one image or video; audio-only input passes the public contract but is not accepted by this supply. Each video/audio clip must be 2–15 seconds, with video and audio each totaling at most 15 seconds. Video/audio references require measured, ready Files owned by the caller, supplied as `file_id`; image URLs remain supported. Quote and admission use trusted measurements, and submission checks the bound measurement snapshot. Other channels retain their own supported subsets. A valid quote covering the complete request is required; static SDK validation does not establish live availability or successful generation. The earlier 1–5-image limit describes a historical supply snapshot, not the current KIE integration.
 
@@ -64,7 +65,7 @@ Seedream 5.0 text and image contracts now accept `4K`; image input allows up to 
 
 This working revision accepts optional boolean `web_search` and `image_search` in Nano Banana 2 `Parameters` for text and image input. Both default to false; image search requires web search. Nano Banana Pro accepts only optional boolean `web_search` (default false) for text and image input; it rejects `image_search`, including explicit false. All other models reject both fields. Provider search execution remains to be verified; this metadata update does not change prices or enable supply. The validator preserves the request and enforces per-role reference counts, required alternatives, output-duration limits and duplicate-reference rejection. Search availability and charges require a supported supply and a valid quote. These updates are not in the published `v0.1.0` module.
 
-This working revision introduces `GetJobStatus` (`GET /v1/jobs/{id}/status`) and migrates `WaitJob` to poll lightweight `JobStatusResponse` summaries, reading the full `Job` detail only once upon reaching terminal status (`succeeded`, `failed`, or `cancelled`). Terminal status mismatches return `ErrJobStateInconsistent`. `WaitOptions.OnPoll` now receives `JobStatusResponse` instead of `Job`. Wait interruptions (context cancellation, timeouts) and transport, validation, or consistency errors return a zero-value `Job{}` without synthesizing partial jobs, with `JobError` as the sole exception returning the complete failed or cancelled terminal `Job`. Status 404 does not silently fall back to the detail endpoint. Delivered results preserve optional `result.warnings`. These status polling and error return contracts are unreleased and not included in published `v0.1.0`. Under `0.x` semver rules, the next release containing incompatible contract changes requires a minor version bump; package versions are unchanged in this revision.
+This working revision introduces `GetJobStatus` (`GET /v1/jobs/{id}/status`) and migrates `WaitJob` to poll lightweight `JobStatusResponse` summaries, reading the full `Job` detail only once upon reaching terminal status (`succeeded`, `failed`, or `cancelled`). Terminal status mismatches return `ErrJobStateInconsistent`. `WaitOptions.OnPoll` now receives `JobStatusResponse` instead of `Job`. Wait interruptions (context cancellation, timeouts) and transport, validation, or consistency errors return a zero-value `Job{}` without synthesizing partial jobs, with `JobError` as the sole exception returning the complete failed or cancelled terminal `Job`. Status 404 does not silently fall back to the detail endpoint. Delivered results preserve optional `result.warnings`. These incompatible polling and error return changes are included in 0.2.0; follow the migration guide when upgrading from 0.1.0.
 
 ## Verify
 

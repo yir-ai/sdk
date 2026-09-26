@@ -1,9 +1,8 @@
 import { validateGeneration } from "../shared/standard.js";
-import { getModelOperationContract } from "../shared/model-contracts.js";
+import { findModelOperationContract, modelContractPath, parseModelContractCatalog, parseModelContractDetail, type ModelContractCatalog, type ModelContractDetail } from "../shared/catalog.js";
 import { checkParameterPolicies } from "../shared/parameter-rules.js";
-import { validateQuoteResponse } from "../shared/quote.js";
+import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
 import { createFileClient } from "./files.js";
-import { modelPricesPath, validateModelPrices, type ModelPrices, type ModelPriceFilter } from "../shared/model-prices.js";
 import type { YirFileClient } from "./files.js";
 import type {
   StandardImageGenerationRequest,
@@ -12,8 +11,8 @@ import type {
   StandardVideoQuoteRequest,
 } from "../shared/standard.js";
 
-export type { JobStatus, JobCancellation, JobStatusResponse, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote } from "../shared/types.js";
-import type { JobStatus, JobCancellation, JobStatusResponse, Job, Quote, YirPublicError } from "../shared/types.js";
+export type { JobStatus, JobCancellation, JobStatusResponse, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
+import type { JobStatus, JobStatusResponse, Job, Quote, YirPublicError, QuoteBatchRequestItem, QuoteBatch } from "../shared/types.js";
 
 export type YirTransportRequest = {
   readonly method: "GET" | "POST";
@@ -30,10 +29,13 @@ export type YirRequestOptions = {
 };
 
 export type YirClient = YirFileClient & {
-  getModelPrices(model: string, operation: ModelPrices["operation"], inputMode: ModelPrices["input_mode"], options?: YirRequestOptions & {filter?: ModelPriceFilter}): Promise<ModelPrices>;
-  quoteImage(request: StandardImageQuoteRequest): Promise<Quote>;
+  readonly modelContracts?: ModelContractCatalog;
+  getModelContracts(options?: YirRequestOptions): Promise<ModelContractCatalog>;
+  getModelContract(model: string, options?: YirRequestOptions): Promise<ModelContractDetail>;
+  quoteImage(request: StandardImageQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
+  quoteBatch(requests: readonly QuoteBatchRequestItem[], options?: YirRequestOptions): Promise<QuoteBatch>;
   submitImage(request: StandardImageGenerationRequest, idempotencyKey: string, options?: YirRequestOptions): Promise<Job>;
-  quoteVideo(request: StandardVideoQuoteRequest): Promise<Quote>;
+  quoteVideo(request: StandardVideoQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
   submitVideo(request: StandardVideoGenerationRequest, idempotencyKey: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
   getJobStatus(id: string, options?: YirRequestOptions): Promise<JobStatusResponse>;
@@ -44,29 +46,53 @@ export type YirClient = YirFileClient & {
  * Transport-neutral Standard API client. Authentication stays in the injected
  * transport, so browser UI code never needs to receive an API Key secret.
  */
-export function createYirClient(transport: YirTransport): YirClient {
+export function createYirClient(transport: YirTransport, catalog?: ModelContractCatalog): YirClient {
+  const localCatalog = catalog === undefined ? undefined : parseModelContractCatalog(catalog);
   return {
     ...createFileClient(transport),
-    getModelPrices(model, operation, inputMode, options) {
+    modelContracts: localCatalog,
+    getModelContracts(options) {
       options?.signal?.throwIfAborted();
-      return transport<unknown>({method: "GET", path: modelPricesPath(model, operation, inputMode, options?.filter), ...(options?.signal ? {signal: options.signal} : {})})
-        .then(value => validateModelPrices(value, model, operation, inputMode, options?.filter));
+      return transport<unknown>({
+        method: "GET", path: "/v1/models?include=parameters",
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(parseModelContractCatalog);
     },
-    quoteImage(request) {
-      validateGeneration("generate_image", request);
-      warnParameterPolicies("generate_image", request);
+    async getModelContract(model, options) {
+      options?.signal?.throwIfAborted();
+      const value = await transport<unknown>({
+        method: "GET", path: modelContractPath(model),
+        ...(options?.signal ? { signal: options.signal } : {}),
+      });
+      return parseModelContractDetail(value, model);
+    },
+    quoteImage(request, options) {
+      options?.signal?.throwIfAborted();
+      validateGeneration("generate_image", request, localCatalog);
+      warnParameterPolicies("generate_image", request, localCatalog);
       return transport<Quote>({
         method: "POST",
         path: "/v1/images/quotes",
         body: request,
-      }).then(value => validateQuoteResponse(value, request, "generate_image"));
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(value => validateQuoteResponse(value, request, "generate_image", localCatalog));
+    },
+    quoteBatch(requests, options) {
+      options?.signal?.throwIfAborted();
+      if (requests.length < 1 || requests.length > 20) throw new Error("quote_batch_request_invalid");
+      return transport<unknown>({
+        method: "POST",
+        path: "/v1/quotes",
+        body: { requests },
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(value => validateQuoteBatchResponse(value, requests, localCatalog));
     },
     submitImage(request, idempotencyKey, options) {
       options?.signal?.throwIfAborted();
       const key = idempotencyKey.trim();
       if (!key) throw new Error("idempotency_key_required");
-      validateGeneration("generate_image", request);
-      warnParameterPolicies("generate_image", request);
+      validateGeneration("generate_image", request, localCatalog);
+      warnParameterPolicies("generate_image", request, localCatalog);
       return transport<Job>({
         method: "POST",
         path: "/v1/images/generations",
@@ -75,21 +101,23 @@ export function createYirClient(transport: YirTransport): YirClient {
         body: request,
       });
     },
-    quoteVideo(request) {
-      validateGeneration("generate_video", request);
-      warnParameterPolicies("generate_video", request);
+    quoteVideo(request, options) {
+      options?.signal?.throwIfAborted();
+      validateGeneration("generate_video", request, localCatalog);
+      warnParameterPolicies("generate_video", request, localCatalog);
       return transport<Quote>({
         method: "POST",
         path: "/v1/videos/quotes",
         body: request,
-      }).then(value => validateQuoteResponse(value, request, "generate_video"));
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(value => validateQuoteResponse(value, request, "generate_video", localCatalog));
     },
     submitVideo(request, idempotencyKey, options) {
       options?.signal?.throwIfAborted();
       const key = idempotencyKey.trim();
       if (!key) throw new Error("idempotency_key_required");
-      validateGeneration("generate_video", request);
-      warnParameterPolicies("generate_video", request);
+      validateGeneration("generate_video", request, localCatalog);
+      warnParameterPolicies("generate_video", request, localCatalog);
       return transport<Job>({
         method: "POST",
         path: "/v1/videos/generations",
@@ -148,8 +176,8 @@ export function createYirClient(transport: YirTransport): YirClient {
 export const DEFAULT_GATEWAY_BASE_URL = "https://gateway.yir.ai";
 
 // 固定日志不包含提示词、参数值、密钥或服务端任意文本。
-function warnParameterPolicies(operation: "generate_image" | "generate_video", request: StandardImageQuoteRequest | StandardVideoQuoteRequest): void {
-  const contract = getModelOperationContract(request.model, operation, request.input.type);
+function warnParameterPolicies(operation: "generate_image" | "generate_video", request: StandardImageQuoteRequest | StandardVideoQuoteRequest, catalog?: ModelContractCatalog): void {
+  const contract = catalog && findModelOperationContract(catalog, request.model, operation, request.input.type);
   if (!contract) return;
   for (const notice of checkParameterPolicies(contract, request.parameters, request.routing?.only)) {
     console.warn(`[Yir] ${notice.message}`);
@@ -435,6 +463,8 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 export type CreateNodeYirClientOptions = {
+  /** Optional current API snapshot for additional local parameter validation. */
+  readonly modelContracts?: ModelContractCatalog;
   readonly apiKey?: string;
   readonly baseURL?: string;
   readonly userAgent?: string;
@@ -542,7 +572,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
 
 export function createNodeYirClient(options: CreateNodeYirClientOptions = {}): NodeYirClient {
   const transport = createNodeHttpTransport(options);
-  const baseClient = createYirClient(transport);
+  const baseClient = createYirClient(transport, options.modelContracts);
 
   return {
     ...baseClient,

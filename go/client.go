@@ -19,14 +19,16 @@ import (
 const DefaultBaseURL = "https://gateway.yir.ai"
 
 type ClientOptions struct {
-	BaseURL    string
-	HTTPClient *http.Client
+	BaseURL        string
+	HTTPClient     *http.Client
+	ModelContracts *ModelContractCatalog
 }
 
 type Client struct {
-	baseURL    string
-	apiKey     string
-	httpClient *http.Client
+	baseURL        string
+	apiKey         string
+	httpClient     *http.Client
+	modelContracts *ModelContractCatalog
 }
 
 // NewClient performs no network requests. A custom BaseURL supports private gateways.
@@ -49,7 +51,16 @@ func NewClient(apiKey string, options ClientOptions) (*Client, error) {
 	}
 	// Redirects are not part of the Gateway API contract. Never forward credentials.
 	httpClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	return &Client{strings.TrimRight(baseURL, "/"), apiKey, &httpClient}, nil
+	var catalog *ModelContractCatalog
+	if options.ModelContracts != nil {
+		if !validRemoteModelContracts(*options.ModelContracts) {
+			return nil, errors.New("model_contract_invalid")
+		}
+		copy := *options.ModelContracts
+		copy.Models = cloneStaticModelContracts(copy.Models)
+		catalog = &copy
+	}
+	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, httpClient: &httpClient, modelContracts: catalog}, nil
 }
 
 type SubmitRequest struct {
@@ -66,7 +77,12 @@ type APIError struct {
 	Action    string `json:"action,omitempty"`
 }
 
-func (e *APIError) Error() string { return fmt.Sprintf("yir HTTP %d: %s", e.Status, e.Code) }
+func (e *APIError) Error() string {
+	if e.Status == 0 {
+		return "yir: " + e.Code
+	}
+	return fmt.Sprintf("yir HTTP %d: %s", e.Status, e.Code)
+}
 
 func (c *Client) QuoteImage(ctx context.Context, request GenerationRequest) (Quote, error) {
 	return c.quote(ctx, "images", "generate_image", request)
@@ -76,27 +92,84 @@ func (c *Client) QuoteVideo(ctx context.Context, request GenerationRequest) (Quo
 	return c.quote(ctx, "videos", "generate_video", request)
 }
 
+// QuoteBatch quotes explicit image and video requests together. Invalid items
+// are returned in their own positions so one model does not hide other quotes.
+func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestItem) (QuoteBatch, error) {
+	var batch QuoteBatch
+	if len(requests) == 0 || len(requests) > 20 {
+		return batch, errors.New("quote_batch_request_invalid")
+	}
+	prepared := make([]QuoteBatchRequestItem, len(requests))
+	copy(prepared, requests)
+	for i := range prepared {
+		if prepared[i].Request.Parameters == nil {
+			prepared[i].Request.Parameters = map[string]any{}
+		}
+	}
+	if err := c.do(ctx, http.MethodPost, "/v1/quotes", "", struct {
+		Requests []QuoteBatchRequestItem `json:"requests"`
+	}{Requests: prepared}, &batch); err != nil {
+		return batch, err
+	}
+	if batch.Object != "quote_batch" || strings.TrimSpace(batch.RequestID) == "" || len(batch.Data) != len(requests) {
+		return QuoteBatch{}, errors.New("quote_batch_response_invalid")
+	}
+	for index, item := range batch.Data {
+		if item.Index != index || (item.Quote == nil) == (item.Error == nil) {
+			return QuoteBatch{}, errors.New("quote_batch_response_invalid")
+		}
+		if item.Error != nil {
+			if item.Error.Code != "YIR_INVALID_REQUEST" || strings.TrimSpace(item.Error.Message) == "" || item.Error.Retryable || item.Error.Action != "fix_request" {
+				return QuoteBatch{}, errors.New("quote_batch_response_invalid")
+			}
+			continue
+		}
+		request := requests[index]
+		if err := item.Quote.Validate(); err != nil || !c.quoteMatchesRequest(*item.Quote, request.Request, request.Operation) {
+			return QuoteBatch{}, errors.New("quote_batch_response_invalid")
+		}
+	}
+	return batch, nil
+}
+
+func (c *Client) validateGeneration(operation string, request GenerationRequest) error {
+	if c != nil && c.modelContracts != nil {
+		return ValidateGenerationWithCatalog(operation, request, *c.modelContracts)
+	}
+	return ValidateGenerationProtocol(operation, request)
+}
+
 func (c *Client) quote(ctx context.Context, resource, operation string, request GenerationRequest) (Quote, error) {
 	var quote Quote
 	if request.Parameters == nil {
 		request.Parameters = map[string]any{}
 	}
-	if err := ValidateGeneration(operation, request); err != nil {
+	if err := c.validateGeneration(operation, request); err != nil {
 		return quote, err
 	}
-	warnParameterPolicies(operation, request)
+	warnParameterPolicies(operation, request, c.modelContracts)
 	err := c.do(ctx, http.MethodPost, "/v1/"+resource+"/quotes", "", request, &quote)
 	if err == nil {
 		err = quote.Validate()
 	}
-	if err == nil {
-		requested, requestKnown := GetModelContract(request.Model)
-		returned, responseKnown := GetModelContract(quote.Model)
-		if !requestKnown || !responseKnown || requested.ID != returned.ID || quote.Operation != operation || quote.InputMode != request.Input.Type {
-			err = errors.New("quote_response_invalid")
-		}
+	if err == nil && !c.quoteMatchesRequest(quote, request, operation) {
+		err = errors.New("quote_response_invalid")
 	}
 	return quote, err
+}
+
+func (c *Client) quoteMatchesRequest(quote Quote, request GenerationRequest, operation string) bool {
+	expectedModel := request.Model
+	returnedModel := quote.Model
+	if c != nil && c.modelContracts != nil {
+		if requested, found := findContractInCatalog(*c.modelContracts, request.Model); found {
+			expectedModel = requested.ID
+		}
+		if returned, found := findContractInCatalog(*c.modelContracts, quote.Model); found {
+			returnedModel = returned.ID
+		}
+	}
+	return returnedModel == expectedModel && quote.Operation == operation && quote.InputMode == request.Input.Type
 }
 
 func (c *Client) SubmitImage(ctx context.Context, request SubmitRequest, idempotencyKey string) (Job, error) {
@@ -111,8 +184,22 @@ var decimalCostPattern = regexp.MustCompile(`^[0-9]{1,13}(\.[0-9]{1,6})?$`)
 var jobIDPattern = regexp.MustCompile(`^[1-9][0-9]*$`)
 
 // 只记录固定说明，不将输入内容或参数值写入日志。
-func warnParameterPolicies(operation string, request GenerationRequest) {
-	contract, ok := GetModelOperationContract(request.Model, operation, request.Input.Type)
+func warnParameterPolicies(operation string, request GenerationRequest, catalogs ...*ModelContractCatalog) {
+	var contract ModelOperationContract
+	var ok bool
+	if len(catalogs) == 0 {
+		contract, ok = GetModelOperationContract(request.Model, operation, request.Input.Type)
+	} else if catalogs[0] != nil {
+		model, found := findContractInCatalog(*catalogs[0], request.Model)
+		if found {
+			for _, candidate := range model.Operations {
+				if candidate.Operation == operation && containsString(candidate.InputModes, request.Input.Type) {
+					contract, ok = candidate, true
+					break
+				}
+			}
+		}
+	}
 	if !ok {
 		return
 	}
@@ -138,10 +225,10 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 	if key == "" || strings.ContainsAny(key, "\r\n") {
 		return job, errors.New("idempotency_key_invalid")
 	}
-	if err := ValidateGeneration(operation, request.GenerationRequest); err != nil {
+	if err := c.validateGeneration(operation, request.GenerationRequest); err != nil {
 		return job, err
 	}
-	warnParameterPolicies(operation, request.GenerationRequest)
+	warnParameterPolicies(operation, request.GenerationRequest, c.modelContracts)
 	if request.MaxCost != nil {
 		amount, ok := new(big.Rat).SetString(*request.MaxCost)
 		maximum, _ := new(big.Rat).SetString("9223372036854.775807")

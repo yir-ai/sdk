@@ -2,6 +2,7 @@ package yir
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -16,31 +17,65 @@ type QuotePrice struct {
 
 // QuoteEstimate excludes input and other charges and is not an upper bound.
 type QuoteEstimate struct {
-	Scope        string `json:"scope"`
-	OutputTokens int64  `json:"output_tokens"`
+	Scope               string `json:"scope"`
+	OutputTokens        int64  `json:"output_tokens,omitempty"`
+	OutputMegapixels    int64  `json:"output_megapixels,omitempty"`
+	Quality             string `json:"quality,omitempty"`
+	AspectRatio         string `json:"aspect_ratio,omitempty"`
+	outputTokensSet     bool
+	outputMegapixelsSet bool
+	qualitySet          bool
+	aspectRatioSet      bool
+}
+
+func (e *QuoteEstimate) UnmarshalJSON(data []byte) error {
+	type estimateAlias QuoteEstimate
+	var value estimateAlias
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	*e = QuoteEstimate(value)
+	_, e.outputTokensSet = fields["output_tokens"]
+	_, e.outputMegapixelsSet = fields["output_megapixels"]
+	_, e.qualitySet = fields["quality"]
+	_, e.aspectRatioSet = fields["aspect_ratio"]
+	return nil
 }
 
 type Quote struct {
-	ParameterNotices         []ParameterNotice `json:"parameter_notices,omitempty"`
-	ParameterHandlingMayVary bool              `json:"parameter_handling_may_vary,omitempty"`
-	Supply                   QuoteSupply       `json:"supply"`
-	Object                   string            `json:"object"`
-	Model                    string            `json:"model"`
-	Operation                string            `json:"operation"`
-	InputMode                string            `json:"input_mode"`
-	Parameters               map[string]any    `json:"parameters"`
-	Currency                 string            `json:"currency"`
-	Primary                  QuotePrice        `json:"primary"`
-	Max                      QuotePrice        `json:"max"`
-	Official                 QuotePrice        `json:"official"`
-	SingleAttemptUpperBound  *string           `json:"single_attempt_upper_bound"`
-	HasVerifiableUpperBound  bool              `json:"has_verifiable_upper_bound"`
-	ExpiresAt                int64             `json:"expires_at"`
+	PriceDifferencePercent   *QuotePriceDifference `json:"price_difference_percent,omitempty"`
+	ParameterNotices         []ParameterNotice     `json:"parameter_notices,omitempty"`
+	ParameterHandlingMayVary bool                  `json:"parameter_handling_may_vary,omitempty"`
+	Supply                   QuoteSupply           `json:"supply"`
+	Object                   string                `json:"object"`
+	Model                    string                `json:"model"`
+	Operation                string                `json:"operation"`
+	InputMode                string                `json:"input_mode"`
+	Parameters               map[string]any        `json:"parameters"`
+	Currency                 string                `json:"currency"`
+	Primary                  QuotePrice            `json:"primary"`
+	Max                      QuotePrice            `json:"max"`
+	Official                 QuotePrice            `json:"official"`
+	SingleAttemptUpperBound  *string               `json:"single_attempt_upper_bound"`
+	HasVerifiableUpperBound  bool                  `json:"has_verifiable_upper_bound"`
+	ExpiresAt                int64                 `json:"expires_at"`
+}
+
+// QuotePriceDifference is comparison metadata, never a charge or authorization.
+type QuotePriceDifference struct {
+	Min                   float64 `json:"min"`
+	Max                   float64 `json:"max"`
+	ReferenceAmountMicros *int64  `json:"reference_amount_micros,omitempty"`
 }
 
 type QuoteSupply struct {
-	Available bool     `json:"available"`
-	Issues    []string `json:"issues"`
+	Available       bool     `json:"available"`
+	RequiresMaxCost bool     `json:"requires_max_cost"`
+	Issues          []string `json:"issues"`
 }
 
 type Job struct {

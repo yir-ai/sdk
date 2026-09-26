@@ -1,6 +1,7 @@
+import { validateGeneration } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validateGeneration, getModelOperationContract } from "../dist/index.js";
+import { getModelOperationContract } from "../dist/index.js";
 
 const ref = role => ({ role, url: "https://example.com/fixture" });
 test("reference role counts and alternatives are exported and enforced", () => {

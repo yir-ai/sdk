@@ -1,5 +1,7 @@
 # Yir SDK
 
+> 0.2.0 protocol / 协议升级：模型参数来自 API，SDK 不再以内置模型清单限制请求；旧全量价格表与客户端计价已移除。升级前阅读 [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md)。
+
 English | [简体中文](spec/docs/zh-CN/README.md)
 
 Official Go and TypeScript SDKs for the Yir image and video API. Public source: [yir-ai/sdk](https://github.com/yir-ai/sdk). Licensed under [MIT](LICENSE).
@@ -15,10 +17,10 @@ Official Go and TypeScript SDKs for the Yir image and video API. Public source: 
 Go 1.25 or later, from your application's module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.1.0
+go get github.com/yir-ai/sdk/go@v0.2.0
 ```
 
-Install TypeScript with `pnpm add @yir-ai/sdk@0.1.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
+Install TypeScript with `pnpm add @yir-ai/sdk@0.2.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
 
 ## Safe generation lifecycle
 

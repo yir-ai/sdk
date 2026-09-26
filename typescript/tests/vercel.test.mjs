@@ -3,6 +3,7 @@ import test from "node:test";
 import { generateImage, experimental_generateVideo as generateVideo, experimental_startVideo as startVideo, experimental_getVideoStatus as getVideoStatus } from "ai";
 import { createYirAIProvider } from "../dist/server/vercel.js";
 import { createYirClient } from "../dist/server/client.js";
+import { catalog } from "./catalog-fixture.mjs";
 
 function fixture(mediaType = "image/png", notices = []) {
   const calls = [];
@@ -17,7 +18,7 @@ function fixture(mediaType = "image/png", notices = []) {
       billing: { total_charged_by_yir: "0.020" },
     };
   });
-  const provider = createYirAIProvider({ client, fetch: async (url, init) => {
+  const provider = createYirAIProvider({ client, modelContracts: catalog, fetch: async (url, init) => {
     assert.equal(String(url), "https://assets.example/result");
     assert.equal(init.headers, undefined);
     assert.equal(init.redirect, "error");

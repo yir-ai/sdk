@@ -1,7 +1,8 @@
+import { createYirClient, validateModelParameters } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createYirClient } from "../dist/server/index.js";
-import { getModelOperationContract, listModelContracts, validateModelParameters } from "../dist/browser/index.js";
+
+import { getModelOperationContract, listModelContracts } from "../dist/browser/index.js";
 import { quoteFixture } from "./quote-fixture.mjs";
 
 test("Seedance 2 last-frame intent survives quote and submit for every input mode", async () => {
@@ -22,7 +23,13 @@ test("Seedance 2 last-frame intent survives quote and submit for every input mod
       const calls = [];
       const client = createYirClient(async call => {
         calls.push(structuredClone(call));
-        return call.path.endsWith("/quotes") ? { ...quoteFixture(call.body, "generate_video"), primary: { kind: "unavailable", amount: null, reason: "unverified_last_frame_cost" }, supply: { available: false, issues: ["unverified_last_frame_cost"] } } : { object: "job", id: "1", status: "queued" };
+        return call.path.endsWith("/quotes") ? {
+          ...quoteFixture(call.body, "generate_video"),
+          primary: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
+          max: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
+          supply: { available: false, requires_max_cost: false, issues: ["no_matching_supply"] },
+          has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
+        } : { object: "job", id: "1", status: "queued" };
       });
       const quote = await client.quoteVideo(request);
       assert.equal(quote.primary.kind, "unavailable");

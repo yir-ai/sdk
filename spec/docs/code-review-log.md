@@ -1,5 +1,25 @@
 # SDK 代码审查台账
 
+## 2026-09-26：PR #4 完整 CI 与适配器修复
+
+- 首轮 CI `36238176016` 在 `502d7180a1ae7bd0c12759b6bfea4a3b794c76df` 发现四项失败。`SDK-CONTRACT-20260926-06` / P2：AI SDK 适配器预校验未传递显式 modelContracts；`-07` / P3：浏览器边界测试仍要求已删除的 calculatePrice。修复 `0d298f3c2638e699f8408a7bea72b758bd8badb4` 补传可选合同并更新显式测试夹具/导出断言，相关 18 项测试通过。
+- 独立 AGY `review-muian8hx-4bbeba14` 审查 `502d7180a1ae7bd0c12759b6bfea4a3b794c76df..0d298f3c2638e699f8408a7bea72b758bd8badb4`，Approve、无新增问题，独立 18 项测试通过（609.8ms），两项关闭。
+- 同一修复 SHA 的完整 GitHub Actions [36238275792](https://github.com/yir-ai/sdk/actions/runs/36238275792) 成功（44s）：合同生成、全部 TS 测试、类型检查、归档安装、独立 Go 模块测试全部通过。候选 PR 为 [#4](https://github.com/yir-ai/sdk/pull/4)。建议下一版 0.2.0，迁移说明见 PR；尚未合并、发包或打标签，客户正式依赖锁定仍待发布。
+
+## 2026-09-26：外部参数合同与实时报价候选（独立复审通过，CI 待完成）
+
+- 原审查方 AGY `review-mui8vouy-ab3f03ad` 复核 `2fe4aaef66570a9f1c7b8dcef536b1a107cff16e..19256626b350bf4e72755f5650c48e18be8b49b0`，结论 **Approve**，无新增可操作问题。`SDK-CONTRACT-20260926-01/02/03` 修复关闭；规范 ID 详情与批量错误码两项建议按服务端代码和回归测试驳回。独立定向 Go 测试通过（1.086s）。报告所称价差用例名称有笔误，实际新增用例为 `TestQuotePriceDifferenceMetadata`，包含在其 `TestQuote` 选择范围中。
+- Pilio 使用该修复候选再次运行参数冻结/报价准备定向测试通过（0.476s）。依旧通过临时 workspace 消费，不代表正式依赖已锁定或 CI 已通过。
+
+- 独立 AGY `review-mui89jh3-d44bad6e` 审查 `8552363dd1403d4a09b099a73c9c39598d6884de..2fe4aaef66570a9f1c7b8dcef536b1a107cff16e`，结论 Request Changes。`SDK-CONTRACT-20260926-01` / P1：Go 不支持 number 与小数边界；`-02` / P3：Go 搜索依赖硬编码；`-03` / P3：Go 未暴露报价价差。已实现修复，待原审查方复审；浮点用例修复前稳定复现失败，修复后 Go 定向测试通过（1.337s）。
+- 两条意见按服务端合同保留现状：详情只接受规范模型 ID；批量单项参数错误固定为 `YIR_INVALID_REQUEST`，服务端失败走整体 HTTP 错误。复审须核对这些边界，不扩展未定义协议。工具所报六项文档漂移为主任务同时编辑，非已确认的审查方写入。
+- 公开 OpenAPI 已同步当前参数合同与批量报价，移除旧价格表端点；历史 models.json 仅作为显式旧版参考。`pnpm check:model-contracts` 通过。CI 与正式消费版本仍待完成。
+
+- 实现方 Codex；基准 `8552363dd1403d4a09b099a73c9c39598d6884de`。范围为 Go/TS 外部参数合同读取和校验、纯前端入口、客户目录生成器、20 项显式批量报价，以及旧价格表运行代码退出。公开包名、Go module、Job ID/状态校验、禁止浏览器使用密钥客户端、重定向保护、结果 warnings 保留。
+- 实现方验证：TS 编译及类型测试通过；外部合同/批量报价/传输及 warnings 12 项通过；模型字段/引用/生成请求受影响测试已改为显式合同输入，后续报价/搜索/尾帧 8 项通过。`pnpm test:package` 实际打包、隔离安装和消费者运行/TypeScript 校验通过。Go `Test(Client|RemoteModelContract|ResultWarnings|Wait|GetJobStatus|SubmitUnknown|Quote|NanoSearchQuote|LastFrameContractAndTransport|ProSearchContractAndTransport)` 定向通过（1.155s）。不是全量或独立审查。
+- 当前本地 Yir API 回读成功：50 个模型，合同版本 `42744c1abe2439319c58cac717c30b6e33e9c2667961c997d27a5b7de711c0c1`，已由纯前端解析器验证；没有生成任务或收费请求。Pilio 消费在隔离 worktree 验证，不写其主工作区。
+- 未发布 npm 包或 Go tag，未部署生产。固定提交独立复审、CI、公开 spec 的旧价格表文本收敛及客户正式依赖锁定仍待完成；不能把此前发布的 0.1.0 当成本候选。
+
 ## 2026-09-20：Job 轻量状态轮询
 
 - 执行：agy；审查与验证：Codex。会话 `224fcb3b-9431-4689-a3bf-92349dedeca0` 已确认 IDLE，无继续写入。

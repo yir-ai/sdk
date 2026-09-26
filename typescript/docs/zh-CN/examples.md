@@ -7,9 +7,6 @@
 | 文件 | 用途 |
 | --- | --- |
 | [quickstart.mjs](../../examples/quickstart.mjs) | 图像报价，然后提交或恢复应用保存的请求 |
-| [price-preview.mjs](../../examples/price-preview.mjs) | 补全明确默认值，预览已校验模型价格表，使用浏览器安全入口 |
-| [pricing.mjs](../../examples/pricing.mjs) | 使用虚构模型进行客户零售价纯计算与可信后端校验 |
-| [retail-table.mjs](../../examples/retail-table.mjs) | 加价、舍入和版本化零售价快照策略示例，不实现结账 |
 
 ## 集成快速开始
 
@@ -19,12 +16,12 @@
 4. 读取该记录并调用 `submitSavedImage(client, saved)`；等待前保存返回的任务 ID。
 5. 超时且没有任务 ID 时，使用完全相同的请求和键重复第 4 步；已有 ID 时恢复轮询。账单只结算一次并复制可用文件。
 
-第 3 步的持久化和审批是必须完成的应用集成，不是示例提供的函数。恢复不得重新报价或生成新身份。价格预览不授权生成；后端加载可信零售价表，不接受浏览器传入的价格。成本表过期时保留已接受零售订单的价格。
+第 3 步的持久化和审批是必须完成的应用集成，不是示例提供的函数。恢复不得重新报价或生成新身份。通过 API 获取报价，客户零售价格与购买授权由自己的后端负责。
 
 构建后，在 `typescript/` 运行聚焦离线验证：
 
 ```sh
-node --test --test-concurrency=2 tests/quickstart.test.mjs tests/price-preview.test.mjs tests/pricing-example.test.mjs tests/retail-table.test.mjs
+node --test --test-concurrency=2 tests/quickstart.test.mjs
 ```
 
 Vercel 集成及限制见[指南](README.md#vercel-ai-sdk)和[模拟测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。

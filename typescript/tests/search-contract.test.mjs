@@ -1,14 +1,15 @@
+import { buildImageQuoteRequest, createYirClient, validateModelParameters } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createYirClient } from "../dist/server/index.js";
-import { buildImageQuoteRequest, getModelOperationContract, listModelContracts, validateModelParameters } from "../dist/browser/index.js";
+
+import { getModelOperationContract, listModelContracts } from "../dist/browser/index.js";
 import { quoteFixture } from "./quote-fixture.mjs";
 
 const model = "google/nano-banana-2";
 const input = mode => mode === "text" ? { type: mode, prompt: "fixture" }
   : { type: mode, prompt: "fixture", references: [{ role: "reference_image", url: "https://example.com/input.png" }] };
 
-test("Nano2 search defaults and dependencies are shared by text and image clients", async () => {
+test("explicit Nano2 contract validates search field types; semantic dependencies remain server-owned", async () => {
   for (const mode of ["text", "image"]) {
     const contract = getModelOperationContract(model, "generate_image", mode);
     for (const name of ["web_search", "image_search"]) {
@@ -17,7 +18,7 @@ test("Nano2 search defaults and dependencies are shared by text and image client
       assert.equal(rule.required, false);
       assert.equal(rule.default, false);
     }
-    for (const parameters of [{}, { web_search: false, image_search: false }, { web_search: true }, { web_search: true, image_search: false }, { web_search: true, image_search: true }]) {
+    for (const parameters of [{}, { image_search: true }, { web_search: false, image_search: true }, { web_search: false, image_search: false }, { web_search: true }, { web_search: true, image_search: false }, { web_search: true, image_search: true }]) {
       const request = { model, input: input(mode), parameters };
       const before = structuredClone(request);
       const calls = [];
@@ -34,8 +35,6 @@ test("Nano2 search defaults and dependencies are shared by text and image client
       assert.deepEqual(request, before, "validation must preserve omitted and explicit false values");
     }
     for (const [parameters, code, path] of [
-      [{ image_search: true }, "parameter_dependency", "parameters.image_search"],
-      [{ web_search: false, image_search: true }, "parameter_dependency", "parameters.image_search"],
       [{ web_search: "true" }, "parameter_type", "parameters.web_search"],
       [{ web_search: true, image_search: null }, "parameter_type", "parameters.image_search"],
     ]) {
@@ -109,9 +108,9 @@ test("builders retain search intent and unavailable quotes remain unavailable", 
   const request = buildImageQuoteRequest({ model, prompt: "fixture", parameters });
   assert.deepEqual(request.parameters, parameters);
   const client = createYirClient(async () => ({
-    ...quoteFixture(request), supply: { available: false, issues: ["search_not_supported"] },
-    primary: { kind: "unavailable", amount: null, reason: "search_not_supported" },
-    max: { kind: "unavailable", amount: null, reason: "search_not_supported" },
+    ...quoteFixture(request), supply: { available: false, requires_max_cost: false, issues: ["no_matching_supply"] },
+    primary: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
+    max: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
     has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
   }));
   const quote = await client.quoteImage(request);
