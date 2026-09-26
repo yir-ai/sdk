@@ -9,7 +9,9 @@ import * as shared from '@yir-ai/sdk/shared';
 import {createNodeHttpTransport, createNodeYirClient} from '@yir-ai/sdk/server';
 
 test('browser/shared 导出纯逻辑并共享同一实现',()=>{
-  assert.equal(browser.calculatePrice,shared.calculatePrice);
+  assert.equal(browser.validateGeneration,shared.validateGeneration);
+  assert.equal('calculatePrice' in browser,false);
+  assert.equal('calculatePrice' in shared,false);
   assert.equal(typeof browser.validateGeneration,'function');
   for(const entry of [browser,shared]) for(const name of ['createYirClient','createNodeYirClient','createNodeHttpTransport','verifyWebhookSignature','createYirAIProvider']) assert.equal(name in entry,false);
 });
@@ -49,6 +51,7 @@ test('浏览器真实打包只包含 browser/shared，不包含 server 或 Node 
   const {build}=await import('esbuild');
   const result=await build({absWorkingDir:fileURLToPath(new URL('../',import.meta.url)),entryPoints:['src/browser/index.ts'],bundle:true,platform:'browser',format:'esm',write:false,metafile:true});
   for(const name of Object.keys(result.metafile.inputs)){const normalized=name.replaceAll('\\','/');assert.ok(normalized.startsWith('src/browser/')||normalized.startsWith('src/shared/'),normalized);}
-  assert.ok(result.outputFiles[0].text.includes('calculatePrice'));
+  assert.ok(result.outputFiles[0].text.includes('validateGeneration'));
+  assert.equal(result.outputFiles[0].text.includes('calculatePrice'),false);
   assert.equal(result.outputFiles[0].text.includes('YIR_API_KEY'),false);
 });

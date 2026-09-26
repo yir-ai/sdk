@@ -44,7 +44,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             parameters, routing: extension.routing,
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
           };
-          validateGeneration("generate_image", request);
+          validateGeneration("generate_image", request, options.modelContracts);
           if (request.input.type === "image") {
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, call.files ?? [], extension.idempotencyKey, fetchResult, call.abortSignal) } };
           }
@@ -99,7 +99,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
             ...(call.webhookUrl === undefined ? {} : { webhook_url: call.webhookUrl }),
           };
-          validateGeneration("generate_video", request);
+          validateGeneration("generate_video", request, options.modelContracts);
           if (request.input.type !== "text") {
             const files = call.image ? [call.image] : call.frameImages?.length ? call.frameImages.map(frame => frame.image) : call.inputReferences ?? [];
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, files, extension.idempotencyKey, fetchResult, call.abortSignal) } };
