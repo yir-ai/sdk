@@ -1,6 +1,6 @@
 # Yir TypeScript SDK
 
-> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+> 0.2.0 protocol / 协议升级：模型参数来自 API，SDK 不再以内置模型清单限制请求；旧全量价格表与客户端计价已移除。升级前阅读 [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md)。
 
 [English](../../README.md) | 简体中文 · [仓库总览](https://github.com/yir-ai/sdk/blob/main/spec/docs/zh-CN/README.md) · [示例](examples.md)
 
@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.1.0
+pnpm add @yir-ai/sdk@0.2.0
 ```
 
 如需构建本地归档，在本仓库检出目录执行：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./artifacts
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.1.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.2.0.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -82,7 +82,7 @@ const client = createNodeYirClient();
 
 不支持图像 mask、像素 `size`、seed、视频像素 resolution 和 fps；分辨率使用 Yir parameters。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
-## 合同更新（尚未发布）
+## 0.2.0 合同更新
 
 H3 reference 合同允许 1–15 项引用：图片最多 9 项、视频和音频各最多 3 项，可仅使用音频，保留 URL 与顺序。图生视频仍仅允许 adaptive。2026-09-16 已验证的 KIE 集成支持上述数量范围内的混合引用，但至少需要一项图片或视频；纯音频虽符合公共合同，仍不被该供应接受。每段视频或音频须为 2–15 秒，视频和音频各自总时长最多 15 秒。音视频须使用属于调用者、已完成可信测量且 ready 的 Files，以 `file_id` 引用；图片 URL 继续兼容。报价和准入使用可信测量，提交校验绑定的测量快照。其他渠道仍遵循各自支持的子集。完整请求必须取得有效报价；SDK 静态校验不代表在线可用或实际生成成功。此前 1–5 张图片的限制属于历史供应快照，不是当前 KIE 集成边界。
 
@@ -94,9 +94,9 @@ Seedream 5.0 的文本和图片合同现接受 `4K`，图片输入最多允许 1
 
 当前工作版本为 Nano Banana 2 的文本和图片输入增加可选的 `parameters.web_search`、`parameters.image_search`，默认均为 false；`image_search: true` 要求 `web_search: true`。Nano Banana Pro 的文本和图片输入仅接受可选布尔值 `web_search`（默认 false），拒绝 `image_search`，包括显式 false；其余模型拒绝这两个字段。供应商搜索执行仍待实证，本次元数据更新不改变价格或开放供应。校验保留调用者的参数。搜索需要明确支持该能力的供应和有效报价，静态支持不代表当前可用或免费。本更新尚未包含在已发布的 `0.1.0` 包中。
 
-当前开发分支新增 `getJobStatus`（`GET /v1/jobs/{id}/status`），并将 `waitForJob` 改造为两阶段轮询：先轮询轻量状态摘要 `JobStatusResponse`，进入终态（`succeeded`、`failed`、`cancelled`）后再读取一次完整 `Job`；终态状态不一致时抛出 `job_state_inconsistent` 错误。`WaitForJobOptions.onPoll` 接收类型由完整 `Job` 改为 `JobStatusResponse` 摘要，`YirTimeoutError.lastJob` 迁移为 `lastStatus`。等待异常（包括 abort、超时与传输异常）不伪造残缺任务。查询 status 遇到 404 错误时不静默回退到详情接口。已交付结果保留可选 `result.warnings`。上述状态轮询及错误结构属于新契约，未包含在已发布的 `0.1.0` 中；在 `0.x` 规范下，后续包含不兼容变更的正式发布需提升 minor 版本，本轮不修改发布版本号。
+当前开发分支新增 `getJobStatus`（`GET /v1/jobs/{id}/status`），并将 `waitForJob` 改造为两阶段轮询：先轮询轻量状态摘要 `JobStatusResponse`，进入终态（`succeeded`、`failed`、`cancelled`）后再读取一次完整 `Job`；终态状态不一致时抛出 `job_state_inconsistent` 错误。`WaitForJobOptions.onPoll` 接收类型由完整 `Job` 改为 `JobStatusResponse` 摘要，`YirTimeoutError.lastJob` 迁移为 `lastStatus`。等待异常（包括 abort、超时与传输异常）不伪造残缺任务。查询 status 遇到 404 错误时不静默回退到详情接口。已交付结果保留可选 `result.warnings`。上述状态轮询及错误结构属于新契约，未包含在已发布的 `0.1.0` 中；这些不兼容变化进入 0.2.0，升级时请按迁移说明调整调用方。
 
-引用校验同时执行随包合同中的角色数量、必选角色组合、输出时长限制，并拒绝重复引用。报价、保存授权与提交之间应保留完整请求。
+显式提供参数合同时，引用校验执行其中的角色数量、必选角色组合和输出时长限制，并拒绝重复引用。模型专属语义依赖由网关校验。报价、保存授权与提交之间应保留完整请求。
 
 ## 验证和维护
 

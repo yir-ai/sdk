@@ -1,4 +1,4 @@
-# Parameter contracts (unreleased)
+# Parameter contracts — 0.2.0
 
 The SDK implements the protocol; model facts come from the API. A new model does
 not require an SDK release. Without an explicit catalog, clients validate only
@@ -50,8 +50,16 @@ storage belong to the customer application.
   price-table imports. No exhaustive specification-price table is exposed.
 - Legacy `/model-contracts` getters remain explicit historical snapshots; they
   do not gate runtime clients and are not the recommended UI data source.
-- Job status validation, idempotency, polling, cancellation and result warnings
-  remain unchanged. No SDK package or version tag has been published by this change.
+- Polling now uses lightweight status summaries and reads the complete Job at
+  terminal status. TypeScript `onPoll` and Go `OnPoll` receive a status summary;
+  TypeScript `lastJob` becomes `lastStatus`. Go wait errors return a zero Job,
+  except `JobError`, which carries the complete failed or cancelled Job.
+- Status/detail disagreement fails explicitly; status 404 does not fall back.
+  Preserve idempotency keys, cancellation semantics and optional result warnings.
+- Go parameter bounds are now `*float64`, supporting fractional number rules.
+  Applications constructing contracts with `*int` bounds must update their types.
+- The AI SDK adapter accepts `modelContracts` for explicit local validation
+  before inline uploads. Without it, model-specific validation belongs to the API.
 
 ## 中文摘要
 

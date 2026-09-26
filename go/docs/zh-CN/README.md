@@ -1,6 +1,6 @@
 # Yir Go SDK
 
-> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+> 0.2.0 protocol / 协议升级：模型参数来自 API，SDK 不再以内置模型清单限制请求；旧全量价格表与客户端计价已移除。升级前阅读 [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md)。
 
 [English](../../README.md) | 简体中文 · [仓库总览](https://github.com/yir-ai/sdk/blob/main/spec/docs/zh-CN/README.md) · [示例](examples.md)
 
@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.1.0
+go get github.com/yir-ai/sdk/go@v0.2.0
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.1.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.2.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -53,7 +53,7 @@ _ = client
 ## 价格与合同
 
 
-## 合同更新（尚未发布）
+## 0.2.0 合同更新
 
 H3 reference 合同允许 1–15 项引用：图片最多 9 项、视频和音频各最多 3 项，可仅使用音频，保留 URL 与顺序。图生视频仍仅允许 adaptive。2026-09-16 已验证的 KIE 集成支持上述数量范围内的混合引用，但至少需要一项图片或视频；纯音频虽符合公共合同，仍不被该供应接受。每段视频或音频须为 2–15 秒，视频和音频各自总时长最多 15 秒。音视频须使用属于调用者、已完成可信测量且 ready 的 Files，以 `file_id` 引用；图片 URL 继续兼容。报价和准入使用可信测量，提交校验绑定的测量快照。其他渠道仍遵循各自支持的子集。完整请求必须取得有效报价；SDK 静态校验不代表在线可用或实际生成成功。此前 1–5 张图片的限制属于历史供应快照，不是当前 KIE 集成边界。
 
@@ -65,7 +65,7 @@ Seedream 5.0 的文本和图片合同现接受 `4K`，图片输入最多允许 1
 
 当前工作版本在 Nano Banana 2 的文本和图片输入 `Parameters` 中接受可选布尔值 `web_search`、`image_search`，默认均为 false；图片搜索要求同时开启网页搜索。Nano Banana Pro 的文本和图片输入仅接受可选布尔值 `web_search`（默认 false），拒绝 `image_search`，包括显式 false；其余模型拒绝这两个字段。供应商搜索执行仍待实证，本次元数据更新不改变价格或开放供应。校验保留原请求，并执行按角色数量、必选角色组合、输出时长限制及重复引用检查。搜索可用性与费用需要支持该能力的供应和有效报价确认。这些更新尚未包含在已发布的 `v0.1.0` 模块中。
 
-当前开发分支新增 `GetJobStatus`（`GET /v1/jobs/{id}/status`），并将 `WaitJob` 改造为两阶段轮询：先轮询轻量状态摘要 `JobStatusResponse`，进入终态（`succeeded`、`failed`、`cancelled`）后再读取一次完整 `Job`；终态状态不一致时返回 `ErrJobStateInconsistent`。`WaitOptions.OnPoll` 接收类型由完整 `Job` 改为 `JobStatusResponse` 摘要。等待中断（context 取消、超时）以及传输、校验或状态一致性错误时返回零值 `Job{}`，不伪造残缺任务；`JobError` 作为唯一例外返回完整的失败或已取消终态 `Job`。查询 status 遇到 404 错误时不静默回退到详情接口。已交付结果保留可选 `result.warnings`。上述状态轮询及零 Job 返回契约属于新特性，未包含在已发布的 `v0.1.0` 中；在 `0.x` 规范下，后续包含不兼容变更的正式发布需提升 minor 版本，本轮不修改发布版本号。
+当前开发分支新增 `GetJobStatus`（`GET /v1/jobs/{id}/status`），并将 `WaitJob` 改造为两阶段轮询：先轮询轻量状态摘要 `JobStatusResponse`，进入终态（`succeeded`、`failed`、`cancelled`）后再读取一次完整 `Job`；终态状态不一致时返回 `ErrJobStateInconsistent`。`WaitOptions.OnPoll` 接收类型由完整 `Job` 改为 `JobStatusResponse` 摘要。等待中断（context 取消、超时）以及传输、校验或状态一致性错误时返回零值 `Job{}`，不伪造残缺任务；`JobError` 作为唯一例外返回完整的失败或已取消终态 `Job`。查询 status 遇到 404 错误时不静默回退到详情接口。已交付结果保留可选 `result.warnings`。上述状态轮询及零 Job 返回契约属于新特性，未包含在已发布的 `v0.1.0` 中；这些不兼容变化进入 0.2.0，升级时请按迁移说明调整调用方。
 
 ## 验证
 

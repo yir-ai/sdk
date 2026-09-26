@@ -1,6 +1,6 @@
 # Yir TypeScript SDK
 
-> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+> 0.2.0 protocol / 协议升级：模型参数来自 API，SDK 不再以内置模型清单限制请求；旧全量价格表与客户端计价已移除。升级前阅读 [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md)。
 
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.1.0
+pnpm add @yir-ai/sdk@0.2.0
 ```
 
 To build a local archive instead, from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./artifacts
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.1.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.2.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -81,7 +81,7 @@ Every generation call requires `providerOptions.yir.idempotencyKey`; pass your s
 
 Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported. Use Yir parameters for resolution. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
-## Contract update (unreleased)
+## Contract updates in 0.2.0
 
 H3 reference input accepts 1–15 references: up to 9 images, 3 videos and 3 audio files, including audio-only input, preserving URLs and order. Image-to-video remains adaptive-only. The KIE integration verified on 2026-09-16 supports mixed references within those limits, but requires at least one image or video; audio-only input passes the public contract but is not accepted by this supply. Each video/audio clip must be 2–15 seconds, with video and audio each totaling at most 15 seconds. Video/audio references require measured, ready Files owned by the caller, supplied as `file_id`; image URLs remain supported. Quote and admission use trusted measurements, and submission checks the bound measurement snapshot. Other channels retain their own supported subsets. A valid quote covering the complete request is required; static SDK validation does not establish live availability or successful generation. The earlier 1–5-image limit describes a historical supply snapshot, not the current KIE integration.
 
@@ -93,7 +93,7 @@ Seedream 5.0 text and image contracts now accept `4K`; image input allows up to 
 
 This working revision adds optional `parameters.web_search` and `parameters.image_search` for Nano Banana 2 text and image requests. Both default to false; `image_search: true` requires `web_search: true`. Nano Banana Pro accepts only optional boolean `web_search` (default false) for text and image input; it rejects `image_search`, including explicit false. All other models reject both fields. Provider search execution remains to be verified; this metadata update does not change prices or enable supply. Validation preserves the caller's parameters. Search requires an explicitly supported supply and a valid quote; static support does not establish availability or free search. This is not included in the published `0.1.0` package.
 
-This working revision introduces `getJobStatus` (`GET /v1/jobs/{id}/status`) and migrates `waitForJob` to poll lightweight `JobStatusResponse` summaries, reading the full `Job` detail only once upon reaching terminal status (`succeeded`, `failed`, or `cancelled`). Terminal status mismatches throw an error with code `job_state_inconsistent`. `WaitForJobOptions.onPoll` now receives `JobStatusResponse` instead of `Job`, and `YirTimeoutError.lastJob` has been migrated to `lastStatus`. Wait errors (including aborts, timeouts, and transport errors) do not synthesize partial jobs. Status 404 does not silently fall back to the detail endpoint. Delivered results preserve optional `result.warnings`. These status polling and error return contracts are unreleased and not included in published `0.1.0`. Under `0.x` semver rules, the next release containing incompatible contract changes requires a minor version bump; package versions are unchanged in this revision.
+This working revision introduces `getJobStatus` (`GET /v1/jobs/{id}/status`) and migrates `waitForJob` to poll lightweight `JobStatusResponse` summaries, reading the full `Job` detail only once upon reaching terminal status (`succeeded`, `failed`, or `cancelled`). Terminal status mismatches throw an error with code `job_state_inconsistent`. `WaitForJobOptions.onPoll` now receives `JobStatusResponse` instead of `Job`, and `YirTimeoutError.lastJob` has been migrated to `lastStatus`. Wait errors (including aborts, timeouts, and transport errors) do not synthesize partial jobs. Status 404 does not silently fall back to the detail endpoint. Delivered results preserve optional `result.warnings`. These incompatible polling and error return changes are included in 0.2.0; follow the migration guide when upgrading from 0.1.0.
 
 Reference validation also enforces the bundled per-role counts, required alternative roles, output-duration limits and duplicate-reference rejection. Keep complete requests unchanged between quote, saved authorization and submission.
 
