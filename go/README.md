@@ -1,5 +1,7 @@
 # Yir Go SDK
 
+> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
 Server-side image and video API client. Requires Go 1.25+. Module: `github.com/yir-ai/sdk/go`. [MIT](LICENSE).
@@ -50,7 +52,6 @@ Set `SubmitRequest.WebhookURL` for callbacks. `VerifyWebhookSignature` takes `Se
 
 ## Pricing and contracts
 
-`GetModelPrices` retrieves validated model prices. Cache by account/policy/model/operation/input mode/filter and respect expiry. Local pricing helpers consume tables without network calls. Preserve decimal strings and table scale; estimates, holds and static model metadata are not final billing or guaranteed live supply. A missing price row is not a free price or proof of unsupported input. Customer retail pricing, balances and authorization remain separate from Yir procurement cost. See [pricing examples](pricing_example_test.go) and [public contracts](https://github.com/yir-ai/sdk/blob/main/spec/README.md).
 
 ## Contract update (unreleased)
 

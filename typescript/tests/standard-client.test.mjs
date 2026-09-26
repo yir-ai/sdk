@@ -1,19 +1,11 @@
+import { buildImageGenerationRequest, buildImageQuoteRequest, createYirClient } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 import { quoteFixture } from "./quote-fixture.mjs";
 import * as YirSDK from "../dist/index.js";
 
-import {
-  buildImageGenerationRequest,
-  buildImageQuoteRequest,
-  createYirClient,
-  normalizeRoutingOverride,
-  waitForJob,
-  YirJobError,
-  YirSDKValidationError,
-  YirTimeoutError,
-} from "../dist/index.js";
+import { normalizeRoutingOverride, waitForJob, YirJobError, YirSDKValidationError, YirTimeoutError } from "../dist/index.js";
 
 test("public SDK surface exposes generated static contracts without the removed runtime registry", () => {
   assert.equal(typeof YirSDK.listModelContracts, "function");

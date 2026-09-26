@@ -1,8 +1,13 @@
-import { getModelOperationContract } from "./model-contracts.js";
+import { findModelOperationContract, type ModelContractCatalog } from "./catalog.js";
 
 export type RoutingPreference = "balanced" | "cost";
 
+/**
+ * Request-scoped routing intent.
+ * "official" is supported as an alias for the model's official provider in both only and variants.
+ */
 export type RoutingOverride = {
+  /** Omit a provider to consider all its eligible variants; specify standard to pin the standard version. */
   readonly variants?: Readonly<Record<string, string>>;
   readonly preference?: RoutingPreference;
   readonly only?: readonly string[];
@@ -85,36 +90,63 @@ export type BuildImageQuoteRequest = Omit<
   "webhookUrl" | "maxCost"
 >;
 
+export type ParameterExpectation = {
+  readonly type?: "string" | "integer" | "number" | "boolean";
+  readonly values?: readonly (string | number | boolean)[];
+  readonly minimum?: number;
+  readonly maximum?: number;
+  readonly required?: boolean;
+  readonly allowed_parameters?: readonly string[];
+};
+
 export class YirSDKValidationError extends Error {
   readonly code: string;
   readonly path: string;
+  readonly expected?: ParameterExpectation;
 
-  constructor(code: string, path: string) {
+  constructor(code: string, path: string, expected?: ParameterExpectation) {
     super(`${code}: ${path}`);
     this.name = "YirSDKValidationError";
     this.code = code;
     this.path = path;
+    if (expected !== undefined) {
+      this.expected = expected;
+    }
   }
 }
 
-/** Validate bundled parameter rules without fetching rules or mutating caller data. */
+/** Validate caller-supplied parameter rules without fetching or mutating data. */
 export function validateModelParameters(
   model: string,
   operation: "generate_image" | "generate_video",
   inputMode: "text" | "image" | "reference",
   parameters: unknown,
+  catalog: ModelContractCatalog,
 ): void {
-  const contract = getModelOperationContract(model, operation, inputMode);
+  if (!catalog) throw new YirSDKValidationError("model_contract_required", "catalog");
+  const contract = findModelOperationContract(catalog, model, operation, inputMode);
   if (!contract) throw new YirSDKValidationError("model_contract_unavailable", "model");
   const values = requireObject(parameters, "parameters");
   const rules = new Map(contract.parameters.map(rule => [rule.name, rule]));
   for (const key of Object.keys(values).sort()) {
-    if (!rules.has(key)) throw new YirSDKValidationError("parameter_unknown", `parameters.${key}`);
+    if (!rules.has(key)) {
+      const allowed_parameters = Object.freeze(contract.parameters.map(rule => rule.name));
+      throw new YirSDKValidationError("parameter_unknown", `parameters.${key}`, {
+        allowed_parameters,
+      });
+    }
   }
   for (const rule of contract.parameters) {
     const path = `parameters.${rule.name}`;
     if (!Object.hasOwn(values, rule.name)) {
-      if (rule.required && rule.default === undefined) throw new YirSDKValidationError("parameter_required", path);
+      if (rule.required && rule.default === undefined) {
+        const expected: ParameterExpectation = {
+          required: true,
+          type: rule.type,
+          ...(rule.values ? { values: Object.freeze([...rule.values]) } : {}),
+        };
+        throw new YirSDKValidationError("parameter_required", path, expected);
+      }
       continue;
     }
     const value = values[rule.name];
@@ -122,22 +154,28 @@ export function validateModelParameters(
       : rule.type === "number" ? typeof value === "number" && Number.isFinite(value)
       : rule.type === "string" ? typeof value === "string"
       : rule.type === "boolean" ? typeof value === "boolean" : false;
-    if (!validType) throw new YirSDKValidationError("parameter_type", path);
+    if (!validType) {
+      throw new YirSDKValidationError("parameter_type", path, { type: rule.type });
+    }
     if (typeof value === "number" &&
       ((rule.minimum !== undefined && value < rule.minimum) || (rule.maximum !== undefined && value > rule.maximum))) {
-      throw new YirSDKValidationError("parameter_range", path);
+      const expected: ParameterExpectation = {
+        type: rule.type,
+        ...(rule.minimum !== undefined ? { minimum: rule.minimum } : {}),
+        ...(rule.maximum !== undefined ? { maximum: rule.maximum } : {}),
+      };
+      throw new YirSDKValidationError("parameter_range", path, expected);
     }
     if (rule.values && !rule.values.includes(value as string | number | boolean)) {
-      throw new YirSDKValidationError("parameter_value", path);
+      throw new YirSDKValidationError("parameter_value", path, {
+        values: Object.freeze([...rule.values]),
+      });
     }
-  }
-  if (values.image_search === true && values.web_search !== true) {
-    throw new YirSDKValidationError("parameter_dependency", "parameters.image_search");
   }
 }
 
 /** Shared Quote/Submit preflight; availability and pricing remain server facts. */
-export function validateGeneration(operation: "generate_image" | "generate_video", request: unknown): void {
+export function validateGeneration(operation: "generate_image" | "generate_video", request: unknown, catalog?: ModelContractCatalog): void {
   const body = requireObject(request, "request");
   rejectUnknown(body, ["model", "input", "parameters", "routing", "max_cost", "webhook_url"], "request");
   if (typeof body.model !== "string" || !body.model.trim()) throw new YirSDKValidationError("model_required", "model");
@@ -148,12 +186,18 @@ export function validateGeneration(operation: "generate_image" | "generate_video
   }
   if (typeof input.prompt !== "string" || !input.prompt.trim()) throw new YirSDKValidationError("prompt_required", "input.prompt");
   if ([...input.prompt].length > 20000) throw new YirSDKValidationError("prompt_too_long", "input.prompt");
-  validateModelParameters(body.model, operation, input.type, body.parameters);
-  const contract = getModelOperationContract(body.model, operation, input.type)!;
-  const constraint = contract.input_constraints[input.type];
-  if (!constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
+  requireObject(body.parameters, "parameters");
+  if (operation === "generate_image" && input.type === "reference") {
+    throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  }
+  if (catalog) validateModelParameters(body.model, operation, input.type, body.parameters, catalog);
+  const contract = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
+  const constraint = contract?.input_constraints[input.type];
+  if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
   const references = input.references === undefined ? [] : input.references;
-  if (!Array.isArray(references) || references.length < constraint.min_references || references.length > constraint.max_references) {
+  if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||
+      (input.type !== "text" && references.length === 0) ||
+      (constraint && (references.length < constraint.min_references || references.length > constraint.max_references))) {
     throw new YirSDKValidationError("reference_count", "input.references");
   }
   const roles = new Map<string, number>();
@@ -162,7 +206,9 @@ export function validateGeneration(operation: "generate_image" | "generate_video
     const path = `input.references.${index}`;
     const reference = requireObject(value, path);
     rejectUnknown(reference, ["role", "url", "file_id"], path);
-    if (typeof reference.role !== "string" || !constraint.allowed_reference_roles.some(role => role === reference.role)) {
+    const allowedRoles = constraint?.allowed_reference_roles ?? (operation === "generate_image"
+      ? ["reference_image"] : ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"]);
+    if (typeof reference.role !== "string" || !allowedRoles.some(role => role === reference.role)) {
       throw new YirSDKValidationError("reference_role_invalid", `${path}.role`);
     }
     roles.set(reference.role, (roles.get(reference.role) ?? 0) + 1);
@@ -178,21 +224,21 @@ export function validateGeneration(operation: "generate_image" | "generate_video
       throw new YirSDKValidationError("file_id_invalid", `${path}.file_id`);
     }
   }
-  for (const role of constraint.required_reference_roles ?? []) {
+  for (const role of constraint?.required_reference_roles ?? []) {
     if (!roles.has(role)) throw new YirSDKValidationError("reference_role_required", "input.references");
   }
-  for (const [role, limit] of Object.entries(constraint.reference_counts_by_role ?? {})) {
+  for (const [role, limit] of Object.entries(constraint?.reference_counts_by_role ?? {})) {
     const count = roles.get(role) ?? 0;
     if (count < limit.minimum || count > limit.maximum) {
       throw new YirSDKValidationError("reference_role_count", "input.references");
     }
   }
-  if (constraint.required_any_reference_roles?.length && !constraint.required_any_reference_roles.some(role => roles.has(role))) {
+  if (constraint?.required_any_reference_roles?.length && !constraint.required_any_reference_roles.some(role => roles.has(role))) {
     throw new YirSDKValidationError("reference_role_required", "input.references");
   }
-  const durationRule = contract.parameters.find(parameter => parameter.name === "duration");
+  const durationRule = contract?.parameters.find(parameter => parameter.name === "duration");
   const duration = (body.parameters as Record<string, unknown> | undefined)?.duration ?? durationRule?.default;
-  for (const [role, maximum] of Object.entries(constraint.max_duration_by_reference_role ?? {})) {
+  for (const [role, maximum] of Object.entries(constraint?.max_duration_by_reference_role ?? {})) {
     if (roles.has(role) && typeof duration === "number" && duration > maximum) {
       throw new YirSDKValidationError("reference_duration_limit", "parameters.duration");
     }
@@ -270,7 +316,8 @@ export function normalizeRoutingOverride(
       throw new YirSDKValidationError("routing_invalid", "routing.variants");
     }
     for (const [provider, variant] of Object.entries(routing.variants)) {
-      if (provider.length > 50 || !ROUTING_PROVIDER_CODE_PATTERN.test(provider) || typeof variant !== "string" || variant.length > 50 || !ROUTING_PROVIDER_CODE_PATTERN.test(variant) || (only && !only.includes(provider))) {
+      const allowedByOnly = !only || only.includes(provider) || provider === "official" || only.includes("official");
+      if (provider.length > 50 || !ROUTING_PROVIDER_CODE_PATTERN.test(provider) || typeof variant !== "string" || variant.length > 50 || !ROUTING_PROVIDER_CODE_PATTERN.test(variant) || !allowedByOnly) {
         throw new YirSDKValidationError("routing_invalid", "routing.variants");
       }
     }
@@ -292,6 +339,7 @@ export function normalizeRoutingOverride(
 /** Build the portable Yir Standard image request shared by Playground and SDK consumers. */
 export function buildImageGenerationRequest(
   input: BuildImageGenerationRequest,
+  catalog?: ModelContractCatalog,
 ): StandardImageGenerationRequest {
   const model = input.model.trim();
   if (!model) throw new YirSDKValidationError("model_required", "model");
@@ -329,15 +377,16 @@ export function buildImageGenerationRequest(
     ...(webhookUrl ? { webhook_url: webhookUrl } : {}),
     ...(input.maxCost === undefined ? {} : { max_cost: input.maxCost }),
   };
-  validateGeneration("generate_image", request);
+  validateGeneration("generate_image", request, catalog);
   return request;
 }
 
 /** Build the read-only Quote request from the same normalized image contract. */
 export function buildImageQuoteRequest(
   input: BuildImageQuoteRequest,
+  catalog?: ModelContractCatalog,
 ): StandardImageQuoteRequest {
-  const { webhook_url: _webhookURL, max_cost: _maxCost, ...request } = buildImageGenerationRequest(input);
+  const { webhook_url: _webhookURL, max_cost: _maxCost, ...request } = buildImageGenerationRequest(input, catalog);
   return request;
 }
 

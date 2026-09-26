@@ -7,9 +7,6 @@ Build first with `pnpm build` from `typescript/`. These ESM files export helpers
 | File | Purpose |
 | --- | --- |
 | [quickstart.mjs](quickstart.mjs) | Quote an image, then submit/recover an application-owned saved request |
-| [price-preview.mjs](price-preview.mjs) | Apply explicit defaults and preview a validated model price table; browser-safe imports |
-| [pricing.mjs](pricing.mjs) | Pure customer retail price calculation and trusted backend verification using synthetic models |
-| [retail-table.mjs](retail-table.mjs) | Example markup/rounding policy and versioned retail snapshots; no checkout |
 
 ## Integrate quickstart
 
@@ -24,7 +21,7 @@ Persistence and approval in step 3 are required integration work, not functions 
 After building, focused offline verification from `typescript/`:
 
 ```sh
-node --test --test-concurrency=2 tests/quickstart.test.mjs tests/price-preview.test.mjs tests/pricing-example.test.mjs tests/retail-table.test.mjs
+node --test --test-concurrency=2 tests/quickstart.test.mjs
 ```
 
 Vercel integration and its limits are covered in the [guide](../README.md#vercel-ai-sdk) and [mock-backed tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs).

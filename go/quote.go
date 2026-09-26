@@ -28,7 +28,7 @@ func (q Quote) Validate() error {
 				return invalid
 			}
 		case "estimate":
-			if price.Amount == nil || !quoteAmountPattern.MatchString(*price.Amount) || price.Reason != "" || price.Estimate == nil || price.Estimate.Scope != "output_only" || price.Estimate.OutputTokens <= 0 || price.Estimate.OutputTokens > 1_000_000 {
+			if price.Amount == nil || !quoteAmountPattern.MatchString(*price.Amount) || price.Reason != "" || price.Estimate == nil || price.Estimate.Scope != "output_only" || !price.Estimate.validUsage() {
 				return invalid
 			}
 		case "unavailable":
@@ -56,6 +56,16 @@ func (q Quote) Validate() error {
 		return invalid
 	}
 	return nil
+}
+
+func (e QuoteEstimate) validUsage() bool {
+	if (e.qualitySet || e.Quality != "") && strings.TrimSpace(e.Quality) == "" ||
+		(e.aspectRatioSet || e.AspectRatio != "") && strings.TrimSpace(e.AspectRatio) == "" ||
+		(e.outputTokensSet && e.OutputTokens <= 0) || (e.outputMegapixelsSet && e.OutputMegapixels <= 0) {
+		return false
+	}
+	return (e.OutputTokens > 0 && e.OutputTokens <= 1_000_000 && e.OutputMegapixels == 0 && !e.outputMegapixelsSet) ||
+		(e.OutputMegapixels > 0 && e.OutputMegapixels <= 1_000_000 && e.OutputTokens == 0 && !e.outputTokensSet)
 }
 
 func quoteAmount(value string) *big.Rat {

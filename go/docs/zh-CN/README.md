@@ -1,5 +1,7 @@
 # Yir Go SDK
 
+> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+
 [English](../../README.md) | 简体中文 · [仓库总览](https://github.com/yir-ai/sdk/blob/main/spec/docs/zh-CN/README.md) · [示例](examples.md)
 
 服务端图像与视频 API 客户端。要求 Go 1.25+，模块为 `github.com/yir-ai/sdk/go`，采用 [MIT](../../LICENSE) 许可证。
@@ -50,7 +52,6 @@ _ = client
 
 ## 价格与合同
 
-`GetModelPrices` 获取经过校验的模型价格，缓存区分账户、策略、模型、操作、输入模式和过滤条件，遵守过期时间。本地价格辅助函数只消费表，不发送请求。保留十进制字符串和表的 scale；估算、冻结金额和静态模型元数据不是最终账单或实时供给保证。缺少价格行不表示免费或不支持输入。客户零售价、余额和授权与 Yir 采购成本分离。见[价格示例](../../pricing_example_test.go)和[公开合同](https://github.com/yir-ai/sdk/blob/main/spec/docs/zh-CN/spec.md)。
 
 ## 合同更新（尚未发布）
 

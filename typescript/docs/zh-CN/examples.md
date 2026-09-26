@@ -7,9 +7,6 @@
 | 文件 | 用途 |
 | --- | --- |
 | [quickstart.mjs](../../examples/quickstart.mjs) | 图像报价，然后提交或恢复应用保存的请求 |
-| [price-preview.mjs](../../examples/price-preview.mjs) | 补全明确默认值，预览已校验模型价格表，使用浏览器安全入口 |
-| [pricing.mjs](../../examples/pricing.mjs) | 使用虚构模型进行客户零售价纯计算与可信后端校验 |
-| [retail-table.mjs](../../examples/retail-table.mjs) | 加价、舍入和版本化零售价快照策略示例，不实现结账 |
 
 ## 集成快速开始
 
@@ -24,7 +21,7 @@
 构建后，在 `typescript/` 运行聚焦离线验证：
 
 ```sh
-node --test --test-concurrency=2 tests/quickstart.test.mjs tests/price-preview.test.mjs tests/pricing-example.test.mjs tests/retail-table.test.mjs
+node --test --test-concurrency=2 tests/quickstart.test.mjs
 ```
 
 Vercel 集成及限制见[指南](README.md#vercel-ai-sdk)和[模拟测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。

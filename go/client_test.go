@@ -83,7 +83,10 @@ func TestClientRejectsInvalidRequestsBeforeNetwork(t *testing.T) {
 	var calls atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))
 	defer server.Close()
-	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL, ModelContracts: testModelContracts()})
+	if err != nil {
+		t.Fatal(err)
+	}
 	request := imageRequest()
 	request.Parameters = map[string]any{"n": "1"}
 	if _, err := client.QuoteImage(context.Background(), request); err == nil {

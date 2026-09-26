@@ -54,6 +54,7 @@ export type StaticModelContract = {
 export type ModelContractCatalog = {
   readonly schema_version: "v1";
   readonly schema_ref: string;
+  readonly version?: string;
   readonly models: readonly StaticModelContract[];
 };
 

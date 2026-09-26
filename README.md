@@ -1,5 +1,7 @@
 # Yir SDK
 
+> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+
 English | [简体中文](spec/docs/zh-CN/README.md)
 
 Official Go and TypeScript SDKs for the Yir image and video API. Public source: [yir-ai/sdk](https://github.com/yir-ai/sdk). Licensed under [MIT](LICENSE).

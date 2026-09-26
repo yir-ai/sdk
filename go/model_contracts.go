@@ -64,6 +64,7 @@ type StaticModelContract struct {
 type ModelContractCatalog struct {
 	SchemaVersion string                `json:"schema_version"`
 	SchemaRef     string                `json:"schema_ref"`
+	Version       string                `json:"version,omitempty"`
 	Models        []StaticModelContract `json:"models"`
 }
 

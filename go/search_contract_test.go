@@ -112,7 +112,7 @@ func TestNanoSearchQuoteAndSubmit(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	client, err := NewClient("fixture", ClientOptions{BaseURL: server.URL})
+	client, err := NewClient("fixture", ClientOptions{BaseURL: server.URL, ModelContracts: testModelContracts()})
 	if err != nil {
 		t.Fatal(err)
 	}

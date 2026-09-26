@@ -1,5 +1,12 @@
 # SDK 代码审查台账
 
+## 2026-09-26：外部参数合同与实时报价候选（待独立复审）
+
+- 实现方 Codex；基准 `8552363dd1403d4a09b099a73c9c39598d6884de`。范围为 Go/TS 外部参数合同读取和校验、纯前端入口、客户目录生成器、20 项显式批量报价，以及旧价格表运行代码退出。公开包名、Go module、Job ID/状态校验、禁止浏览器使用密钥客户端、重定向保护、结果 warnings 保留。
+- 实现方验证：TS 编译及类型测试通过；外部合同/批量报价/传输及 warnings 12 项通过；模型字段/引用/生成请求受影响测试已改为显式合同输入，后续报价/搜索/尾帧 8 项通过。`pnpm test:package` 实际打包、隔离安装和消费者运行/TypeScript 校验通过。Go `Test(Client|RemoteModelContract|ResultWarnings|Wait|GetJobStatus|SubmitUnknown|Quote|NanoSearchQuote|LastFrameContractAndTransport|ProSearchContractAndTransport)` 定向通过（1.155s）。不是全量或独立审查。
+- 当前本地 Yir API 回读成功：50 个模型，合同版本 `42744c1abe2439319c58cac717c30b6e33e9c2667961c997d27a5b7de711c0c1`，已由纯前端解析器验证；没有生成任务或收费请求。Pilio 消费在隔离 worktree 验证，不写其主工作区。
+- 未发布 npm 包或 Go tag，未部署生产。固定提交独立复审、CI、公开 spec 的旧价格表文本收敛及客户正式依赖锁定仍待完成；不能把此前发布的 0.1.0 当成本候选。
+
 ## 2026-09-20：Job 轻量状态轮询
 
 - 执行：agy；审查与验证：Codex。会话 `224fcb3b-9431-4689-a3bf-92349dedeca0` 已确认 IDLE，无继续写入。

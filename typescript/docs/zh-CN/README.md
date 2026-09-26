@@ -1,5 +1,7 @@
 # Yir TypeScript SDK
 
+> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+
 [English](../../README.md) | 简体中文 · [仓库总览](https://github.com/yir-ai/sdk/blob/main/spec/docs/zh-CN/README.md) · [示例](examples.md)
 
 单个 `@yir-ai/sdk` 包支持图像和视频生成。使用具备原生 `fetch`、Web Crypto 和 `Blob` 的 Node 环境（可从 Node 22+ 起步）；开发使用 pnpm 10.30.1。
@@ -42,7 +44,6 @@ server 与 browser 依赖 shared，shared 不反向依赖。根入口保留服�
 
 ```ts
 import { createNodeYirClient } from '@yir-ai/sdk/server';
-import { calculatePrice, getModelContract } from '@yir-ai/sdk/browser';
 import type { Job } from '@yir-ai/sdk/shared';
 
 // 读取 YIR_API_KEY；可用 YIR_BASE_URL 覆盖默认网关。
@@ -59,7 +60,6 @@ const client = createNodeYirClient();
 
 视频使用 `quoteVideo(request)` 和 `submitVideo(savedRequest, savedKey)`，遵循同样流程。报价不会提交任务，接受新工作前应检查报价是否过期。提交结果未知时，不得用新报价或新预算替换已保存请求，应先恢复原操作。
 
-金额使用十进制字符串。本地预览、仅输出部分的估算或冻结预算均非最终账单。`getModelPrices(model, operation, inputMode, options)` 加载并校验价格；缓存应区分账户、策略、模型、操作、输入模式和过滤条件，并遵守过期时间。浏览器 `calculatePrice` 只计算传入表，不发请求。客户零售价与 Yir 成本分离；缺行不表示免费或不支持该模型。
 
 ## 任务和恢复
 

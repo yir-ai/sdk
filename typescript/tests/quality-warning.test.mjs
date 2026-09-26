@@ -1,6 +1,7 @@
+import { createYirClient } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createYirClient } from "../dist/server/client.js";
+
 import { checkParameterPolicies } from "../dist/shared/parameter-rules.js";
 import { getModelOperationContract } from "../dist/shared/model-contracts.js";
 

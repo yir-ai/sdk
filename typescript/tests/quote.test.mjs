@@ -8,6 +8,7 @@ const read = value => createYirClient(async () => value).quoteImage(request);
 
 test("Official output estimate carries assumptions without authorizing a budget", async () => {
   const value = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
+    supply: { available: true, requires_max_cost: true, issues: [] },
     official: { kind: "estimate", amount: "0.042390", estimate: { scope: "output_only", output_tokens: 1413 } } };
   assert.deepEqual(await read(value), value);
   for (const estimate of [null, {}, { scope: "complete", output_tokens: 1413 }, { scope: "output_only", output_tokens: 0 }, { scope: "output_only", output_tokens: 1.5 }]) {
@@ -42,5 +43,6 @@ test("Quote compares exact decimals and does not cap official reference prices",
   await assert.rejects(read(value), /quote_response_invalid/);
   value.has_verifiable_upper_bound = false;
   value.single_attempt_upper_bound = null;
+  value.supply.requires_max_cost = true;
   assert.deepEqual(await read(value), value);
 });

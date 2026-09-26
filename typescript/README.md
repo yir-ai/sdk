@@ -1,5 +1,7 @@
 # Yir TypeScript SDK
 
+> 未发布协议升级 / Unreleased: models come from API catalogs; runtime clients no longer require a bundled model list. Exhaustive price tables and client pricing have been removed. See [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md). Existing package installation commands below refer to the previously published release.
+
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
 One `@yir-ai/sdk` package for image and video generation. Use a Node runtime with native `fetch`, Web Crypto and `Blob` (Node 22+ is a practical baseline); development uses pnpm 10.30.1.
@@ -34,15 +36,13 @@ Do not install the repository root as a Node package. The package is ESM.
 | Import | Use |
 | --- | --- |
 | `@yir-ai/sdk/server` | `createNodeYirClient`, custom transport client, jobs, files, Webhook verification |
-| `@yir-ai/sdk/browser` | Model contracts, parameter validation, request builders and pure price calculations; no network or secrets |
+| `@yir-ai/sdk/browser` | Model contracts, parameter validation, request builders; no network or secrets |
 | `@yir-ai/sdk/shared` | Shared types and pure logic |
 | `@yir-ai/sdk/vercel` | Server-side Vercel AI SDK 7 / Provider V4 adapter |
 
-Server and browser depend on shared; shared does not depend on either. The root entry remains a compatible server entry. `pricing` and `model-contracts` subpaths remain available. Prefer explicit server/browser imports for new code. Never send a Yir Key to the browser; the key client rejects browser execution without an override switch. Have your browser call your own authenticated backend.
 
 ```ts
 import { createNodeYirClient } from '@yir-ai/sdk/server';
-import { calculatePrice, getModelContract } from '@yir-ai/sdk/browser';
 import type { Job } from '@yir-ai/sdk/shared';
 
 // Reads YIR_API_KEY; YIR_BASE_URL optionally overrides the default gateway.
@@ -59,7 +59,6 @@ Your application must approve the budget and durably save `{ request, idempotenc
 
 For video, use `quoteVideo(request)` and `submitVideo(savedRequest, savedKey)` with the same lifecycle. A quote alone does not submit a job. Check quote expiry before accepting new work. After an ambiguous submit outcome, do not replace the saved request with a fresh quote or modified budget: recover the original operation first.
 
-Prices are decimal strings. A local price preview, output-only estimate or held budget is not final billing. `getModelPrices(model, operation, inputMode, options)` loads validated prices; cache by account/policy/model/operation/input mode/filter and respect expiry. Browser `calculatePrice` uses the supplied table without fetching. Keep retail pricing separate from Yir cost; missing rows are not free prices or proof that a model is unsupported.
 
 ## Jobs and recovery
 
