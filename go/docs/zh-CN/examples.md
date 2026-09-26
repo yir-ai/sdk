@@ -6,7 +6,7 @@
 
 示例没有 `Output` 指令，`go test` 仅编译，不执行 API 请求。复制到应用并调用它可能提交付费任务，须先实现审批和持久化。超时不证明失败或退款。包括 `JobError` 路径在内，终态账单只结算一次，并在过期前复制文件。
 
-[pricing_example_test.go](../../pricing_example_test.go) 展示本地价格辅助函数；价格是计算输入，不是生成授权或客户计费策略。
+使用 `GetModelContracts` 获取参数合同，以 `QuoteImage`、`QuoteVideo` 或 `QuoteBatch` 获取报价。本地价格表计算已移除；客户零售定价由应用自行负责。
 
 在 `go/` 执行聚焦验证，设置 `GOWORK=off` 和 `GOMAXPROCS=2`：
 

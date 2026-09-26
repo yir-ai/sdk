@@ -47,21 +47,29 @@ func (e *QuoteEstimate) UnmarshalJSON(data []byte) error {
 }
 
 type Quote struct {
-	ParameterNotices         []ParameterNotice `json:"parameter_notices,omitempty"`
-	ParameterHandlingMayVary bool              `json:"parameter_handling_may_vary,omitempty"`
-	Supply                   QuoteSupply       `json:"supply"`
-	Object                   string            `json:"object"`
-	Model                    string            `json:"model"`
-	Operation                string            `json:"operation"`
-	InputMode                string            `json:"input_mode"`
-	Parameters               map[string]any    `json:"parameters"`
-	Currency                 string            `json:"currency"`
-	Primary                  QuotePrice        `json:"primary"`
-	Max                      QuotePrice        `json:"max"`
-	Official                 QuotePrice        `json:"official"`
-	SingleAttemptUpperBound  *string           `json:"single_attempt_upper_bound"`
-	HasVerifiableUpperBound  bool              `json:"has_verifiable_upper_bound"`
-	ExpiresAt                int64             `json:"expires_at"`
+	PriceDifferencePercent   *QuotePriceDifference `json:"price_difference_percent,omitempty"`
+	ParameterNotices         []ParameterNotice     `json:"parameter_notices,omitempty"`
+	ParameterHandlingMayVary bool                  `json:"parameter_handling_may_vary,omitempty"`
+	Supply                   QuoteSupply           `json:"supply"`
+	Object                   string                `json:"object"`
+	Model                    string                `json:"model"`
+	Operation                string                `json:"operation"`
+	InputMode                string                `json:"input_mode"`
+	Parameters               map[string]any        `json:"parameters"`
+	Currency                 string                `json:"currency"`
+	Primary                  QuotePrice            `json:"primary"`
+	Max                      QuotePrice            `json:"max"`
+	Official                 QuotePrice            `json:"official"`
+	SingleAttemptUpperBound  *string               `json:"single_attempt_upper_bound"`
+	HasVerifiableUpperBound  bool                  `json:"has_verifiable_upper_bound"`
+	ExpiresAt                int64                 `json:"expires_at"`
+}
+
+// QuotePriceDifference is comparison metadata, never a charge or authorization.
+type QuotePriceDifference struct {
+	Min                   float64 `json:"min"`
+	Max                   float64 `json:"max"`
+	ReferenceAmountMicros *int64  `json:"reference_amount_micros,omitempty"`
 }
 
 type QuoteSupply struct {

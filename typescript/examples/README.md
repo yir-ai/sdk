@@ -16,7 +16,7 @@ Build first with `pnpm build` from `typescript/`. These ESM files export helpers
 4. Read that record and call `submitSavedImage(client, saved)`. Persist the returned job ID before waiting.
 5. After a timeout with no job ID, repeat step 4 with exactly the saved request and key. With a known ID, resume polling instead. Reconcile billing once and copy available files.
 
-Persistence and approval in step 3 are required integration work, not functions supplied by this example. New retries must not re-quote or create a new identity. Price previews do not authorize generation; load the trusted retail table on the server rather than accepting prices from the browser. Keep existing accepted retail orders stable when cost tables expire.
+Persistence and approval in step 3 are required integration work, not functions supplied by this example. Recovery must not re-quote or create a new identity. Obtain prices through the API and keep customer retail decisions on your own backend.
 
 After building, focused offline verification from `typescript/`:
 

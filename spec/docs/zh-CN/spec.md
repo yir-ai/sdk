@@ -2,7 +2,7 @@
 
 [English](../../README.md) | 简体中文 · [仓库总览](README.md)
 
-[openapi.json](../../openapi.json) 与 [models.json](../../models.json) 是从服务端同一版本一起导出的公开协议快照。模型目录的 `schema_ref` 指向 `./openapi.json#/components/schemas/ModelContractCatalog`，更新时保持引用与文件一致。
+[openapi.json](../../openapi.json) 描述当前公开协议。[models.json](../../models.json) 保留已审查的历史目录，仅用于显式旧版读取函数与夹具，不阻断运行时请求。应用通过 API 独立更新模型目录，无需随之升级 SDK。目录的 `schema_ref` 指向 `./openapi.json#/components/schemas/ModelContractCatalog`。
 
 在 `typescript/` 执行 `pnpm generate:model-contracts` 生成随包分发的 TS/Go 合同，执行 `pnpm check:model-contracts` 检测漂移。生成器只消费公开快照，不访问私有服务端。保留模型已有双语元数据、稳定错误码和计费语义。
 
@@ -14,7 +14,7 @@
 
 ## 合同更新流程
 
-1. 从同一个已审查服务端版本一起导出 `openapi.json` 和 `models.json`。源版本记录在私有交接中，此仓库仅接收公开快照，不得带入凭据、内部端点、生产价格或用户数据。
+1. 从已审查的服务端版本导出 `openapi.json`；仅在明确更新历史参考目录时刷新 `models.json`。源版本记录在私有交接中，此仓库仅接收公开快照，不得带入凭据、内部端点、生产价格或用户数据。
 2. 生成前审查快照差异：请求与响应字段、必填项、模型操作、默认值、校验规则、稳定错误码及计费语义。更新快照不代表获准修改计费合同。
 3. 在 `typescript/` 执行 `pnpm generate:model-contracts` 和 `pnpm check:model-contracts`。快照与生成的 TS/Go 文件一起提交，不手改生成文件。
 4. 为行为变化补充聚焦回归测试或人工夹具，Go 所需向量保留在 `go/testdata/`。英文和中文指南、示例一起更新，在 PR 中说明应用迁移要求。

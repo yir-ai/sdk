@@ -2,6 +2,10 @@
 
 ## 2026-09-26：外部参数合同与实时报价候选（待独立复审）
 
+- 独立 AGY `review-mui89jh3-d44bad6e` 审查 `8552363dd1403d4a09b099a73c9c39598d6884de..2fe4aaef66570a9f1c7b8dcef536b1a107cff16e`，结论 Request Changes。`SDK-CONTRACT-20260926-01` / P1：Go 不支持 number 与小数边界；`-02` / P3：Go 搜索依赖硬编码；`-03` / P3：Go 未暴露报价价差。已实现修复，待原审查方复审；浮点用例修复前稳定复现失败，修复后 Go 定向测试通过（1.337s）。
+- 两条意见按服务端合同保留现状：详情只接受规范模型 ID；批量单项参数错误固定为 `YIR_INVALID_REQUEST`，服务端失败走整体 HTTP 错误。复审须核对这些边界，不扩展未定义协议。工具所报六项文档漂移为主任务同时编辑，非已确认的审查方写入。
+- 公开 OpenAPI 已同步当前参数合同与批量报价，移除旧价格表端点；历史 models.json 仅作为显式旧版参考。`pnpm check:model-contracts` 通过。CI 与正式消费版本仍待完成。
+
 - 实现方 Codex；基准 `8552363dd1403d4a09b099a73c9c39598d6884de`。范围为 Go/TS 外部参数合同读取和校验、纯前端入口、客户目录生成器、20 项显式批量报价，以及旧价格表运行代码退出。公开包名、Go module、Job ID/状态校验、禁止浏览器使用密钥客户端、重定向保护、结果 warnings 保留。
 - 实现方验证：TS 编译及类型测试通过；外部合同/批量报价/传输及 warnings 12 项通过；模型字段/引用/生成请求受影响测试已改为显式合同输入，后续报价/搜索/尾帧 8 项通过。`pnpm test:package` 实际打包、隔离安装和消费者运行/TypeScript 校验通过。Go `Test(Client|RemoteModelContract|ResultWarnings|Wait|GetJobStatus|SubmitUnknown|Quote|NanoSearchQuote|LastFrameContractAndTransport|ProSearchContractAndTransport)` 定向通过（1.155s）。不是全量或独立审查。
 - 当前本地 Yir API 回读成功：50 个模型，合同版本 `42744c1abe2439319c58cac717c30b6e33e9c2667961c997d27a5b7de711c0c1`，已由纯前端解析器验证；没有生成任务或收费请求。Pilio 消费在隔离 worktree 验证，不写其主工作区。

@@ -20,26 +20,6 @@
     { "name": "Jobs" }
   ],
   "paths": {
-    "/v1/images/prices": {
-      "post": {
-        "operationId": "compareImagePrices", "summary": "Compare complete fixed public prices without requiring executable supply", "tags": ["Images"], "security": [{ "BearerAuth": [] }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceRequest" } } } },
-        "responses": {
-          "200": { "description": "Advisory public price comparison in USD", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceComparison" } } } },
-          "400": { "$ref": "#/components/responses/InvalidRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
-        }
-      }
-    },
-    "/v1/videos/prices": {
-      "post": {
-        "operationId": "compareVideoPrices", "summary": "Compare complete fixed public prices without requiring executable supply", "tags": ["Videos"], "security": [{ "BearerAuth": [] }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceRequest" } } } },
-        "responses": {
-          "200": { "description": "Advisory public price comparison in USD", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PriceComparison" } } } },
-          "400": { "$ref": "#/components/responses/InvalidRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
-        }
-      }
-    },
     "/v1/images/quotes": {
       "post": {
         "operationId": "quoteImageGeneration",
@@ -102,6 +82,26 @@
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/quotes": {
+      "post": {
+        "operationId": "quoteBatch",
+        "summary": "Quote up to 20 explicit image or video requests in one current-facts snapshot",
+        "description": "Each request is evaluated with the same rules as the corresponding single-request Quote. Invalid model requests return an error in their own result entry; source fact and infrastructure failures fail the entire call. This endpoint does not enumerate model specifications or infer equivalent quality across models.",
+        "tags": ["Images", "Videos"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QuoteBatchRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Ordered quote and per-item validation results", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QuoteBatch" } } } },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -277,31 +277,44 @@
         }
       }
     },
+    "/v1/models": {
+      "get": {
+        "operationId": "listModelContracts",
+        "summary": "List supported model contracts",
+        "description": "Lists the public parameter contract derived from current Go model definitions. By default returns model identities and localized labels. include=parameters expands operations, input constraints and parameter rules. The version identifies the complete contract and is the same for compact and expanded responses. Support does not imply current supply availability or an executable quote. No prices or channel details are returned.",
+        "tags": ["Models"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "include", "in": "query", "schema": { "type": "string", "const": "parameters" }, "description": "Expand public parameter contracts. Other or repeated query parameters are rejected." }
+        ],
+        "responses": {
+          "200": { "description": "Compact or expanded model contracts", "content": { "application/json": { "schema": { "oneOf": [{ "$ref": "#/components/schemas/ModelContractList" }, { "$ref": "#/components/schemas/ModelContractCatalog" }] } } } },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
     "/v1/models/{creator}/{model}": {
       "get": {
         "operationId": "getModel",
-        "summary": "Get model detail or caller-scoped local price tables",
-        "description": "Without query parameters returns the existing Market detail. For SDK pricing, supply view=pricing, operation and input_mode. Optional resolution and reference_count filters narrow the finite specification space before the 512-item limit. Coverage applies only to the echoed filter, not the entire model. Pricing uses the API Key default routing policy and exposes no channels. Truncated coverage is partial; enumerated does not mean every combination has a known price. Input-media-dependent prices remain unavailable. Cache separately by customer, effective routing policy, model, operation, input mode and filter. Independently fetched ranges are observations, not one atomic price snapshot, and do not lock prices or authorize spending.",
+        "summary": "Get model detail or its versioned parameter contract",
+        "description": "Without query parameters returns the existing Market detail. view=contract requires the canonical creator/model ID and returns its public parameter contract with the same content version as the model list, without querying price or current supply. Aliases may be used in generation requests but are not resource paths.",
         "tags": ["Models"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "$ref": "#/components/parameters/ModelCreator" },
           { "$ref": "#/components/parameters/ModelName" },
-          { "name": "view", "in": "query", "schema": { "type": "string", "enum": ["pricing"] }, "description": "Requires operation and input_mode; unknown or repeated query parameters are rejected." },
-          { "name": "operation", "in": "query", "schema": { "type": "string", "enum": ["generate_image", "generate_video"] }, "description": "Required with view=pricing." },
-          { "name": "input_mode", "in": "query", "schema": { "type": "string", "enum": ["text", "image", "reference"] }, "description": "Required with view=pricing. Multimodal reference mode currently requires request-level Quote (422)." },
-          { "name": "resolution", "in": "query", "schema": { "type": "string", "minLength": 1, "maxLength": 32 }, "description": "Optional pricing filter; must match a declared model resolution. Case-insensitive, echoed lowercase. Invalid filters return 400." },
-          { "name": "reference_count", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 512 }, "description": "Optional pricing filter for image input only, within the model reference limits. Canonical decimal integer, no leading zeros. Counts all input references." }
+          { "name": "view", "in": "query", "schema": { "type": "string", "const": "contract" }, "description": "Returns the public parameter contract; no other query parameters are accepted." }
         ],
         "responses": {
           "200": {
-            "description": "Model detail, or SDK price tables when view=pricing",
-            "content": { "application/json": { "schema": { "oneOf": [{ "$ref": "#/components/schemas/ModelDetail" }, { "$ref": "#/components/schemas/ModelPrices" }] } } }
+            "description": "Model detail or versioned parameter contract",
+            "content": { "application/json": { "schema": { "oneOf": [{ "$ref": "#/components/schemas/ModelDetail" }, { "$ref": "#/components/schemas/ModelContractDetail" }] } } }
           },
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "description": "Local pricing unavailable for this model/operation/input mode; use request-level Quote.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -434,11 +447,11 @@
       "RoutingOverride": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Request-scoped routing intent. only is an unordered Provider allowlist; selection and recovery stay within this set and any retained account restrictions. A single item supports targeted testing. Custom order is not supported. preference and fallback remain optional.",
+        "description": "Request-scoped routing intent. only is an unordered Provider allowlist; selection and recovery stay within this set and any retained account restrictions. 'official' is accepted as an alias for the model's official provider channel in both only and variants (normalized before execution). A single item supports targeted testing. Custom order is not supported. preference and fallback remain optional.",
         "properties": {
           "variants": {
             "type": "object", "minProperties": 1, "maxProperties": 16,
-            "description": "Provider-to-channel-variant selection. Omitted providers use their existing default variant. Keys must belong to only when only is supplied. Unknown or unavailable variants never fall back to another variant of the same provider.",
+            "description": "Provider-to-channel-variant selection. Providers omitted from this map consider all eligible variants; explicitly select standard to restrict a provider to its standard variant. Keys must belong to only when only is supplied ('official' alias is resolved before whitelist validation). Explicitly selected unknown or unavailable variants never fall back to another variant of the same provider.",
             "propertyNames": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" },
             "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" }
           },
@@ -969,7 +982,7 @@
             "properties": {
               "duration": {
                 "type": "integer",
-                "minimum": 1,
+                "minimum": 0,
                 "maximum": 30
               },
               "resolution": {
@@ -1034,7 +1047,7 @@
             "properties": {
               "duration": {
                 "type": "integer",
-                "minimum": 1,
+                "minimum": 0,
                 "maximum": 30
               },
               "resolution": {
@@ -1070,6 +1083,55 @@
         "maxLength": 20,
         "description": "Whole-job authorization limit in USD, up to 9223372036854.775807. Omission uses the highest single-attempt user price upper bound among admission candidates. One Job hold is shared across attempts, never summed; an explicit limit does not reserve its whole amount. New Jobs charge only the successfully delivered result and release unused funds at the terminal state. Failed and late upstream costs are absorbed by Yir without additional customer charges. Routes exceeding the existing hold or authorization are skipped. Below-primary limits are rejected. Historical jobs retain their recorded billing terms."
       },
+      "QuoteBatchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["requests"],
+        "properties": {
+          "requests": {
+            "type": "array", "minItems": 1, "maxItems": 20,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object", "additionalProperties": false, "required": ["operation", "request"],
+                  "properties": {
+                    "operation": { "const": "generate_image" },
+                    "request": { "$ref": "#/components/schemas/StandardImageQuoteRequest" }
+                  }
+                },
+                {
+                  "type": "object", "additionalProperties": false, "required": ["operation", "request"],
+                  "properties": {
+                    "operation": { "const": "generate_video" },
+                    "request": { "$ref": "#/components/schemas/StandardVideoQuoteRequest" }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "QuoteBatch": {
+        "type": "object", "additionalProperties": false,
+        "required": ["object", "data", "request_id"],
+        "properties": {
+          "object": { "const": "quote_batch" },
+          "data": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/components/schemas/QuoteBatchItem" } },
+          "request_id": { "type": "string", "minLength": 1 }
+        }
+      },
+      "QuoteBatchItem": {
+        "oneOf": [
+          {
+            "type": "object", "additionalProperties": false, "required": ["index", "quote"],
+            "properties": { "index": { "type": "integer", "minimum": 0, "maximum": 19 }, "quote": { "$ref": "#/components/schemas/Quote" } }
+          },
+          {
+            "type": "object", "additionalProperties": false, "required": ["index", "error"],
+            "properties": { "index": { "type": "integer", "minimum": 0, "maximum": 19 }, "error": { "$ref": "#/components/schemas/Error" } }
+          }
+        ]
+      },
       "Quote": {
         "type": "object",
         "additionalProperties": false,
@@ -1094,12 +1156,13 @@
           "supply": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["available", "issues"],
+            "required": ["available", "requires_max_cost", "issues"],
             "properties": {
               "available": { "type": "boolean" },
+              "requires_max_cost": { "type": "boolean", "description": "True when a selectable usage-based route requires an explicit max_cost of at least USD 0.01 at Submit. This is an authorization requirement, not an estimated price or guaranteed upper bound." },
               "issues": { "type": "array", "items": { "type": "string", "enum": ["no_matching_supply"] } }
             },
-            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
+            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array; requires_max_cost indicates that Submit needs an explicit authorization cap for usage-based charging. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
           },
           "object": {
             "type": "string",
@@ -1132,13 +1195,15 @@
             "const": "USD"
           },
           "single_attempt_upper_bound": {
+            "description": "Largest verified single-attempt customer charge ceiling among the currently selectable routes. One Job freezes one amount shared by its attempts. Null when any selectable route lacks a verifiable upper bound; this advisory value is neither a price lock nor the customer's max_cost authorization. A verifiable ceiling can exist even when the exact charge is usage-dependent and primary/max prices are unavailable.",
             "oneOf": [
               { "$ref": "#/components/schemas/Decimal" },
               { "type": "null" }
             ]
           },
           "has_verifiable_upper_bound": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "True only when single_attempt_upper_bound is verified for all currently selectable routes. Submit resolves supply and price again. False on an unbounded provider-reported route or when supply is unavailable."
           },
           "expires_at": {
             "type": "integer",
@@ -1146,6 +1211,7 @@
             "minimum": 1
           },
           "primary": {
+            "description": "Current preferred route's complete fixed customer price when provable, or an output-only estimate when supported by its selected tariff and model usage evidence; otherwise unavailable. An output-only estimate excludes input charges, is not a task total or authorization ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
             "oneOf": [
               { "$ref": "#/components/schemas/OutputQuoteEstimate" },
               {
@@ -1188,6 +1254,7 @@
             ]
           },
           "max": {
+            "description": "Highest complete fixed customer price among currently selectable routes when all are provable; otherwise unavailable. This price is distinct from the authorization bound, and Submit rechecks current facts.",
             "oneOf": [
               { "$ref": "#/components/schemas/OutputQuoteEstimate" },
               {
@@ -1270,6 +1337,17 @@
                 }
               }
             ]
+          },
+          "price_difference_percent": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Optional comparison with the official reference. Negative values mean a lower Yir price. Complete fixed prices are compared only with complete fixed prices. Output-only estimates are compared only when both prices use identical output assumptions; that comparison excludes input and other charges.",
+            "required": ["min", "max"],
+            "properties": {
+              "min": { "type": "number" },
+              "max": { "type": "number" },
+              "reference_amount_micros": { "type": "integer", "format": "int64", "minimum": 0 }
+            }
           }
         }
       },
@@ -1282,55 +1360,14 @@
           "amount": { "$ref": "#/components/schemas/Decimal" },
           "estimate": {
             "type": "object", "additionalProperties": false,
-            "required": ["scope", "output_tokens"],
+            "required": ["scope"],
+            "oneOf": [{ "required": ["output_tokens"] }, { "required": ["output_megapixels"] }],
             "properties": {
               "scope": { "const": "output_only" },
-              "output_tokens": { "type": "integer", "minimum": 1, "maximum": 1000000 }
-            }
-          }
-        }
-      },
-      "ReferencePrice": {
-        "type": "object", "additionalProperties": false,
-        "required": ["amount", "source_url"],
-        "properties": {
-          "amount": { "$ref": "#/components/schemas/Decimal" },
-          "source_url": { "type": "string", "format": "uri" }
-        }
-      },
-      "PriceRequest": {
-        "type": "object", "additionalProperties": false,
-        "description": "Public price conditions only. No prompt, file, routing policy or generation is required. Only exact published specifications return complete fixed prices; unmatched conditions return an empty comparison.",
-        "required": ["model", "input_mode", "resolution", "aspect_ratio", "n", "reference_count"],
-        "properties": {
-          "model": { "type": "string", "minLength": 1 },
-          "input_mode": { "type": "string", "enum": ["text", "image"] },
-          "resolution": { "type": "string", "minLength": 1 },
-          "aspect_ratio": { "type": "string", "minLength": 1 },
-          "n": { "type": "integer", "minimum": 1 },
-          "reference_count": { "type": "integer", "minimum": 0 },
-          "duration": { "type": "integer", "minimum": 0 },
-          "generate_audio": { "type": "boolean" }
-        }
-      },
-      "PriceComparison": {
-        "type": "object", "additionalProperties": false,
-        "description": "Advisory complete fixed prices for the exact request, in quote currency. Null means no proven complete fixed price, including dynamic usage tariffs. Independent of routing restrictions; does not assert execution eligibility or reserve prices.",
-        "required": ["official_price", "channels"],
-        "properties": {
-          "official_price": { "oneOf": [{ "$ref": "#/components/schemas/ReferencePrice" }, { "type": "null" }] },
-          "official_price_unavailable_reason": { "type": "string", "enum": ["conditional_price", "dynamic_price", "missing_price"], "description": "Why no complete comparable official fixed price is available. Omitted when official_price is present." },
-          "channels": {
-            "type": "array",
-            "items": {
-              "type": "object", "additionalProperties": false,
-              "required": ["provider", "public_price", "user_amount"],
-              "properties": {
-                "provider": { "type": "string", "minLength": 1 },
-                "channel_variant": { "type": "string", "minLength": 1 },
-                "public_price": { "oneOf": [{ "$ref": "#/components/schemas/ReferencePrice" }, { "type": "null" }] },
-                "user_amount": { "oneOf": [{ "$ref": "#/components/schemas/Decimal" }, { "type": "null" }] }
-              }
+              "output_tokens": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+              "output_megapixels": { "type": "integer", "minimum": 1, "maximum": 1000000, "description": "Billable whole output megapixels using the model's declared pixel unit; excludes input megapixels. Mutually exclusive with output_tokens." },
+              "quality": { "type": "string", "minLength": 1, "description": "Reference quality used for the output estimate. Automatic or omitted quality uses the catalog's medium reference when available; this does not change generation parameters." },
+              "aspect_ratio": { "type": "string", "minLength": 1, "description": "Reference aspect ratio used for the output estimate. Automatic aspect ratio uses a declared square reference when available; explicitly selected unsupported ratios remain unavailable." }
             }
           }
         }
@@ -1515,7 +1552,7 @@
         "type": "object",
         "additionalProperties": false,
         "description": "Successful jobs only. Complete fixed USD official price frozen at admission for the exact request. Savings is baseline minus all Yir charges, including recovery attempts; it may be negative. Omitted for historical jobs, dynamic prices, missing baselines and external billing.",
-        "required": ["baseline_amount", "savings_amount", "source_url"],
+        "required": ["baseline_amount", "savings_amount"],
         "properties": {
           "baseline_amount": { "$ref": "#/components/schemas/Decimal" },
           "savings_amount": { "type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$" },
@@ -1600,64 +1637,6 @@
           "url": { "type": "string", "format": "uri" }
         }
       },
-      "ModelPrices": {
-        "type": "object", "additionalProperties": false,
-        "required": ["id", "object", "operation", "input_mode", "contract_version", "coverage", "issues", "prices"],
-        "properties": {
-          "channel_parameters": { "type": "array", "items": { "$ref": "#/components/schemas/ChannelParameters" } },
-          "id": { "type": "string" }, "object": { "const": "model_prices" },
-          "operation": { "enum": ["generate_image", "generate_video"] },
-          "input_mode": { "enum": ["text", "image", "reference"] },
-          "contract_version": { "type": "string", "minLength": 1 },
-          "filter": { "type": "object", "additionalProperties": false, "minProperties": 1, "properties": {
-            "resolution": { "type": "string", "minLength": 1, "maxLength": 32 },
-            "reference_count": { "type": "integer", "minimum": 1, "maximum": 512 }
-          }, "description": "Requested pricing scope. Coverage and prices apply only to this filter. Omitted for an unfiltered request." },
-          "coverage": { "enum": ["enumerated", "partial"] },
-          "issues": { "type": "array", "items": { "type": "string" } },
-          "prices": {
-            "type": "object", "additionalProperties": false, "required": ["primary", "max", "expires_at", "unavailable"],
-            "properties": {
-              "primary": { "$ref": "#/components/schemas/SDKPriceTable" },
-              "max": { "$ref": "#/components/schemas/SDKPriceTable" },
-              "expires_at": { "type": "integer", "minimum": 1 },
-              "unavailable": { "type": "array", "items": { "$ref": "#/components/schemas/SDKPriceUnavailable" } }
-            }
-          }
-        }
-      },
-      "SDKPriceConditions": {
-        "type": "object",
-        "description": "Complete normalized pricing dimensions. Every key must match, including explicit zero media-role counts. Unknown or missing keys do not match; never infer a price from a nearby row.",
-        "additionalProperties": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "oneOf": [{ "type": "string" }, { "type": "boolean" }, { "type": "integer", "minimum": -9007199254740991, "maximum": 9007199254740991 }] } }
-      },
-      "SDKPriceTable": {
-        "type": "object", "additionalProperties": false,
-        "required": ["format", "version", "purpose", "unit", "scale", "rows"],
-        "properties": {
-          "format": { "const": "yir-price-table-v1" }, "version": { "type": "string", "minLength": 1 },
-          "purpose": { "const": "yir-cost" }, "unit": { "const": "USD" }, "scale": { "const": 1000000 },
-          "rows": { "type": "array", "maxItems": 512, "items": { "$ref": "#/components/schemas/SDKPriceRow" } }
-        }
-      },
-      "SDKPriceRow": {
-        "type": "object", "additionalProperties": false,
-        "required": ["id", "model", "operation", "conditions", "kind", "price"],
-        "properties": {
-          "id": { "type": "string", "minLength": 1 }, "model": { "type": "string" }, "operation": { "type": "string" },
-          "conditions": { "$ref": "#/components/schemas/SDKPriceConditions" }, "kind": { "const": "exact" },
-          "description": { "type": "string" },
-          "price": { "type": "object", "additionalProperties": false, "required": ["type", "amount"], "properties": { "type": { "const": "total" }, "amount": { "type": "string", "pattern": "^(0|[1-9][0-9]{0,18})$", "description": "Complete total in integer USD micros, at most 9223372036854775807. Do not multiply this total by output count or duration again." } } }
-        }
-      },
-      "SDKPriceUnavailable": {
-        "type": "object", "additionalProperties": false,
-        "required": ["id", "model", "operation", "conditions", "basis", "reason"],
-        "properties": {
-          "id": { "type": "string" }, "model": { "type": "string" }, "operation": { "type": "string" },
-          "conditions": { "$ref": "#/components/schemas/SDKPriceConditions" }, "basis": { "enum": ["primary", "max"] }, "reason": { "type": "string", "minLength": 1 }
-        }
-      },
       "ParameterNotice": {
         "type": "object", "additionalProperties": false,
         "required": ["name", "disposition", "reason", "message"],
@@ -1736,9 +1715,42 @@
         "properties": {
           "schema_version": { "type": "string", "const": "v1" },
           "schema_ref": { "type": "string", "const": "./standard-openapi.json#/components/schemas/ModelContractCatalog" },
+          "version": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "Present on API responses; omitted from generated static artifacts." },
           "models": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/StaticModelContract" } }
         },
         "description": "Language-neutral static model contracts generated with this Standard OpenAPI release. Runtime price, health, authorization and route facts are excluded."
+      },
+      "ModelContractList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "schema_ref", "version", "models"],
+        "properties": {
+          "schema_version": { "type": "string", "const": "v1" },
+          "schema_ref": { "type": "string", "const": "./standard-openapi.json#/components/schemas/ModelContractCatalog" },
+          "version": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "models": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ModelContractSummary" } }
+        }
+      },
+      "ModelContractSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "aliases", "locales"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
+          "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+          "locales": { "$ref": "#/components/schemas/ModelContractLocales" }
+        }
+      },
+      "ModelContractDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "schema_ref", "version", "model"],
+        "properties": {
+          "schema_version": { "type": "string", "const": "v1" },
+          "schema_ref": { "type": "string", "const": "./standard-openapi.json#/components/schemas/ModelContractCatalog" },
+          "version": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "model": { "$ref": "#/components/schemas/StaticModelContract" }
+        }
       },
       "StaticModelContract": {
         "type": "object",

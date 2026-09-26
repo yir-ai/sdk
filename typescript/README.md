@@ -36,6 +36,7 @@ Do not install the repository root as a Node package. The package is ESM.
 | Import | Use |
 | --- | --- |
 | `@yir-ai/sdk/server` | `createNodeYirClient`, custom transport client, jobs, files, Webhook verification |
+| `@yir-ai/sdk/frontend` | External model contracts and parameter validation; no bundled registry, network or pricing engine |
 | `@yir-ai/sdk/browser` | Model contracts, parameter validation, request builders; no network or secrets |
 | `@yir-ai/sdk/shared` | Shared types and pure logic |
 | `@yir-ai/sdk/vercel` | Server-side Vercel AI SDK 7 / Provider V4 adapter |

@@ -3,11 +3,58 @@ package yir
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+func TestRemoteModelContractSupportsFractionalNumberParameters(t *testing.T) {
+	model, ok := GetModelContract("openai/gpt-image-2")
+	if !ok {
+		t.Fatal("fixture missing")
+	}
+	encoded, _ := json.Marshal(model)
+	var wire map[string]any
+	if err := json.Unmarshal(encoded, &wire); err != nil {
+		t.Fatal(err)
+	}
+	wire["id"], wire["aliases"] = "future/number-image", []string{}
+	operation := wire["operations"].([]any)[0].(map[string]any)
+	operation["parameters"] = []any{map[string]any{
+		"name": "strength", "type": "number", "required": true,
+		"minimum": 0.1, "maximum": 0.9, "control": "number",
+		"locales": map[string]any{},
+	}}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"schema_version": "v1", "schema_ref": "fixture", "version": strings.Repeat("a", 64), "models": []any{wire},
+		})
+	}))
+	defer server.Close()
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalog, err := client.GetModelContracts(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := GenerationRequest{Model: "future/number-image", Input: GenerationInput{Type: "text", Prompt: "fixture"}}
+	for _, value := range []any{0.1, 0.5, json.Number("0.900")} {
+		request.Parameters = map[string]any{"strength": value}
+		if err := ValidateGenerationWithCatalog("generate_image", request, catalog); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, value := range []any{0.09, 0.91, "0.5", nil, math.NaN(), math.Inf(1)} {
+		request.Parameters = map[string]any{"strength": value}
+		if err := ValidateGenerationWithCatalog("generate_image", request, catalog); err == nil {
+			t.Fatal("invalid number accepted")
+		}
+	}
+}
 
 func TestClientReadsVersionedModelContractsWithoutBundledAdmission(t *testing.T) {
 	model := cloneStaticModelContract(bundledModelContractCatalog.Models[0])

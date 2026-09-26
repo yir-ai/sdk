@@ -2,6 +2,7 @@ package yir
 
 import (
 	"errors"
+	"math"
 	"math/big"
 	"regexp"
 	"strings"
@@ -12,6 +13,12 @@ var quoteAmountPattern = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?$`)
 // Validate checks public price semantics without inferring a price from a hold.
 func (q Quote) Validate() error {
 	invalid := errors.New("quote_response_invalid")
+	if diff := q.PriceDifferencePercent; diff != nil {
+		if math.IsNaN(diff.Min) || math.IsInf(diff.Min, 0) || math.IsNaN(diff.Max) || math.IsInf(diff.Max, 0) || diff.Min > diff.Max ||
+			(diff.ReferenceAmountMicros != nil && *diff.ReferenceAmountMicros < 0) {
+			return invalid
+		}
+	}
 	if q.Object != "quote" || q.Model == "" || q.Currency != "USD" || q.ExpiresAt <= 0 || q.Parameters == nil {
 		return invalid
 	}

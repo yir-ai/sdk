@@ -2,7 +2,7 @@
 
 English | [简体中文](docs/zh-CN/spec.md) · [Repository](../README.md)
 
-[openapi.json](openapi.json) and [models.json](models.json) are public protocol snapshots exported together from the same server revision. The model catalog's `schema_ref` points to `./openapi.json#/components/schemas/ModelContractCatalog`; preserve that reference when updating files.
+[openapi.json](openapi.json) describes the current public protocol. [models.json](models.json) is a reviewed historical catalog retained for explicit legacy getters and fixtures; it does not gate runtime requests. Applications update their model catalog through the API independently of SDK releases. The catalog's `schema_ref` points to `./openapi.json#/components/schemas/ModelContractCatalog`.
 
 From `typescript/`, run `pnpm generate:model-contracts` to generate the packaged TypeScript and Go contracts, and `pnpm check:model-contracts` to detect drift. The generator consumes only public snapshots and never accesses the private server. Preserve existing bilingual model metadata, stable error codes and billing semantics.
 
@@ -14,7 +14,7 @@ Keep translations paired with their English documents and maintain links in both
 
 ## Contract update procedure
 
-1. Export `openapi.json` and `models.json` together from the same reviewed server revision. Record the source revision in the private handoff; copy only the public snapshots here. Do not include credentials, internal endpoints, production prices or user data.
+1. Export `openapi.json` from the reviewed server revision. Refresh `models.json` only when intentionally updating the historical reference catalog. Record source revisions in the private handoff; copy only public snapshots here. Do not include credentials, internal endpoints, production prices or user data.
 2. Review the snapshot diff before generation. Check request/response fields, required fields, model operations, defaults, validation rules, stable error codes and billing semantics. A snapshot update does not authorize changing the billing contract.
 3. From `typescript/`, run `pnpm generate:model-contracts` then `pnpm check:model-contracts`. Commit the snapshots and generated TS/Go files together. Do not edit generated files manually.
 4. Add focused regressions or synthetic fixtures for changed behavior. Keep Go-required vectors in `go/testdata/`. Update English and Chinese guides/examples together. Identify any application migration in the PR.

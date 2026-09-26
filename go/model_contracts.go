@@ -19,8 +19,8 @@ type ModelParameterContract struct {
 	Required bool                           `json:"required"`
 	Values   []any                          `json:"values,omitempty"`
 	Default  any                            `json:"default,omitempty"`
-	Minimum  *int                           `json:"minimum,omitempty"`
-	Maximum  *int                           `json:"maximum,omitempty"`
+	Minimum  *float64                       `json:"minimum,omitempty"`
+	Maximum  *float64                       `json:"maximum,omitempty"`
 	Control  string                         `json:"control"`
 	Locales  map[string]ModelContractLocale `json:"locales"`
 }
@@ -189,15 +189,15 @@ func cloneModelOperationContract(source ModelOperationContract) ModelOperationCo
 			parameter.Policy = &policy
 		}
 		parameter.Values = append([]any(nil), parameter.Values...)
-		parameter.Minimum = cloneIntPointer(parameter.Minimum)
-		parameter.Maximum = cloneIntPointer(parameter.Maximum)
+		parameter.Minimum = cloneFloatPointer(parameter.Minimum)
+		parameter.Maximum = cloneFloatPointer(parameter.Maximum)
 		parameter.Locales = cloneModelContractLocales(parameter.Locales)
 		result.Parameters[index] = parameter
 	}
 	return result
 }
 
-func cloneIntPointer(source *int) *int {
+func cloneFloatPointer(source *float64) *float64 {
 	if source == nil {
 		return nil
 	}

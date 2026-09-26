@@ -1,6 +1,30 @@
 package yir
 
-import "testing"
+import (
+	"encoding/json"
+	"math"
+	"testing"
+)
+
+func TestQuotePriceDifferenceMetadata(t *testing.T) {
+	var q Quote
+	if err := json.Unmarshal([]byte(`{"object":"quote","model":"future/image","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":1,"primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","reason":"missing"},"price_difference_percent":{"min":-10,"max":20,"reference_amount_micros":50000}}`), &q); err != nil {
+		t.Fatal(err)
+	}
+	if q.PriceDifferencePercent == nil || q.PriceDifferencePercent.Min != -10 || q.PriceDifferencePercent.ReferenceAmountMicros == nil || *q.PriceDifferencePercent.ReferenceAmountMicros != 50000 {
+		t.Fatal("comparison metadata lost")
+	}
+	if err := q.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	negative := int64(-1)
+	for _, diff := range []QuotePriceDifference{{Min: 2, Max: 1}, {Min: math.NaN()}, {Max: math.Inf(1)}, {ReferenceAmountMicros: &negative}} {
+		q.PriceDifferencePercent = &diff
+		if q.Validate() == nil {
+			t.Fatal("invalid comparison accepted")
+		}
+	}
+}
 
 func fixedQuotePrice(amount string) QuotePrice { return QuotePrice{Kind: "fixed", Amount: &amount} }
 

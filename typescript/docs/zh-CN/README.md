@@ -36,11 +36,12 @@ pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.1.0.tgz
 | 导入路径 | 用途 |
 | --- | --- |
 | `@yir-ai/sdk/server` | `createNodeYirClient`、自定义传输客户端、任务、文件和 Webhook 验签 |
-| `@yir-ai/sdk/browser` | 模型合同、参数校验、请求构造和纯价格计算，无网络与密钥 |
+| `@yir-ai/sdk/frontend` | 外部模型合同查询和参数校验，无网络、密钥或计价逻辑 |
+| `@yir-ai/sdk/browser` | 既有合同与请求构造兼容入口，无网络与密钥 |
 | `@yir-ai/sdk/shared` | 共享类型和纯逻辑 |
 | `@yir-ai/sdk/vercel` | 服务端 Vercel AI SDK 7 / Provider V4 适配 |
 
-server 与 browser 依赖 shared，shared 不反向依赖。根入口保留服务端兼容性，`pricing` 和 `model-contracts` 子入口继续可用。新代码优先明确使用 server/browser 入口。不得将 Yir Key 传给浏览器；密钥客户端拒绝浏览器运行且不提供绕过开关。浏览器应调用应用自己的已认证后端。
+server 与 browser 依赖 shared，shared 不反向依赖。根入口保留服务端兼容性；`model-contracts` 为历史静态合同入口，`pricing` 已移除。新代码优先使用 server/frontend，参数快照由客户生成。不得将 Yir Key 传给浏览器；密钥客户端拒绝浏览器运行且不提供绕过开关。浏览器应调用应用自己的已认证后端。
 
 ```ts
 import { createNodeYirClient } from '@yir-ai/sdk/server';
