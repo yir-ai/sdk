@@ -1,5 +1,10 @@
 # SDK 代码审查台账
 
+## 2026-09-28 默认生成幂等键：固定提交审查与 CI 通过
+
+- 独立 AGY `review-mukyh7kc-60444f08` 只读审查 `7f168cd91a9e247859caebfeb763eb997254d89d..597c528d0420eb0214bf50059a7887248b1d2a72` 全部 15 文件，结论 **Approve**、无可操作问题。覆盖正确性、仓库约定、协议与安全边界；未调用真实供应商，未做生产联调，不推进更早历史的连续审查状态。
+- 分支 `codex/generation-idempotency` 已推送，候选 [PR #5](https://github.com/yir-ai/sdk/pull/5)。同一 `597c528d0420eb0214bf50059a7887248b1d2a72` 的完整 [SDK checks 36394772538](https://github.com/yir-ai/sdk/actions/runs/36394772538) completed/success（44s）：合同生成、全 TS 测试/类型、归档与安装、独立 Go 模块验证。本条仅追加证据，运行代码不变。仍未发包、打标签或合并 PR。
+
 ## 2026-09-28 生成幂等键可选与默认生成：实现自验
 
 - 用户授权实现并收尾提交、清理、推送；实现者 Codex。基准 `7f168cd91a9e247859caebfeb763eb997254d89d`，分支 `codex/generation-idempotency`；14 文件源码/文档补丁 SHA256 `468a8c89a7829ce0224ae52195576417ce4c7dd68442ef99f37c175aeb9bac22`，本记录另计。范围为 TS/Go 生成客户端、AI SDK 适配层、OpenAPI、聚焦回归及中英文使用指南。
