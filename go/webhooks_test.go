@@ -2,7 +2,11 @@ package yir
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"os"
 	"strconv"
 	"strings"
@@ -113,5 +117,34 @@ func TestWebhookRejectsInvalidClockConfiguration(t *testing.T) {
 	r.Now = &negative
 	if _, err := VerifyWebhookSignature(r); err == nil {
 		t.Fatal("negative time accepted")
+	}
+}
+
+func TestConstructWebhookEventReturnsVerifiedTerminalJob(t *testing.T) {
+	event, err := ConstructWebhookEvent(webhookVector(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.ID != "yir_evt_94101" || event.Timestamp != 1785974442 || event.Job.ID != "7001" || event.Job.Status != "succeeded" {
+		t.Fatalf("unexpected event %+v", event)
+	}
+}
+
+func TestConstructWebhookEventRejectsBadSignatureAndPayload(t *testing.T) {
+	tampered := webhookVector(t)
+	tampered.RawBody = []byte(`{"id":"7001","status":"failed"}`)
+	var rejected *WebhookVerificationError
+	if _, err := ConstructWebhookEvent(tampered); !errors.As(err, &rejected) || rejected.Reason != "invalid_signature" {
+		t.Fatalf("tampered body must fail signature, got %v", err)
+	}
+	for _, body := range []string{`not json`, `{"id":"","status":"succeeded"}`, `{"id":"7001","status":"running"}`} {
+		request := webhookVector(t)
+		request.RawBody = []byte(body)
+		mac := hmac.New(sha256.New, []byte(request.Secret))
+		mac.Write([]byte(request.Timestamp + "." + request.ID + "." + body))
+		request.Signature = "v1=" + base64.StdEncoding.EncodeToString(mac.Sum(nil))
+		if _, err := ConstructWebhookEvent(request); !errors.As(err, &rejected) || rejected.Reason != "invalid_payload" {
+			t.Fatalf("body %q must be rejected as invalid_payload, got %v", body, err)
+		}
 	}
 }

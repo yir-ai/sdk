@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"regexp"
 	"strconv"
@@ -81,4 +82,35 @@ func VerifyWebhookSignature(request VerifyWebhookSignatureRequest) (WebhookVerif
 		return fail("invalid_signature")
 	}
 	return WebhookVerificationResult{Valid: true, Timestamp: timestamp}, nil
+}
+
+// WebhookEvent is a verified Yir webhook: the stable delivery ID for
+// deduplication and the terminal Job projection it carries.
+type WebhookEvent struct {
+	ID        string
+	Timestamp int64
+	Job       Job
+}
+
+// WebhookVerificationError reports why ConstructWebhookEvent rejected a request.
+type WebhookVerificationError struct{ Reason string }
+
+func (e *WebhookVerificationError) Error() string { return "yir webhook rejected: " + e.Reason }
+
+// ConstructWebhookEvent verifies the raw request and then decodes its terminal
+// Job. Receivers that treat webhooks only as wake-up signals should still read
+// the Job with GetJob before settling; deduplicate by Event.ID either way.
+func ConstructWebhookEvent(request VerifyWebhookSignatureRequest) (WebhookEvent, error) {
+	result, err := VerifyWebhookSignature(request)
+	if err != nil {
+		return WebhookEvent{}, err
+	}
+	if !result.Valid {
+		return WebhookEvent{}, &WebhookVerificationError{Reason: result.Reason}
+	}
+	var job Job
+	if err := json.Unmarshal(request.RawBody, &job); err != nil || job.ID == "" || !job.IsTerminal() {
+		return WebhookEvent{}, &WebhookVerificationError{Reason: "invalid_payload"}
+	}
+	return WebhookEvent{ID: request.ID, Timestamp: result.Timestamp, Job: job}, nil
 }

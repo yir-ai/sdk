@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.2.1
+pnpm add @yir-ai/sdk@0.3.0
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.2.1.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -65,7 +65,7 @@ For video, use `quoteVideo(request)` and `submitVideo(savedRequest, savedKey)` w
 
 ## Jobs and recovery
 
-Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobStatus(id)` queries lightweight `JobStatusResponse` summaries. Use `waitForJob(id, options)` on the Node client or `waitForJob(client, id, options)` with a transport client. Polling defaults to 2 seconds and a 5-minute timeout, querying status summaries and reading full job details only once at terminal states, rejecting terminal status mismatches with `job_state_inconsistent`. `YirTimeoutError` retains `jobId` and `lastStatus`; timeouts and aborts stop local waiting and do not cancel the job or imply a refund. Resume with the saved ID. If submission returned no ID, resubmit the exact saved request and key.
+Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobStatus(id)` queries lightweight `JobStatusResponse` summaries. Use `waitForJob(id, options)` on the Node client or `waitForJob(client, id, options)` with a transport client. Polling defaults to the `pollDelayMs` backoff (5s for the first 30 seconds, 10s until about 90 seconds, then 20s; set `pollIntervalMs` for a fixed interval) and a 5-minute timeout, querying status summaries and reading full job details only once at terminal states, rejecting terminal status mismatches with `job_state_inconsistent`. `YirTimeoutError` retains `jobId` and `lastStatus`; timeouts and aborts stop local waiting and do not cancel the job or imply a refund. Resume with the saved ID. If submission returned no ID, resubmit the exact saved request and key.
 
 `YirJobError` contains the failed/cancelled terminal job. `YirAPIError` exposes status, code, retryable, action and requestId where available. Keep error codes stable in application logic. `cancelJob(id)` explicitly requests cancellation; inspect the returned cancellation and terminal billing instead of assuming immediate cancellation or zero charge. Reconcile `billing.total_charged_by_yir` once per job. Result URLs expire; inspect `result.availability` and copy files to your own asset store while available.
 
@@ -73,7 +73,7 @@ Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobSta
 
 `createFiles(request, key)` creates upload plans; `uploadFile(client, plan, blob)` uploads and completes a plan. `createAndUploadFile(client, metadata, blob, key)` combines the steps. Use stable upload keys and retain returned file IDs; `getFile(id)` checks state and `completeFile(id)` completes a manually uploaded file. Only reference ready files in generation requests (`file_id` plus the appropriate role). Upload helpers support the server's single/multipart plans.
 
-Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })` using the account's Webhook secret, not its API key. Pass the original request bytes before parsing JSON and map the delivery signature metadata into `id`, `timestamp` and `signature`. The default clock tolerance is 300 seconds. Reject invalid results, durably deduplicate by Webhook ID, and apply terminal settlement once even if polling also observes it.
+Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })` using the account's Webhook secret, not its API key. Pass the original request bytes before parsing JSON and map the delivery signature metadata into `id`, `timestamp` and `signature`. The default clock tolerance is 300 seconds. Reject invalid results, durably deduplicate by Webhook ID, and apply terminal settlement once even if polling also observes it. `constructWebhookEvent` verifies the same fields and resolves to `{ id, timestamp, job }`, or rejects with `YirWebhookVerificationError` carrying a stable `reason`. Durable workflows can treat a webhook as a wake-up signal, read the job with `getJob`, and keep `pollDelayMs` polling as a fallback.
 
 ## Vercel AI SDK
 
@@ -82,6 +82,10 @@ Install the adapter's tested AI SDK generation in your application with `pnpm ad
 Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported. Use Yir parameters for resolution. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+
+## Changes in 0.3.0
+
+`waitForJob` (and the Vercel adapter's image wait) without `pollIntervalMs` now backs off with `pollDelayMs` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `pollIntervalMs` to keep a fixed interval. `DEFAULT_POLL_INTERVAL_MS` is deprecated. `constructWebhookEvent` and `YirWebhookVerificationError` are new. No call signatures change.
 
 ## Contract updates in 0.2.0
 

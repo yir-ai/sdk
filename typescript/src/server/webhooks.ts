@@ -1,3 +1,5 @@
+import type { Job } from "../shared/types.js";
+
 const DEFAULT_WEBHOOK_TOLERANCE_SECONDS = 300;
 const WEBHOOK_SECRET_PATTERN = /^yir_whsec_[A-Za-z0-9_-]{43}$/;
 const WEBHOOK_SIGNATURE_PATTERN = /^v1=[A-Za-z0-9+/]{43}=$/;
@@ -108,4 +110,46 @@ function constantTimeEqual(left: string, right: string): boolean {
     difference |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0);
   }
   return difference === 0;
+}
+
+/** A verified Yir webhook: the stable delivery ID for deduplication and its terminal Job. */
+export interface WebhookEvent {
+  readonly id: string;
+  readonly timestamp: number;
+  readonly job: Job;
+}
+
+export class YirWebhookVerificationError extends Error {
+  readonly reason: WebhookVerificationFailureReason | "invalid_payload";
+
+  constructor(reason: WebhookVerificationFailureReason | "invalid_payload") {
+    super(`yir webhook rejected: ${reason}`);
+    this.name = "YirWebhookVerificationError";
+    this.reason = reason;
+  }
+}
+
+/**
+ * Verifies the raw request, then decodes its terminal Job.
+ * Receivers that treat webhooks only as wake-up signals should still read the Job
+ * with `getJob` before settling; deduplicate by `event.id` either way.
+ */
+export async function constructWebhookEvent(
+  request: VerifyWebhookSignatureRequest,
+): Promise<WebhookEvent> {
+  const result = await verifyWebhookSignature(request);
+  if (!result.valid) throw new YirWebhookVerificationError(result.reason);
+  let job: Job;
+  try {
+    job = JSON.parse(new TextDecoder().decode(request.rawBody)) as Job;
+  } catch {
+    throw new YirWebhookVerificationError("invalid_payload");
+  }
+  if (
+    typeof job !== "object" || job === null || typeof job.id !== "string" || job.id === "" ||
+    (job.status !== "succeeded" && job.status !== "failed" && job.status !== "cancelled")
+  ) {
+    throw new YirWebhookVerificationError("invalid_payload");
+  }
+  return { id: request.id, timestamp: result.timestamp, job };
 }

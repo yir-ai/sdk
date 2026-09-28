@@ -11,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.3.0
+go get github.com/yir-ai/sdk/go@v0.4.0
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.3.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.4.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -31,6 +31,10 @@ _ = client
 ```
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
+
+## 0.4.0 changes
+
+`WaitJob` without `WaitOptions.PollInterval` now backs off with `PollDelay` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `PollInterval` to keep a fixed interval. `ConstructWebhookEvent` is new. No call signatures change.
 
 ## 0.3.0 migration
 
@@ -58,13 +62,13 @@ See [the compile-checked example](client_example_test.go) and its [integration g
 
 ## Jobs, files and Webhooks
 
-Persist the returned job ID. `GetJob` queries full job details; `GetJobStatus` queries lightweight `JobStatusResponse` summaries. `WaitJob` polls status summaries every 2 seconds by default using `WaitOptions`, reading the full `Job` detail only once at terminal states and rejecting terminal status mismatches with `ErrJobStateInconsistent`. Cancel or time out its context to stop local waiting, which returns a zero-value `Job{}` and does not cancel the remote job or imply a refund. Resume with the saved ID. `JobError` contains the failed/cancelled terminal job; `APIError` contains HTTP status, code, message, retryable and action. Use stable codes for application logic.
+Persist the returned job ID. `GetJob` queries full job details; `GetJobStatus` queries lightweight `JobStatusResponse` summaries. `WaitJob` polls status summaries with the `PollDelay` backoff by default (5s for the first 30 seconds, 10s until about 90 seconds, then 20s); set `WaitOptions.PollInterval` for a fixed interval. It reads the full `Job` detail only once at terminal states and rejecting terminal status mismatches with `ErrJobStateInconsistent`. Cancel or time out its context to stop local waiting, which returns a zero-value `Job{}` and does not cancel the remote job or imply a refund. Resume with the saved ID. `JobError` contains the failed/cancelled terminal job; `APIError` contains HTTP status, code, message, retryable and action. Use stable codes for application logic.
 
 `CancelJob` explicitly requests cancellation. Inspect cancellation status and terminal billing instead of assuming immediate success or zero charge. Apply `Billing.TotalChargedByYir` once per job, including error paths. Check `Result.Availability` and copy available result files before their URLs expire.
 
 `CreateFiles(ctx, request, key)` creates upload plans. `UploadFile(ctx, plan, source)` uploads from an `io.ReaderAt` and completes the file; `CreateAndUploadFile(ctx, metadata, source, key)` combines the steps. Keep a stable upload key and file IDs. `GetFile` checks state; `CompleteFile` completes a manually uploaded file. Use ready files as generation references with `FileID` and the appropriate role. Single and multipart upload plans are supported.
 
-Set `SubmitRequest.WebhookURL` for callbacks. `VerifyWebhookSignature` takes `Secret`, `ID`, `Timestamp`, `Signature` and `RawBody`. Use the account Webhook secret, not the API key, and exact bytes captured before JSON parsing. Map the delivery's signature metadata into those fields. Default clock tolerance is 300 seconds. Check both the returned error and `Valid`; durably deduplicate by Webhook ID and settle once even when polling also observes the terminal job.
+Set `SubmitRequest.WebhookURL` for callbacks. `VerifyWebhookSignature` takes `Secret`, `ID`, `Timestamp`, `Signature` and `RawBody`. Use the account Webhook secret, not the API key, and exact bytes captured before JSON parsing. Map the delivery's signature metadata into those fields. Default clock tolerance is 300 seconds. Check both the returned error and `Valid`; durably deduplicate by Webhook ID and settle once even when polling also observes the terminal job. `ConstructWebhookEvent` verifies the same fields and returns the Webhook ID and terminal `Job`, or a `*WebhookVerificationError` with a stable `Reason`. Durable workflows that cannot block in `WaitJob` can treat a webhook as a wake-up signal, read the job with `GetJob`, and keep `PollDelay` polling as a fallback.
 
 ## Pricing and contracts
 

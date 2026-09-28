@@ -4,7 +4,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { verifyWebhookSignature } from "../dist/index.js";
+import { constructWebhookEvent, verifyWebhookSignature, YirWebhookVerificationError } from "../dist/index.js";
+import { createHmac } from "node:crypto";
 
 const sdkRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repositoryRoot = path.resolve(sdkRoot, "..");
@@ -74,4 +75,28 @@ test("SDK rejects invalid verification clock configuration", async () => {
     verifyWebhookSignature(verificationRequest({ toleranceSeconds: -1 })),
     /toleranceSeconds/,
   );
+});
+
+test("constructWebhookEvent returns the verified terminal Job", async () => {
+  const event = await constructWebhookEvent(verificationRequest());
+  assert.equal(event.id, vector.id);
+  assert.equal(event.timestamp, Number(vector.timestamp));
+  assert.equal(event.job.id, "7001");
+  assert.equal(event.job.status, "succeeded");
+});
+
+test("constructWebhookEvent rejects bad signatures and non-terminal payloads", async () => {
+  await assert.rejects(
+    constructWebhookEvent(verificationRequest({ rawBody: encoder.encode('{"id":"7001","status":"failed"}') })),
+    (error) => error instanceof YirWebhookVerificationError && error.reason === "invalid_signature",
+  );
+  for (const body of ["not json", "null", '{"id":"","status":"succeeded"}', '{"id":"7001","status":"running"}']) {
+    const signature = "v1=" + createHmac("sha256", vector.testOnlySecret)
+      .update(`${vector.timestamp}.${vector.id}.${body}`).digest("base64");
+    await assert.rejects(
+      constructWebhookEvent(verificationRequest({ rawBody: encoder.encode(body), signature })),
+      (error) => error instanceof YirWebhookVerificationError && error.reason === "invalid_payload",
+      body,
+    );
+  }
 });

@@ -205,3 +205,12 @@ func TestGetJobStatusNotFoundDoesNotFallback(t *testing.T) {
 		t.Fatal("WaitJob 404 status must not fallback to detail endpoint")
 	}
 }
+
+func TestPollDelayBacksOff(t *testing.T) {
+	cases := map[int]time.Duration{0: 5 * time.Second, 5: 5 * time.Second, 6: 10 * time.Second, 11: 10 * time.Second, 12: 20 * time.Second, 500: 20 * time.Second}
+	for poll, want := range cases {
+		if got := PollDelay(poll); got != want {
+			t.Fatalf("PollDelay(%d) = %s, want %s", poll, got, want)
+		}
+	}
+}
