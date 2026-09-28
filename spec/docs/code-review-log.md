@@ -2,6 +2,11 @@
 
 ## 2026-09-28 幂等键 SDK 正式发布准备
 
+- 固定说明范围 `26b9b407ce165560eca6be6f7550a4c3ae320233..6b4d63e7301410fca79a8787d34601f684a29590` 由 AGY `review-mul3lhgn-23a0b865` 独立审查 **Approve / 无问题**；同一 SHA 的 [CI 36409258112](https://github.com/yir-ai/sdk/actions/runs/36409258112) completed/success（44s）。[PR #7](https://github.com/yir-ai/sdk/pull/7) 尚未合并，正式安装说明仍未切换。
+- 用户批准的 Go `go/v0.3.0` 已创建并推送为 annotated tag，peeled SHA 为 `6b4d63e7301410fca79a8787d34601f684a29590`；[GitHub Release](https://github.com/yir-ai/sdk/releases/tag/go/v0.3.0) 已回读。匿名公开 Go Proxy 下载及校验和服务校验通过，Origin.Hash 匹配目标；Sum 为 `h1:y3vjg6tNPajPNYuIDmvO03DXkf2MKn3Q/wEvcfCJzUg=`。
+- 公开 `v0.3.0` 的独立消费者模拟保存原授权、已接受 Submit 响应丢失、重建客户端、复用原键和完整请求恢复，并按已知 ID 查询，通过（0.816s）。Pilio 六项恢复聚焦测试在独立临时 modfile 明确依赖 `v0.3.0` 后通过（0.367s），未改其正式依赖。本次均为合成网络故障，不证明生产供应商或系统进程重启。
+- TypeScript `0.2.1` 实际发布尝试因 npm `EOTP` 退出，未成功发包；等待维护者在本机完成验证码验证，不采集或转交验证码。归档与发布源为上述已审 SHA，未创建 TS 新标签，未覆盖任何版本。发布回读与匿名安装成功前不合并发布说明或 Docs 安装更新。
+
 - 用户明确批准发布 TypeScript `0.2.1` 与 Go `0.3.0`，并验证公开安装。基准 `26b9b407ce165560eca6be6f7550a4c3ae320233`；本批仅将六份双语 README 更新为目标版本说明，不改变已验收的实现或包版本。
 - 运行代码及归档安装证据复用上述候选审查和 CI；新说明的固定提交独立审查、CI 与实际发布回读待完成。主线安装说明在发包成功前保持原版；标签不得移动、版本不得覆盖。
 
