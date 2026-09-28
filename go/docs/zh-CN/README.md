@@ -34,6 +34,8 @@ _ = client
 
 ## 报价与提交
 
+当前源码可直接调用 `SubmitImage(ctx, request)` 或 `SubmitVideo(ctx, request)`，SDK 每次调用生成随机幂等键。最后一个参数可传入一个非空且不含换行的显式键。Submit 不隐式重试；再次调用或跨进程恢复须复用已保存的键和完整请求。此改动尚未包含在已发布的 0.2.0 模块中；服务端同一 Job 内的故障转移不依赖客户端传键。
+
 构造含 `Model`、`Input` 和明确 `Parameters` 的 `GenerationRequest`，使用 `QuoteImage` 或 `QuoteVideo`。保守的固定价流程要求 `Supply.Available`、`Primary.Kind == "fixed"`、`HasVerifiableUpperBound` 和非 nil 的 `SingleAttemptUpperBound`。审批新工作前检查过期时间。这是应用接受策略，API 仍支持其他报价类型。
 
 应用审批预算后，持久化包含完整生成请求和 `MaxCost` 的 `SubmitRequest`，以及稳定幂等键；同时保存路由、引用和 `WebhookURL`。之后才调用 `SubmitImage(ctx, savedRequest, savedKey)` 或 `SubmitVideo`。报价不授权或触发生成。重试不得生成新键；传输结果未知时使用原请求与键恢复，不得悄悄用新报价或预算替换请求。

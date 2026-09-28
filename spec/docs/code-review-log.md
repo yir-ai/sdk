@@ -1,5 +1,19 @@
 # SDK 代码审查台账
 
+## 2026-09-28 默认生成幂等键：固定提交审查与 CI 通过
+
+- 收尾记录增量 `597c528d0420eb0214bf50059a7887248b1d2a72..99286c9aac1e38b32e883754bd31d00cfd61aa17` 经原独立审查方 `review-mukyvkbt-aea350b3` 复核 **Approve**、无可操作问题，运行代码未变化；本条仅追加该结论。
+
+- 独立 AGY `review-mukyh7kc-60444f08` 只读审查 `7f168cd91a9e247859caebfeb763eb997254d89d..597c528d0420eb0214bf50059a7887248b1d2a72` 全部 15 文件，结论 **Approve**、无可操作问题。覆盖正确性、仓库约定、协议与安全边界；未调用真实供应商，未做生产联调，不推进更早历史的连续审查状态。
+- 分支 `codex/generation-idempotency` 已推送，候选 [PR #5](https://github.com/yir-ai/sdk/pull/5)。同一 `597c528d0420eb0214bf50059a7887248b1d2a72` 的完整 [SDK checks 36394772538](https://github.com/yir-ai/sdk/actions/runs/36394772538) completed/success（44s）：合同生成、全 TS 测试/类型、归档与安装、独立 Go 模块验证。本条仅追加证据，运行代码不变。仍未发包、打标签或合并 PR。
+
+## 2026-09-28 生成幂等键可选与默认生成：实现自验
+
+- 用户授权实现并收尾提交、清理、推送；实现者 Codex。基准 `7f168cd91a9e247859caebfeb763eb997254d89d`，分支 `codex/generation-idempotency`；14 文件源码/文档补丁 SHA256 `468a8c89a7829ce0224ae52195576417ce4c7dd68442ef99f37c175aeb9bac22`，本记录另计。范围为 TS/Go 生成客户端、AI SDK 适配层、OpenAPI、聚焦回归及中英文使用指南。
+- 参数省略时每次调用自动生成随机键，显式键校验并复用；AI SDK 同次上传和 Submit 使用同一生成键派生身份。REST 仍可省略，服务端 Job 内 fallback 独立于该 Header。SDK 保留无隐式 Submit 重试合同；跨调用/进程恢复由调用方持久化原键和原请求。
+- 自验：TS 两份配置编译通过；键语义、未知结果和内联素材 6 个行为用例通过（0.427s）；另运行 `node --test --test-concurrency=2 tests/transport.test.mjs`，2 PASS（0.197s）。Go `-run '^(TestClientSubmitOptionalIdempotencyKey|TestClientQuoteAndSubmitShareDemand|TestClient.*(Retry|Redirect|Unknown).*|TestSubmitUnknownOutcomeIsNotRetried)$' -count=1 -p 2` 通过（0.818s），`GOWORK=off GOMAXPROCS=2` 及 Yir 共享固定缓存。`pnpm check:model-contracts`、`gofmt -d` 与 `git diff --check` 通过。
+- 本节是实现方自验，固定提交独立审查及完整 CI 待完成；未改发布版本、未打 tag、未发布包或调用真实付费生成。已发布 0.2.0 仍要求传键，新增文档明确该行为尚未发布。
+
 ## 2026-09-26：PR #4 完整 CI 与适配器修复
 
 - 首轮 CI `36238176016` 在 `502d7180a1ae7bd0c12759b6bfea4a3b794c76df` 发现四项失败。`SDK-CONTRACT-20260926-06` / P2：AI SDK 适配器预校验未传递显式 modelContracts；`-07` / P3：浏览器边界测试仍要求已删除的 calculatePrice。修复 `0d298f3c2638e699f8408a7bea72b758bd8badb4` 补传可选合同并更新显式测试夹具/导出断言，相关 18 项测试通过。

@@ -79,6 +79,57 @@ func TestClientQuoteAndSubmitShareDemand(t *testing.T) {
 	}
 }
 
+func TestClientSubmitOptionalIdempotencyKey(t *testing.T) {
+	for _, resource := range []string{"image", "video"} {
+		t.Run(resource, func(t *testing.T) {
+			var calls int
+			var receivedKeys []string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calls++
+				receivedKeys = append(receivedKeys, r.Header.Get("Idempotency-Key"))
+				if calls == 1 {
+					w.WriteHeader(http.StatusServiceUnavailable)
+					io.WriteString(w, `{"error":{"code":"YIR_UNAVAILABLE"}}`)
+					return
+				}
+				io.WriteString(w, `{"object":"job","id":"1","status":"queued"}`)
+			}))
+			defer server.Close()
+			client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+			request := SubmitRequest{GenerationRequest: imageRequest()}
+			submit := client.SubmitImage
+			if resource == "video" {
+				request.GenerationRequest = GenerationRequest{Model: "bytedance/seedance-2.0", Input: GenerationInput{Type: "text", Prompt: "fixture"},
+					Parameters: map[string]any{"duration": 5, "resolution": "720p", "aspect_ratio": "16:9", "generate_audio": false, "n": 1}}
+				submit = client.SubmitVideo
+			}
+			if _, err := submit(context.Background(), request); err == nil || calls != 1 {
+				t.Fatalf("failed submit must not retry: calls=%d err=%v", calls, err)
+			}
+			if _, err := submit(context.Background(), request); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := submit(context.Background(), request, " stable-key "); err != nil {
+				t.Fatal(err)
+			}
+			if len(receivedKeys[0]) < 26 || len(receivedKeys[1]) < 26 || receivedKeys[0] == receivedKeys[1] || receivedKeys[2] != "stable-key" {
+				t.Fatalf("unexpected keys: %v", receivedKeys)
+			}
+			if _, err := submit(context.Background(), request, " stable-key "); err != nil || receivedKeys[3] != "stable-key" {
+				t.Fatalf("key not preserved: %v err=%v", receivedKeys, err)
+			}
+			for _, keys := range [][]string{{""}, {" "}, {"key\ninjected"}, {"key\n"}, {"one", "two"}} {
+				if _, err := submit(context.Background(), request, keys...); err == nil {
+					t.Fatalf("invalid keys accepted: %v", keys)
+				}
+			}
+			if calls != 4 {
+				t.Fatalf("invalid keys reached network: %d", calls)
+			}
+		})
+	}
+}
+
 func TestClientRejectsInvalidRequestsBeforeNetwork(t *testing.T) {
 	var calls atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))

@@ -386,7 +386,7 @@
         "name": "Idempotency-Key",
         "in": "header",
         "required": false,
-        "description": "Optional on the wire. Replaying the same key with an identical standardized request returns the original result instead of creating a second one; reusing a key with a changed request is rejected; a request without a key always creates a new resource. Production integrations should persist one key per logical request before submitting. The TypeScript and Go SDKs require a caller-persisted key instead of generating one, so their callers must supply it.",
+        "description": "Optional. Replaying the same key with an identical standardized request returns the original result instead of creating a second one; reusing a key with a changed request is rejected; a request without a key always creates a new resource. Generation SDK methods accept an omitted key and generate a random key per call; they do not automatically retry Submit. Production integrations should persist one key per logical request before submitting and reuse it with the original request when the outcome is unknown. Server-side fallback within an accepted Job is independent of this header.",
         "schema": { "type": "string", "minLength": 1, "maxLength": 200 }
       },
       "JobID": {
