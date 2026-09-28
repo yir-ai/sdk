@@ -2,6 +2,8 @@
 
 ## 2026-09-28 默认生成幂等键：固定提交审查与 CI 通过
 
+- 收尾记录增量 `597c528d0420eb0214bf50059a7887248b1d2a72..99286c9aac1e38b32e883754bd31d00cfd61aa17` 经原独立审查方 `review-mukyvkbt-aea350b3` 复核 **Approve**、无可操作问题，运行代码未变化；本条仅追加该结论。
+
 - 独立 AGY `review-mukyh7kc-60444f08` 只读审查 `7f168cd91a9e247859caebfeb763eb997254d89d..597c528d0420eb0214bf50059a7887248b1d2a72` 全部 15 文件，结论 **Approve**、无可操作问题。覆盖正确性、仓库约定、协议与安全边界；未调用真实供应商，未做生产联调，不推进更早历史的连续审查状态。
 - 分支 `codex/generation-idempotency` 已推送，候选 [PR #5](https://github.com/yir-ai/sdk/pull/5)。同一 `597c528d0420eb0214bf50059a7887248b1d2a72` 的完整 [SDK checks 36394772538](https://github.com/yir-ai/sdk/actions/runs/36394772538) completed/success（44s）：合同生成、全 TS 测试/类型、归档与安装、独立 Go 模块验证。本条仅追加证据，运行代码不变。仍未发包、打标签或合并 PR。
 
