@@ -2,6 +2,8 @@
 
 ## 2026-09-28 幂等键发布候选：独立审查与完整 CI 通过
 
+- 用户已有合并授权。最终候选 `dcdca33e5b9147f35f66576dfda54a1352855e65` 的 [CI 36406408521](https://github.com/yir-ai/sdk/actions/runs/36406408521) completed/success；台账增量由原审查方 `review-mul2mqcd-721d9ebb` 复审 **Approve / 无问题**。SDK [PR #6](https://github.com/yir-ai/sdk/pull/6) 于 `2026-09-28T09:56:36Z` 合并为 `376603d750701b82c39e27b70303a07d8623e5dd`；其 tree 与已审最终候选完全一致，合并后 [CI 36406662638](https://github.com/yir-ai/sdk/actions/runs/36406662638) completed/success。TypeScript 0.2.1 与 Go 0.3.0 仍为未发布候选，无新增标签或实际发包。
+
 - 独立审查方 AGY `review-mul2b72z-39c490bd` 只读审查固定范围 `31026cce9530c92fb429ebf54191fdebcdcaeaa2..ecf9b4df56c41cf665692b8414c5b1e6ce1a76b0` 全部增量，结论 **Approve / 无问题**。覆盖各语言版本、迁移合同、归档消费者、类型及双语正式安装边界；旧接口失败与新接口/包装函数编译、实际 TS 归档安装（5.97s）由审查方独立复核。
 - 同一候选 [PR #6](https://github.com/yir-ai/sdk/pull/6) 完整 [SDK checks 36405566814](https://github.com/yir-ai/sdk/actions/runs/36405566814) completed/success（53s）：合同、TS 全测试/类型/归档安装、独立 Go 模块通过。本条仅登记已取得证据，运行实现及候选内容不变；未发包、打标签或部署。
 
