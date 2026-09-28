@@ -42,6 +42,32 @@ for (const name of ["@yir-ai/sdk", "@yir-ai/sdk/model-contracts", "@yir-ai/sdk/v
   assert.ok(resolved.endsWith(".js"));
 }
 const request = { model: "openai/gpt-image-2", input: { type: "text", prompt: "test" }, parameters: {} };
+const submissions = [];
+const submittingClient = createNodeYirClient({ apiKey: "fixture", baseURL: "https://example.com", fetch: async (url, options) => {
+  assert.equal(options.method, "POST");
+  const key = new Headers(options.headers).get("Idempotency-Key");
+  assert.ok(key?.trim(), "The installed SDK must supply a key when omitted by the caller");
+  submissions.push({ url: String(url), key, body: JSON.parse(options.body) });
+  return new Response(JSON.stringify({ object: "job", id: String(submissions.length), status: "queued", result: null, error: null, created_at: 1 }), { status: 202, headers: { "content-type": "application/json" } });
+} });
+await submittingClient.submitImage(request);
+await submittingClient.submitImage(request);
+assert.notEqual(submissions[0].key, submissions[1].key, "Separate calls must use separate generated identities");
+const videoRequest = { model: "google/veo-3.1-fast", input: { type: "text", prompt: "test" }, parameters: {} };
+await submittingClient.submitVideo(videoRequest);
+assert.ok(submissions[2].url.endsWith("/v1/videos/generations"));
+await submittingClient.submitImage(request, "saved-key");
+await submittingClient.submitImage(request, "saved-key");
+assert.equal(submissions[3].key, "saved-key");
+assert.deepEqual(submissions[3], submissions[4], "Recovery must preserve the saved key and request on the wire");
+assert.equal(submissions.length, 5, "Each invocation must issue exactly one Submit");
+let unknownSubmits = 0;
+const unknownClient = createNodeYirClient({ apiKey: "fixture", baseURL: "https://example.com", fetch: async () => {
+  unknownSubmits++;
+  throw new Error("fixture_unknown_submit");
+} });
+await assert.rejects(() => unknownClient.submitImage(request), /fixture_unknown_submit/);
+assert.equal(unknownSubmits, 1, "An ambiguous outcome must not cause an implicit Submit retry");
 let calls = 0;
 const client = createYirClient(async () => {
   calls++;

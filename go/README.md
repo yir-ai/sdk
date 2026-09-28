@@ -32,6 +32,20 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
 
+## 0.3.0 candidate migration
+
+The current source is the unpublished **Go 0.3.0** candidate. The final generation key argument changes from `string` to `...string`; this is an incompatible public API change under the module's 0.x release rules. Ordinary calls such as `client.SubmitImage(ctx, request, savedKey)` still compile, and calls without a key now work. The same change applies to `SubmitVideo`.
+
+Custom interfaces must declare `SubmitImage(context.Context, yir.SubmitRequest, ...string) (yir.Job, error)` (and the analogous video method). A method value no longer matches `func(context.Context, yir.SubmitRequest, string) (yir.Job, error)`. Preserve that function type with a wrapper:
+
+```go
+submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.Job, error) {
+    return client.SubmitImage(ctx, request, key)
+}
+```
+
+See the compile-checked [migration example](client_example_test.go). No `go/v0.3.0` release tag has been created; the install command above uses the published module.
+
 ## Quote and submit
 
 In current source, `SubmitImage(ctx, request)` and `SubmitVideo(ctx, request)` generate a random idempotency key per call. You may pass one explicit, non-empty key with no CR/LF as the final argument. Submit has no hidden retries. Recovery across calls or process restarts requires a saved key and exact request. This change is not yet included in the published 0.2.0 module; server fallback within an accepted Job is independent of the client key.

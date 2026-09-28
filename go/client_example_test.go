@@ -9,6 +9,26 @@ import (
 	yir "github.com/yir-ai/sdk/go"
 )
 
+type generationClient interface {
+	SubmitImage(context.Context, yir.SubmitRequest, ...string) (yir.Job, error)
+	SubmitVideo(context.Context, yir.SubmitRequest, ...string) (yir.Job, error)
+}
+
+var _ generationClient = (*yir.Client)(nil)
+
+// Compile-checked migration for applications retaining a fixed function type.
+func ExampleClient_SubmitImage_legacyFunction() {
+	client, err := yir.NewClient("fixture", yir.ClientOptions{})
+	if err != nil {
+		panic(err)
+	}
+	var submit func(context.Context, yir.SubmitRequest, string) (yir.Job, error)
+	submit = func(ctx context.Context, request yir.SubmitRequest, key string) (yir.Job, error) {
+		return client.SubmitImage(ctx, request, key)
+	}
+	_ = submit // Pass this wrapper to the application's existing function consumer.
+}
+
 // This example is compile-checked; without an Output directive, go test does not
 // execute it or incur generation costs. Persist the request and key before Submit.
 func ExampleClient() {

@@ -1,5 +1,17 @@
 # SDK 代码审查台账
 
+## 2026-09-28 幂等键发布候选：独立审查与完整 CI 通过
+
+- 独立审查方 AGY `review-mul2b72z-39c490bd` 只读审查固定范围 `31026cce9530c92fb429ebf54191fdebcdcaeaa2..ecf9b4df56c41cf665692b8414c5b1e6ce1a76b0` 全部增量，结论 **Approve / 无问题**。覆盖各语言版本、迁移合同、归档消费者、类型及双语正式安装边界；旧接口失败与新接口/包装函数编译、实际 TS 归档安装（5.97s）由审查方独立复核。
+- 同一候选 [PR #6](https://github.com/yir-ai/sdk/pull/6) 完整 [SDK checks 36405566814](https://github.com/yir-ai/sdk/actions/runs/36405566814) completed/success（53s）：合同、TS 全测试/类型/归档安装、独立 Go 模块通过。本条仅登记已取得证据，运行实现及候选内容不变；未发包、打标签或部署。
+
+## 2026-09-28 幂等键发布候选：实现方定向验证
+
+- 实现者 Codex，基准 `31026cce9530c92fb429ebf54191fdebcdcaeaa2`。保留已合并的默认生成键实现，仅准备 TypeScript `0.2.1` 元数据、Go `0.3.0` 候选与双语迁移说明，并增强实际归档消费者验证。
+- Go 普通带键调用保持可用，但 `string` 改为 `...string` 不兼容固定签名接口与方法函数赋值；采用各语言独立版本，按 0.x 规则提升 Go minor。正式安装命令仍固定已发布 `0.2.0`，未创建标签或发布包。
+- `pnpm run test:package` 通过（5.6s）：从实际 `0.2.1` 归档安装后验证省略键、每次调用不同键、同键同请求恢复及未知 Submit 只发送一次；消费者类型检查覆盖图片和视频可选键调用。`GOWORK=off GOMAXPROCS=2 go test -p 2 -run '^ExampleClient_SubmitImage_legacyFunction$' ./...` 通过（0.901s），只编译迁移示例，不执行生成。`git diff --check` 通过。
+- 本条为实现方定向验证；固定提交独立审查及完整 CI 待完成，历史实现审查按既有范围复用。
+
 ## 2026-09-28 默认生成幂等键：PR #5 合并
 
 - 用户明确授权推进合并。最终候选 `143082f9ad4d81dbd1b95b9a179a45105b49a62f` 的 [SDK checks 36395971800](https://github.com/yir-ai/sdk/actions/runs/36395971800) completed/success（42s）；运行代码与上述两轮独立 AGY 审查覆盖的实现一致，后续仅记录审查证据。

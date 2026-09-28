@@ -24,6 +24,8 @@ Install TypeScript with `pnpm add @yir-ai/sdk@0.2.0`. See the [TypeScript guide]
 
 ## Safe generation lifecycle
 
+Release candidates: **TypeScript 0.2.1** and **Go 0.3.0**, both unpublished. TypeScript's optional argument is compatible with existing calls. Go changes the final argument to `...string`: ordinary calls with a key still compile, while custom fixed-signature interfaces and method function assignments need migration. See the [Go guide](go/README.md#030-candidate-migration). Published installation commands above remain pinned to 0.2.0.
+
 Current source allows omitting the generation idempotency key and creates a new random key per SDK call. The published 0.2.0 packages still require the key; this change is unreleased. Submit is issued once. Recovery across calls/processes requires the same caller-persisted key and exact request. Server fallback within an accepted Job is independent of this header.
 
 1. Build an explicit request and obtain a quote. Check supply and a verifiable single-attempt upper bound.
