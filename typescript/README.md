@@ -14,19 +14,19 @@ Install from npm:
 pnpm add @yir-ai/sdk@0.2.0
 ```
 
-To build a local archive instead, from a checkout of this repository:
+The source candidate is **0.2.1**, which has not been published. Build a local archive from a checkout of this repository:
 
 ```sh
 cd typescript
 pnpm install --frozen-lockfile
 pnpm build
-pnpm pack --pack-destination ./artifacts
+pnpm pack --pack-destination ./.tmp/scratch
 ```
 
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.2.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.2.1.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.

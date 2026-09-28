@@ -14,19 +14,19 @@
 pnpm add @yir-ai/sdk@0.2.0
 ```
 
-如需构建本地归档，在本仓库检出目录执行：
+当前源码候选版本为 **0.2.1**，尚未发布。在本仓库检出目录构建本地归档：
 
 ```sh
 cd typescript
 pnpm install --frozen-lockfile
 pnpm build
-pnpm pack --pack-destination ./artifacts
+pnpm pack --pack-destination ./.tmp/scratch
 ```
 
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/artifacts/yir-ai-sdk-0.2.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.2.1.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
