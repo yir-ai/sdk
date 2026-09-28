@@ -42,6 +42,50 @@ test("AI SDK generateImage submits one validated Yir demand with original budget
   assert.equal(result.providerMetadata.yir.images[0].jobId, "42");
 });
 
+test("AI SDK image and video accept omitted keys and do not resubmit failures", async () => {
+  for (const kind of ["image", "video"]) {
+    const { provider, calls } = fixture(kind === "image" ? "image/png" : "video/mp4");
+    if (kind === "image") {
+      await generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: "fixture" });
+    } else {
+      await startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "fixture" });
+    }
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].headers["Idempotency-Key"], /^[0-9a-f-]{36}$/);
+    let failures = 0;
+    const failing = createYirAIProvider({ client: createYirClient(async () => { failures++; throw new TypeError("connection lost"); }) });
+    await assert.rejects(kind === "image"
+      ? generateImage({ model: failing.imageModel("openai/gpt-image-2"), prompt: "fixture" })
+      : startVideo({ model: failing.videoModel("bytedance/seedance-2.0"), prompt: "fixture" }), /connection lost/);
+    assert.equal(failures, 1);
+  }
+});
+
+test("AI SDK generates one identity for Submit and its inline inputs per invocation", async () => {
+  const calls = [];
+  const fileID = "file_11111111-1111-4111-8111-111111111111";
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path === "/v1/files") return { files: request.body.files.map(file => ({ ...file, id: fileID, object: "file", status: "ready" })) };
+    return { id: "42", status: "succeeded", created_at: 1,
+      result: { availability: "available", files: [{ url: "https://assets.example/result", media_type: "image/png" }] } };
+  });
+  const provider = createYirAIProvider({ client, fetch: async () => new Response(new Uint8Array([137, 80, 78, 71])) });
+  for (let index = 0; index < 2; index++) {
+    await generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: { text: "Edit", images: [new Uint8Array([137, 80, 78, 71])] } });
+  }
+  const uploads = calls.filter(request => request.path === "/v1/files");
+  assert.equal(uploads.length, 2);
+  assert.notEqual(uploads[0].headers["Idempotency-Key"], uploads[1].headers["Idempotency-Key"]);
+  const submissions = calls.filter(request => request.path === "/v1/images/generations");
+  assert.equal(submissions.length, 2);
+  assert.notEqual(submissions[0].headers["Idempotency-Key"], submissions[1].headers["Idempotency-Key"]);
+  for (const [index, request] of submissions.entries()) {
+    assert.equal(uploads[index].headers["Idempotency-Key"], `${request.headers["Idempotency-Key"]}:inputs`);
+    assert.deepEqual(request.body.input.references, [{ role: "reference_image", file_id: fileID }]);
+  }
+});
+
 test("image adapter exposes actual parameter handling as warnings", async () => {
   const notice={name:"quality",disposition:"ignored",reason:"channel_parameter_unsupported",message:"Quality is not sent upstream."};
   const {provider,calls}=fixture("image/png",[notice]);

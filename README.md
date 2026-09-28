@@ -24,6 +24,8 @@ Install TypeScript with `pnpm add @yir-ai/sdk@0.2.0`. See the [TypeScript guide]
 
 ## Safe generation lifecycle
 
+Current source allows omitting the generation idempotency key and creates a new random key per SDK call. The published 0.2.0 packages still require the key; this change is unreleased. Submit is issued once. Recovery across calls/processes requires the same caller-persisted key and exact request. Server fallback within an accepted Job is independent of this header.
+
 1. Build an explicit request and obtain a quote. Check supply and a verifiable single-attempt upper bound.
 2. Have your application approve the budget. Persist the exact submit request, including `max_cost`, and a stable idempotency key before submitting.
 3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID.

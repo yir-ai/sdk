@@ -186,9 +186,9 @@ function readOptions(options: SharedV4ProviderOptions) {
   for (const key of Object.keys(extension)) {
     if (!["parameters", "routing", "maxCost", "idempotencyKey"].includes(key)) throw new YirSDKValidationError("unknown_field", `providerOptions.yir.${key}`);
   }
-  if (typeof extension.idempotencyKey !== "string" || !extension.idempotencyKey.trim()) throw new YirSDKValidationError("idempotency_key_required", "providerOptions.yir.idempotencyKey");
+  if (extension.idempotencyKey !== undefined && (typeof extension.idempotencyKey !== "string" || !extension.idempotencyKey.trim() || /[\r\n]/.test(extension.idempotencyKey))) throw new YirSDKValidationError("idempotency_key_invalid", "providerOptions.yir.idempotencyKey");
   const parameters = extension.parameters === undefined ? {} : extension.parameters;
   if (parameters === null || typeof parameters !== "object" || Array.isArray(parameters)) throw new YirSDKValidationError("object_required", "providerOptions.yir.parameters");
   if (extension.maxCost !== undefined && typeof extension.maxCost !== "string") throw new YirSDKValidationError("parameter_type", "providerOptions.yir.maxCost");
-  return { parameters: parameters as Record<string, unknown>, routing: extension.routing as RoutingOverride | undefined, maxCost: extension.maxCost, idempotencyKey: extension.idempotencyKey };
+  return { parameters: parameters as Record<string, unknown>, routing: extension.routing as RoutingOverride | undefined, maxCost: extension.maxCost, idempotencyKey: extension.idempotencyKey?.trim() ?? crypto.randomUUID() };
 }

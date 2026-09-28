@@ -34,9 +34,9 @@ export type YirClient = YirFileClient & {
   getModelContract(model: string, options?: YirRequestOptions): Promise<ModelContractDetail>;
   quoteImage(request: StandardImageQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
   quoteBatch(requests: readonly QuoteBatchRequestItem[], options?: YirRequestOptions): Promise<QuoteBatch>;
-  submitImage(request: StandardImageGenerationRequest, idempotencyKey: string, options?: YirRequestOptions): Promise<Job>;
+  submitImage(request: StandardImageGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   quoteVideo(request: StandardVideoQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
-  submitVideo(request: StandardVideoGenerationRequest, idempotencyKey: string, options?: YirRequestOptions): Promise<Job>;
+  submitVideo(request: StandardVideoGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
   getJobStatus(id: string, options?: YirRequestOptions): Promise<JobStatusResponse>;
   cancelJob(id: string): Promise<Job>;
@@ -89,8 +89,8 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     },
     submitImage(request, idempotencyKey, options) {
       options?.signal?.throwIfAborted();
-      const key = idempotencyKey.trim();
-      if (!key) throw new Error("idempotency_key_required");
+      const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
+      if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
       validateGeneration("generate_image", request, localCatalog);
       warnParameterPolicies("generate_image", request, localCatalog);
       return transport<Job>({
@@ -114,8 +114,8 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     },
     submitVideo(request, idempotencyKey, options) {
       options?.signal?.throwIfAborted();
-      const key = idempotencyKey.trim();
-      if (!key) throw new Error("idempotency_key_required");
+      const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
+      if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
       validateGeneration("generate_video", request, localCatalog);
       warnParameterPolicies("generate_video", request, localCatalog);
       return transport<Job>({

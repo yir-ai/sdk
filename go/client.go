@@ -3,6 +3,7 @@ package yir
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -172,12 +173,12 @@ func (c *Client) quoteMatchesRequest(quote Quote, request GenerationRequest, ope
 	return returnedModel == expectedModel && quote.Operation == operation && quote.InputMode == request.Input.Type
 }
 
-func (c *Client) SubmitImage(ctx context.Context, request SubmitRequest, idempotencyKey string) (Job, error) {
-	return c.submit(ctx, "images", "generate_image", request, idempotencyKey)
+func (c *Client) SubmitImage(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
+	return c.submit(ctx, "images", "generate_image", request, idempotencyKey...)
 }
 
-func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempotencyKey string) (Job, error) {
-	return c.submit(ctx, "videos", "generate_video", request, idempotencyKey)
+func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
+	return c.submit(ctx, "videos", "generate_video", request, idempotencyKey...)
 }
 
 var decimalCostPattern = regexp.MustCompile(`^[0-9]{1,13}(\.[0-9]{1,6})?$`)
@@ -216,13 +217,21 @@ func warnParameterPolicies(operation string, request GenerationRequest, catalogs
 	}
 }
 
-func (c *Client) submit(ctx context.Context, resource, operation string, request SubmitRequest, key string) (Job, error) {
+func (c *Client) submit(ctx context.Context, resource, operation string, request SubmitRequest, keys ...string) (Job, error) {
 	var job Job
 	if request.Parameters == nil {
 		request.Parameters = map[string]any{}
 	}
-	key = strings.TrimSpace(key)
-	if key == "" || strings.ContainsAny(key, "\r\n") {
+	if len(keys) > 1 {
+		return job, errors.New("idempotency_key_invalid")
+	}
+	key := ""
+	if len(keys) == 1 {
+		key = strings.TrimSpace(keys[0])
+	} else {
+		key = rand.Text()
+	}
+	if len(keys) == 1 && (key == "" || strings.ContainsAny(keys[0], "\r\n")) {
 		return job, errors.New("idempotency_key_invalid")
 	}
 	if err := c.validateGeneration(operation, request.GenerationRequest); err != nil {

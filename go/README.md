@@ -34,6 +34,8 @@ Keep the key on your server. The default base URL is `https://gateway.yir.ai`; c
 
 ## Quote and submit
 
+In current source, `SubmitImage(ctx, request)` and `SubmitVideo(ctx, request)` generate a random idempotency key per call. You may pass one explicit, non-empty key with no CR/LF as the final argument. Submit has no hidden retries. Recovery across calls or process restarts requires a saved key and exact request. This change is not yet included in the published 0.2.0 module; server fallback within an accepted Job is independent of the client key.
+
 Build a `GenerationRequest` with `Model`, `Input` and explicit `Parameters`; use `QuoteImage` or `QuoteVideo`. For a conservative fixed-price flow, require `Supply.Available`, `Primary.Kind == "fixed"`, `HasVerifiableUpperBound` and a non-nil `SingleAttemptUpperBound`. Check expiry before approving new work. These are application acceptance rules; other API quote kinds remain supported.
 
 After your application's budget approval, persist a `SubmitRequest` containing the exact generation request and `MaxCost`, plus a stable idempotency key. Include routing, references and any `WebhookURL`. Only then call `SubmitImage(ctx, savedRequest, savedKey)` or `SubmitVideo`. A quote does not authorize or trigger generation. Do not generate a new key on retry; an unknown transport outcome must recover with the original request and key. Never silently replace that request with a new quote or budget.

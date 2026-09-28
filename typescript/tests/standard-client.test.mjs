@@ -246,7 +246,7 @@ test("the client delegates auth to a transport and fixes the public paths", asyn
   ]);
 });
 
-test("video submit requires an idempotency key before transport", async () => {
+test("video submit rejects an explicitly empty idempotency key before transport", async () => {
   let calls = 0;
   const client = createYirClient(async () => {
     calls += 1;
@@ -258,8 +258,40 @@ test("video submit requires an idempotency key before transport", async () => {
     parameters: { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1 },
   };
 
-  assert.throws(() => client.submitVideo(request, "  "), /idempotency_key_required/);
+  assert.throws(() => client.submitVideo(request, "  "), /idempotency_key_invalid/);
   assert.equal(calls, 0);
+});
+
+test("image and video submits generate independent keys without hidden retries", async () => {
+  const requests = [
+    ["submitImage", buildImageGenerationRequest({ model: "openai/gpt-image-2", prompt: "fixture", parameters: { n: 1 } })],
+    ["submitVideo", { model: "bytedance/seedance-2.0", input: { type: "text", prompt: "fixture" },
+      parameters: { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1 } }],
+  ];
+  for (const [method, body] of requests) {
+    const calls = [];
+    const client = createYirClient(async request => {
+      calls.push(request);
+      if (calls.length === 1) throw new Error("connection lost");
+      return { id: String(calls.length), status: "queued" };
+    });
+    await assert.rejects(client[method](body), /connection lost/);
+    assert.equal(calls.length, 1);
+    assert.equal((await client[method](body)).id, "2");
+    for (const request of calls) {
+      assert.match(request.headers["Idempotency-Key"], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      assert.deepEqual(request.body, body);
+    }
+    assert.notEqual(calls[0].headers["Idempotency-Key"], calls[1].headers["Idempotency-Key"]);
+    assert.throws(() => client[method](body, ""), /idempotency_key_invalid/);
+    assert.throws(() => client[method](body, "key\ninjected"), /idempotency_key_invalid/);
+    assert.throws(() => client[method](body, "key\n"), /idempotency_key_invalid/);
+    await client[method](body, " persisted-key ");
+    assert.equal(calls[2].headers["Idempotency-Key"], "persisted-key");
+    await client[method](body, " persisted-key ");
+    assert.equal(calls[3].headers["Idempotency-Key"], "persisted-key");
+    assert.deepEqual(calls[3].body, calls[2].body);
+  }
 });
 
 test("image Quote and Submit share one normalized request contract", () => {
