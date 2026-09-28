@@ -1,5 +1,10 @@
 # SDK 代码审查台账
 
+## 2026-09-28 幂等键发布候选：独立审查与完整 CI 通过
+
+- 独立审查方 AGY `review-mul2b72z-39c490bd` 只读审查固定范围 `31026cce9530c92fb429ebf54191fdebcdcaeaa2..ecf9b4df56c41cf665692b8414c5b1e6ce1a76b0` 全部增量，结论 **Approve / 无问题**。覆盖各语言版本、迁移合同、归档消费者、类型及双语正式安装边界；旧接口失败与新接口/包装函数编译、实际 TS 归档安装（5.97s）由审查方独立复核。
+- 同一候选 [PR #6](https://github.com/yir-ai/sdk/pull/6) 完整 [SDK checks 36405566814](https://github.com/yir-ai/sdk/actions/runs/36405566814) completed/success（53s）：合同、TS 全测试/类型/归档安装、独立 Go 模块通过。本条仅登记已取得证据，运行实现及候选内容不变；未发包、打标签或部署。
+
 ## 2026-09-28 幂等键发布候选：实现方定向验证
 
 - 实现者 Codex，基准 `31026cce9530c92fb429ebf54191fdebcdcaeaa2`。保留已合并的默认生成键实现，仅准备 TypeScript `0.2.1` 元数据、Go `0.3.0` 候选与双语迁移说明，并增强实际归档消费者验证。
