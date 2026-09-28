@@ -2,6 +2,7 @@
 
 ## 2026-09-28 SDK 公开发布与匿名安装验证
 
+- 发布说明已闭环：AGY `review-mul71hhs-065e01f5` 对最终记录增量 `dfa4118cbc997c0edbfa329887dbee16f303f985..c7d20d57bf217a82b8bd8d3c64cbe453d6c54f27` 独立审查 Approve；最终候选完整 CI `36418855060` success（42s）。[PR #7](https://github.com/yir-ai/sdk/pull/7) 于 `2026-09-28T12:03:36Z` 合并为 `832655b7875f066449a24906b4082a4a9844bdd6`，合并 tree 与候选完全一致，合并后完整 [CI 36419403779](https://github.com/yir-ai/sdk/actions/runs/36419403779) success。本条为事后台账记录；以下未合并/EOTP 等描述保留为阶段历史，不移动发布标签、不改变运行实现。
 - 维护者已完成 npm 浏览器验证并发布 `@yir-ai/sdk@0.2.1`。匿名 registry 回读版本成功，归档 SHA1 `c4a06597128e5df5494654a146e410d41ca7eaf7`，完整性 `sha512-omvR9MfXYcxRfzoQQOdo0kqLDUYlhViDtuqGpNOpY71Z8hrKpljprbAtNoyzvdw6VEt7d1TTSYe96YANj3bwvQ==` 与已审归档一致。独立无凭据消费者安装成功；实际公开包 `smoke.mjs` 通过（0.629s），类型编译通过（1.754s），覆盖省略键、每次调用新键、显式原授权恢复和未知 Submit 无自动重试。
 - `typescript/v0.2.1` annotated tag 和 [Release](https://github.com/yir-ai/sdk/releases/tag/typescript/v0.2.1) 已创建，源固定为 `6b4d63e7301410fca79a8787d34601f684a29590`；与 Go `go/v0.3.0` 的发布源一致。后续说明记录不移动标签、不重复发包。早先 EOTP/E400 记录保留为阶段历史。
 - 后续发布记录及不带 OTP 参数的说明范围 `6b4d63e7301410fca79a8787d34601f684a29590..dfa4118cbc997c0edbfa329887dbee16f303f985` 经 AGY `review-mul6m9oa-21937eb3` 独立审查 **Approve / 无问题**，完整 [CI 36417058935](https://github.com/yir-ai/sdk/actions/runs/36417058935) completed/success（42s）。本条仅登记公开安装事实，不改变运行代码；PR #7 合并结果另行回读。未部署生产服务。
