@@ -1,5 +1,10 @@
 # SDK 代码审查台账
 
+## 2026-09-28 默认生成幂等键：PR #5 合并
+
+- 用户明确授权推进合并。最终候选 `143082f9ad4d81dbd1b95b9a179a45105b49a62f` 的 [SDK checks 36395971800](https://github.com/yir-ai/sdk/actions/runs/36395971800) completed/success（42s）；运行代码与上述两轮独立 AGY 审查覆盖的实现一致，后续仅记录审查证据。
+- [PR #5](https://github.com/yir-ai/sdk/pull/5) 于 `2026-09-28T08:38:49Z` 普通合并，GitHub 回读 MERGED，合并提交 `dcdccc01e2ab0a504cdd144c95003ee9757d8c47`。本地干净工作区已快进至该主线。本条仅登记最终结果，未发布包、打标签或部署生产。
+
 ## 2026-09-28 默认生成幂等键：固定提交审查与 CI 通过
 
 - 收尾记录增量 `597c528d0420eb0214bf50059a7887248b1d2a72..99286c9aac1e38b32e883754bd31d00cfd61aa17` 经原独立审查方 `review-mukyvkbt-aea350b3` 复核 **Approve**、无可操作问题，运行代码未变化；本条仅追加该结论。
