@@ -11,10 +11,10 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.2.0
+pnpm add @yir-ai/sdk@0.2.1
 ```
 
-The source candidate is **0.2.1**, which has not been published. Build a local archive from a checkout of this repository:
+For local development, build an archive from a checkout of this repository:
 
 ```sh
 cd typescript
@@ -54,7 +54,7 @@ You can also pass `{ apiKey, baseURL, fetch, headers, userAgent }`. The default 
 
 ## Quote, authorize, persist, submit
 
-In current source, `client.submitImage(request)` and `client.submitVideo(request)` create a random idempotency key per call. Explicit keys are trimmed and must be non-empty with no CR/LF. Submit has no hidden retries. For recovery across calls or process restarts, pass a saved key as the second argument and reuse the exact request. This change is not yet included in the published 0.2.0 package; server fallback within an accepted Job is independent of the client key.
+Starting in 0.2.1, `client.submitImage(request)` and `client.submitVideo(request)` create a random idempotency key per call. Explicit keys are trimmed and must be non-empty with no CR/LF. Submit has no hidden retries. For recovery across calls or process restarts, pass a saved key as the second argument and reuse the exact request. Server fallback within an accepted Job is independent of the client key.
 
 Use [quickstart.mjs](examples/quickstart.mjs)'s `prepareImage(client, input)` to build a request and quote it. It requires available supply, a fixed primary price and a verifiable upper bound, and returns a request containing `max_cost`. This is a conservative example policy, not a change to the API's supported quote kinds.
 
@@ -79,7 +79,7 @@ Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ sec
 
 Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces.
 
-Current source makes `providerOptions.yir.idempotencyKey` optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
+Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported. Use Yir parameters for resolution. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 

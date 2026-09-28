@@ -15,16 +15,16 @@ Yir 图像与视频 API 的官方 Go 和 TypeScript SDK。公开源码：[yir-ai
 Go 1.25 及以上，在应用的模块目录执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.2.0
+go get github.com/yir-ai/sdk/go@v0.3.0
 ```
 
-TypeScript 使用 `pnpm add @yir-ai/sdk@0.2.0` 安装。入口和本地归档安装方式见 [TypeScript 指南](../../../typescript/docs/zh-CN/README.md#安装)。
+TypeScript 使用 `pnpm add @yir-ai/sdk@0.2.1` 安装。入口和本地归档安装方式见 [TypeScript 指南](../../../typescript/docs/zh-CN/README.md#安装)。
 
 ## 安全的生成流程
 
-发布候选分别为 **TypeScript 0.2.1** 和 **Go 0.3.0**，均未发布。TypeScript 可选参数兼容原调用；Go 将最后一个参数改为 `...string`，普通带键调用仍可编译，但固定签名的自定义接口和方法函数赋值需要迁移，见 [Go 指南](../../../go/docs/zh-CN/README.md#030-候选迁移)。以上正式安装命令继续固定已发布的 0.2.0。
+生成键可选从 **TypeScript 0.2.1** 和 **Go 0.3.0** 起支持。TypeScript 可选参数兼容原调用；Go 将最后一个参数改为 `...string`，普通带键调用仍可编译，但固定签名的自定义接口和方法函数赋值需要迁移，见 [Go 指南](../../../go/docs/zh-CN/README.md#030-迁移)。
 
-当前源码允许省略生成幂等键，每次 SDK 调用自动生成一个随机键。已发布的 0.2.0 包仍要求传键，此改动尚未发布。Submit 只发送一次；再次调用或跨进程恢复必须复用调用方已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖该 Header。
+上述版本允许省略生成幂等键，每次 SDK 调用自动生成一个随机键。Submit 只发送一次；再次调用或跨进程恢复必须复用调用方已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖该 Header。
 
 1. 构造明确的请求并取得报价，检查供给和可验证的单次尝试费用上限。
 2. 由应用审批预算；提交前持久化包含 `max_cost` 的完整提交请求和稳定幂等键。

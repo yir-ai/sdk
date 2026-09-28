@@ -1,5 +1,21 @@
 # SDK 代码审查台账
 
+## 2026-09-28 SDK 公开发布与匿名安装验证
+
+- 维护者已完成 npm 浏览器验证并发布 `@yir-ai/sdk@0.2.1`。匿名 registry 回读版本成功，归档 SHA1 `c4a06597128e5df5494654a146e410d41ca7eaf7`，完整性 `sha512-omvR9MfXYcxRfzoQQOdo0kqLDUYlhViDtuqGpNOpY71Z8hrKpljprbAtNoyzvdw6VEt7d1TTSYe96YANj3bwvQ==` 与已审归档一致。独立无凭据消费者安装成功；实际公开包 `smoke.mjs` 通过（0.629s），类型编译通过（1.754s），覆盖省略键、每次调用新键、显式原授权恢复和未知 Submit 无自动重试。
+- `typescript/v0.2.1` annotated tag 和 [Release](https://github.com/yir-ai/sdk/releases/tag/typescript/v0.2.1) 已创建，源固定为 `6b4d63e7301410fca79a8787d34601f684a29590`；与 Go `go/v0.3.0` 的发布源一致。后续说明记录不移动标签、不重复发包。早先 EOTP/E400 记录保留为阶段历史。
+- 后续发布记录及不带 OTP 参数的说明范围 `6b4d63e7301410fca79a8787d34601f684a29590..dfa4118cbc997c0edbfa329887dbee16f303f985` 经 AGY `review-mul6m9oa-21937eb3` 独立审查 **Approve / 无问题**，完整 [CI 36417058935](https://github.com/yir-ai/sdk/actions/runs/36417058935) completed/success（42s）。本条仅登记公开安装事实，不改变运行代码；PR #7 合并结果另行回读。未部署生产服务。
+
+## 2026-09-28 幂等键 SDK 正式发布准备
+
+- 固定说明范围 `26b9b407ce165560eca6be6f7550a4c3ae320233..6b4d63e7301410fca79a8787d34601f684a29590` 由 AGY `review-mul3lhgn-23a0b865` 独立审查 **Approve / 无问题**；同一 SHA 的 [CI 36409258112](https://github.com/yir-ai/sdk/actions/runs/36409258112) completed/success（44s）。[PR #7](https://github.com/yir-ai/sdk/pull/7) 尚未合并，正式安装说明仍未切换。
+- 用户批准的 Go `go/v0.3.0` 已创建并推送为 annotated tag，peeled SHA 为 `6b4d63e7301410fca79a8787d34601f684a29590`；[GitHub Release](https://github.com/yir-ai/sdk/releases/tag/go/v0.3.0) 已回读。匿名公开 Go Proxy 下载及校验和服务校验通过，Origin.Hash 匹配目标；Sum 为 `h1:y3vjg6tNPajPNYuIDmvO03DXkf2MKn3Q/wEvcfCJzUg=`。
+- 公开 `v0.3.0` 的独立消费者模拟保存原授权、已接受 Submit 响应丢失、重建客户端、复用原键和完整请求恢复，并按已知 ID 查询，通过（0.816s）。Pilio 六项恢复聚焦测试在独立临时 modfile 明确依赖 `v0.3.0` 后通过（0.367s），未改其正式依赖。本次均为合成网络故障，不证明生产供应商或系统进程重启。
+- TypeScript `0.2.1` 实际发布尝试因 npm `EOTP` 退出，未成功发包；等待维护者在本机完成验证码验证，不采集或转交验证码。归档与发布源为上述已审 SHA，未创建 TS 新标签，未覆盖任何版本。发布回读与匿名安装成功前不合并发布说明或 Docs 安装更新。
+
+- 用户明确批准发布 TypeScript `0.2.1` 与 Go `0.3.0`，并验证公开安装。基准 `26b9b407ce165560eca6be6f7550a4c3ae320233`；本批仅将六份双语 README 更新为目标版本说明，不改变已验收的实现或包版本。
+- 运行代码及归档安装证据复用上述候选审查和 CI；新说明的固定提交独立审查、CI 与实际发布回读待完成。主线安装说明在发包成功前保持原版；标签不得移动、版本不得覆盖。
+
 ## 2026-09-28 幂等键发布候选：独立审查与完整 CI 通过
 
 - 用户已有合并授权。最终候选 `dcdca33e5b9147f35f66576dfda54a1352855e65` 的 [CI 36406408521](https://github.com/yir-ai/sdk/actions/runs/36406408521) completed/success；台账增量由原审查方 `review-mul2mqcd-721d9ebb` 复审 **Approve / 无问题**。SDK [PR #6](https://github.com/yir-ai/sdk/pull/6) 于 `2026-09-28T09:56:36Z` 合并为 `376603d750701b82c39e27b70303a07d8623e5dd`；其 tree 与已审最终候选完全一致，合并后 [CI 36406662638](https://github.com/yir-ai/sdk/actions/runs/36406662638) completed/success。TypeScript 0.2.1 与 Go 0.3.0 仍为未发布候选，无新增标签或实际发包。

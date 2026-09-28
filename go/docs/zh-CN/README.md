@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.2.0
+go get github.com/yir-ai/sdk/go@v0.3.0
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.2.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.3.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -32,9 +32,9 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
 
-## 0.3.0 候选迁移
+## 0.3.0 迁移
 
-当前源码为尚未发布的 **Go 0.3.0** 候选。生成方法的最后一个键参数由 `string` 改为 `...string`，按模块 0.x 版本规则属于公共 API 不兼容变更。`client.SubmitImage(ctx, request, savedKey)` 等普通调用仍可编译，也可省略键；`SubmitVideo` 同样变化。
+**Go 0.3.0** 的生成方法最后一个键参数由 `string` 改为 `...string`，按模块 0.x 版本规则属于公共 API 不兼容变更。`client.SubmitImage(ctx, request, savedKey)` 等普通调用仍可编译，也可省略键；`SubmitVideo` 同样变化。
 
 自定义接口应声明 `SubmitImage(context.Context, yir.SubmitRequest, ...string) (yir.Job, error)`，视频方法做对应修改。方法值不再匹配 `func(context.Context, yir.SubmitRequest, string) (yir.Job, error)`；需要保留原函数类型时可包装：
 
@@ -44,11 +44,11 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 }
 ```
 
-见[编译检查迁移示例](../../client_example_test.go)。尚未创建 `go/v0.3.0` 发布标签；以上安装命令使用已发布模块。
+见[编译检查迁移示例](../../client_example_test.go)。
 
 ## 报价与提交
 
-当前源码可直接调用 `SubmitImage(ctx, request)` 或 `SubmitVideo(ctx, request)`，SDK 每次调用生成随机幂等键。最后一个参数可传入一个非空且不含换行的显式键。Submit 不隐式重试；再次调用或跨进程恢复须复用已保存的键和完整请求。此改动尚未包含在已发布的 0.2.0 模块中；服务端同一 Job 内的故障转移不依赖客户端传键。
+从 0.3.0 起，可直接调用 `SubmitImage(ctx, request)` 或 `SubmitVideo(ctx, request)`，SDK 每次调用生成随机幂等键。最后一个参数可传入一个非空且不含换行的显式键。Submit 不隐式重试；再次调用或跨进程恢复须复用已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖客户端传键。
 
 构造含 `Model`、`Input` 和明确 `Parameters` 的 `GenerationRequest`，使用 `QuoteImage` 或 `QuoteVideo`。保守的固定价流程要求 `Supply.Available`、`Primary.Kind == "fixed"`、`HasVerifiableUpperBound` 和非 nil 的 `SingleAttemptUpperBound`。审批新工作前检查过期时间。这是应用接受策略，API 仍支持其他报价类型。
 
