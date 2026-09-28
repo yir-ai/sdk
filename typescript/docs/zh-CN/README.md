@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.2.1
+pnpm add @yir-ai/sdk@0.3.0
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.2.1.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.0.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -83,6 +83,10 @@ const client = createNodeYirClient();
 从 0.2.1 起，`providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
 不支持图像 mask、像素 `size`、seed、视频像素 resolution 和 fps；分辨率使用 Yir parameters。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+
+## 0.3.0 变化
+
+未设置 `pollIntervalMs` 时，`waitForJob`（以及 Vercel 适配器的图片等待）改为按 `pollDelayMs` 退避（5 秒、10 秒、20 秒），不再每 2 秒轮询；需要固定间隔时设置 `pollIntervalMs`。`DEFAULT_POLL_INTERVAL_MS` 已弃用。新增 `constructWebhookEvent` 与 `YirWebhookVerificationError`。调用签名不变。
 
 ## 0.2.0 合同更新
 

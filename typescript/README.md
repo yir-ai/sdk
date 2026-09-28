@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.2.1
+pnpm add @yir-ai/sdk@0.3.0
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.2.1.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -82,6 +82,10 @@ Install the adapter's tested AI SDK generation in your application with `pnpm ad
 Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported. Use Yir parameters for resolution. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+
+## Changes in 0.3.0
+
+`waitForJob` (and the Vercel adapter's image wait) without `pollIntervalMs` now backs off with `pollDelayMs` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `pollIntervalMs` to keep a fixed interval. `DEFAULT_POLL_INTERVAL_MS` is deprecated. `constructWebhookEvent` and `YirWebhookVerificationError` are new. No call signatures change.
 
 ## Contract updates in 0.2.0
 

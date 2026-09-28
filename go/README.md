@@ -11,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.3.0
+go get github.com/yir-ai/sdk/go@v0.4.0
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.3.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.4.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -31,6 +31,10 @@ _ = client
 ```
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
+
+## 0.4.0 changes
+
+`WaitJob` without `WaitOptions.PollInterval` now backs off with `PollDelay` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `PollInterval` to keep a fixed interval. `ConstructWebhookEvent` is new. No call signatures change.
 
 ## 0.3.0 migration
 
