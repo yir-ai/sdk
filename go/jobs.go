@@ -151,21 +151,32 @@ func (e *JobError) Error() string {
 }
 
 type WaitOptions struct {
+	// PollInterval fixes the delay between status queries. Zero uses PollDelay.
 	PollInterval time.Duration
 	OnPoll       func(JobStatusResponse)
+}
+
+// PollDelay is the recommended delay after the given number of completed status
+// queries for one Job: 5s for the first 30 seconds, 10s until about 90 seconds,
+// then 20s. Durable workflows can reuse it with their own timers.
+func PollDelay(poll int) time.Duration {
+	switch {
+	case poll < 6:
+		return 5 * time.Second
+	case poll < 12:
+		return 10 * time.Second
+	default:
+		return 20 * time.Second
+	}
 }
 
 // WaitJob only polls. Cancelling its context never sends a Job cancellation or
 // implies failure/refund; callers can resume polling with the same Job ID.
 func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (Job, error) {
-	interval := options.PollInterval
-	if interval == 0 {
-		interval = 2 * time.Second
-	}
-	if interval < 0 {
+	if options.PollInterval < 0 {
 		return Job{}, errors.New("poll_interval_invalid")
 	}
-	for {
+	for poll := 0; ; poll++ {
 		status, err := c.GetJobStatus(ctx, id)
 		if err != nil {
 			return Job{}, err
@@ -185,6 +196,10 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 				return job, nil
 			}
 			return job, &JobError{Job: job}
+		}
+		interval := options.PollInterval
+		if interval == 0 {
+			interval = PollDelay(poll)
 		}
 		timer := time.NewTimer(interval)
 		select {

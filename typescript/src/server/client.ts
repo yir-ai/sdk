@@ -184,6 +184,7 @@ function warnParameterPolicies(operation: "generate_image" | "generate_video", r
   }
 }
 export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.1.0";
+/** @deprecated Former fixed default. `waitForJob` now backs off with `pollDelayMs` unless `pollIntervalMs` is set. */
 export const DEFAULT_POLL_INTERVAL_MS = 2000;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 
@@ -198,6 +199,17 @@ function validJobStatus(status: unknown): status is JobStatus {
     status === "failed" ||
     status === "cancelled"
   );
+}
+
+/**
+ * Recommended delay after the given number of completed status queries for one Job:
+ * 5s for the first 30 seconds, 10s until about 90 seconds, then 20s.
+ * Durable workflows can reuse it with their own timers.
+ */
+export function pollDelayMs(poll: number): number {
+  if (poll < 6) return 5000;
+  if (poll < 12) return 10000;
+  return 20000;
 }
 
 export function isTerminalJobStatus(status: JobStatus): boolean {
@@ -265,8 +277,8 @@ export class YirTimeoutError extends Error {
 
 export type WaitForJobOptions = {
   /**
-   * Interval in milliseconds between polling attempts.
-   * Defaults to 2000 (2 seconds).
+   * Fixed interval in milliseconds between polling attempts.
+   * Defaults to the `pollDelayMs` backoff (5s, then 10s, then 20s).
    */
   readonly pollIntervalMs?: number;
   /**
@@ -297,8 +309,8 @@ export async function waitForJob(
   const normalizedID = jobId.trim();
   if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
 
-  const interval = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
-  if (interval <= 0) throw new Error("poll_interval_invalid");
+  const fixedInterval = options.pollIntervalMs;
+  if (fixedInterval !== undefined && !(fixedInterval > 0)) throw new Error("poll_interval_invalid");
 
   const timeout = options.timeoutMs ?? DEFAULT_POLL_TIMEOUT_MS;
   const hasTimeout = typeof timeout === "number" && timeout > 0 && Number.isFinite(timeout);
@@ -307,7 +319,8 @@ export async function waitForJob(
 
   let lastStatus: JobStatusResponse | undefined;
 
-  while (true) {
+  for (let poll = 0; ; poll += 1) {
+    const interval = fixedInterval ?? pollDelayMs(poll);
     if (options.signal?.aborted) {
       throw options.signal.reason ?? new Error("aborted");
     }

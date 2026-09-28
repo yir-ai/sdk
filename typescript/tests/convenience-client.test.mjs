@@ -7,6 +7,7 @@ import {
   DEFAULT_GATEWAY_BASE_URL,
   DEFAULT_USER_AGENT,
   isTerminalJobStatus,
+  pollDelayMs,
   TERMINAL_JOB_STATUSES,
   waitForJob,
   YirAPIError,
@@ -479,4 +480,28 @@ test("getJobStatus validates returned id and 6 statuses over HTTP transport", as
     assert.equal(result.id, "8001");
     assert.equal(result.status, validStatus);
   }
+});
+
+test("pollDelayMs backs off from 5s to 10s to 20s", () => {
+  const cases = [[0, 5000], [5, 5000], [6, 10000], [11, 10000], [12, 20000], [500, 20000]];
+  for (const [poll, expected] of cases) assert.equal(pollDelayMs(poll), expected, `poll ${poll}`);
+});
+
+test("waitForJob waits with the default backoff when no interval is set", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "Date"] });
+  let polls = 0;
+  const client = {
+    getJobStatus: async () => ({ id: "8001", status: ++polls < 3 ? "running" : "succeeded" }),
+    getJob: async () => ({ id: "8001", object: "job", model: "m", status: "succeeded" }),
+  };
+  const pending = waitForJob(client, "8001", { timeoutMs: 0 });
+  for (let tick = 0; tick < 2; tick += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+    t.mock.timers.tick(4999);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(polls, tick + 1, "must not poll before 5s");
+    t.mock.timers.tick(1);
+  }
+  assert.equal((await pending).status, "succeeded");
+  assert.equal(polls, 3);
 });
