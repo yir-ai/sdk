@@ -1,5 +1,10 @@
 # SDK 代码审查台账
 
+## 2026-09-28 幂等键 SDK 正式发布准备
+
+- 用户明确批准发布 TypeScript `0.2.1` 与 Go `0.3.0`，并验证公开安装。基准 `26b9b407ce165560eca6be6f7550a4c3ae320233`；本批仅将六份双语 README 更新为目标版本说明，不改变已验收的实现或包版本。
+- 运行代码及归档安装证据复用上述候选审查和 CI；新说明的固定提交独立审查、CI 与实际发布回读待完成。主线安装说明在发包成功前保持原版；标签不得移动、版本不得覆盖。
+
 ## 2026-09-28 幂等键发布候选：独立审查与完整 CI 通过
 
 - 用户已有合并授权。最终候选 `dcdca33e5b9147f35f66576dfda54a1352855e65` 的 [CI 36406408521](https://github.com/yir-ai/sdk/actions/runs/36406408521) completed/success；台账增量由原审查方 `review-mul2mqcd-721d9ebb` 复审 **Approve / 无问题**。SDK [PR #6](https://github.com/yir-ai/sdk/pull/6) 于 `2026-09-28T09:56:36Z` 合并为 `376603d750701b82c39e27b70303a07d8623e5dd`；其 tree 与已审最终候选完全一致，合并后 [CI 36406662638](https://github.com/yir-ai/sdk/actions/runs/36406662638) completed/success。TypeScript 0.2.1 与 Go 0.3.0 仍为未发布候选，无新增标签或实际发包。
