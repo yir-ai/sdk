@@ -6,9 +6,11 @@ export type CreateFilesRequest = { readonly files: readonly CreateFile[]; readon
 export type InputFile = CreateFile & {
   readonly id: string;
   readonly object: "file";
-  readonly status: "pending_upload" | "ready" | "expired" | "failed";
+  readonly status: "pending_upload" | "processing" | "ready" | "expired" | "failed";
   readonly url?: string;
   readonly expires_at?: number;
+  readonly width?: number;
+  readonly height?: number;
   readonly upload?: {
     readonly type: "multipart";
     readonly expires_at: number;
@@ -67,7 +69,22 @@ function normalizeFileMetadata(file: CreateFile, path: string): CreateFile {
 }
 
 function validateFileResponse(file: InputFile) {
-  if (!file || !fileIDPattern.test(file.id) || file.object !== "file" || !["pending_upload", "ready", "expired", "failed"].includes(file.status)) throw new Error("file_response_invalid");
+  if (!file || !fileIDPattern.test(file.id) || file.object !== "file" || !["pending_upload", "processing", "ready", "expired", "failed"].includes(file.status)) throw new Error("file_response_invalid");
+}
+
+export async function waitForFileReady(client: Pick<YirFileClient, "getFile">, id: string, timeoutMs: number = 300000, options?: YirRequestOptions): Promise<InputFile> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    options?.signal?.throwIfAborted();
+    const file = await client.getFile(id, options);
+    validateFileResponse(file);
+    if (file.id !== id) throw new Error("file_response_invalid");
+    if (file.status === "ready") return file;
+    if (file.status === "failed") throw new Error("file_processing_failed");
+    if (file.status === "expired") throw new Error("file_expired");
+    await new Promise(r => setTimeout(r, 200));
+  }
+  throw new Error("file_wait_timeout");
 }
 
 async function fileRequest(transport: YirTransport, id: string, complete: boolean, options?: YirRequestOptions): Promise<InputFile> {
@@ -81,12 +98,17 @@ async function fileRequest(transport: YirTransport, id: string, complete: boolea
 }
 
 /** Reuses a ready file or streams its issued plan, then confirms completion. */
-export async function uploadFile(client: Pick<YirFileClient, "completeFile">, file: InputFile, data: Blob,
+export async function uploadFile(client: Pick<YirFileClient, "completeFile"> | Pick<YirFileClient, "completeFile" | "getFile">, file: InputFile, data: Blob,
   options: YirRequestOptions & { fetch?: typeof globalThis.fetch } = {}): Promise<InputFile> {
   options.signal?.throwIfAborted();
   validateFileResponse(file);
   if (!(data instanceof Blob) || data.size !== file.size || file.size < 1 || file.size > 2147483648) invalid("upload_source_invalid", "data");
   if (file.status === "ready") return file;
+  if (file.status === "processing" && "getFile" in client) {
+    const ready = await waitForFileReady(client, file.id, undefined, options);
+    if (ready.name !== file.name || ready.media_type !== file.media_type || ready.size !== file.size) throw new Error("file_response_invalid");
+    return ready;
+  }
   const plan = file.upload;
   if (!(data instanceof Blob) || data.size !== file.size || file.size < 1 || file.size > 2147483648 || file.status !== "pending_upload" ||
     !plan || plan.type !== "multipart" || !Number.isSafeInteger(plan.expires_at) || plan.expires_at <= Math.floor(Date.now() / 1000) || !Array.isArray(plan.parts) || !plan.parts.length) invalid("upload_plan_invalid", "upload");
@@ -116,8 +138,11 @@ export async function uploadFile(client: Pick<YirFileClient, "completeFile">, fi
     if (!response.ok) throw new Error(`upload_failed:${response.status}`);
     offset += part.size;
   }
-  const ready = await client.completeFile(file.id, options);
+  let ready = await client.completeFile(file.id, options);
   validateFileResponse(ready);
+  if (ready.status === "processing" && "getFile" in client) {
+    ready = await waitForFileReady(client, file.id, undefined, options);
+  }
   if (ready.status !== "ready" || ready.id !== file.id || ready.name !== file.name || ready.media_type !== file.media_type || ready.size !== file.size) throw new Error("file_response_invalid");
   return ready;
 }

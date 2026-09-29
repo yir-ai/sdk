@@ -57,7 +57,7 @@ func TestGenerationValidation(t *testing.T) {
 }
 
 func TestGenerationValidationPreservesReferencesAndDefaults(t *testing.T) {
-	r := GenerationRequest{Model: "openai/gpt-image-2", Input: GenerationInput{Type: "image", Prompt: "merge", References: []Reference{{Role: "reference_image", URL: "https://example.com/second"}, {Role: "reference_image", URL: "https://example.com/first"}}}}
+	r := GenerationRequest{Model: "openai/gpt-image-2", Input: GenerationInput{Type: "image", Prompt: "merge", References: []Reference{{Role: "reference_image", FileID: "file_22222222-2222-4222-8222-222222222222"}, {Role: "reference_image", FileID: "file_11111111-1111-4111-8111-111111111111"}}}}
 	before, _ := json.Marshal(r)
 	if err := ValidateGeneration("generate_image", r); err != nil {
 		t.Fatal(err)

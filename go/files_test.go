@@ -217,3 +217,144 @@ func TestUploadFileRejectsIncompleteOrChangedCompletion(t *testing.T) {
 		})
 	}
 }
+
+func TestWaitForFileReadyPollsUntilReady(t *testing.T) {
+	calls := 0
+	w := 1024
+	h := 768
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		calls++
+		status := "processing"
+		var widthPtr, heightPtr *int
+		if calls >= 3 {
+			status = "ready"
+			widthPtr = &w
+			heightPtr = &h
+		}
+		json.NewEncoder(rw).Encode(File{
+			ID:        testFileID,
+			Object:    "file",
+			Status:    status,
+			Name:      "test.png",
+			MediaType: "image/png",
+			Size:      100,
+			Width:     widthPtr,
+			Height:    heightPtr,
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	file, err := client.WaitForFileReady(context.Background(), testFileID, 2*time.Second)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if file.Status != "ready" || file.Width == nil || *file.Width != 1024 || file.Height == nil || *file.Height != 768 {
+		t.Fatalf("unexpected ready file: %+v", file)
+	}
+	if calls < 3 {
+		t.Fatalf("expected at least 3 calls, got %d", calls)
+	}
+}
+
+func TestWaitForFileReadyReturnsErrorOnFailedStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(rw).Encode(File{
+			ID:        testFileID,
+			Object:    "file",
+			Status:    "failed",
+			Name:      "bad.png",
+			MediaType: "image/png",
+			Size:      100,
+		})
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.WaitForFileReady(context.Background(), testFileID, 1*time.Second)
+	if err == nil || err.Error() != "file_processing_failed" {
+		t.Fatalf("expected file_processing_failed, got %v", err)
+	}
+}
+
+func TestUploadFileWaitsWhenServerReturnsProcessing(t *testing.T) {
+	uploadServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	}))
+	defer uploadServer.Close()
+
+	w := 1200
+	h := 800
+	getCalls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/files/" + testFileID + "/complete":
+			// returns processing
+			json.NewEncoder(rw).Encode(File{
+				ID:        testFileID,
+				Object:    "file",
+				Status:    "processing",
+				Name:      "frame.png",
+				MediaType: "image/png",
+				Size:      4,
+			})
+		case "/v1/files/" + testFileID:
+			getCalls++
+			status := "processing"
+			var widthPtr, heightPtr *int
+			if getCalls >= 2 {
+				status = "ready"
+				widthPtr = &w
+				heightPtr = &h
+			}
+			json.NewEncoder(rw).Encode(File{
+				ID:        testFileID,
+				Object:    "file",
+				Status:    status,
+				Name:      "frame.png",
+				MediaType: "image/png",
+				Size:      4,
+				Width:     widthPtr,
+				Height:    heightPtr,
+			})
+		default:
+			rw.WriteHeader(404)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("key", ClientOptions{BaseURL: server.URL, HTTPClient: uploadServer.Client()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pending := File{
+		ID:        testFileID,
+		Object:    "file",
+		Status:    "pending_upload",
+		Name:      "frame.png",
+		MediaType: "image/png",
+		Size:      4,
+		Upload: &FileUpload{
+			Type:      "multipart",
+			ExpiresAt: time.Now().Add(time.Minute).Unix(),
+			Parts:     []UploadPart{{PartNumber: 1, Size: 4, URL: uploadServer.URL + "/part"}},
+		},
+	}
+
+	ready, err := client.UploadFile(context.Background(), pending, strings.NewReader("1234"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ready.Status != "ready" || ready.Width == nil || *ready.Width != 1200 {
+		t.Fatalf("unexpected ready file: %+v", ready)
+	}
+}

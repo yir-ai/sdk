@@ -19,9 +19,7 @@ export type StandardTextInput = {
   readonly prompt: string;
 };
 
-export type StandardMediaSource =
-  | { readonly url: string; readonly file_id?: never }
-  | { readonly file_id: string; readonly url?: never };
+export type StandardMediaSource = { readonly file_id: string };
 
 export type StandardImageInput = {
   readonly type: "image";
@@ -219,7 +217,7 @@ export function validateGeneration(operation: "generate_image" | "generate_video
       throw new YirSDKValidationError("reference_source_invalid", path);
     }
     if (Object.hasOwn(reference, "url")) {
-      validateHTTPSURL(reference.url, `${path}.url`);
+      throw new YirSDKValidationError("url_deprecated", `${path}.url`);
     } else if (typeof reference.file_id !== "string" || !/^file_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(reference.file_id)) {
       throw new YirSDKValidationError("file_id_invalid", `${path}.file_id`);
     }
@@ -357,11 +355,10 @@ export function buildImageGenerationRequest(
   const image = input.image;
   if (image !== undefined) {
     if (!image || typeof image !== "object" || Array.isArray(image) ||
-      Object.keys(image).some(key => key !== "url" && key !== "file_id") ||
-      (("url" in image) === ("file_id" in image))) {
+      Object.keys(image).some(key => key !== "file_id") || !("file_id" in image)) {
       throw new YirSDKValidationError("image_source_invalid", "input.image");
     }
-    const value = "url" in image ? image.url : image.file_id;
+    const value = image.file_id;
     if (typeof value !== "string" || !value.trim()) {
       throw new YirSDKValidationError("image_source_invalid", "input.image");
     }

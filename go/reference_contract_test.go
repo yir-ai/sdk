@@ -14,9 +14,15 @@ func TestReferenceRoleContract(t *testing.T) {
 		{9, 3, 3, true}, {10, 0, 0, false}, {1, 4, 0, false}, {1, 0, 4, false}, {0, 0, 1, false},
 	} {
 		r := GenerationRequest{Model: "bytedance/seedance-2", Input: GenerationInput{Type: "reference", Prompt: "fixture"}}
-		for role, count := range map[string]int{"reference_image": tc.images, "reference_video": tc.videos, "reference_audio": tc.audios} {
-			for i := 0; i < count; i++ {
-				r.Input.References = append(r.Input.References, Reference{Role: role, URL: fmt.Sprintf("https://example.com/%s/%d", role, i)})
+		counter := 0
+		for _, group := range []struct {
+			role  string
+			count int
+		}{{"reference_image", tc.images}, {"reference_video", tc.videos}, {"reference_audio", tc.audios}} {
+			for i := 0; i < group.count; i++ {
+				fileID := fmt.Sprintf("file_12345678-1234-4123-8123-%012d", counter)
+				counter++
+				r.Input.References = append(r.Input.References, Reference{Role: group.role, FileID: fileID})
 			}
 		}
 		if err := ValidateGeneration("generate_video", r); (err == nil) != tc.valid {
@@ -31,7 +37,7 @@ func TestReferenceOutputDurationContract(t *testing.T) {
 		duration int
 		valid    bool
 	}{{"reference_video", 10, true}, {"reference_video", 11, false}, {"reference_image", 11, true}} {
-		r := GenerationRequest{Model: "alibaba/wan-2.7", Input: GenerationInput{Type: "reference", Prompt: "fixture", References: []Reference{{Role: tc.role, URL: "https://example.com/fixture"}}}, Parameters: map[string]any{"duration": tc.duration}}
+		r := GenerationRequest{Model: "alibaba/wan-2.7", Input: GenerationInput{Type: "reference", Prompt: "fixture", References: []Reference{{Role: tc.role, FileID: "file_12345678-1234-4123-8123-123456789abc"}}}, Parameters: map[string]any{"duration": tc.duration}}
 		if err := ValidateGeneration("generate_video", r); (err == nil) != tc.valid {
 			t.Fatalf("%+v: %v", tc, err)
 		}
@@ -69,12 +75,15 @@ func TestH3ReferenceRoleContract(t *testing.T) {
 		valid                  bool
 	}{{9, 0, 0, true}, {0, 3, 0, true}, {0, 0, 3, true}, {9, 3, 3, true}, {10, 0, 0, false}, {1, 4, 0, false}, {1, 0, 4, false}, {0, 0, 0, false}} {
 		r := GenerationRequest{Model: "minimax/minimax-h3", Input: GenerationInput{Type: "reference", Prompt: "fixture"}}
+		counter := 0
 		for _, group := range []struct {
 			role  string
 			count int
 		}{{"reference_audio", tc.audios}, {"reference_image", tc.images}, {"reference_video", tc.videos}} {
 			for i := 0; i < group.count; i++ {
-				r.Input.References = append(r.Input.References, Reference{Role: group.role, URL: fmt.Sprintf("https://example.com/%s/%d", group.role, i)})
+				fileID := fmt.Sprintf("file_12345678-1234-4123-8123-%012d", counter)
+				counter++
+				r.Input.References = append(r.Input.References, Reference{Role: group.role, FileID: fileID})
 			}
 		}
 		before, _ := json.Marshal(r)
@@ -85,5 +94,22 @@ func TestH3ReferenceRoleContract(t *testing.T) {
 		if string(before) != string(after) {
 			t.Fatal("request mutated")
 		}
+	}
+}
+
+func TestValidateGenerationRejectsExternalURLs(t *testing.T) {
+	r := GenerationRequest{
+		Model: "minimax/minimax-h3",
+		Input: GenerationInput{
+			Type:   "reference",
+			Prompt: "fixture",
+			References: []Reference{
+				{Role: "reference_image", URL: "https://example.com/test.png"},
+			},
+		},
+	}
+	err := ValidateGeneration("generate_video", r)
+	if err == nil || err.Error() != "input.references[0].url: external_urls_deprecated" {
+		t.Fatalf("expected external_urls_deprecated error, got: %v", err)
 	}
 }

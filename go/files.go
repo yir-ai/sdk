@@ -32,6 +32,8 @@ type File struct {
 	Upload    *FileUpload `json:"upload,omitempty"`
 	URL       string      `json:"url,omitempty"`
 	ExpiresAt int64       `json:"expires_at,omitempty"`
+	Width     *int        `json:"width,omitempty"`
+	Height    *int        `json:"height,omitempty"`
 }
 
 type FileUpload struct {
@@ -127,7 +129,7 @@ func normalizeCreateFile(file CreateFile) CreateFile {
 
 func validFile(file File) bool {
 	return fileIDPattern.MatchString(file.ID) && file.Object == "file" &&
-		(file.Status == "pending_upload" || file.Status == "ready" || file.Status == "expired" || file.Status == "failed")
+		(file.Status == "pending_upload" || file.Status == "processing" || file.Status == "ready" || file.Status == "expired" || file.Status == "failed")
 }
 
 func (c *Client) GetFile(ctx context.Context, id string) (File, error) {
@@ -136,6 +138,43 @@ func (c *Client) GetFile(ctx context.Context, id string) (File, error) {
 
 func (c *Client) CompleteFile(ctx context.Context, id string) (File, error) {
 	return c.fileRequest(ctx, http.MethodPost, id, "/complete", struct{}{})
+}
+
+// WaitForFileReady polls GetFile until the file reaches ready status, fails, expires, or timeout occurs.
+func (c *Client) WaitForFileReady(ctx context.Context, id string, timeout time.Duration) (File, error) {
+	if timeout <= 0 {
+		timeout = 5 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		file, err := c.GetFile(ctx, id)
+		if err != nil {
+			return File{}, err
+		}
+		switch file.Status {
+		case "ready":
+			return file, nil
+		case "failed":
+			return file, errors.New("file_processing_failed")
+		case "expired":
+			return file, errors.New("file_expired")
+		case "processing", "pending_upload":
+			// bounded wait
+		default:
+			return file, errors.New("file_not_ready")
+		}
+
+		select {
+		case <-ctx.Done():
+			return File{}, ctx.Err()
+		case <-ticker.C:
+		}
+	}
 }
 
 func (c *Client) fileRequest(ctx context.Context, method, id, suffix string, body any) (File, error) {
@@ -156,6 +195,16 @@ func (c *Client) fileRequest(ctx context.Context, method, id, suffix string, bod
 func (c *Client) UploadFile(ctx context.Context, file File, source io.ReaderAt) (File, error) {
 	if c == nil || c.httpClient == nil {
 		return file, errors.New("client_uninitialized")
+	}
+	if validFile(file) && file.Status == "ready" {
+		return file, nil
+	}
+	if validFile(file) && file.Status == "processing" {
+		ready, err := c.WaitForFileReady(ctx, file.ID, 0)
+		if err == nil && (ready.Name != file.Name || ready.MediaType != file.MediaType || ready.Size != file.Size) {
+			return File{}, errors.New("response_invalid")
+		}
+		return ready, err
 	}
 	if source == nil || !validFile(file) || file.Status != "pending_upload" || file.Upload == nil || file.Upload.Type != "multipart" ||
 		file.Size < 1 || file.Size > 2147483648 || len(file.Upload.Parts) == 0 || file.Upload.ExpiresAt <= time.Now().Unix() {
@@ -197,6 +246,12 @@ func (c *Client) UploadFile(ctx context.Context, file File, source io.ReaderAt) 
 	ready, err := c.CompleteFile(ctx, file.ID)
 	if err != nil {
 		return File{}, err
+	}
+	if ready.Status == "processing" {
+		ready, err = c.WaitForFileReady(ctx, file.ID, 0)
+		if err != nil {
+			return File{}, err
+		}
 	}
 	if ready.Status != "ready" || ready.Name != file.Name || ready.MediaType != file.MediaType || ready.Size != file.Size {
 		return File{}, errors.New("response_invalid")
