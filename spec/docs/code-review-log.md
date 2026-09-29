@@ -1,5 +1,11 @@
 # SDK 代码审查台账
 
+## 2026-09-29 默认轮询退避与 Webhook 事件解析发布
+
+- 范围 `87fbe25..5f95d7d`（[PR #8](https://github.com/yir-ai/sdk/pull/8)，实现 `9597a34`、发版说明 `f57a1f8`）：Go `PollDelay` / TS `pollDelayMs`（5s→10s→20s）成为 `WaitJob` / `waitForJob` 未设间隔时的默认轮询；新增 Go `ConstructWebhookEvent`、TS `constructWebhookEvent` 与 `YirWebhookVerificationError`。调用签名不变，默认首次复查由 2 秒改为 5 秒。
+- 证据等级：实现方本地定向验证（Go `go vet`/`go test ./...`；TS `convenience-client`、`webhooks`、`standard-client` 49 项、`test:types`、`test:package`）；PR CI [36475842370](https://github.com/yir-ai/sdk/actions/runs/36475842370)、[36476172944](https://github.com/yir-ai/sdk/actions/runs/36476172944) 与合并后 main CI [36476324696](https://github.com/yir-ai/sdk/actions/runs/36476324696) success。**未做独立审查**：按维护者指示 CI 通过即合并发版，待补审查。
+- 发布：`go/v0.4.0` 与 `typescript/v0.3.0` annotated tag 均指向 `5f95d7d`，已建 GitHub Release；proxy.golang.org 可解析 `github.com/yir-ai/sdk/go@v0.4.0`。维护者经 staged publishing 发布 `@yir-ai/sdk@0.3.0`，匿名下载归档 SHA1 `b7cd6dfae81251ba375dc335e5ba09c8e9fba601` 与本地打包一致，`latest` 为 `0.3.0`。Pilio 未升级依赖、未部署。
+
 ## 2026-09-28 SDK 公开发布与匿名安装验证
 
 - 发布说明已闭环：AGY `review-mul71hhs-065e01f5` 对最终记录增量 `dfa4118cbc997c0edbfa329887dbee16f303f985..c7d20d57bf217a82b8bd8d3c64cbe453d6c54f27` 独立审查 Approve；最终候选完整 CI `36418855060` success（42s）。[PR #7](https://github.com/yir-ai/sdk/pull/7) 于 `2026-09-28T12:03:36Z` 合并为 `832655b7875f066449a24906b4082a4a9844bdd6`，合并 tree 与候选完全一致，合并后完整 [CI 36419403779](https://github.com/yir-ai/sdk/actions/runs/36419403779) success。本条为事后台账记录；以下未合并/EOTP 等描述保留为阶段历史，不移动发布标签、不改变运行实现。
