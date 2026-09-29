@@ -5,6 +5,7 @@
 - 背景：私有 monorepo 的 SDK 副本已退役删除（私有 `a61c52e1`），核对发现私有 `a246c66d` 修复的 SDK-CLEAN 问题只落在副本中，本仓库未同步。
 - 移植：Go `Quote.Validate` 补 `supply` 与价格一致性校验（与 TS `shared/quote.ts` 相同规则）并新增 `TestQuoteSupplyConsistency`，报价夹具补齐合同必填的 `supply`（CLEAN-01；比价字段与校验本仓库已有）；TS 请求构造器 prompt 上限按 Unicode 码点计数并补边界测试（CLEAN-02）；删除无引用的退役价格表夹具（CLEAN-05）；`supply_type` 的 `byok` 标注仅为历史账单保留（CLEAN-06，不删除类型）。CLEAN-03/04 属 Python，不适用。
 - 实施方验证：Go `go vet`、`go test ./...`；TS `standard-client`、`quote` 27 项与 `test:types`；私有 contracttest 以本地替换的 Go SDK 对真实 Gateway 与迁移后 PostgreSQL 报价通过（新校验不误拒服务端报价）。发布 Go `0.4.2` / TS `0.3.2`。
+- AGY `review-mumavo7p-6f298259`（只读，PR #13 相对 main）**approve**，无问题：Go 供给规则与 TS `shared/quote.ts`、服务端 `yir_standard_quote_v1.go` 及 OpenAPI 一致，不误拒合法报价；夹具取值合理；码点修复与边界测试有效；删除夹具无引用；相对 `a246c66d` 无遗漏适用修复。
 
 ## 2026-09-29 公开合同快照同步（关闭私有台账 YIR-REVIEW-20260928-DOCS-01）
 
