@@ -79,6 +79,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/InsufficientBalance" },
+          "403": { "$ref": "#/components/responses/SpendLimitExceeded" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
@@ -169,6 +170,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/InsufficientBalance" },
+          "403": { "$ref": "#/components/responses/SpendLimitExceeded" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
@@ -182,7 +184,7 @@
         "summary": "Create one or more input-file upload plans",
         "tags": ["Files"],
         "security": [{ "BearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "parameters": [{ "$ref": "#/components/parameters/FileIdempotencyKey" }],
         "requestBody": {
           "required": true,
           "content": {
@@ -382,11 +384,18 @@
       "BearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "YIR_API_KEY" }
     },
     "parameters": {
-      "IdempotencyKey": {
+      "FileIdempotencyKey": {
         "name": "Idempotency-Key",
         "in": "header",
         "required": false,
-        "description": "Optional. Replaying the same key with an identical standardized request returns the original result instead of creating a second one; reusing a key with a changed request is rejected; a request without a key always creates a new resource. Generation SDK methods accept an omitted key and generate a random key per call; they do not automatically retry Submit. Production integrations should persist one key per logical request before submitting and reuse it with the original request when the outcome is unknown. Server-side fallback within an accepted Job is independent of this header.",
+        "description": "Optional for input-file upload plans. Replaying the same key with identical file metadata returns the original plan; reusing a key with changed metadata is rejected. Without a key, each request creates a new plan. SDK file helpers require a caller-persisted key for recovery.",
+        "schema": { "type": "string", "minLength": 1, "maxLength": 200 }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "Required. Missing or blank keys are rejected with a non-retryable 400 before creating a resource or reserving funds. Replaying the same key with an identical standardized request returns the original result; reusing a key with a changed request is rejected. Generation SDK methods accept an omitted key and generate a random key per call; they do not automatically retry Submit. Persist one key per logical request before submitting and reuse it with the original request when the outcome is unknown. Separate SDK calls without an explicit key can create separate billable Jobs. Server-side fallback within an accepted Job is independent of this header.",
         "schema": { "type": "string", "minLength": 1, "maxLength": 200 }
       },
       "JobID": {
@@ -422,6 +431,7 @@
       "InvalidRequest": { "$ref": "#/components/responses/StandardError" },
       "Unauthorized": { "$ref": "#/components/responses/StandardError" },
       "InsufficientBalance": { "$ref": "#/components/responses/StandardError" },
+      "SpendLimitExceeded": { "$ref": "#/components/responses/StandardError" },
       "Conflict": { "$ref": "#/components/responses/StandardError" },
       "NoExecutableRoute": { "$ref": "#/components/responses/StandardError" },
       "RateLimited": { "$ref": "#/components/responses/StandardError" },
@@ -1397,11 +1407,11 @@
             "type": "string",
             "enum": [
               "YIR_INVALID_REQUEST", "YIR_UNAUTHORIZED", "YIR_INVALID_ROUTING_OVERRIDE",
-              "YIR_ROUTING_OVERRIDE_NOT_ALLOWED", "YIR_INSUFFICIENT_BALANCE", "YIR_BUDGET_EXCEEDED", "YIR_JOB_NOT_FOUND",
+              "YIR_ROUTING_OVERRIDE_NOT_ALLOWED", "YIR_INSUFFICIENT_BALANCE", "YIR_BUDGET_EXCEEDED", "YIR_SPEND_LIMIT_EXCEEDED", "YIR_JOB_NOT_FOUND",
               "YIR_FILE_NOT_FOUND", "YIR_FILE_NOT_READY", "YIR_FILE_EXPIRED", "YIR_MODEL_NOT_FOUND",
               "YIR_IDEMPOTENCY_CONFLICT", "YIR_JOB_NOT_CANCELLABLE", "YIR_NO_EXECUTABLE_ROUTE",
               "YIR_RATE_LIMITED", "YIR_TEMPORARILY_UNAVAILABLE", "YIR_EXECUTION_FAILED",
-              "YIR_OUTCOME_TIMEOUT", "result_delivery_failed"
+              "YIR_OUTCOME_TIMEOUT", "YIR_RESULT_DELIVERY_FAILED"
             ]
           },
           "message": { "type": "string", "minLength": 1 },

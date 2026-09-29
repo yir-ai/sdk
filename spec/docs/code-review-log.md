@@ -1,5 +1,10 @@
 # SDK 代码审查台账
 
+## 2026-09-29 公开合同快照同步（关闭私有台账 YIR-REVIEW-20260928-DOCS-01）
+
+- `spec/openapi.json` 同步私有已审合同 `yir-api/docs/standard-openapi.json`（私有 `9ce0cdde`）：生成接口 `Idempotency-Key` 改为服务端必填（缺失返回不可重试 400）、文件上传计划改用可选 `FileIdempotencyKey`、新增 `YIR_SPEND_LIMIT_EXCEEDED` 与 403 响应、`result_delivery_failed` 更名为 `YIR_RESULT_DELIVERY_FAILED`。
+- `pnpm generate:model-contracts` 与 `check:model-contracts` 生成物无变化；SDK 生成方法未传键时自动生成、文件接口本就要求传键，运行时已符合新合同。npm 包与 Go 模块均不包含 `spec/`，按本文件第 6 条属于合同快照更新，不发包；已发布标签内的旧快照保留不移动。
+
 ## 2026-09-29 PR #8 事后独立审查与修复
 
 - AGY `review-mum73c4m-17068c97`（gemini-3.8-flash-medium）补审 `87fbe25..5f95d7d`：**comment**，未发现安全绕过（验签先于解析、篡改不误报为 `invalid_payload`、超时/abort 与退避交互正确）。
