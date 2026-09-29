@@ -156,7 +156,7 @@
                 "input": {
                   "type": "image",
                   "prompt": "The subject turns toward the sunrise",
-                  "references": [{ "role": "first_frame", "url": "https://example.com/first-frame.png" }]
+                  "references": [{ "role": "first_frame", "file_id": "file_11111111-1111-4111-8111-111111111111" }]
                 },
                 "parameters": { "duration": 4, "resolution": "480p", "aspect_ratio": "16:9", "generate_audio": false, "n": 1 },
                 "routing": { "preference": "cost", "fallback": true },

@@ -9,7 +9,7 @@ import { parseModelContractCatalog, findModelContract } from '@yir-ai/sdk/fronte
 const catalog = parseModelContractCatalog({schema_version:'v1', schema_ref:'fixture', models:listModelContracts()});
 const validateModelParameters = (...args) => validateParameters(...args, catalog);
 assert.equal(findModelContract(catalog, 'openai/gpt-image-2').id, 'openai/gpt-image-2');
-validateGeneration("generate_video", { model: "minimax/minimax-h3", input: { type: "reference", prompt: "fixture", references: [{ role: "reference_audio", url: "https://example.com/audio.mp3" }] }, parameters: {} });
+validateGeneration("generate_video", { model: "minimax/minimax-h3", input: { type: "reference", prompt: "fixture", references: [{ role: "reference_audio", file_id: "file_11111111-1111-4111-8111-111111111111" }] }, parameters: {} });
 import { createNodeYirClient } from "@yir-ai/sdk/server";
 
 for (const availability of ["available", "expired"]) for (const warned of [false, true]) {
