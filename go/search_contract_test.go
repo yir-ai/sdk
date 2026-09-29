@@ -43,7 +43,7 @@ func TestNanoSearchContract(t *testing.T) {
 		} {
 			request := GenerationRequest{Model: "google/nano-banana-2", Input: GenerationInput{Type: mode, Prompt: "fixture"}, Parameters: tc.parameters}
 			if mode == "image" {
-				request.Input.References = []Reference{{Role: "reference_image", URL: "https://example.com/input.png"}}
+				request.Input.References = []Reference{{Role: "reference_image", FileID: "file_11111111-1111-4111-8111-111111111111"}}
 			}
 			before, _ := json.Marshal(request)
 			for _, err := range []error{ValidateGeneration("generate_image", request), ValidateModelParameters(request.Model, "generate_image", mode, request.Parameters)} {
@@ -121,7 +121,7 @@ func TestNanoSearchQuoteAndSubmit(t *testing.T) {
 		for _, parameters := range []map[string]any{{}, {"web_search": false, "image_search": false}, {"web_search": true, "image_search": true}} {
 			request := GenerationRequest{Model: "google/nano-banana-2", Input: GenerationInput{Type: mode, Prompt: "fixture"}, Parameters: parameters}
 			if mode == "image" {
-				request.Input.References = []Reference{{Role: "reference_image", URL: "https://example.com/input.png"}}
+				request.Input.References = []Reference{{Role: "reference_image", FileID: "file_11111111-1111-4111-8111-111111111111"}}
 			}
 			quote, err := client.QuoteImage(context.Background(), request)
 			if err != nil {
