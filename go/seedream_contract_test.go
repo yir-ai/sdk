@@ -11,7 +11,7 @@ func TestSeedreamCompatibleContract(t *testing.T) {
 			for _, count := range []int{0, 1, 10, 11, 14, 15} {
 				request := GenerationRequest{Model: "bytedance/seedream-5.0", Input: GenerationInput{Type: mode, Prompt: "fixture"}, Parameters: map[string]any{"resolution": resolution}}
 				for i := 0; i < count; i++ {
-					request.Input.References = append(request.Input.References, Reference{Role: "reference_image", URL: fmt.Sprintf("https://example.com/%d.png", i)})
+					request.Input.References = append(request.Input.References, Reference{Role: "reference_image", FileID: fmt.Sprintf("file_11111111-1111-4111-8111-%012d", i)})
 				}
 				valid := mode == "text" && count == 0 || mode == "image" && count >= 1 && count <= 14
 				if err := ValidateGeneration("generate_image", request); (err == nil) != valid {

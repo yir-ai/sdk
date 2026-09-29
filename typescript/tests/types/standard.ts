@@ -20,6 +20,7 @@ const video: StandardVideoGenerationRequest = {
   model: "bytedance/seedance-2.0", input: image.input,
   parameters: { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1 },
 };
+// @ts-expect-error External URLs are not accepted as input sources.
 const urlSource: StandardMediaSource = { url: "https://example.com/image.png" };
 
 function submitWithOptionalKeys(client: YirClient) {
@@ -31,7 +32,7 @@ function submitWithOptionalKeys(client: YirClient) {
 
 void submitWithOptionalKeys;
 // @ts-expect-error Sources must select exactly one transport representation.
-const ambiguousSource: StandardMediaSource = { ...urlSource, file_id: "file_11111111-1111-4111-8111-111111111111" };
+const ambiguousSource: StandardMediaSource = { url: "https://example.com/image.png", file_id: "file_11111111-1111-4111-8111-111111111111" };
 // @ts-expect-error A source cannot be empty.
 const emptySource: StandardMediaSource = {};
 

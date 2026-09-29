@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.3.2
+pnpm add @yir-ai/sdk@0.4.0
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.2.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.4.0.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -71,6 +71,8 @@ const client = createNodeYirClient();
 `YirJobError` 包含失败或取消的终态任务。`YirAPIError` 在可用时提供 status、code、retryable、action 和 requestId。应用逻辑应依赖稳定错误码，`YIR_ERROR_CODES` 与 `YirErrorCode` 类型列出全部稳定错误码。`cancelJob(id, options)` 显式申请取消，需检查 cancellation 和终态账单，不能假定立即取消或零费用。每个任务的 `billing.total_charged_by_yir` 只结算一次。结果 URL 会过期，应检查 `result.availability` 并及时复制到自己的资源库。
 
 ## 文件与 Webhook
+
+0.4.0 要求媒体引用使用 `file_id`，拒绝外部引用 URL。先上传原始字节；`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器支持上传内联字节；URL 输入需由应用先下载为字节。
 
 `createFiles(request, key)` 创建上传计划；`uploadFile(client, plan, blob)` 上传并完成计划；`createAndUploadFile(client, metadata, blob, key)` 合并这些步骤。使用稳定上传键并保留文件 ID；`getFile(id)` 查询状态，`completeFile(id)` 完成手动上传。生成请求仅引用 ready 文件，使用 `file_id` 和相应 role。上传辅助函数支持服务端的单段及分段计划。
 

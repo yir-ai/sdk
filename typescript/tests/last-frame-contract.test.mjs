@@ -16,7 +16,7 @@ test("Seedance 2 last-frame intent survives quote and submit for every input mod
   assert.equal(rule.required, false);
   assert.equal(rule.default, false);
   for (const mode of contract.input_modes) {
-    const input = { type: mode, prompt: "fixture", ...(mode === "text" ? {} : { references: [{ role: mode === "image" ? "first_frame" : "reference_image", url: "https://example.com/image.png" }] }) };
+    const input = { type: mode, prompt: "fixture", ...(mode === "text" ? {} : { references: [{ role: mode === "image" ? "first_frame" : "reference_image", file_id: "file_11111111-1111-4111-8111-111111111111" }] }) };
     for (const parameters of [{}, { return_last_frame: false }, { return_last_frame: true }, ...ratio.values.map(aspect_ratio => ({ aspect_ratio, return_last_frame: true }))]) {
       const request = { model, input, parameters };
       const before = structuredClone(request);

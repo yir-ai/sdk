@@ -7,7 +7,7 @@ import { quoteFixture } from "./quote-fixture.mjs";
 
 const model = "google/nano-banana-2";
 const input = mode => mode === "text" ? { type: mode, prompt: "fixture" }
-  : { type: mode, prompt: "fixture", references: [{ role: "reference_image", url: "https://example.com/input.png" }] };
+  : { type: mode, prompt: "fixture", references: [{ role: "reference_image", file_id: "file_11111111-1111-4111-8111-111111111111" }] };
 
 test("explicit Nano2 contract validates search field types; semantic dependencies remain server-owned", async () => {
   for (const mode of ["text", "image"]) {

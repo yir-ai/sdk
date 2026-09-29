@@ -100,7 +100,7 @@ func TestQuoteSupplyConsistency(t *testing.T) {
 			q.SingleAttemptUpperBound = nil
 			q.Supply.RequiresMaxCost = true
 		}, true},
-		{"available no bound or budget", func(q *Quote) { q.HasVerifiableUpperBound = false; q.SingleAttemptUpperBound = nil }, false},
+		{"available server-authorized uncapped", func(q *Quote) { q.HasVerifiableUpperBound = false; q.SingleAttemptUpperBound = nil }, true},
 		{"available with issue", func(q *Quote) { q.Supply.Issues = []string{"no_matching_supply"} }, false},
 		{"unknown issue", func(q *Quote) { q.Supply.Issues = []string{"unknown"} }, false},
 		{"available missing primary supply", func(q *Quote) { q.Primary = noSupply }, false},

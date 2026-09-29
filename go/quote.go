@@ -24,7 +24,7 @@ func (q Quote) Validate() error {
 	}
 	// Supply must agree with the prices, matching the TypeScript validator.
 	if q.Supply.Available {
-		if len(q.Supply.Issues) != 0 || (!q.HasVerifiableUpperBound && !q.Supply.RequiresMaxCost) ||
+		if len(q.Supply.Issues) != 0 ||
 			(q.Primary.Kind == "unavailable" && q.Primary.Reason == "no_matching_supply") ||
 			(q.Max.Kind == "unavailable" && q.Max.Reason == "no_matching_supply") {
 			return invalid

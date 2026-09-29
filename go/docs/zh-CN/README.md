@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.4.2
+go get github.com/yir-ai/sdk/go@v0.5.0
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.4.2`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.5.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -65,6 +65,8 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 保存返回的任务 ID。`GetJob` 查询完整任务详情，`GetJobStatus` 查询轻量状态摘要 `JobStatusResponse`。`WaitJob` 默认按 `PollDelay` 退避轮询状态摘要（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒）；设置 `WaitOptions.PollInterval` 可改为固定间隔。进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符返回 `ErrJobStateInconsistent`。取消或超时 context 只停止本地等待，返回零值 `Job{}`，不取消远端任务或表示退款；用保存的 ID 恢复。`JobError` 包含失败或取消的终态任务；`APIError` 包含 HTTP status、code、message、retryable 和 action。业务判断使用稳定错误码。
 
 `CancelJob` 显式申请取消，应检查取消状态和终态账单，不假定立即成功或零费用。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径；`ComputeCharges`、`GatewayFee`、`Savings` 和 `OfficialComparison` 说明该总额的构成。`APIError.Code` 应与 `ErrCode*` 常量比较，而非字符串字面量。检查 `Result.Availability`，在 URL 过期前复制可用结果文件。
+
+0.5.0 要求媒体引用使用 `FileID`，拒绝外部引用 URL。先上传原始字节；`CompleteFile` 可能返回 `processing`，`UploadFile` 默认最多等待五分钟到 `ready`。可用 `WaitForFileReady` 继续等待已保存的文件 ID；本地等待超时不会取消服务端分析。
 
 `CreateFiles(ctx, request, key)` 创建上传计划；`UploadFile(ctx, plan, source)` 从 `io.ReaderAt` 上传并完成文件；`CreateAndUploadFile(ctx, metadata, source, key)` 合并步骤。保留稳定上传键及文件 ID。`GetFile` 查询状态，`CompleteFile` 完成手动上传。生成引用使用 ready 文件的 `FileID` 和适当角色，支持单段与分段上传计划。
 
