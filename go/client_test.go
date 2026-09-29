@@ -36,7 +36,7 @@ func TestClientQuoteAndSubmitShareDemand(t *testing.T) {
 			if r.Header.Get("Idempotency-Key") != "" {
 				t.Error("quote has submit key")
 			}
-			io.WriteString(w, `{"object":"quote","model":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`)
+			io.WriteString(w, `{"object":"quote","supply":{"available":true,"requires_max_cost":false,"issues":[]},"model":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`)
 		case "/v1/images/generations":
 			if r.Header.Get("Idempotency-Key") != "stable-key" {
 				t.Error("key not preserved")

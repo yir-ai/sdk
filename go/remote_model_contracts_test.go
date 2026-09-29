@@ -136,7 +136,7 @@ func TestClientFutureModelDoesNotNeedBundledRegistry(t *testing.T) {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"object":"quote","model":"future/new-image","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`))
+		w.Write([]byte(`{"object":"quote","supply":{"available":true,"requires_max_cost":false,"issues":[]},"model":"future/new-image","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`))
 	}))
 	defer server.Close()
 	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
@@ -160,7 +160,7 @@ func TestClientQuoteAcceptsPublishedAliasWithExternalContract(t *testing.T) {
 	catalog := ModelContractCatalog{SchemaVersion: "v1", SchemaRef: bundledModelContractCatalog.SchemaRef,
 		Version: strings.Repeat("a", 64), Models: []StaticModelContract{model}}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"object":"quote","model":"new-image","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`))
+		w.Write([]byte(`{"object":"quote","supply":{"available":true,"requires_max_cost":false,"issues":[]},"model":"new-image","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`))
 	}))
 	defer server.Close()
 	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL, ModelContracts: &catalog})

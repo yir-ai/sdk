@@ -99,6 +99,7 @@ func TestNanoSearchQuoteAndSubmit(t *testing.T) {
 		if r.URL.Path == "/v1/images/quotes" {
 			unavailable := map[string]any{"kind": "unavailable", "amount": nil, "reason": "search_not_supported"}
 			json.NewEncoder(w).Encode(map[string]any{
+				"supply": map[string]any{"available": true, "requires_max_cost": true, "issues": []string{}},
 				"object": "quote", "model": request.Model, "operation": "generate_image", "input_mode": request.Input.Type,
 				"parameters": request.Parameters, "currency": "USD", "expires_at": 3000000000,
 				"primary": unavailable, "max": unavailable, "official": unavailable,

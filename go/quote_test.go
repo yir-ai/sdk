@@ -8,7 +8,7 @@ import (
 
 func TestQuotePriceDifferenceMetadata(t *testing.T) {
 	var q Quote
-	if err := json.Unmarshal([]byte(`{"object":"quote","model":"future/image","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":1,"primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","reason":"missing"},"price_difference_percent":{"min":-10,"max":20,"reference_amount_micros":50000}}`), &q); err != nil {
+	if err := json.Unmarshal([]byte(`{"object":"quote","supply":{"available":true,"requires_max_cost":true,"issues":[]},"model":"future/image","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":1,"primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","reason":"missing"},"price_difference_percent":{"min":-10,"max":20,"reference_amount_micros":50000}}`), &q); err != nil {
 		t.Fatal(err)
 	}
 	if q.PriceDifferencePercent == nil || q.PriceDifferencePercent.Min != -10 || q.PriceDifferencePercent.ReferenceAmountMicros == nil || *q.PriceDifferencePercent.ReferenceAmountMicros != 50000 {
@@ -30,6 +30,7 @@ func fixedQuotePrice(amount string) QuotePrice { return QuotePrice{Kind: "fixed"
 
 func TestQuoteOutputEstimateDoesNotRequireOrCreateBudget(t *testing.T) {
 	q := Quote{Object: "quote", Model: "openai/gpt-image-2", Operation: "generate_image", InputMode: "text", Parameters: map[string]any{}, Currency: "USD", ExpiresAt: 1,
+		Supply:  QuoteSupply{Available: true, RequiresMaxCost: true},
 		Primary: QuotePrice{Kind: "unavailable", Reason: "missing"}, Max: QuotePrice{Kind: "unavailable", Reason: "missing"},
 		Official: QuotePrice{Kind: "estimate", Amount: fixedQuotePrice("0.042390").Amount, Estimate: &QuoteEstimate{Scope: "output_only", OutputTokens: 1413}}}
 	if err := q.Validate(); err != nil {
@@ -45,6 +46,7 @@ func TestQuoteOutputEstimateDoesNotRequireOrCreateBudget(t *testing.T) {
 
 func TestQuoteValidatesUnavailableAndExactAmounts(t *testing.T) {
 	base := Quote{Object: "quote", Model: "openai/gpt-image-2", Operation: "generate_image", InputMode: "text", Parameters: map[string]any{}, Currency: "USD", ExpiresAt: 1,
+		Supply:  QuoteSupply{Available: true},
 		Primary: fixedQuotePrice("0.02"), Max: fixedQuotePrice("0.05"), Official: QuotePrice{Kind: "unavailable", Reason: "missing"}, HasVerifiableUpperBound: true, SingleAttemptUpperBound: fixedQuotePrice("0.05").Amount}
 	if err := base.Validate(); err != nil {
 		t.Fatal(err)
@@ -74,7 +76,49 @@ func TestQuoteValidatesUnavailableAndExactAmounts(t *testing.T) {
 	unknown.Max = unknown.Primary
 	unknown.SingleAttemptUpperBound = nil
 	unknown.HasVerifiableUpperBound = false
+	unknown.Supply.RequiresMaxCost = true
 	if err := unknown.Validate(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestQuoteSupplyConsistency(t *testing.T) {
+	base := Quote{Object: "quote", Model: "openai/gpt-image-2", Operation: "generate_image", InputMode: "text",
+		Parameters: map[string]any{}, Currency: "USD", ExpiresAt: 1,
+		Supply: QuoteSupply{Available: true}, Primary: fixedQuotePrice("0.02"), Max: fixedQuotePrice("0.05"),
+		Official:                QuotePrice{Kind: "unavailable", Reason: "official_price_unavailable"},
+		HasVerifiableUpperBound: true, SingleAttemptUpperBound: fixedQuotePrice("0.05").Amount}
+	noSupply := QuotePrice{Kind: "unavailable", Reason: "no_matching_supply"}
+	for _, tc := range []struct {
+		name   string
+		change func(*Quote)
+		valid  bool
+	}{
+		{"available bounded", func(q *Quote) {}, true},
+		{"available explicit budget", func(q *Quote) {
+			q.HasVerifiableUpperBound = false
+			q.SingleAttemptUpperBound = nil
+			q.Supply.RequiresMaxCost = true
+		}, true},
+		{"available no bound or budget", func(q *Quote) { q.HasVerifiableUpperBound = false; q.SingleAttemptUpperBound = nil }, false},
+		{"available with issue", func(q *Quote) { q.Supply.Issues = []string{"no_matching_supply"} }, false},
+		{"unknown issue", func(q *Quote) { q.Supply.Issues = []string{"unknown"} }, false},
+		{"available missing primary supply", func(q *Quote) { q.Primary = noSupply }, false},
+		{"available missing max supply", func(q *Quote) { q.Max = noSupply }, false},
+		{"unavailable bounded", func(q *Quote) { q.Supply = QuoteSupply{Issues: []string{"no_matching_supply"}} }, false},
+		{"unavailable consistent", func(q *Quote) {
+			q.Supply = QuoteSupply{Issues: []string{"no_matching_supply"}}
+			q.Primary, q.Max = noSupply, noSupply
+			q.HasVerifiableUpperBound = false
+			q.SingleAttemptUpperBound = nil
+		}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			q := base
+			tc.change(&q)
+			if err := q.Validate(); (err == nil) != tc.valid {
+				t.Fatalf("valid=%v, error=%v", tc.valid, err)
+			}
+		})
 	}
 }

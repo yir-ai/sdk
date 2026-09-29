@@ -514,3 +514,12 @@ test("waitForJob status 404 does not silently fallback to detail", async () => {
   );
   assert.equal(detailCalls, 0);
 });
+
+test("image request builder counts Unicode code points at the prompt limit", () => {
+  for (const character of ["a", "😀"]) {
+    const input = { model: "openai/gpt-image-2", prompt: character.repeat(20_000), parameters: { n: 1 } };
+    assert.equal(buildImageGenerationRequest(input).input.prompt, input.prompt);
+    assert.throws(() => buildImageGenerationRequest({ ...input, prompt: input.prompt + character }),
+      (error) => error instanceof YirSDKValidationError && error.code === "prompt_too_long");
+  }
+});
