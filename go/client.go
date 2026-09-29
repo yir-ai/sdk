@@ -296,20 +296,35 @@ func (c *Client) CancelJob(ctx context.Context, id string) (Job, error) {
 }
 
 func (c *Client) do(ctx context.Context, method, path, key string, body, response any) error {
+	result, raw, err := c.send(ctx, method, path, key, body)
+	if err != nil {
+		return err
+	}
+	if result.StatusCode < 200 || result.StatusCode >= 300 {
+		return responseAPIError(result.StatusCode, raw)
+	}
+	if json.Unmarshal(raw, response) != nil {
+		return errors.New("response_invalid")
+	}
+	return nil
+}
+
+// send issues one authenticated Gateway request. Redirects are returned, never followed.
+func (c *Client) send(ctx context.Context, method, path, key string, body any) (*http.Response, []byte, error) {
 	if c == nil || c.httpClient == nil {
-		return errors.New("client_uninitialized")
+		return nil, nil, errors.New("client_uninitialized")
 	}
 	var data []byte
 	var err error
 	if body != nil {
 		data, err = json.Marshal(body)
 		if err != nil {
-			return errors.New("request_encoding_failed")
+			return nil, nil, errors.New("request_encoding_failed")
 		}
 	}
 	request, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, bytes.NewReader(data))
 	if err != nil {
-		return errors.New("request_creation_failed")
+		return nil, nil, errors.New("request_creation_failed")
 	}
 	request.Header.Set("Authorization", "Bearer "+c.apiKey)
 	request.Header.Set("User-Agent", "yir-go/0.1.0")
@@ -325,29 +340,27 @@ func (c *Client) do(ctx context.Context, method, path, key string, body, respons
 	}
 	result, err := c.httpClient.Do(request)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	defer result.Body.Close()
 	const maximumResponseBytes = 2 << 20
 	raw, err := io.ReadAll(io.LimitReader(result.Body, maximumResponseBytes+1))
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if len(raw) > maximumResponseBytes {
-		return errors.New("response_too_large")
+		return nil, nil, errors.New("response_too_large")
 	}
-	if result.StatusCode < 200 || result.StatusCode >= 300 {
-		var envelope struct {
-			Error *APIError `json:"error"`
-		}
-		if json.Unmarshal(raw, &envelope) != nil || envelope.Error == nil || envelope.Error.Code == "" {
-			return &APIError{Status: result.StatusCode, Code: "http_error"}
-		}
-		envelope.Error.Status = result.StatusCode
-		return envelope.Error
+	return result, raw, nil
+}
+
+func responseAPIError(status int, raw []byte) error {
+	var envelope struct {
+		Error *APIError `json:"error"`
 	}
-	if json.Unmarshal(raw, response) != nil {
-		return errors.New("response_invalid")
+	if json.Unmarshal(raw, &envelope) != nil || envelope.Error == nil || envelope.Error.Code == "" {
+		return &APIError{Status: status, Code: "http_error"}
 	}
-	return nil
+	envelope.Error.Status = status
+	return envelope.Error
 }

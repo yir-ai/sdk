@@ -1,5 +1,11 @@
 # SDK 代码审查台账
 
+## 2026-09-29 Market 模型详情与文件内容签名 URL（实现自验，待独立审查）
+
+- 实现方 Claude Code；基准 `4af07ea`。新增 Go `GetModel` / `GetFileContentURL`，TS `getModel` / `getFileContentURL`，以及 `modelDetailPath`、`parseModelDetail`，对应 `getModel`（无 `view` 参数）与 `getFileContent`。API 形状已先与用户确认：`ModelDetail` 宽松解析，忽略未知字段，校验 id、object、必填值与枚举；文件内容只返回签名 URL，不提供下载辅助。
+- 凭据边界：Go 仍依赖 `CheckRedirect` 返回 `ErrUseLastResponse`，把 `do` 拆出 `send` 与 `responseAPIError`，JSON 调用行为不变。TS 在 `YirTransportRequest` 增加可选 `redirect: "manual"`；Node 传输只对该请求使用 `fetch` manual 并返回 `{ status, location }`，其余请求仍为 `redirect: "error"`。只接受 307 加绝对 `https`、无 userinfo 和 fragment 的 `Location`，否则报 `file_content_response_invalid`，错误不含 URL。不理解该字段的自定义传输安全失败。404/409/410 原样透传服务端错误码，无新增错误类型。
+- 实现方验证（定向）：`go test -count=1 -run 'TestGetModel|TestGetFileContentURL|TestClientReadsVersionedModelContracts|TestFileUpload' ./`（go/ 根包）通过。TS 已 `pnpm run build`（tsc），files、external-model-contracts、transport 三个测试文件 23 项通过，`pnpm test:types` 通过。未在本地跑 `pnpm check`、`go test ./...`，完整回归交由 CI。未独立审查、未推送、未发布。
+
 ## 2026-09-30 PR #16 合并与授权发布
 
 - PR #16 最终 `cac4a359040597c4f13104bfa314cd0f70d0c21d` 的完整 CI 36612791486 通过，合并为 `3c1bf5c8fb66f30e16bbce29d623c878836010ec`；合并后 CI 36613074206 通过。最终候选相对已审 `7fe342f0f05fb5e0d973f44ae39369d989376045` 仅新增上一节审查记录，代码结论复用。

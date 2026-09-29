@@ -53,3 +53,12 @@ function checkTimeout(err: YirTimeoutError) {
 }
 
 void [video, ambiguousSource, emptySource, readJob, readStatus, checkTimeout];
+
+async function readMarketDetailAndContent(client: YirClient) {
+  const detail = await client.getModel("openai/gpt-image-2");
+  const amount: number | undefined = detail.specifications[0]?.channels[0]?.amount_micros;
+  const signedURL: string = await client.getFileContentURL("file_11111111-1111-4111-8111-111111111111");
+  void amount;
+  void signedURL;
+}
+void readMarketDetailAndContent;

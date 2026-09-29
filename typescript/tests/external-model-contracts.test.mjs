@@ -7,7 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { createYirClient, getModelContract } from "../dist/index.js";
-import { findModelContract, parseModelContractCatalog, parseModelContractDetail, modelContractPath, validateModelParameters } from "../dist/frontend.js";
+import { findModelContract, parseModelContractCatalog, parseModelContractDetail, modelContractPath, modelDetailPath, parseModelDetail, validateModelParameters } from "../dist/frontend.js";
 import { quoteFixture } from "./quote-fixture.mjs";
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -119,5 +119,36 @@ test("generator writes a customer models.ts from the API without changing the SD
   } finally {
     server.close();
     await unlink(target).catch(() => {});
+  }
+});
+
+const marketDetail = () => ({
+  id: "openai/gpt-image-2", object: "model", future_field: true,
+  specifications: [{ request_model_id: "openai/gpt-image-2", operation: "generate_image", input_mode: "text", specification_label: "1024x1024", currency: "USD",
+    channels: [{ provider_code: "openai", provider_label: "OpenAI", amount_micros: 40000, availability: "available", estimated: false, specification_label: "1024x1024" },
+      { provider_code: "other", provider_label: "Other", availability: "unavailable", estimated: true, specification_label: "1024x1024" }] }],
+  channel_parameters: [{ provider: "openai", channel_variant: "default", operation: "generate_image", input_mode: "text",
+    parameter_rules: { quality: { behavior: "supported", values: ["low", "high"], description: { zh: "质量", en: "Quality" } } } }],
+});
+
+test("market model detail uses the plain path and tolerates additive fields", () => {
+  assert.equal(modelDetailPath("openai/gpt-image-2"), "/v1/models/openai/gpt-image-2");
+  for (const model of ["gpt-image-2", "OpenAI/gpt-image-2", "openai/gpt-image-2?view=contract"]) {
+    assert.throws(() => modelDetailPath(model), /model_request_invalid/);
+  }
+  const detail = parseModelDetail(marketDetail(), "openai/gpt-image-2");
+  assert.equal(detail.specifications[0].channels[0].amount_micros, 40000);
+  assert.throws(() => parseModelDetail(marketDetail(), "openai/other"), /model_response_invalid/);
+  for (const mutate of [
+    value => { value.object = "model_contract"; },
+    value => { value.specifications = []; },
+    value => { value.specifications[0].operation = "upscale_image"; },
+    value => { value.specifications[0].channels[0].availability = "maybe"; },
+    value => { value.specifications[0].channels[0].amount_micros = -1; },
+    value => { value.channel_parameters[0].parameter_rules.quality.behavior = "maybe"; },
+  ]) {
+    const value = marketDetail();
+    mutate(value);
+    assert.throws(() => parseModelDetail(value, "openai/gpt-image-2"), /model_response_invalid/);
   }
 });

@@ -1,5 +1,5 @@
 import { validateGeneration } from "../shared/standard.js";
-import { findModelOperationContract, modelContractPath, parseModelContractCatalog, parseModelContractDetail, type ModelContractCatalog, type ModelContractDetail } from "../shared/catalog.js";
+import { findModelOperationContract, modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
 import { checkParameterPolicies } from "../shared/parameter-rules.js";
 import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
 import { createFileClient } from "./files.js";
@@ -20,7 +20,16 @@ export type YirTransportRequest = {
   readonly headers?: Readonly<Record<string, string>>;
   readonly body?: unknown;
   readonly signal?: AbortSignal;
+  /**
+   * "manual" asks the transport to return a 3xx as `{ status, location }`
+   * without following it or sending credentials to the target. Transports that
+   * ignore it make redirect-only calls fail closed.
+   */
+  readonly redirect?: "manual";
 };
+
+/** Result of a `redirect: "manual"` request that received a 3xx response. */
+export type YirTransportRedirect = { readonly status: number; readonly location: string | null };
 
 export type YirTransport = <Response>(request: YirTransportRequest) => Promise<Response>;
 
@@ -32,6 +41,7 @@ export type YirClient = YirFileClient & {
   readonly modelContracts?: ModelContractCatalog;
   getModelContracts(options?: YirRequestOptions): Promise<ModelContractCatalog>;
   getModelContract(model: string, options?: YirRequestOptions): Promise<ModelContractDetail>;
+  getModel(model: string, options?: YirRequestOptions): Promise<ModelDetail>;
   quoteImage(request: StandardImageQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
   quoteBatch(requests: readonly QuoteBatchRequestItem[], options?: YirRequestOptions): Promise<QuoteBatch>;
   submitImage(request: StandardImageGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
@@ -65,6 +75,14 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         ...(options?.signal ? { signal: options.signal } : {}),
       });
       return parseModelContractDetail(value, model);
+    },
+    async getModel(model, options) {
+      options?.signal?.throwIfAborted();
+      const value = await transport<unknown>({
+        method: "GET", path: modelDetailPath(model),
+        ...(options?.signal ? { signal: options.signal } : {}),
+      });
+      return parseModelDetail(value, model);
     },
     quoteImage(request, options) {
       options?.signal?.throwIfAborted();
@@ -537,8 +555,12 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       headers,
       body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
       signal: request.signal,
-      redirect: "error",
+      redirect: request.redirect === "manual" ? "manual" : "error",
     });
+    if (request.redirect === "manual" && response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      return { status: response.status, location: response.headers.get("location") } as Response;
+    }
 
     const contentType = response.headers.get("content-type") ?? "";
     const text = await response.text();

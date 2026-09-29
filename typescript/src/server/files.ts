@@ -1,4 +1,4 @@
-import type { YirTransport, YirRequestOptions } from "./client.js";
+import type { YirTransport, YirTransportRedirect, YirRequestOptions } from "./client.js";
 import { YirSDKValidationError } from "../shared/standard.js";
 
 export type CreateFile = { readonly name: string; readonly media_type: string; readonly size: number };
@@ -22,6 +22,8 @@ export type YirFileClient = {
   createFiles(request: CreateFilesRequest, idempotencyKey: string, options?: YirRequestOptions): Promise<readonly InputFile[]>;
   getFile(id: string, options?: YirRequestOptions): Promise<InputFile>;
   completeFile(id: string, options?: YirRequestOptions): Promise<InputFile>;
+  /** Returns the short-lived signed URL without following it; fetch it without the API Key. */
+  getFileContentURL(id: string, options?: YirRequestOptions): Promise<string>;
 };
 
 const fileIDPattern = /^file_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -49,6 +51,17 @@ export function createFileClient(transport: YirTransport): YirFileClient {
     },
     getFile(id, options) { return fileRequest(transport, id, false, options); },
     completeFile(id, options) { return fileRequest(transport, id, true, options); },
+    async getFileContentURL(id, options) {
+      options?.signal?.throwIfAborted();
+      if (!fileIDPattern.test(id)) invalid("file_id_invalid", "id");
+      const result = await transport<YirTransportRedirect>({ method: "GET", path: `/v1/files/${id}/content`, redirect: "manual",
+        ...(options?.signal ? { signal: options.signal } : {}) });
+      let url: URL | undefined;
+      try { url = new URL(typeof result?.location === "string" ? result.location : ""); } catch { /* rejected below */ }
+      // Never echo the signed URL in errors.
+      if (result?.status !== 307 || !url || url.protocol !== "https:" || !url.hostname || url.username || url.password || url.hash) throw new Error("file_content_response_invalid");
+      return result.location!;
+    },
   };
 }
 

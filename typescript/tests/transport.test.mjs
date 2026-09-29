@@ -48,3 +48,29 @@ test("invalid success bodies and malformed JSON errors are read once without ret
     assert.equal(requests, 1);
   }
 });
+
+test("manual redirects return the signed location without contacting it", async t => {
+  const hits = [];
+  const target = createServer((request, response) => { hits.push(request.headers.authorization); response.end(); });
+  target.listen(0, "127.0.0.1");
+  await once(target, "listening");
+  const signed = `http://127.0.0.1:${target.address().port}/object?X-Signature=abc`;
+  const gateway = createServer((request, response) => {
+    assert.equal(request.headers.authorization, "Bearer fixture");
+    response.writeHead(307, { Location: signed });
+    response.end();
+  });
+  gateway.listen(0, "127.0.0.1");
+  await once(gateway, "listening");
+  t.after(async () => {
+    for (const server of [target, gateway]) {
+      const closed = new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+      server.closeAllConnections();
+      await closed;
+    }
+  });
+  const transport = createNodeHttpTransport({ apiKey: "fixture", baseURL: `http://127.0.0.1:${gateway.address().port}` });
+  assert.deepEqual(await transport({ method: "GET", path: "/content", redirect: "manual" }), { status: 307, location: signed });
+  await assert.rejects(transport({ method: "GET", path: "/content" }));
+  assert.deepEqual(hits, []);
+});
