@@ -5,6 +5,7 @@
 - AGY `review-mum73c4m-17068c97`（gemini-3.8-flash-medium）补审 `87fbe25..5f95d7d`：**comment**，未发现安全绕过（验签先于解析、篡改不误报为 `invalid_payload`、超时/abort 与退避交互正确）。
 - 问题：M1 TS `WebhookEvent.job` 类型宽于运行时校验——**不修**，与 `getJob` 相同信任模型（仅校验 id/status），Yir 合同规定 Webhook body 即终态 Job 投影；M2 `PollDelay`/`pollDelayMs` 注释 off-by-one——已修为“刚完成查询的 0 基序号”；L3 Go `WaitJob` 默认退避无测试——补 `TestWaitJobDefaultUsesPollDelaySchedule`；L4 Vercel 适配器等待路径无测试——补 running→status→detail 用例；N5 Webhook 未校验 Job ID 格式——两端改用与 `GetJob` 相同的 `^[1-9][0-9]*$`。
 - 修复分支 `fix/review-poll-webhook`（[PR #10](https://github.com/yir-ai/sdk/pull/10)，`5a79a41`），随 Go `0.4.1` / TS `0.3.1` 补丁发布。AGY `review-mum7dlet-a72d7686` 复审 `5f95d7d..5a79a41` **approve**，确认 M1 不修理由成立；仅 nit：`pollDelay` 包级测试钩子在未来 `t.Parallel()` 时可能竞争，当前无需改动。PR CI [36523783599](https://github.com/yir-ai/sdk/actions/runs/36523783599) success。
+- 发布：PR #10 合并为 `8c5499a`，main CI success；`go/v0.4.1`、`typescript/v0.3.1` annotated tag 指向 `8c5499a` 并建 GitHub Release，proxy.golang.org 可解析 `go@v0.4.1`。维护者完成 npm 网页验证后发布 `@yir-ai/sdk@0.3.1`，匿名下载归档 SHA1 `f6c98e4e44fabe46db2eae163d3f6e6443f69ff0` 与本地打包一致，`latest` 为 `0.3.1`（registry 处理约数分钟后 tarball 才可下载）。Pilio 未升级、未部署。
 
 ## 2026-09-29 默认轮询退避与 Webhook 事件解析发布
 
