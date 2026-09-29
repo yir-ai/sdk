@@ -1,6 +1,14 @@
 # SDK 代码审查台账
 
-## 2026-09-29 Market 模型详情与文件内容签名 URL（实现自验，待独立审查）
+## 2026-09-30 Go 0.5.1 与 TypeScript 0.4.1 发布
+
+- 候选：PR #19 合并为 `d2cfc0d`，main CI [36625948248](https://github.com/yir-ai/sdk/actions/runs/36625948248) success。`go/v0.5.1`、`typescript/v0.4.1` annotated tag 指向 `d2cfc0d` 并建 GitHub Release；proxy.golang.org 可解析 `go@v0.5.1`。
+- npm：main 已合入 PR #20，为避免包内容偏离 tag，在 `typescript/v0.4.1` 的独立干净 worktree 中构建后发布（仓库无 prepack，需先 `pnpm run build`；分离 HEAD 需 `--no-git-checks`）。首次因本机 npm 登录失效返回 404，维护者重新 `npm login` 后发布 `@yir-ai/sdk@0.4.1`，npm 回报 shasum `f5ede9908b11bda6f84acfad5b4f2399a22f4988`，与发布前本地打包一致。
+- 文档：安装命令更新为 `go@v0.5.1` / `@yir-ai/sdk@0.4.1`；PR #20 新增接口标注为尚未发布（Go 0.5.1、TS 0.4.1 之后）。TS 下一版因 `YirFileClient` 新增方法应升次版本（0.5.0）。
+
+## 2026-09-30 Market 模型详情与文件内容签名 URL
+
+- 独立审查（Claude Code，主会话，只读 PR #20 相对 main）**approve**，无阻塞问题：Go 复制调用方 HTTP 客户端并强制 `ErrUseLastResponse`，自定义客户端亦不跟随跳转；仅 307 且绝对 `https`、无 userinfo/fragment 的 `Location` 被接受，错误不含签名 URL；TS 仅该请求使用 manual，其余仍 `redirect: "error"`，内置传输只有 Node 一个；`ModelDetail` 字段、必填与枚举与 `spec/openapi.json` 一致。
 
 - 实现方 Claude Code；基准 `4af07ea`，其后合入 main `d2cfc0d`（Go 0.5.1 / TS 0.4.1 候选）。新增 Go `GetModel` / `GetFileContentURL`，TS `getModel` / `getFileContentURL`，以及 `modelDetailPath`、`parseModelDetail`，对应 `getModel`（无 `view` 参数）与 `getFileContent`。API 形状已先与用户确认：`ModelDetail` 宽松解析，忽略未知字段，校验 id、object、必填值与枚举；文件内容只返回签名 URL，不提供下载辅助。
 - 凭据边界：Go 仍依赖 `CheckRedirect` 返回 `ErrUseLastResponse`，把 `do` 拆出 `send` 与 `responseAPIError`，JSON 调用行为不变。TS 在 `YirTransportRequest` 增加可选 `redirect: "manual"`；Node 传输只对该请求使用 `fetch` manual 并返回 `{ status, location }`，其余请求仍为 `redirect: "error"`。只接受 307 加绝对 `https`、无 userinfo 和 fragment 的 `Location`，否则报 `file_content_response_invalid`，错误不含 URL。不理解该字段的自定义传输安全失败。404/409/410 原样透传服务端错误码，无新增错误类型。
