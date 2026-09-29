@@ -4,6 +4,7 @@
 
 - `spec/openapi.json` 同步私有已审合同 `yir-api/docs/standard-openapi.json`（私有 `9ce0cdde`）：生成接口 `Idempotency-Key` 改为服务端必填（缺失返回不可重试 400）、文件上传计划改用可选 `FileIdempotencyKey`、新增 `YIR_SPEND_LIMIT_EXCEEDED` 与 403 响应、`result_delivery_failed` 更名为 `YIR_RESULT_DELIVERY_FAILED`。
 - `pnpm generate:model-contracts` 与 `check:model-contracts` 生成物无变化；SDK 生成方法未传键时自动生成、文件接口本就要求传键，运行时已符合新合同。npm 包与 Go 模块均不包含 `spec/`，按本文件第 6 条属于合同快照更新，不发包；已发布标签内的旧快照保留不移动。
+- AGY `review-muma8dgc-8d3b6ec7`（只读，PR #12 分支相对 main）**approve**：快照与私有合同逐字节一致、无敏感信息；TS/Go 生成请求均必带键、文件接口强制传键、无旧错误码硬编码；`pnpm pack --dry-run` 确认不含 `spec/`；TS 117 项、`test:types`、`test:package` 与 Go `go test ./...` 通过。
 
 ## 2026-09-29 PR #8 事后独立审查与修复
 
