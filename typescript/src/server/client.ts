@@ -202,7 +202,8 @@ function validJobStatus(status: unknown): status is JobStatus {
 }
 
 /**
- * Recommended delay after the given number of completed status queries for one Job:
+ * Recommended delay after a status query for one Job. `poll` is the zero-based index
+ * of the query that just completed (0 after the first):
  * 5s for the first 30 seconds, 10s until about 90 seconds, then 20s.
  * Durable workflows can reuse it with their own timers.
  */

@@ -156,9 +156,13 @@ type WaitOptions struct {
 	OnPoll       func(JobStatusResponse)
 }
 
-// PollDelay is the recommended delay after the given number of completed status
-// queries for one Job: 5s for the first 30 seconds, 10s until about 90 seconds,
-// then 20s. Durable workflows can reuse it with their own timers.
+// pollDelay lets tests observe WaitJob's default schedule without real sleeps.
+var pollDelay = PollDelay
+
+// PollDelay is the recommended delay after a status query for one Job. poll is
+// the zero-based index of the query that just completed (0 after the first):
+// 5s for the first 30 seconds, 10s until about 90 seconds, then 20s. Durable
+// workflows can reuse it with their own timers.
 func PollDelay(poll int) time.Duration {
 	switch {
 	case poll < 6:
@@ -199,7 +203,7 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 		}
 		interval := options.PollInterval
 		if interval == 0 {
-			interval = PollDelay(poll)
+			interval = pollDelay(poll)
 		}
 		timer := time.NewTimer(interval)
 		select {

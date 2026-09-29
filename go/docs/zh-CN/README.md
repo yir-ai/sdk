@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.4.0
+go get github.com/yir-ai/sdk/go@v0.4.1
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.4.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.4.1`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -34,7 +34,7 @@ _ = client
 
 ## 0.4.0 变化
 
-未设置 `WaitOptions.PollInterval` 时，`WaitJob` 改为按 `PollDelay` 退避（5 秒、10 秒、20 秒），不再每 2 秒轮询；需要固定间隔时设置 `PollInterval`。新增 `ConstructWebhookEvent`。调用签名不变。
+未设置 `WaitOptions.PollInterval` 时，`WaitJob` 改为按 `PollDelay` 退避（5 秒、10 秒、20 秒），不再每 2 秒轮询；需要固定间隔时设置 `PollInterval`。新增 `ConstructWebhookEvent`。调用签名不变。0.4.1 起 `ConstructWebhookEvent` 同样拒绝 `GetJob` 不接受的 Job ID，并明确 `PollDelay` 的 `poll` 为刚完成查询的 0 基序号。
 
 ## 0.3.0 迁移
 

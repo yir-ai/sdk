@@ -214,3 +214,41 @@ func TestPollDelayBacksOff(t *testing.T) {
 		}
 	}
 }
+
+func TestWaitJobDefaultUsesPollDelaySchedule(t *testing.T) {
+	var statusCalls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/jobs/102/status":
+			if statusCalls.Add(1) < 4 {
+				io.WriteString(w, `{"id":"102","status":"running","error":null}`)
+			} else {
+				io.WriteString(w, `{"id":"102","status":"succeeded","error":null}`)
+			}
+		case "/v1/jobs/102":
+			io.WriteString(w, `{"id":"102","status":"succeeded"}`)
+		}
+	}))
+	defer server.Close()
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var polls []int
+	pollDelay = func(poll int) time.Duration { polls = append(polls, poll); return time.Millisecond }
+	defer func() { pollDelay = PollDelay }()
+	if _, err := client.WaitJob(context.Background(), "102", WaitOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if len(polls) != 3 || polls[0] != 0 || polls[1] != 1 || polls[2] != 2 {
+		t.Fatalf("default wait must consult PollDelay with zero-based query indexes, got %v", polls)
+	}
+	polls = nil
+	statusCalls.Store(0)
+	if _, err := client.WaitJob(context.Background(), "102", WaitOptions{PollInterval: time.Millisecond}); err != nil {
+		t.Fatal(err)
+	}
+	if len(polls) != 0 {
+		t.Fatalf("fixed PollInterval must bypass PollDelay, got %v", polls)
+	}
+}

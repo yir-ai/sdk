@@ -90,7 +90,7 @@ test("constructWebhookEvent rejects bad signatures and non-terminal payloads", a
     constructWebhookEvent(verificationRequest({ rawBody: encoder.encode('{"id":"7001","status":"failed"}') })),
     (error) => error instanceof YirWebhookVerificationError && error.reason === "invalid_signature",
   );
-  for (const body of ["not json", "null", '{"id":"","status":"succeeded"}', '{"id":"7001","status":"running"}']) {
+  for (const body of ["not json", "null", '{"id":"","status":"succeeded"}', '{"id":" 7001","status":"succeeded"}', '{"id":"abc","status":"failed"}', '{"id":"7001","status":"running"}']) {
     const signature = "v1=" + createHmac("sha256", vector.testOnlySecret)
       .update(`${vector.timestamp}.${vector.id}.${body}`).digest("base64");
     await assert.rejects(

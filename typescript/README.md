@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.3.0
+pnpm add @yir-ai/sdk@0.3.1
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.1.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -85,7 +85,7 @@ Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported.
 
 ## Changes in 0.3.0
 
-`waitForJob` (and the Vercel adapter's image wait) without `pollIntervalMs` now backs off with `pollDelayMs` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `pollIntervalMs` to keep a fixed interval. `DEFAULT_POLL_INTERVAL_MS` is deprecated. `constructWebhookEvent` and `YirWebhookVerificationError` are new. No call signatures change.
+`waitForJob` (and the Vercel adapter's image wait) without `pollIntervalMs` now backs off with `pollDelayMs` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `pollIntervalMs` to keep a fixed interval. `DEFAULT_POLL_INTERVAL_MS` is deprecated. `constructWebhookEvent` and `YirWebhookVerificationError` are new. No call signatures change. In 0.3.1, `constructWebhookEvent` also rejects Job IDs that `getJob` would reject, and `pollDelayMs` documents `poll` as the zero-based index of the query that just completed.
 
 ## Contract updates in 0.2.0
 

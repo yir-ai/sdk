@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.3.0
+pnpm add @yir-ai/sdk@0.3.1
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.1.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -86,7 +86,7 @@ const client = createNodeYirClient();
 
 ## 0.3.0 变化
 
-未设置 `pollIntervalMs` 时，`waitForJob`（以及 Vercel 适配器的图片等待）改为按 `pollDelayMs` 退避（5 秒、10 秒、20 秒），不再每 2 秒轮询；需要固定间隔时设置 `pollIntervalMs`。`DEFAULT_POLL_INTERVAL_MS` 已弃用。新增 `constructWebhookEvent` 与 `YirWebhookVerificationError`。调用签名不变。
+未设置 `pollIntervalMs` 时，`waitForJob`（以及 Vercel 适配器的图片等待）改为按 `pollDelayMs` 退避（5 秒、10 秒、20 秒），不再每 2 秒轮询；需要固定间隔时设置 `pollIntervalMs`。`DEFAULT_POLL_INTERVAL_MS` 已弃用。新增 `constructWebhookEvent` 与 `YirWebhookVerificationError`。调用签名不变。0.3.1 起 `constructWebhookEvent` 同样拒绝 `getJob` 不接受的 Job ID，并明确 `pollDelayMs` 的 `poll` 为刚完成查询的 0 基序号。
 
 ## 0.2.0 合同更新
 

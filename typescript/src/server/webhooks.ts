@@ -146,7 +146,7 @@ export async function constructWebhookEvent(
     throw new YirWebhookVerificationError("invalid_payload");
   }
   if (
-    typeof job !== "object" || job === null || typeof job.id !== "string" || job.id === "" ||
+    typeof job !== "object" || job === null || typeof job.id !== "string" || !/^[1-9][0-9]*$/.test(job.id) ||
     (job.status !== "succeeded" && job.status !== "failed" && job.status !== "cancelled")
   ) {
     throw new YirWebhookVerificationError("invalid_payload");
