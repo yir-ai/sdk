@@ -6,6 +6,7 @@
 - 移植：Go `Quote.Validate` 补 `supply` 与价格一致性校验（与 TS `shared/quote.ts` 相同规则）并新增 `TestQuoteSupplyConsistency`，报价夹具补齐合同必填的 `supply`（CLEAN-01；比价字段与校验本仓库已有）；TS 请求构造器 prompt 上限按 Unicode 码点计数并补边界测试（CLEAN-02）；删除无引用的退役价格表夹具（CLEAN-05）；`supply_type` 的 `byok` 标注仅为历史账单保留（CLEAN-06，不删除类型）。CLEAN-03/04 属 Python，不适用。
 - 实施方验证：Go `go vet`、`go test ./...`；TS `standard-client`、`quote` 27 项与 `test:types`；私有 contracttest 以本地替换的 Go SDK 对真实 Gateway 与迁移后 PostgreSQL 报价通过（新校验不误拒服务端报价）。发布 Go `0.4.2` / TS `0.3.2`。
 - AGY `review-mumavo7p-6f298259`（只读，PR #13 相对 main）**approve**，无问题：Go 供给规则与 TS `shared/quote.ts`、服务端 `yir_standard_quote_v1.go` 及 OpenAPI 一致，不误拒合法报价；夹具取值合理；码点修复与边界测试有效；删除夹具无引用；相对 `a246c66d` 无遗漏适用修复。
+- 发布：PR #13 合并为 `1c9ee19`，main CI [36532283311](https://github.com/yir-ai/sdk/actions/runs/36532283311) success；`go/v0.4.2`、`typescript/v0.3.2` annotated tag 指向 `1c9ee19` 并建 GitHub Release，proxy.golang.org 可解析 `go@v0.4.2`。维护者完成 npm 网页验证后发布 `@yir-ai/sdk@0.3.2`，匿名下载归档 SHA1 `ab484f32e55cd723948ee0653f64772bbf017588` 与本地打包一致，`latest` 为 `0.3.2`。
 
 ## 2026-09-29 公开合同快照同步（关闭私有台账 YIR-REVIEW-20260928-DOCS-01）
 
