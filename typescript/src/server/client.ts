@@ -170,6 +170,11 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         method: "POST",
         path: `/v1/jobs/${normalizedID}/cancel`,
         ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(job => {
+        if (typeof job !== "object" || job === null || job.id !== normalizedID || !validJobStatus(job.status)) {
+          throw new Error("response_invalid");
+        }
+        return job;
       });
     },
   };

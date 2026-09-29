@@ -21,11 +21,21 @@ test("default User-Agent reports the package version", async () => {
 
 test("cancelJob forwards the abort signal and rejects an aborted signal before sending", async () => {
   const calls = [];
-  const client = createYirClient(async request => { calls.push(request); return {}; });
+  const client = createYirClient(async request => {
+    calls.push(request);
+    return { id: "7001", object: "job", status: "cancelled", model: "openai/gpt-image-2", error: null, created_at: 1 };
+  });
   const controller = new AbortController();
   await client.cancelJob("7001", { signal: controller.signal });
   assert.equal(calls[0].signal, controller.signal);
   controller.abort();
   assert.throws(() => client.cancelJob("7002", { signal: controller.signal }));
   assert.equal(calls.length, 1);
+});
+
+test("cancelJob rejects a response that is not the cancelled job", async () => {
+  for (const response of [{}, null, { id: "9999", status: "cancelled" }, { id: "7001", status: "unknown" }]) {
+    const client = createYirClient(async () => response);
+    await assert.rejects(client.cancelJob("7001"), /response_invalid/);
+  }
 });
