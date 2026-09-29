@@ -1,8 +1,15 @@
 # SDK 代码审查台账
 
+## 2026-09-30 PR #16 合并与授权发布
+
+- PR #16 最终 `cac4a359040597c4f13104bfa314cd0f70d0c21d` 的完整 CI 36612791486 通过，合并为 `3c1bf5c8fb66f30e16bbce29d623c878836010ec`；合并后 CI 36613074206 通过。最终候选相对已审 `7fe342f0f05fb5e0d973f44ae39369d989376045` 仅新增上一节审查记录，代码结论复用。
+- 用户另行明确授权两个 SDK 及标签发布、Yir 依赖升级。`go/v0.5.0` 与 `typescript/v0.4.0` annotated tag 均固定至上述合并提交，GitHub Release 已创建。
+- Go 公共 Proxy 下载与 checksum 核验成功，Origin.Hash 匹配，模块 Sum `h1:MNDlYXW6EYDv+Ngbub2n28JBgwCeY3Upp4lYF3fC778=`。TypeScript 经维护者 npm 官方登录及网页发包验证成功；公开 registry 0.4.0 归档 SHA1 `42f9bfcce3cf365f8a4d3a0eee2739d85e463f25` 与发布归档一致，Yir Web 与 contracttest 已从 registry 安装。
+- 发布后的安装指南指向新版本；不移动已发布标签、不覆盖归档。Yir 的服务端 PR 仍在修复 CI，未部署生产；调用方应配套支持 file_id 与 processing 的服务端。
+
 ## 2026-09-30 文件分析等待与 file_id 合同候选
 
-- 实施/迁移 Codex，独立审查 AGY `review-mumztezu-63fa7c97`：检查 `f6d9653..0672b61a7efbc562384cabadf74eeda520b82616`。发现 SDK-FILE-01（P1，Go 六项旧 URL 夹具）及 SDK-FILE-02（P1，TS 四项旧 URL 夹具）；初审 Request Changes。历史工作区测试数字不代表此候选。
+- 实施/迁移 Codex，独立审查 AGY `review-mumztezu-63fa7c97`：检查 `f6d965348d3e801592913802c06cde8c8b559f09..0672b61a7efbc562384cabadf74eeda520b82616`。发现 SDK-FILE-01（P1，Go 六项旧 URL 夹具）及 SDK-FILE-02（P1，TS 四项旧 URL 夹具）；初审 Request Changes。历史工作区测试数字不代表此候选。
 - 修复 `f15e3eb363e9de4cbf9c7a59dafa221b3e77dbcf`，补归档消费者与公开示例 `7fe342f0f05fb5e0d973f44ae39369d989376045`。原审查方 `review-mun0ec10-73922ea9` 复审 `0672b61a7efbc562384cabadf74eeda520b82616..7fe342f0f05fb5e0d973f44ae39369d989376045` **APPROVE**，两项关闭；独立 Go 六项 0.839s、TS 六项 243ms 通过。
 - 同一候选完整 [SDK CI 36612198912](https://github.com/yir-ai/sdk/actions/runs/36612198912) 通过（51s），覆盖合同、TypeScript 测试/类型、实际归档消费及独立 Go 模块。主控定向 Go 0.888s、TS 六项 234ms 通过。
 - TypeScript 0.4.0、Go 0.5.0 为不兼容输入合同候选；要求先上传媒体再引用 file_id，上传辅助函数等待 processing 完成。未发布包或标签；当前正式安装说明仍指向已发布版本。

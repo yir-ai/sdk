@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.3.2
+pnpm add @yir-ai/sdk@0.4.0
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.3.2.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.4.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -71,7 +71,7 @@ Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobSta
 
 ## Files and Webhooks
 
-The unreleased 0.4.0 candidate requires `file_id` for every media reference; external reference URLs are rejected. Upload the original bytes first. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter accepts inline bytes for upload; download URL inputs in your application before passing their bytes to the adapter.
+Version 0.4.0 requires `file_id` for every media reference; external reference URLs are rejected. Upload the original bytes first. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter accepts inline bytes for upload; download URL inputs in your application before passing their bytes to the adapter.
 
 `createFiles(request, key)` creates upload plans; `uploadFile(client, plan, blob)` uploads and completes a plan. `createAndUploadFile(client, metadata, blob, key)` combines the steps. Use stable upload keys and retain returned file IDs; `getFile(id)` checks state and `completeFile(id)` completes a manually uploaded file. Only reference ready files in generation requests (`file_id` plus the appropriate role). Upload helpers support the server's single/multipart plans.
 
