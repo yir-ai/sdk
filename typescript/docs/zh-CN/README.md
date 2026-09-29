@@ -70,6 +70,8 @@ const client = createNodeYirClient();
 
 `YirJobError` 包含失败或取消的终态任务。`YirAPIError` 在可用时提供 status、code、retryable、action 和 requestId。应用逻辑应依赖稳定错误码，`YIR_ERROR_CODES` 与 `YirErrorCode` 类型列出全部稳定错误码。`cancelJob(id, options)` 显式申请取消，需检查 cancellation 和终态账单，不能假定立即取消或零费用。每个任务的 `billing.total_charged_by_yir` 只结算一次。结果 URL 会过期，应检查 `result.availability` 并及时复制到自己的资源库。
 
+尚未发布的 0.4.1 候选与 0.4.0 兼容。`cancelJob(id, options)` 支持中断信号，返回的不是所请求任务时抛出 `response_invalid`。`Quote.parameters` 新增 `return_last_frame`、`web_search`、`image_search`。新增 `YIR_ERROR_CODES` 与 `YirErrorCode`，`DEFAULT_USER_AGENT` 报告包版本。内置模型合同与服务端当前导出一致：新增 `alibaba/qwen-image-2.1`，Gemini Omni 接受 `duration`，`wan-2.6` 最多 5 个参考，移除 `kie/gemini-omni-video` 别名。仅使用内置目录的校验受影响。
+
 ## 文件与 Webhook
 
 0.4.0 要求媒体引用使用 `file_id`，拒绝外部引用 URL。先上传原始字节；`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器支持上传内联字节；URL 输入需由应用先下载为字节。
