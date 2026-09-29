@@ -11,7 +11,7 @@ import type {
   StandardVideoQuoteRequest,
 } from "../shared/standard.js";
 
-export type { JobStatus, JobCancellation, JobStatusResponse, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
+export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
 import type { JobStatus, JobStatusResponse, Job, Quote, YirPublicError, QuoteBatchRequestItem, QuoteBatch } from "../shared/types.js";
 
 export type YirTransportRequest = {
@@ -49,7 +49,7 @@ export type YirClient = YirFileClient & {
   submitVideo(request: StandardVideoGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
   getJobStatus(id: string, options?: YirRequestOptions): Promise<JobStatusResponse>;
-  cancelJob(id: string): Promise<Job>;
+  cancelJob(id: string, options?: YirRequestOptions): Promise<Job>;
 };
 
 /**
@@ -180,12 +180,19 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         return status;
       });
     },
-    cancelJob(id) {
+    cancelJob(id, options) {
+      options?.signal?.throwIfAborted();
       const normalizedID = id.trim();
       if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
       return transport<Job>({
         method: "POST",
         path: `/v1/jobs/${normalizedID}/cancel`,
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(job => {
+        if (typeof job !== "object" || job === null || job.id !== normalizedID || !validJobStatus(job.status)) {
+          throw new Error("response_invalid");
+        }
+        return job;
       });
     },
   };
@@ -201,7 +208,8 @@ function warnParameterPolicies(operation: "generate_image" | "generate_video", r
     console.warn(`[Yir] ${notice.message}`);
   }
 }
-export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.1.0";
+// Keep in sync with package.json "version"; tests enforce it.
+export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.4.1";
 /** @deprecated Former fixed default. `waitForJob` now backs off with `pollDelayMs` unless `pollIntervalMs` is set. */
 export const DEFAULT_POLL_INTERVAL_MS = 2000;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;

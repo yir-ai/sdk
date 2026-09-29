@@ -64,7 +64,9 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 
 保存返回的任务 ID。`GetJob` 查询完整任务详情，`GetJobStatus` 查询轻量状态摘要 `JobStatusResponse`。`WaitJob` 默认按 `PollDelay` 退避轮询状态摘要（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒）；设置 `WaitOptions.PollInterval` 可改为固定间隔。进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符返回 `ErrJobStateInconsistent`。取消或超时 context 只停止本地等待，返回零值 `Job{}`，不取消远端任务或表示退款；用保存的 ID 恢复。`JobError` 包含失败或取消的终态任务；`APIError` 包含 HTTP status、code、message、retryable 和 action。业务判断使用稳定错误码。
 
-`CancelJob` 显式申请取消，应检查取消状态和终态账单，不假定立即成功或零费用。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径。检查 `Result.Availability`，在 URL 过期前复制可用结果文件。
+`CancelJob` 显式申请取消，应检查取消状态和终态账单，不假定立即成功或零费用。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径；`ComputeCharges`、`GatewayFee`、`Savings` 和 `OfficialComparison` 说明该总额的构成。`APIError.Code` 应与 `ErrCode*` 常量比较，而非字符串字面量。
+
+尚未发布的 0.5.1 候选与 0.5.0 兼容。`Job` 新增 `FinalProvider`、`URLs`、`Usage`；`JobBilling` 新增 `ComputeCharges`、`GatewayFee`、`Savings`、`OfficialComparison`。新增 `ErrCode*` 常量与 `Version`，User-Agent 改为报告 SDK 版本。内置模型合同与服务端当前导出一致：新增 `alibaba/qwen-image-2.1`，Gemini Omni 接受 `duration`，`wan-2.6` 最多 5 个参考，移除 `kie/gemini-omni-video` 别名。仅显式使用内置合同的校验入口受影响；未传调用方目录的运行时请求不变。检查 `Result.Availability`，在 URL 过期前复制可用结果文件。
 
 0.5.0 要求媒体引用使用 `FileID`，拒绝外部引用 URL。先上传原始字节；`CompleteFile` 可能返回 `processing`，`UploadFile` 默认最多等待五分钟到 `ready`。可用 `WaitForFileReady` 继续等待已保存的文件 ID；本地等待超时不会取消服务端分析。
 
