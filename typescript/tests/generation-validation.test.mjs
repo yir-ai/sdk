@@ -30,7 +30,7 @@ test("dynamic parameters fail locally before either Quote or Submit transport", 
 
 test("validation preserves input order, defaults and caller values", async () => {
   const references = [
-    { role: "reference_image", url: "https://example.com/z.png" },
+    { role: "reference_image", file_id: "file_22222222-2222-4222-8222-222222222222" },
     { role: "reference_image", file_id: "file_11111111-1111-4111-8111-111111111111" },
   ];
   const request = { ...image(), input: { type: "image", prompt: "  Keep spaces  ", references }, parameters: {} };
@@ -50,7 +50,7 @@ test("references reject ambiguous sources, invalid URL and unsupported roles", (
     { role: "reference_image", url: "http://example.com/a" },
     { role: "reference_image", url: "https://secret@example.com/a" },
     { role: "reference_image", file_id: "file_1" },
-    { role: "reference_audio", url: "https://example.com/a" },
+    { role: "reference_audio", file_id: "file_1" },
   ]) {
     assert.throws(() => validateGeneration("generate_image", {
       ...image(), input: { type: "image", prompt: "Edit", references: [reference] },
@@ -59,8 +59,8 @@ test("references reject ambiguous sources, invalid URL and unsupported roles", (
 });
 
 test("video image input requires exactly one first frame and at most one last frame", () => {
-  const first = { role: "first_frame", url: "https://example.com/first.png" };
-  const last = { role: "last_frame", url: "https://example.com/last.png" };
+  const first = { role: "first_frame", file_id: "file_11111111-1111-4111-8111-111111111111" };
+  const last = { role: "last_frame", file_id: "file_22222222-2222-4222-8222-222222222222" };
   const request = references => ({
     model: "bytedance/seedance-2.0", input: { type: "image", prompt: "Animate", references }, parameters: {},
   });

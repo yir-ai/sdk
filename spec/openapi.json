@@ -156,7 +156,7 @@
                 "input": {
                   "type": "image",
                   "prompt": "The subject turns toward the sunrise",
-                  "references": [{ "role": "first_frame", "url": "https://example.com/first-frame.png" }]
+                  "references": [{ "role": "first_frame", "file_id": "file_11111111-1111-4111-8111-111111111111" }]
                 },
                 "parameters": { "duration": 4, "resolution": "480p", "aspect_ratio": "16:9", "generate_audio": false, "n": 1 },
                 "routing": { "preference": "cost", "fallback": true },
@@ -514,21 +514,11 @@
                     "reference_image"
                   ]
                 },
-                "url": {
-                  "type": "string",
-                  "format": "uri",
-                  "pattern": "^https://"
-                },
                 "file_id": {
                   "$ref": "#/components/schemas/FileID"
                 }
               },
               "oneOf": [
-                {
-                  "required": [
-                    "url"
-                  ]
-                },
                 {
                   "required": [
                     "file_id"
@@ -859,21 +849,11 @@
                     "last_frame"
                   ]
                 },
-                "url": {
-                  "type": "string",
-                  "format": "uri",
-                  "pattern": "^https://"
-                },
                 "file_id": {
                   "$ref": "#/components/schemas/FileID"
                 }
               },
               "oneOf": [
-                {
-                  "required": [
-                    "url"
-                  ]
-                },
                 {
                   "required": [
                     "file_id"
@@ -922,21 +902,11 @@
                     "reference_audio"
                   ]
                 },
-                "url": {
-                  "type": "string",
-                  "format": "uri",
-                  "pattern": "^https://"
-                },
                 "file_id": {
                   "$ref": "#/components/schemas/FileID"
                 }
               },
               "oneOf": [
-                {
-                  "required": [
-                    "url"
-                  ]
-                },
                 {
                   "required": [
                     "file_id"
@@ -1617,7 +1587,9 @@
         "properties": {
           "id": { "$ref": "#/components/schemas/FileID" },
           "object": { "type": "string", "const": "file" },
-          "status": { "type": "string", "enum": ["pending_upload", "ready", "expired", "failed"] },
+          "status": { "type": "string", "enum": ["pending_upload", "processing", "ready", "expired", "failed"], "description": "Completion starts asynchronous metadata analysis. Wait for ready before referencing this file in a job." },
+          "width": { "type": "integer", "minimum": 1 },
+          "height": { "type": "integer", "minimum": 1 },
           "name": { "type": "string", "minLength": 1, "maxLength": 255 },
           "media_type": { "type": "string" },
           "size": { "type": "integer", "format": "int64", "minimum": 1 },

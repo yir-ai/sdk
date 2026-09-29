@@ -37,7 +37,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           const parameters = { ...extension.parameters };
           assign(parameters, "n", call.n);
           assign(parameters, "aspect_ratio", call.aspectRatio);
-          const references = call.files?.map(file => reference(file, "reference_image"));
+          const references = call.files?.map((file, index) => reference(file, "reference_image", index));
           let request: StandardImageGenerationRequest = {
             model: modelId,
             input: references?.length ? { type: "image", prompt: call.prompt ?? "", references } : { type: "text", prompt: call.prompt ?? "" },
@@ -84,13 +84,13 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "generate_audio", call.generateAudio);
           const inputKinds = [call.image, call.frameImages?.length, call.inputReferences?.length].filter(Boolean).length;
           if (inputKinds > 1) throw new YirSDKValidationError("input_sources_ambiguous", "input");
-          const references = call.image ? [reference(call.image, "first_frame")]
-            : call.frameImages?.length ? call.frameImages.map(frame => reference(frame.image, frame.frameType))
-            : call.inputReferences?.map(file => {
+          const references = call.image ? [reference(call.image, "first_frame", 0)]
+            : call.frameImages?.length ? call.frameImages.map((frame, index) => reference(frame.image, frame.frameType, index))
+            : call.inputReferences?.map((file, index) => {
               if (!file.mediaType) unsupported("reference without explicit media type");
               const role = file.mediaType!.startsWith("image/") ? "reference_image" : file.mediaType!.startsWith("video/") ? "reference_video" : file.mediaType!.startsWith("audio/") ? "reference_audio" : undefined;
               if (!role) unsupported("reference media type");
-              return reference(file, role!);
+              return reference(file, role!, index);
             });
           let request: StandardVideoGenerationRequest = {
             model: modelId,
@@ -140,16 +140,17 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
 
 function unsupported(functionality: string): never { throw new UnsupportedFunctionalityError({ functionality }); }
 
-function reference(file: ImageModelV4File | VideoModelV4File, role: StandardReference["role"]): StandardReference {
+function reference(file: ImageModelV4File | VideoModelV4File, role: StandardReference["role"], index: number): StandardReference {
+  if (file.type === "url") unsupported("URL media inputs; supply file bytes for upload");
   // This placeholder is local to preflight and is always replaced before Submit.
-  return { role, url: file.type === "url" ? file.url : "https://input.yir.invalid/pending-upload" };
+  return { role, file_id: `file_00000000-0000-4000-8000-${String(index).padStart(12, "0")}` };
 }
 
 async function materializeReferences(client: YirClient, references: readonly StandardReference[], files: readonly (ImageModelV4File | VideoModelV4File)[],
   key: string, fetchPart: typeof globalThis.fetch, signal?: AbortSignal): Promise<readonly StandardReference[]> {
   const inline = [];
   for (const [index, file] of files.entries()) {
-    if (file.type === "url") continue;
+    if (file.type === "url") unsupported("URL media inputs; supply file bytes for upload");
     let bytes: Uint8Array<ArrayBuffer>;
     try {
       bytes = typeof file.data === "string" ? Uint8Array.from(atob(file.data), character => character.charCodeAt(0)) : Uint8Array.from(file.data);

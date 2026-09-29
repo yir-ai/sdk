@@ -171,15 +171,14 @@ test("operation for another model is rejected before querying", async () => {
   assert.equal(calls.length, 0);
 });
 
-test("empty frame array does not discard explicit video references", async () => {
+test("explicit URL video references are rejected before transport", async () => {
   const { provider, calls } = fixture("video/mp4");
-  await provider.videoModel("bytedance/seedance-2.0").doStart({
+  await assert.rejects(() => provider.videoModel("bytedance/seedance-2.0").doStart({
     prompt: "Animate", n: 1, frameImages: [],
     inputReferences: [{ type: "url", url: "https://example.com/ref.png", mediaType: "image/png" }],
     providerOptions: { yir: { idempotencyKey: "reference-key" } },
-  });
-  assert.deepEqual(calls[0].body.input.references, [{ role: "reference_image", url: "https://example.com/ref.png" }]);
-  assert.equal(calls[0].body.input.type, "reference");
+  }), /URL media inputs/);
+  assert.equal(calls.length, 0);
 });
 
 test("AI SDK default retries do not resubmit an unknown Yir transport outcome", async () => {
@@ -227,30 +226,31 @@ test("AI SDK inline image uploads once and submits a ready File ID", async () =>
   assert.deepEqual(events, ["/v1/files", "https://uploads.example/part", `/v1/files/${fileID}/complete`, "/v1/images/generations", "https://assets.example/result"]);
 });
 
-test("AI SDK startVideo preserves mixed inline audio/image and remote video references", async () => {
+test("AI SDK startVideo uploads mixed audio/image/video references", async () => {
   const calls = [];
-  const ids = ["file_11111111-1111-4111-8111-111111111111", "file_22222222-2222-4222-8222-222222222222"];
+  const ids = ["file_11111111-1111-4111-8111-111111111111", "file_22222222-2222-4222-8222-222222222222", "file_33333333-3333-4333-8333-333333333333"];
   const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
   const wav = new Uint8Array([82, 73, 70, 70, 4, 0, 0, 0, 87, 65, 86, 69]);
+  const video = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
   const client = createYirClient(async request => {
     calls.push(request);
     if (request.path === "/v1/files") {
       assert.equal(request.headers["Idempotency-Key"], "mixed-video:inputs");
-      assert.deepEqual(request.body.files.map(file => [file.media_type, file.size]), [["image/png", png.length], ["audio/wav", wav.length]]);
+      assert.deepEqual(request.body.files.map(file => [file.media_type, file.size]), [["image/png", png.length], ["video/mp4", video.length], ["audio/wav", wav.length]]);
       return { files: request.body.files.map((file, index) => ({ ...file, id: ids[index], object: "file", status: "ready" })) };
     }
     assert.equal(request.path, "/v1/videos/generations");
     assert.equal(request.headers["Idempotency-Key"], "mixed-video");
     assert.deepEqual(request.body.input, { type: "reference", prompt: "Animate with sound", references: [
       { role: "reference_image", file_id: ids[0] },
-      { role: "reference_video", url: "https://assets.example/reference.mp4" },
-      { role: "reference_audio", file_id: ids[1] },
+      { role: "reference_video", file_id: ids[1] },
+      { role: "reference_audio", file_id: ids[2] },
     ] });
     return { id: "42", object: "job", status: "queued", created_at: 1 };
   });
   const provider = createYirAIProvider({ client, fetch: async () => { throw new Error("ready files must not upload again"); } });
   const result = await startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Animate with sound", maxRetries: 0,
-    inputReferences: [{ data: png, mediaType: "image/png" }, { data: "https://assets.example/reference.mp4", mediaType: "video/mp4" }, { data: wav, mediaType: "audio/wav" }],
+    inputReferences: [{ data: png, mediaType: "image/png" }, { data: video, mediaType: "video/mp4" }, { data: wav, mediaType: "audio/wav" }],
     providerOptions: { yir: { idempotencyKey: "mixed-video" } },
   });
   assert.equal(result.operation.jobId, "42");

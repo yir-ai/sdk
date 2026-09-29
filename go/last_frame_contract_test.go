@@ -63,7 +63,7 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 				if mode == "image" {
 					role = "first_frame"
 				}
-				request.Input.References = []Reference{{Role: role, URL: "https://example.com/input.png"}}
+				request.Input.References = []Reference{{Role: role, FileID: "file_11111111-1111-4111-8111-111111111111"}}
 			}
 			before, _ := json.Marshal(request)
 			count := len(calls)

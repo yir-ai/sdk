@@ -3,7 +3,6 @@ package yir
 import (
 	"fmt"
 	"math/big"
-	"net/url"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -24,9 +23,10 @@ type GenerationInput struct {
 	References []Reference `json:"references,omitempty"`
 }
 
-// Reference preserves its position and explicit media role. Exactly one source is required.
+// Reference preserves its position and explicit media role. FileID is required.
 type Reference struct {
-	Role   string `json:"role"`
+	Role string `json:"role"`
+	// Deprecated: external URLs are rejected; upload the media and use FileID.
 	URL    string `json:"url,omitempty"`
 	FileID string `json:"file_id,omitempty"`
 }
@@ -124,10 +124,7 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 			return &ParameterError{path, "reference_source_required"}
 		}
 		if reference.URL != "" {
-			u, err := url.Parse(reference.URL)
-			if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
-				return &ParameterError{path + ".url", "invalid_reference_url"}
-			}
+			return &ParameterError{path + ".url", "external_urls_deprecated"}
 		} else if !fileIDPattern.MatchString(reference.FileID) {
 			return &ParameterError{path + ".file_id", "invalid_file_id"}
 		}

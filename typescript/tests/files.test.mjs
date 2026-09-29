@@ -133,3 +133,36 @@ test("file operations respect abort and validate returned identity", async () =>
   assert.equal(calls, 0);
   await assert.rejects(() => client.getFile(id), /file_response_invalid/);
 });
+
+test("uploadFile automatically waits when completeFile returns processing status", async () => {
+  let completeCalls = 0;
+  let getCalls = 0;
+  const client = {
+    completeFile: async () => {
+      completeCalls++;
+      return { ...plan(), status: "processing" };
+    },
+    getFile: async () => {
+      getCalls++;
+      if (getCalls < 2) return { ...plan(), status: "processing" };
+      return { ...plan(), status: "ready", width: 1024, height: 768 };
+    },
+  };
+  const result = await uploadFile(client, plan(), new Blob(["abcdef"]), { fetch: async () => new Response() });
+  assert.equal(completeCalls, 1);
+  assert.equal(getCalls, 2);
+  assert.equal(result.status, "ready");
+  assert.equal(result.width, 1024);
+  assert.equal(result.height, 768);
+});
+
+test("uploadFile resumes processing without uploading or completing again", async () => {
+  const client = {
+    completeFile: async () => { throw new Error("must not complete twice"); },
+    getFile: async () => ({ ...plan(), status: "ready", width: 32, height: 32 }),
+  };
+  const file = await uploadFile(client, { ...plan(), status: "processing", upload: undefined }, new Blob(["abcdef"]), {
+    fetch: async () => { throw new Error("must not upload twice"); },
+  });
+  assert.equal(file.status, "ready");
+});

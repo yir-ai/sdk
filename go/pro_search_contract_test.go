@@ -58,7 +58,7 @@ func TestProSearchContractAndTransport(t *testing.T) {
 		} {
 			request := GenerationRequest{Model: "google/nano-banana-pro", Input: GenerationInput{Type: mode, Prompt: "fixture"}, Parameters: tc.parameters}
 			if mode == "image" {
-				request.Input.References = []Reference{{Role: "reference_image", URL: "https://example.com/input.png"}}
+				request.Input.References = []Reference{{Role: "reference_image", FileID: "file_11111111-1111-4111-8111-111111111111"}}
 			}
 			before, _ := json.Marshal(request)
 			count := len(calls)
