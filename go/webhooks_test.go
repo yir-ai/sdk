@@ -137,7 +137,7 @@ func TestConstructWebhookEventRejectsBadSignatureAndPayload(t *testing.T) {
 	if _, err := ConstructWebhookEvent(tampered); !errors.As(err, &rejected) || rejected.Reason != "invalid_signature" {
 		t.Fatalf("tampered body must fail signature, got %v", err)
 	}
-	for _, body := range []string{`not json`, `{"id":"","status":"succeeded"}`, `{"id":"7001","status":"running"}`} {
+	for _, body := range []string{`not json`, `{"id":"","status":"succeeded"}`, `{"id":" 7001","status":"succeeded"}`, `{"id":"abc","status":"failed"}`, `{"id":"7001","status":"running"}`} {
 		request := webhookVector(t)
 		request.RawBody = []byte(body)
 		mac := hmac.New(sha256.New, []byte(request.Secret))

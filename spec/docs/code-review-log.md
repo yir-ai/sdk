@@ -1,5 +1,11 @@
 # SDK 代码审查台账
 
+## 2026-09-29 PR #8 事后独立审查与修复
+
+- AGY `review-mum73c4m-17068c97`（gemini-3.8-flash-medium）补审 `87fbe25..5f95d7d`：**comment**，未发现安全绕过（验签先于解析、篡改不误报为 `invalid_payload`、超时/abort 与退避交互正确）。
+- 问题：M1 TS `WebhookEvent.job` 类型宽于运行时校验——**不修**，与 `getJob` 相同信任模型（仅校验 id/status），Yir 合同规定 Webhook body 即终态 Job 投影；M2 `PollDelay`/`pollDelayMs` 注释 off-by-one——已修为“刚完成查询的 0 基序号”；L3 Go `WaitJob` 默认退避无测试——补 `TestWaitJobDefaultUsesPollDelaySchedule`；L4 Vercel 适配器等待路径无测试——补 running→status→detail 用例；N5 Webhook 未校验 Job ID 格式——两端改用与 `GetJob` 相同的 `^[1-9][0-9]*$`。
+- 修复分支 `fix/review-poll-webhook`，随 Go `0.4.1` / TS `0.3.1` 补丁发布；修复提交待 AGY 复审。
+
 ## 2026-09-29 默认轮询退避与 Webhook 事件解析发布
 
 - 范围 `87fbe25..5f95d7d`（[PR #8](https://github.com/yir-ai/sdk/pull/8)，实现 `9597a34`、发版说明 `f57a1f8`）：Go `PollDelay` / TS `pollDelayMs`（5s→10s→20s）成为 `WaitJob` / `waitForJob` 未设间隔时的默认轮询；新增 Go `ConstructWebhookEvent`、TS `constructWebhookEvent` 与 `YirWebhookVerificationError`。调用签名不变，默认首次复查由 2 秒改为 5 秒。
