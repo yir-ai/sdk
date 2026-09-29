@@ -4,7 +4,8 @@
 
 - 实现方 Claude Code；基准 `4af07ea`，其后合入 main `d2cfc0d`（Go 0.5.1 / TS 0.4.1 候选）。新增 Go `GetModel` / `GetFileContentURL`，TS `getModel` / `getFileContentURL`，以及 `modelDetailPath`、`parseModelDetail`，对应 `getModel`（无 `view` 参数）与 `getFileContent`。API 形状已先与用户确认：`ModelDetail` 宽松解析，忽略未知字段，校验 id、object、必填值与枚举；文件内容只返回签名 URL，不提供下载辅助。
 - 凭据边界：Go 仍依赖 `CheckRedirect` 返回 `ErrUseLastResponse`，把 `do` 拆出 `send` 与 `responseAPIError`，JSON 调用行为不变。TS 在 `YirTransportRequest` 增加可选 `redirect: "manual"`；Node 传输只对该请求使用 `fetch` manual 并返回 `{ status, location }`，其余请求仍为 `redirect: "error"`。只接受 307 加绝对 `https`、无 userinfo 和 fragment 的 `Location`，否则报 `file_content_response_invalid`，错误不含 URL。不理解该字段的自定义传输安全失败。404/409/410 原样透传服务端错误码，无新增错误类型。
-- 实现方验证（定向）：`go test -count=1 -run 'TestGetModel|TestGetFileContentURL|TestClientReadsVersionedModelContracts|TestFileUpload' ./`（go/ 根包）通过。TS 已 `pnpm run build`（tsc），files、external-model-contracts、transport 三个测试文件 23 项通过，`pnpm test:types` 通过。未在本地跑 `pnpm check`、`go test ./...`，完整回归交由 CI。未独立审查、未推送、未发布。
+- 实现方验证（定向）：`go test -count=1 -run 'TestGetModel|TestGetFileContentURL|TestClientReadsVersionedModelContracts|TestFileUpload' ./`（go/ 根包）通过。TS 已 `pnpm run build`（tsc），files、external-model-contracts、transport 三个测试文件 23 项通过，`pnpm test:types` 通过。未在本地跑 `pnpm check`、`go test ./...`，完整回归交由 CI。未独立审查、未发布。
+- PR #20 头提交 `cfdf971354ff1effe91b2fe349256d893af71a0c` 的完整 CI [36627482038](https://github.com/yir-ai/sdk/actions/runs/36627482038) 通过，包括合同、打包与 Go。用户明确授权合并；此后仅新增本台账行。未打标签、未发布 npm 或 Go 版本。
 
 ## 2026-09-30 对照 yir 服务端的合同与类型漂移修复
 
