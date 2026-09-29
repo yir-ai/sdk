@@ -6,6 +6,13 @@ import { quoteFixture } from "./quote-fixture.mjs";
 const request = { model: "openai/gpt-image-2", input: { type: "text", prompt: "test" }, parameters: {} };
 const read = value => createYirClient(async () => value).quoteImage(request);
 
+test("Quote accepts server-authorized supply without an upper bound or required cap", async () => {
+  const value = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
+    supply: { available: true, requires_max_cost: false, issues: [] } };
+  assert.deepEqual(await read(value), value);
+  await assert.rejects(read({ ...value, single_attempt_upper_bound: "0.05" }), /quote_response_invalid/);
+});
+
 test("Official output estimate carries assumptions without authorizing a budget", async () => {
   const value = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
     supply: { available: true, requires_max_cost: true, issues: [] },

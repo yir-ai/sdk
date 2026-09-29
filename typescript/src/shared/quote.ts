@@ -79,7 +79,6 @@ export function validateQuoteResponse(
   } else if (quote.single_attempt_upper_bound !== null) return invalid();
   if (quote.supply.available) {
     if (quote.supply.issues.length !== 0
-      || (!quote.has_verifiable_upper_bound && !quote.supply.requires_max_cost)
       || (quote.primary.kind === "unavailable" && quote.primary.reason === "no_matching_supply")
       || (quote.max.kind === "unavailable" && quote.max.reason === "no_matching_supply")) return invalid();
   } else if (quote.supply.requires_max_cost || quote.supply.issues.length !== 1

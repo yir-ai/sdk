@@ -1,5 +1,11 @@
 # SDK 代码审查台账
 
+## 2026-09-29 服务端授权的无上限报价
+
+- 候选范围 `416c0c81ffdfd88cdd53239f7d29733fea97a766..3767033c5ef94f53e94d6d487ee9db88d00b3fca`，PR #15。Go/TypeScript 均允许服务端返回供应可用、无可验证上界、不要求 max_cost；其他格式、金额、供给和上界一致性校验保留，不修改服务端授权。
+- 独立 Codex `/root/review_inflight` 分别审查至 b0d5c28 的 TS 增量及 b0d5c28..3767033 的 Go 增量，均通过，无 P0/P1/P2，diff-check 通过。审查方未重跑测试。
+- 实现方 `pnpm exec tsc -p tsconfig.json`、TS quote 四项通过123ms；Go `go test . -run '^TestQuote' -count=1` 通过0.863s。CI待本PR结果，不发布包。
+
 ## 2026-09-29 移植 monorepo 独有的 SDK 审查修复（私有台账 SDK-CLEAN-01、02、05、06）
 
 - 背景：私有 monorepo 的 SDK 副本已退役删除（私有 `a61c52e1`），核对发现私有 `a246c66d` 修复的 SDK-CLEAN 问题只落在副本中，本仓库未同步。
