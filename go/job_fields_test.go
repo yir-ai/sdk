@@ -1,0 +1,62 @@
+package yir
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestJobDecodesRoutingUsageAndBillingFacts(t *testing.T) {
+	raw := `{"id":"7","object":"job","final_provider":"openai","status":"succeeded","model":"openai/gpt-image-2",
+		"urls":{"get":"/v1/jobs/7","cancel":"/v1/jobs/7/cancel"},"usage":{"outputs":2},"error":null,"created_at":1,
+		"billing":{"currency":"USD","total_charged_by_yir":"0.05","max_cost":"0.10",
+			"compute_charges":[{"supply_type":"managed","billed_by":"yir","amount":"0.04","amount_basis":"yir_price_rule","status":"settled",
+				"usage":[{"metric":"output_images","quantity":"2","unit":"image"}]},
+				{"supply_type":"byok","billed_by":"provider","amount":null,"amount_basis":"unknown","status":"external"}],
+			"gateway_fee":{"amount":"0.01","status":"settled"},
+			"savings":{"amount":"0.03","kind":"estimated","baseline_amount":"0.08","actual_user_charge":"0.05"},
+			"official_comparison":{"baseline_amount":"0.08","savings_amount":"0.03","source_url":"https://example.com/pricing"}}}`
+	var job Job
+	if err := json.Unmarshal([]byte(raw), &job); err != nil {
+		t.Fatal(err)
+	}
+	if job.FinalProvider != "openai" || job.URLs == nil || job.URLs.Cancel != "/v1/jobs/7/cancel" || job.Usage == nil || job.Usage.Outputs != 2 {
+		t.Fatalf("routing or usage lost: %+v", job)
+	}
+	billing := job.Billing
+	if billing == nil || len(billing.ComputeCharges) != 2 || billing.GatewayFee.Amount != "0.01" {
+		t.Fatalf("billing lost: %+v", billing)
+	}
+	managed, historical := billing.ComputeCharges[0], billing.ComputeCharges[1]
+	if managed.Amount == nil || *managed.Amount != "0.04" || len(managed.Usage) != 1 || managed.Usage[0].Quantity != "2" {
+		t.Fatalf("managed charge lost: %+v", managed)
+	}
+	if historical.Amount != nil || historical.Status != "external" {
+		t.Fatalf("null amount must stay nil: %+v", historical)
+	}
+	if billing.Savings == nil || billing.Savings.ActualUserCharge != "0.05" || billing.OfficialComparison == nil || billing.OfficialComparison.SourceURL == "" {
+		t.Fatalf("savings facts lost: %+v", billing)
+	}
+}
+
+func TestUserAgentReportsVersion(t *testing.T) {
+	var got string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Get("User-Agent")
+		io.WriteString(w, `{"id":"7","status":"running","error":null}`)
+	}))
+	defer server.Close()
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.GetJobStatus(context.Background(), "7"); err != nil {
+		t.Fatal(err)
+	}
+	if got != "yir-go/"+Version {
+		t.Fatalf("User-Agent = %q", got)
+	}
+}

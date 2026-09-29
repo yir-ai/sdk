@@ -1,5 +1,13 @@
 # SDK 代码审查台账
 
+## 2026-09-30 对照 yir 服务端的合同与类型漂移修复
+
+- 来源：AGY `review-mun1eo0p-388bcab1`（只读，SDK 对照私有 yir 仓库）提出 9 项，维护方逐条核实：7 项属实，1 项误报（TS `createFiles` 强制幂等键为有意设计，Go 同样要求，OpenAPI 描述已注明），1 项（缺模型详情与文件内容重定向封装）属功能缺口，本次不做。AGY 所称"合法请求被阻断"不成立：运行时默认只做协议校验，`models.json` 仅影响显式使用内置合同的旧版校验入口。
+- 合同：`spec/models.json` 按私有 `standard-model-contracts.json`（`ee390745f`）刷新并重新生成 TS/Go；新增 `alibaba/qwen-image-2.1`，Gemini Omni 两个模型补 `duration`（4/6/8/10，默认 4），`wan-2.6` `max_references` 由 8 收紧到 5，`wan-2.6`/`wan-2.7`/`seedance-2.5` 补 `reference_counts_by_role`，同步约 20 个模型的 aliases/locales（移除 `kie/gemini-omni-video` 别名）。`schema_ref` 保持 `./openapi.json`。
+- Go：`Job` 补 `FinalProvider`、`URLs`、`Usage`；`JobBilling` 补 `ComputeCharges`、`GatewayFee`、`Savings`、`OfficialComparison`；导出 20 个 `ErrCode*` 常量；User-Agent 改用 `Version` 常量。
+- TS：`Quote.parameters` 补 `return_last_frame`、`web_search`、`image_search`；`cancelJob` 接受 `options.signal`；导出 `YIR_ERROR_CODES` 与 `YirErrorCode`；`DEFAULT_USER_AGENT` 与 `package.json` 版本一致，并由测试约束。新增 `spec-parity.test.mjs` 校验两语言错误码与 OpenAPI 枚举一致。
+- 验证：Go `go vet`、`go test ./...`；TS `pnpm check`（合同漂移、121 项测试、类型测试、打包安装）通过。
+- AGY `review-mun2pin9-d824e266`（只读，PR #17 相对 main）**approve**：合同与 OpenAPI 与服务端逐字一致，Go/TS 字段与服务端类型一致。Low：TS `cancelJob` 未校验返回 Job（Go `CancelJob` 与 TS `getJob` 均校验）——已核实并修复，补 `response_invalid` 测试。Nit：错误码一致性测试用正则解析 Go 源码——正则失配会得到空列表并与 20 项枚举比对失败，不会静默通过，维持现状。合并 main 后 TS `pnpm check` 126 项通过。
 ## 2026-09-30 PR #16 合并与授权发布
 
 - PR #16 最终 `cac4a359040597c4f13104bfa314cd0f70d0c21d` 的完整 CI 36612791486 通过，合并为 `3c1bf5c8fb66f30e16bbce29d623c878836010ec`；合并后 CI 36613074206 通过。最终候选相对已审 `7fe342f0f05fb5e0d973f44ae39369d989376045` 仅新增上一节审查记录，代码结论复用。
