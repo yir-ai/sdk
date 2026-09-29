@@ -1,4 +1,5 @@
 import type { ModelContractCatalog, ModelOperationContract, StaticModelContract } from "./model-contracts.js";
+import type { ChannelParameters } from "./parameter-rules.js";
 
 export type { ModelContractCatalog, ModelOperationContract, StaticModelContract, ModelParameterContract, ModelInputConstraint } from "./model-contracts.js";
 
@@ -10,9 +11,79 @@ export type ModelContractDetail = {
 };
 
 export function modelContractPath(model: string): string {
-  if (typeof model !== "string" || !/^[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?$/.test(model) ||
-      model.split("/").some(part => part.length > 100)) throw new Error("model_contract_request_invalid");
+  if (!canonicalModelID(model)) throw new Error("model_contract_request_invalid");
   return `/v1/models/${model}?view=contract`;
+}
+
+/** Market display pricing, not a quote. amount_micros is absent when no price is published. */
+export type ModelChannelPrice = {
+  readonly provider_code: string;
+  readonly provider_label: string;
+  readonly amount_micros?: number;
+  readonly availability: "available" | "unavailable";
+  readonly estimated: boolean;
+  readonly specification_label: string;
+};
+
+export type ModelSpecification = {
+  readonly request_model_id: string;
+  readonly operation: "generate_image" | "generate_video";
+  readonly input_mode: "text" | "image" | "reference";
+  readonly specification_label: string;
+  readonly currency: "USD";
+  readonly channels: readonly ModelChannelPrice[];
+};
+
+export type ModelDetail = {
+  readonly id: string;
+  readonly object: "model";
+  readonly specifications: readonly ModelSpecification[];
+  readonly channel_parameters?: readonly ChannelParameters[];
+};
+
+export function modelDetailPath(model: string): string {
+  if (!canonicalModelID(model)) throw new Error("model_request_invalid");
+  return `/v1/models/${model}`;
+}
+
+/** Checks the facts callers rely on; unknown display fields are kept so server additions do not break older SDKs. */
+export function parseModelDetail(value: unknown, requestedModel: string): ModelDetail {
+  const fail = (): never => { throw new Error("model_response_invalid"); };
+  const record = (item: unknown): PlainObject => item && typeof item === "object" && !Array.isArray(item) ? item as PlainObject : fail();
+  const text = (item: unknown) => typeof item === "string" && item.length > 0;
+  const operation = (item: unknown) => item === "generate_image" || item === "generate_video";
+  const inputMode = (item: unknown) => item === "text" || item === "image" || item === "reference";
+  const root = record(value);
+  if (root.id !== requestedModel || root.object !== "model" || !Array.isArray(root.specifications) || !root.specifications.length) fail();
+  for (const item of root.specifications as unknown[]) {
+    const specification = record(item);
+    if (!canonicalModelID(specification.request_model_id) || !operation(specification.operation) || !inputMode(specification.input_mode) ||
+        !text(specification.specification_label) || specification.currency !== "USD" ||
+        !Array.isArray(specification.channels) || !specification.channels.length) fail();
+    for (const entry of specification.channels as unknown[]) {
+      const channel = record(entry);
+      if (!text(channel.provider_code) || !text(channel.provider_label) || !text(channel.specification_label) ||
+          (channel.availability !== "available" && channel.availability !== "unavailable") || typeof channel.estimated !== "boolean" ||
+          (channel.amount_micros !== undefined && (!Number.isSafeInteger(channel.amount_micros) || (channel.amount_micros as number) < 0))) fail();
+    }
+  }
+  if (root.channel_parameters !== undefined) {
+    if (!Array.isArray(root.channel_parameters)) fail();
+    for (const entry of root.channel_parameters as unknown[]) {
+      const channel = record(entry);
+      if (!text(channel.provider) || !text(channel.channel_variant) || !operation(channel.operation) || !inputMode(channel.input_mode)) fail();
+      for (const rule of Object.values(record(channel.parameter_rules))) {
+        const behavior = record(rule).behavior;
+        if (behavior !== "supported" && behavior !== "ignored" && behavior !== "rejected") fail();
+      }
+    }
+  }
+  return root as ModelDetail;
+}
+
+function canonicalModelID(model: unknown): model is string {
+  return typeof model === "string" && /^[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?$/.test(model) &&
+    model.split("/").every(part => part.length <= 100);
 }
 
 export function parseModelContractDetail(value: unknown, requestedModel: string): ModelContractDetail {

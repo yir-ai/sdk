@@ -136,6 +136,27 @@ func (c *Client) GetFile(ctx context.Context, id string) (File, error) {
 	return c.fileRequest(ctx, http.MethodGet, id, "", nil)
 }
 
+// GetFileContentURL returns the short-lived signed URL for a ready file without
+// following it. Fetch the URL without the Gateway key; it expires quickly.
+func (c *Client) GetFileContentURL(ctx context.Context, id string) (string, error) {
+	if !fileIDPattern.MatchString(id) {
+		return "", errors.New("file_id_invalid")
+	}
+	result, raw, err := c.send(ctx, http.MethodGet, "/v1/files/"+id+"/content", "", nil)
+	if err != nil {
+		return "", err
+	}
+	if result.StatusCode < 200 || result.StatusCode >= 400 {
+		return "", responseAPIError(result.StatusCode, raw)
+	}
+	location := result.Header.Get("Location")
+	u, err := url.Parse(location)
+	if result.StatusCode != http.StatusTemporaryRedirect || err != nil || !u.IsAbs() || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
+		return "", errors.New("file_content_response_invalid")
+	}
+	return location, nil
+}
+
 func (c *Client) CompleteFile(ctx context.Context, id string) (File, error) {
 	return c.fileRequest(ctx, http.MethodPost, id, "/complete", struct{}{})
 }

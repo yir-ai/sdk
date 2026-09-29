@@ -51,7 +51,7 @@ import type { Job } from '@yir-ai/sdk/shared';
 const client = createNodeYirClient();
 ```
 
-也可传入 `{ apiKey, baseURL, fetch, headers, userAgent }`。默认地址为 `https://gateway.yir.ai`。`createYirClient(transport)` 保留显式传输合同：注入的传输负责认证、HTTP 序列化、响应解码和错误处理，不是浏览器密钥客户端。
+也可传入 `{ apiKey, baseURL, fetch, headers, userAgent }`。默认地址为 `https://gateway.yir.ai`。`createYirClient(transport)` 保留显式传输合同：注入的传输负责认证、HTTP 序列化、响应解码和错误处理，不是浏览器密钥客户端。要支持 `getFileContentURL`，自定义传输须遵守 `redirect: "manual"`：遇到 3xx 时不跟随，返回 `{ status, location }`；否则该调用会安全失败。
 
 ## 报价、授权、持久化、提交
 
@@ -72,11 +72,17 @@ const client = createNodeYirClient();
 
 尚未发布的 0.4.1 候选与 0.4.0 兼容。`cancelJob(id, options)` 支持中断信号，返回的不是所请求任务时抛出 `response_invalid`。`Quote.parameters` 新增 `return_last_frame`、`web_search`、`image_search`。新增 `YIR_ERROR_CODES` 与 `YirErrorCode`，`DEFAULT_USER_AGENT` 报告包版本。内置模型合同与服务端当前导出一致：新增 `alibaba/qwen-image-2.1`，Gemini Omni 接受 `duration`，`wan-2.6` 最多 5 个参考，移除 `kie/gemini-omni-video` 别名。仅使用内置目录的校验受影响。
 
+## 模型详情
+
+`getModel("creator/model")` 读取 Market `ModelDetail`：`specifications` 及各渠道展示价格 `channels`（未公布价格时没有 `amount_micros`），以及可选的 `channel_parameters`。须传规范 ID，别名不能作为资源路径；非法 ID 在本地以 `model_request_invalid` 失败。未知字段会保留，但 ID 不一致或必填值非法时以 `model_response_invalid` 失败。模型不存在时以 `YirAPIError` 404 `YIR_MODEL_NOT_FOUND` 拒绝。Market 价格仅供展示，提交前仍需报价。`getModelContract` 仍用于读取带版本的参数合同（`view=contract`）。另导出 `modelDetailPath` 与 `parseModelDetail`，供自定义传输使用。
+
 ## 文件与 Webhook
 
 0.4.0 要求媒体引用使用 `file_id`，拒绝外部引用 URL。先上传原始字节；`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器支持上传内联字节；URL 输入需由应用先下载为字节。
 
 `createFiles(request, key)` 创建上传计划；`uploadFile(client, plan, blob)` 上传并完成计划；`createAndUploadFile(client, metadata, blob, key)` 合并这些步骤。使用稳定上传键并保留文件 ID；`getFile(id)` 查询状态，`completeFile(id)` 完成手动上传。生成请求仅引用 ready 文件，使用 `file_id` 和相应 role。上传辅助函数支持服务端的单段及分段计划。
+
+`getFileContentURL(id)` 返回 ready 文件的短时签名 URL。Node 传输以 `redirect: "manual"` 从 307 响应的 `Location` 头读取该 URL，从不跟随跳转，因此 API Key 不会发给存储端。请求该 URL 时不要带 Gateway 凭据；过期后重新获取。只接受绝对 `https` URL，其余情况以 `file_content_response_invalid` 拒绝，错误中不含该 URL。文件不存在以 `YirAPIError` 404 `YIR_FILE_NOT_FOUND` 拒绝；尚未 ready 返回 409 `YIR_FILE_NOT_READY`（用 `waitForFileReady` 等待后重试）；已过期返回 410 `YIR_FILE_EXPIRED`（需重新上传）。
 
 提交请求可设置 `webhook_url`。用账户 Webhook secret（不是 API Key）调用 `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })`。传入 JSON 解析前的原始字节，将回调签名元数据映射到 `id`、`timestamp` 和 `signature`。默认时钟容差为 300 秒。拒绝无效结果，按 Webhook ID 持久化去重；即使轮询也观察到终态，仍只结算一次。`constructWebhookEvent` 校验同样的字段，返回 `{ id, timestamp, job }`，失败时抛出带稳定 `reason` 的 `YirWebhookVerificationError`。持久化工作流可把 Webhook 当作唤醒信号，再用 `getJob` 回读，并保留 `pollDelayMs` 轮询兜底。
 

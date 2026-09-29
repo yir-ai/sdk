@@ -50,7 +50,7 @@ import type { Job } from '@yir-ai/sdk/shared';
 const client = createNodeYirClient();
 ```
 
-You can also pass `{ apiKey, baseURL, fetch, headers, userAgent }`. The default base URL is `https://gateway.yir.ai`. `createYirClient(transport)` retains the explicit transport contract: implement authentication, HTTP serialization, response decoding and errors in the injected transport. It is not a browser key client.
+You can also pass `{ apiKey, baseURL, fetch, headers, userAgent }`. The default base URL is `https://gateway.yir.ai`. `createYirClient(transport)` retains the explicit transport contract: implement authentication, HTTP serialization, response decoding and errors in the injected transport. It is not a browser key client. Custom transports that support `getFileContentURL` must honor `redirect: "manual"` by returning a 3xx as `{ status, location }` without following it; other transports make that call fail closed.
 
 ## Quote, authorize, persist, submit
 
@@ -71,11 +71,17 @@ Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobSta
 
 The unreleased 0.4.1 candidate is compatible with 0.4.0. `cancelJob(id, options)` accepts an abort signal and rejects a response that is not the requested job with `response_invalid`. `Quote.parameters` adds `return_last_frame`, `web_search` and `image_search`. `YIR_ERROR_CODES` and `YirErrorCode` are new, and `DEFAULT_USER_AGENT` reports the package version. The bundled model contracts match the current server export: `alibaba/qwen-image-2.1` is added, Gemini Omni accepts `duration`, `wan-2.6` allows at most 5 references, and the `kie/gemini-omni-video` alias is removed. Only validation against the bundled catalog is affected.
 
+## Model detail
+
+`getModel("creator/model")` reads the Market `ModelDetail`: `specifications` with per-channel `channels` display prices (`amount_micros` is absent when no price is published) and optional `channel_parameters`. Pass the canonical ID; aliases are not resource paths, and an invalid ID fails locally with `model_request_invalid`. Unknown fields are kept, but a mismatched ID or invalid required values fail with `model_response_invalid`. A missing model rejects with `YirAPIError` 404 `YIR_MODEL_NOT_FOUND`. Market prices are for display only; quote before submitting. `getModelContract` remains the versioned parameter contract (`view=contract`). `modelDetailPath` and `parseModelDetail` are also exported for custom transports.
+
 ## Files and Webhooks
 
 Version 0.4.0 requires `file_id` for every media reference; external reference URLs are rejected. Upload the original bytes first. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter accepts inline bytes for upload; download URL inputs in your application before passing their bytes to the adapter.
 
 `createFiles(request, key)` creates upload plans; `uploadFile(client, plan, blob)` uploads and completes a plan. `createAndUploadFile(client, metadata, blob, key)` combines the steps. Use stable upload keys and retain returned file IDs; `getFile(id)` checks state and `completeFile(id)` completes a manually uploaded file. Only reference ready files in generation requests (`file_id` plus the appropriate role). Upload helpers support the server's single/multipart plans.
+
+`getFileContentURL(id)` resolves to the short-lived signed URL of a ready file. The Node transport reads it from the 307 `Location` header with `redirect: "manual"` and never follows it, so the API key is never sent to storage. Fetch the URL without Gateway credentials and ask again once it expires. Only an absolute `https` URL is accepted. Anything else rejects with `file_content_response_invalid`, and errors never include the URL. Missing files reject with `YirAPIError` 404 `YIR_FILE_NOT_FOUND`. Files not yet ready reject with 409 `YIR_FILE_NOT_READY` (wait with `waitForFileReady`, then retry). Expired files reject with 410 `YIR_FILE_EXPIRED` (upload them again).
 
 Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })` using the account's Webhook secret, not its API key. Pass the original request bytes before parsing JSON and map the delivery signature metadata into `id`, `timestamp` and `signature`. The default clock tolerance is 300 seconds. Reject invalid results, durably deduplicate by Webhook ID, and apply terminal settlement once even if polling also observes it. `constructWebhookEvent` verifies the same fields and resolves to `{ id, timestamp, job }`, or rejects with `YirWebhookVerificationError` carrying a stable `reason`. Durable workflows can treat a webhook as a wake-up signal, read the job with `getJob`, and keep `pollDelayMs` polling as a fallback.
 

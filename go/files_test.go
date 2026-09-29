@@ -358,3 +358,81 @@ func TestUploadFileWaitsWhenServerReturnsProcessing(t *testing.T) {
 		t.Fatalf("unexpected ready file: %+v", ready)
 	}
 }
+
+func TestGetFileContentURLReturnsSignedURLWithoutFollowingIt(t *testing.T) {
+	signedHits := 0
+	signed := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { signedHits++ }))
+	defer signed.Close()
+	signedURL := signed.URL + "/object?X-Signature=abc"
+	gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" || r.URL.Path != "/v1/files/"+testFileID+"/content" || r.Header.Get("Authorization") != "Bearer key" {
+			t.Errorf("unexpected gateway request %s %s", r.Method, r.URL.Path)
+		}
+		w.Header().Set("Location", signedURL)
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	}))
+	defer gateway.Close()
+	client, err := NewClient("key", ClientOptions{BaseURL: gateway.URL, HTTPClient: signed.Client()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	location, err := client.GetFileContentURL(context.Background(), testFileID)
+	if err != nil || location != signedURL {
+		t.Fatalf("got %q, %v", location, err)
+	}
+	if signedHits != 0 {
+		t.Fatal("client followed the redirect and exposed the gateway key")
+	}
+}
+
+func TestGetFileContentURLRejectsUnsafeResponses(t *testing.T) {
+	for _, tc := range []struct {
+		status   int
+		location string
+	}{
+		{307, "http://storage.example/object"},
+		{307, "https://user:pass@storage.example/object"},
+		{307, "https://storage.example/object#fragment"},
+		{307, "/relative/object"},
+		{307, ""},
+		{302, "https://storage.example/object"},
+		{200, ""},
+	} {
+		gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if tc.location != "" {
+				w.Header().Set("Location", tc.location)
+			}
+			w.WriteHeader(tc.status)
+		}))
+		client, _ := NewClient("key", ClientOptions{BaseURL: gateway.URL})
+		location, err := client.GetFileContentURL(context.Background(), testFileID)
+		gateway.Close()
+		if err == nil || err.Error() != "file_content_response_invalid" || location != "" {
+			t.Fatalf("%d %q: got %q, %v", tc.status, tc.location, location, err)
+		}
+		if strings.Contains(err.Error(), "storage.example") {
+			t.Fatal("error exposed the signed URL")
+		}
+	}
+	client, _ := NewClient("key", ClientOptions{BaseURL: "http://127.0.0.1:1"})
+	if _, err := client.GetFileContentURL(context.Background(), "file_bad"); err == nil || err.Error() != "file_id_invalid" {
+		t.Fatalf("invalid id accepted: %v", err)
+	}
+}
+
+func TestGetFileContentURLMapsFileStateErrors(t *testing.T) {
+	for status, code := range map[int]string{404: "YIR_FILE_NOT_FOUND", 409: "YIR_FILE_NOT_READY", 410: "YIR_FILE_EXPIRED"} {
+		gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]any{"error": map[string]any{"code": code, "message": "x", "retryable": false}})
+		}))
+		client, _ := NewClient("key", ClientOptions{BaseURL: gateway.URL})
+		_, err := client.GetFileContentURL(context.Background(), testFileID)
+		gateway.Close()
+		apiErr, ok := err.(*APIError)
+		if !ok || apiErr.Status != status || apiErr.Code != code {
+			t.Fatalf("%d: unexpected error %v", status, err)
+		}
+	}
+}

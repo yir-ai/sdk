@@ -166,3 +166,34 @@ test("uploadFile resumes processing without uploading or completing again", asyn
   });
   assert.equal(file.status, "ready");
 });
+
+test("file content returns the signed URL through a manual-redirect transport", async () => {
+  const signed = "https://storage.example/object?X-Signature=abc";
+  const client = createYirClient(async request => {
+    assert.deepEqual(request, { method: "GET", path: `/v1/files/${id}/content`, redirect: "manual" });
+    return { status: 307, location: signed };
+  });
+  assert.equal(await client.getFileContentURL(id), signed);
+});
+
+test("file content rejects unsafe redirects without echoing the URL", async () => {
+  for (const result of [
+    { status: 307, location: "http://storage.example/object" },
+    { status: 307, location: "https://user:pass@storage.example/object" },
+    { status: 307, location: "https://storage.example/object#fragment" },
+    { status: 307, location: "/relative" },
+    { status: 307, location: null },
+    { status: 302, location: "https://storage.example/object" },
+    { id, object: "file" },
+  ]) {
+    const client = createYirClient(async () => result);
+    await assert.rejects(client.getFileContentURL(id), error => {
+      assert.equal(error.message, "file_content_response_invalid");
+      return true;
+    });
+  }
+  let calls = 0;
+  const client = createYirClient(async () => { calls++; });
+  await assert.rejects(client.getFileContentURL("file_bad"), /file_id_invalid/);
+  assert.equal(calls, 0);
+});
