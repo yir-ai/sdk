@@ -25,7 +25,7 @@ func TestClientQuoteBatchPreservesOrderAndItemErrors(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || len(body.Requests) != 2 || body.Requests[0].Request.Parameters == nil {
 			t.Errorf("invalid request envelope: %+v %v", body, err)
 		}
-		io.WriteString(w, `{"object":"quote_batch","request_id":"test","data":[{"index":0,"quote":{"object":"quote","model":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}},{"index":1,"error":{"code":"YIR_INVALID_REQUEST","message":"The request is invalid.","retryable":false,"action":"fix_request"}}]}`)
+		io.WriteString(w, `{"object":"quote_batch","request_id":"test","data":[{"index":0,"quote":{"object":"quote","supply":{"available":true,"requires_max_cost":false,"issues":[]},"model":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}},{"index":1,"error":{"code":"YIR_INVALID_REQUEST","message":"The request is invalid.","retryable":false,"action":"fix_request"}}]}`)
 	}))
 	defer server.Close()
 	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})

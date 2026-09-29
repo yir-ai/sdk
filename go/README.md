@@ -11,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.4.1
+go get github.com/yir-ai/sdk/go@v0.4.2
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.4.1`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.4.2`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -34,7 +34,7 @@ Keep the key on your server. The default base URL is `https://gateway.yir.ai`; c
 
 ## 0.4.0 changes
 
-`WaitJob` without `WaitOptions.PollInterval` now backs off with `PollDelay` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `PollInterval` to keep a fixed interval. `ConstructWebhookEvent` is new. No call signatures change. In 0.4.1, `ConstructWebhookEvent` also rejects Job IDs that `GetJob` would reject, and `PollDelay` documents `poll` as the zero-based index of the query that just completed.
+`WaitJob` without `WaitOptions.PollInterval` now backs off with `PollDelay` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `PollInterval` to keep a fixed interval. `ConstructWebhookEvent` is new. No call signatures change. In 0.4.1, `ConstructWebhookEvent` also rejects Job IDs that `GetJob` would reject, and `PollDelay` documents `poll` as the zero-based index of the query that just completed. In 0.4.2, `Quote.Validate` also rejects quotes whose `supply` disagrees with their prices, matching the TypeScript validator.
 
 ## 0.3.0 migration
 

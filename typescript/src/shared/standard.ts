@@ -345,7 +345,8 @@ export function buildImageGenerationRequest(
   if (!model) throw new YirSDKValidationError("model_required", "model");
   const prompt = input.prompt.trim();
   if (!prompt) throw new YirSDKValidationError("prompt_required", "input.prompt");
-  if (prompt.length > 20_000) throw new YirSDKValidationError("prompt_too_long", "input.prompt");
+  // Count Unicode code points, matching the server and line 188, not UTF-16 units.
+  if ([...prompt].length > 20_000) throw new YirSDKValidationError("prompt_too_long", "input.prompt");
   const parameters = input.parameters;
   if (!parameters || typeof parameters !== "object" || Array.isArray(parameters)) {
     throw new YirSDKValidationError("parameters_required", "parameters");

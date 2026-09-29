@@ -32,6 +32,7 @@ export type JobResultFile = {
 };
 
 export type ComputeCharge = {
+  /** `byok` is retained only for historical bills; Cloud submissions are managed. */
   readonly supply_type: "managed" | "byok";
   readonly billed_by: "yir" | "provider";
   readonly amount: string | null;

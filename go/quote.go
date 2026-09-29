@@ -22,6 +22,18 @@ func (q Quote) Validate() error {
 	if q.Object != "quote" || q.Model == "" || q.Currency != "USD" || q.ExpiresAt <= 0 || q.Parameters == nil {
 		return invalid
 	}
+	// Supply must agree with the prices, matching the TypeScript validator.
+	if q.Supply.Available {
+		if len(q.Supply.Issues) != 0 || (!q.HasVerifiableUpperBound && !q.Supply.RequiresMaxCost) ||
+			(q.Primary.Kind == "unavailable" && q.Primary.Reason == "no_matching_supply") ||
+			(q.Max.Kind == "unavailable" && q.Max.Reason == "no_matching_supply") {
+			return invalid
+		}
+	} else if q.Supply.RequiresMaxCost || len(q.Supply.Issues) != 1 || q.Supply.Issues[0] != "no_matching_supply" ||
+		q.HasVerifiableUpperBound || q.Primary.Kind != "unavailable" || q.Max.Kind != "unavailable" ||
+		q.Primary.Reason != "no_matching_supply" || q.Max.Reason != "no_matching_supply" {
+		return invalid
+	}
 	if q.Operation != "generate_image" && q.Operation != "generate_video" {
 		return invalid
 	}

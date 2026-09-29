@@ -21,7 +21,7 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 		calls = append(calls, request)
 		if r.URL.Path == "/v1/videos/quotes" {
 			unavailable := map[string]any{"kind": "unavailable", "amount": nil, "reason": "search_not_supported"}
-			json.NewEncoder(w).Encode(map[string]any{"object": "quote", "model": request.Model, "operation": "generate_video", "input_mode": request.Input.Type, "parameters": request.Parameters, "currency": "USD", "expires_at": 3000000000, "primary": unavailable, "max": unavailable, "official": unavailable, "has_verifiable_upper_bound": false, "single_attempt_upper_bound": nil})
+			json.NewEncoder(w).Encode(map[string]any{"supply": map[string]any{"available": true, "requires_max_cost": true, "issues": []string{}}, "object": "quote", "model": request.Model, "operation": "generate_video", "input_mode": request.Input.Type, "parameters": request.Parameters, "currency": "USD", "expires_at": 3000000000, "primary": unavailable, "max": unavailable, "official": unavailable, "has_verifiable_upper_bound": false, "single_attempt_upper_bound": nil})
 		} else {
 			if r.URL.Path != "/v1/videos/generations" || r.Header.Get("Idempotency-Key") != "tail-key" {
 				t.Error("unexpected submission")
