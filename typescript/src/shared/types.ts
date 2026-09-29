@@ -3,6 +3,32 @@ import type { StandardImageQuoteRequest, StandardVideoQuoteRequest } from "./sta
 
 export type JobStatus = "queued" | "running" | "delivering" | "succeeded" | "failed" | "cancelled";
 
+export const YIR_ERROR_CODES = Object.freeze([
+  "YIR_INVALID_REQUEST",
+  "YIR_UNAUTHORIZED",
+  "YIR_INVALID_ROUTING_OVERRIDE",
+  "YIR_ROUTING_OVERRIDE_NOT_ALLOWED",
+  "YIR_INSUFFICIENT_BALANCE",
+  "YIR_BUDGET_EXCEEDED",
+  "YIR_SPEND_LIMIT_EXCEEDED",
+  "YIR_JOB_NOT_FOUND",
+  "YIR_FILE_NOT_FOUND",
+  "YIR_FILE_NOT_READY",
+  "YIR_FILE_EXPIRED",
+  "YIR_MODEL_NOT_FOUND",
+  "YIR_IDEMPOTENCY_CONFLICT",
+  "YIR_JOB_NOT_CANCELLABLE",
+  "YIR_NO_EXECUTABLE_ROUTE",
+  "YIR_RATE_LIMITED",
+  "YIR_TEMPORARILY_UNAVAILABLE",
+  "YIR_EXECUTION_FAILED",
+  "YIR_OUTCOME_TIMEOUT",
+  "YIR_RESULT_DELIVERY_FAILED",
+] as const);
+
+/** Stable public error codes. `YirPublicError.code` stays `string` so newer server codes still parse. */
+export type YirErrorCode = (typeof YIR_ERROR_CODES)[number];
+
 export type YirPublicError = {
   readonly code: string;
   readonly message: string;
@@ -105,6 +131,9 @@ export type Quote = {
     readonly generate_audio: boolean;
     readonly quality?: string;
     readonly n: number;
+    readonly return_last_frame?: boolean;
+    readonly web_search?: boolean;
+    readonly image_search?: boolean;
   };
   readonly currency: "USD";
   readonly single_attempt_upper_bound: string | null;

@@ -19,7 +19,7 @@ Keep translations paired with their English documents and maintain links in both
 3. From `typescript/`, run `pnpm generate:model-contracts` then `pnpm check:model-contracts`. Commit the snapshots and generated TS/Go files together. Do not edit generated files manually.
 4. Add focused regressions or synthetic fixtures for changed behavior. Keep Go-required vectors in `go/testdata/`. Update English and Chinese guides/examples together. Identify any application migration in the PR.
 5. Run SDK checks on the final revision. Server integration tests and paid generation remain separate; public CI uses local/mock data and has no Yir credentials. State unverified integration behavior explicitly.
-6. Classify release impact for each language independently. Documentation-only changes need no package release. Compatible fixes normally use a patch; during `0.x`, incompatible API changes require a minor version and migration notes. Do not move published tags or overwrite package versions. Release only with explicit authorization.
+6. Classify release impact for each language independently. Documentation-only changes need no package release. Compatible fixes normally use a patch; during `0.x`, incompatible API changes require a minor version and migration notes. Bump Go `Version` in `go/client.go` with each Go tag and TypeScript `DEFAULT_USER_AGENT` with each npm version (tests check the latter against `package.json`). Do not move published tags or overwrite package versions. Release only with explicit authorization.
 
 ## Continuous checks and release verification
 

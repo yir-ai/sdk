@@ -70,6 +70,34 @@ type SubmitRequest struct {
 	WebhookURL string  `json:"webhook_url,omitempty"`
 }
 
+// Version is the SDK release reported in the User-Agent header. Bump it with each Go tag.
+const Version = "0.4.2"
+
+// Stable public error codes carried in APIError.Code. The server may add codes,
+// so compare against these constants instead of switching exhaustively.
+const (
+	ErrCodeInvalidRequest            = "YIR_INVALID_REQUEST"
+	ErrCodeUnauthorized              = "YIR_UNAUTHORIZED"
+	ErrCodeInvalidRoutingOverride    = "YIR_INVALID_ROUTING_OVERRIDE"
+	ErrCodeRoutingOverrideNotAllowed = "YIR_ROUTING_OVERRIDE_NOT_ALLOWED"
+	ErrCodeInsufficientBalance       = "YIR_INSUFFICIENT_BALANCE"
+	ErrCodeBudgetExceeded            = "YIR_BUDGET_EXCEEDED"
+	ErrCodeSpendLimitExceeded        = "YIR_SPEND_LIMIT_EXCEEDED"
+	ErrCodeJobNotFound               = "YIR_JOB_NOT_FOUND"
+	ErrCodeFileNotFound              = "YIR_FILE_NOT_FOUND"
+	ErrCodeFileNotReady              = "YIR_FILE_NOT_READY"
+	ErrCodeFileExpired               = "YIR_FILE_EXPIRED"
+	ErrCodeModelNotFound             = "YIR_MODEL_NOT_FOUND"
+	ErrCodeIdempotencyConflict       = "YIR_IDEMPOTENCY_CONFLICT"
+	ErrCodeJobNotCancellable         = "YIR_JOB_NOT_CANCELLABLE"
+	ErrCodeNoExecutableRoute         = "YIR_NO_EXECUTABLE_ROUTE"
+	ErrCodeRateLimited               = "YIR_RATE_LIMITED"
+	ErrCodeTemporarilyUnavailable    = "YIR_TEMPORARILY_UNAVAILABLE"
+	ErrCodeExecutionFailed           = "YIR_EXECUTION_FAILED"
+	ErrCodeOutcomeTimeout            = "YIR_OUTCOME_TIMEOUT"
+	ErrCodeResultDeliveryFailed      = "YIR_RESULT_DELIVERY_FAILED"
+)
+
 type APIError struct {
 	Status    int    `json:"-"`
 	Code      string `json:"code"`
@@ -120,7 +148,7 @@ func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestIte
 			return QuoteBatch{}, errors.New("quote_batch_response_invalid")
 		}
 		if item.Error != nil {
-			if item.Error.Code != "YIR_INVALID_REQUEST" || strings.TrimSpace(item.Error.Message) == "" || item.Error.Retryable || item.Error.Action != "fix_request" {
+			if item.Error.Code != ErrCodeInvalidRequest || strings.TrimSpace(item.Error.Message) == "" || item.Error.Retryable || item.Error.Action != "fix_request" {
 				return QuoteBatch{}, errors.New("quote_batch_response_invalid")
 			}
 			continue
@@ -312,7 +340,7 @@ func (c *Client) do(ctx context.Context, method, path, key string, body, respons
 		return errors.New("request_creation_failed")
 	}
 	request.Header.Set("Authorization", "Bearer "+c.apiKey)
-	request.Header.Set("User-Agent", "yir-go/0.1.0")
+	request.Header.Set("User-Agent", "yir-go/"+Version)
 	request.Header.Set("Accept", "application/json")
 	// net/http may otherwise replay a request carrying Idempotency-Key after a
 	// connection failure. Recovery belongs to the caller with the original key.

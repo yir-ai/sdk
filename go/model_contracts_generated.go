@@ -267,6 +267,116 @@ const generatedModelContractCatalogJSON = `{
       ]
     },
     {
+      "id": "alibaba/qwen-image-2.1",
+      "aliases": [
+        "qwen-image-2.1",
+        "qwen-2.1-image"
+      ],
+      "locales": {
+        "en": {
+          "label": "Qwen Image 2.1",
+          "description": "Qwen Image 2.1; Alibaba unified 7B generation and editing model with 1K/2K, native transparency and multi-reference editing"
+        },
+        "zh-CN": {
+          "label": "Qwen Image 2.1",
+          "description": "通义千问 Image 2.1；阿里 7B 统一生图与编辑模型，支持 1K/2K、透明通道与多图参考编辑"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "text",
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 10,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": true,
+              "values": [
+                "1K",
+                "2K"
+              ],
+              "default": "1K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": true,
+              "values": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16"
+              ],
+              "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": true,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs",
+                  "description": "Number of generated outputs."
+                },
+                "zh-CN": {
+                  "label": "输出数量",
+                  "description": "本次生成的内容数量。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "alibaba/qwen-image-3.0-pro",
       "aliases": [
         "qwen-image-3.0-pro"
@@ -368,11 +478,11 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "alibaba/wan-2.6",
       "aliases": [
-        "alibaba/wan-v2.6-t2v",
-        "alibaba/wan-v2.6-r2v",
-        "wan2.6",
         "wan-2.6",
-        "alibaba/wan-v2.6-i2v"
+        "wan2.6",
+        "alibaba/wan-v2.6-t2v",
+        "alibaba/wan-v2.6-i2v",
+        "alibaba/wan-v2.6-r2v"
       ],
       "locales": {
         "en": {
@@ -519,11 +629,21 @@ const generatedModelContractCatalogJSON = `{
           "input_constraints": {
             "reference": {
               "min_references": 1,
-              "max_references": 8,
+              "max_references": 5,
               "allowed_reference_roles": [
                 "reference_image",
                 "reference_video"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "reference_image": {
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "reference_video": {
+                  "minimum": 0,
+                  "maximum": 3
+                }
+              }
             }
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
@@ -673,6 +793,16 @@ const generatedModelContractCatalogJSON = `{
               ],
               "max_duration_by_reference_role": {
                 "reference_video": 10
+              },
+              "reference_counts_by_role": {
+                "reference_image": {
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "reference_video": {
+                  "minimum": 0,
+                  "maximum": 3
+                }
               }
             },
             "text": {
@@ -794,8 +924,8 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "alibaba/wan-2.7-image",
       "aliases": [
-        "wan2.7-image",
-        "wan-2.7-image"
+        "wan-2.7-image",
+        "wan2.7-image"
       ],
       "locales": {
         "en": {
@@ -896,8 +1026,8 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "alibaba/wan-2.7-image-pro",
       "aliases": [
-        "wan2.7-image-pro",
-        "wan-2.7-image-pro"
+        "wan-2.7-image-pro",
+        "wan2.7-image-pro"
       ],
       "locales": {
         "en": {
@@ -999,14 +1129,14 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "alibaba/wan-3.0",
       "aliases": [
-        "wan-3.0",
-        "wan3.0-video",
         "alibaba/wan-v3.0-video",
         "alibaba/wan-v3.0-video-prime",
+        "wan-3.0",
+        "wan-v3.0",
         "wan3",
         "wan3.0",
-        "wan-3",
-        "wan-v3.0"
+        "wan3.0-video",
+        "wan-3"
       ],
       "locales": {
         "en": {
@@ -1890,9 +2020,9 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "bytedance/seedance-1.5-pro",
       "aliases": [
-        "bytedance/seedance-v1.5-pro",
         "seedance-1.5-pro",
         "seedance-1.5",
+        "bytedance/seedance-v1.5-pro",
         "seedance-v1.5-pro"
       ],
       "locales": {
@@ -2053,9 +2183,9 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "bytedance/seedance-2.0",
       "aliases": [
-        "bytedance/seedance-2",
         "seedance-2.0",
-        "seedance-2"
+        "seedance-2",
+        "bytedance/seedance-2"
       ],
       "locales": {
         "en": {
@@ -2265,8 +2395,8 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "bytedance/seedance-2.0-fast",
       "aliases": [
-        "bytedance/seedance-2-fast",
-        "seedance-2.0-fast"
+        "seedance-2.0-fast",
+        "bytedance/seedance-2-fast"
       ],
       "locales": {
         "en": {
@@ -2444,9 +2574,9 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "bytedance/seedance-2.0-mini",
       "aliases": [
-        "bytedance/seedance-2-mini",
         "seedance-2.0-mini",
-        "seedance-mini"
+        "seedance-mini",
+        "bytedance/seedance-2-mini"
       ],
       "locales": {
         "en": {
@@ -2623,8 +2753,8 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "bytedance/seedance-2.5",
       "aliases": [
-        "bytedance/seedance-2-5",
-        "seedance-2.5"
+        "seedance-2.5",
+        "bytedance/seedance-2-5"
       ],
       "locales": {
         "en": {
@@ -2671,6 +2801,16 @@ const generatedModelContractCatalogJSON = `{
                 "reference_video",
                 "reference_audio"
               ],
+              "reference_counts_by_role": {
+                "reference_image": {
+                  "minimum": 0,
+                  "maximum": 30
+                },
+                "reference_video": {
+                  "minimum": 0,
+                  "maximum": 10
+                }
+              },
               "required_any_reference_roles": [
                 "reference_image",
                 "reference_video"
@@ -2989,7 +3129,10 @@ const generatedModelContractCatalogJSON = `{
       "id": "bytedance/seedream-5.0",
       "aliases": [
         "seedream-5",
-        "seedream-5.0"
+        "seedream-5.0",
+        "seedream-5-0",
+        "seedream-5.0-lite",
+        "seedream-5-0-lite"
       ],
       "locales": {
         "en": {
@@ -3100,8 +3243,9 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "bytedance/seedream-5.0-pro",
       "aliases": [
+        "seedream-5.0-pro",
         "seedream-5-pro",
-        "seedream-5.0-pro"
+        "seedream-5-0-pro"
       ],
       "locales": {
         "en": {
@@ -3212,19 +3356,21 @@ const generatedModelContractCatalogJSON = `{
       "id": "google/gemini-2.5-flash-image",
       "aliases": [
         "nano-banana",
-        "gemini-2.5-flash-image",
         "nanobanana",
+        "gemini-2.5-flash-image",
+        "gemini-2.5-flash-image-preview",
         "google/nano-banana",
-        "google/nanobanana"
+        "google/nanobanana",
+        "google/gemini-2.5-flash-image-preview"
       ],
       "locales": {
         "en": {
           "label": "Nano Banana",
-          "description": "Google lightweight high-speed image model suitable for real-time applications"
+          "description": "Google lightweight high-speed image model. Scheduled for deprecation on 2026-10-02; migration to Nano Banana 2 recommended"
         },
         "zh-CN": {
           "label": "Nano Banana",
-          "description": "谷歌轻量高速生图模型，响应迅速，适合高频实时生成"
+          "description": "谷歌初代轻量高速生图模型，响应迅速。官方生命周期将于 2026-10-02 截止，建议迁移至 Nano Banana 2"
         }
       },
       "operations": [
@@ -3327,9 +3473,9 @@ const generatedModelContractCatalogJSON = `{
       "id": "google/gemini-3.1-flash-lite-image",
       "aliases": [
         "nano-banana-2-lite",
-        "gemini-3.1-flash-lite-image",
         "nanobanana-2-lite",
         "nanobanana2lite",
+        "gemini-3.1-flash-lite-image",
         "google/nano-banana-2-lite"
       ],
       "locales": {
@@ -3447,11 +3593,11 @@ const generatedModelContractCatalogJSON = `{
       "locales": {
         "en": {
           "label": "Gemini Omni 1.1 Flash",
-          "description": "Gemini Omni 1.1 Flash video generation; model-selected duration and native audio, without a mute control."
+          "description": "Gemini Omni 1.1 Flash video generation; supports 4/6/8/10s durations with a 4s default; automatic duration is not supported. Native audio without a mute control."
         },
         "zh-CN": {
           "label": "Gemini Omni 1.1 Flash",
-          "description": "Gemini Omni 1.1 Flash 视频生成模型；时长由模型决定，默认尝试生成音轨，不提供静音控制。"
+          "description": "Gemini Omni 1.1 Flash 视频生成模型；支持 4/6/8/10 秒指定时长，默认 4 秒，暂不支持自动时长；默认尝试生成音轨，不提供静音控制。"
         }
       },
       "operations": [
@@ -3485,6 +3631,31 @@ const generatedModelContractCatalogJSON = `{
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
           "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": true,
+              "values": [
+                4,
+                6,
+                8,
+                10
+              ],
+              "default": 4,
+              "minimum": 4,
+              "maximum": 10,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
             {
               "name": "resolution",
               "type": "string",
@@ -3557,17 +3728,16 @@ const generatedModelContractCatalogJSON = `{
       "aliases": [
         "gemini-omni",
         "gemini-omni-video",
-        "kie/gemini-omni-video",
         "google/gemini-omni-flash-preview"
       ],
       "locales": {
         "en": {
           "label": "Gemini Omni Video",
-          "description": "Gemini Omni video generation; model-selected duration and native audio, without a mute control."
+          "description": "Gemini Omni video generation; supports 4/6/8/10s durations with a 4s default; automatic duration is not supported. Native audio without a mute control."
         },
         "zh-CN": {
           "label": "Gemini Omni Video",
-          "description": "Gemini Omni 视频生成模型；时长由模型决定，默认尝试生成音轨，不提供静音控制。"
+          "description": "Gemini Omni 视频生成模型；支持 4/6/8/10 秒指定时长，默认 4 秒，暂不支持自动时长；默认尝试生成音轨，不提供静音控制。"
         }
       },
       "operations": [
@@ -3612,6 +3782,31 @@ const generatedModelContractCatalogJSON = `{
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
           "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": true,
+              "values": [
+                4,
+                6,
+                8,
+                10
+              ],
+              "default": 4,
+              "minimum": 4,
+              "maximum": 10,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
             {
               "name": "resolution",
               "type": "string",
@@ -3681,10 +3876,11 @@ const generatedModelContractCatalogJSON = `{
       "id": "google/nano-banana-2",
       "aliases": [
         "nano-banana-2",
-        "gemini-3.1-flash-image-preview",
         "nanobanana2",
         "nanobanana-2",
         "google/nanobanana2",
+        "gemini-3.1-flash-image-preview",
+        "google/gemini-3.1-flash-image-preview",
         "google/gemini-3.1-flash-image",
         "gemini-3.1-flash-image"
       ],
@@ -3848,9 +4044,9 @@ const generatedModelContractCatalogJSON = `{
       "id": "google/nano-banana-pro",
       "aliases": [
         "nano-banana-pro",
-        "gemini-3-pro-image-preview",
         "nanobanana-pro",
         "nanobananapro",
+        "gemini-3-pro-image-preview",
         "google/gemini-3-pro-image",
         "gemini-3-pro-image"
       ],
@@ -4448,9 +4644,9 @@ const generatedModelContractCatalogJSON = `{
       "id": "klingai/kling-2.6",
       "aliases": [
         "kuaishou/kling-2.6",
-        "klingai/kling-v2.6-t2v",
-        "kling-v2-6",
         "kling-2.6",
+        "kling-v2-6",
+        "klingai/kling-v2.6-t2v",
         "klingai/kling-v2.6-i2v"
       ],
       "locales": {
@@ -4715,11 +4911,11 @@ const generatedModelContractCatalogJSON = `{
       "id": "klingai/kling-3.0",
       "aliases": [
         "kuaishou/kling-3.0",
-        "klingai/kling-v3.0-t2v",
-        "klingai/kling-v3.0-i2v",
         "kling-3.0",
+        "kling-3",
         "kling-3.0/video",
-        "kling-3"
+        "klingai/kling-v3.0-t2v",
+        "klingai/kling-v3.0-i2v"
       ],
       "locales": {
         "en": {
@@ -5102,9 +5298,9 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "minimax/hailuo-2.3",
       "aliases": [
+        "hailuo-2.3",
         "minimax-hailuo-2.3",
-        "minimax-hailuo-2-3",
-        "hailuo-2.3"
+        "minimax-hailuo-2-3"
       ],
       "locales": {
         "en": {
@@ -5250,9 +5446,9 @@ const generatedModelContractCatalogJSON = `{
     {
       "id": "minimax/hailuo-2.3-fast",
       "aliases": [
+        "hailuo-2.3-fast",
         "minimax-hailuo-2.3-fast",
-        "minimax-hailuo-2-3-fast",
-        "hailuo-2.3-fast"
+        "minimax-hailuo-2-3-fast"
       ],
       "locales": {
         "en": {
@@ -7205,11 +7401,11 @@ const generatedModelContractCatalogJSON = `{
       "locales": {
         "en": {
           "label": "Grok Imagine Image 2.0",
-          "description": "Grok's second-generation image model with low and medium text-to-image quality; editing channels are pending certification"
+          "description": "Grok's second-generation image model with low and medium text-to-image quality; APIMart editing is pending certification"
         },
         "zh-CN": {
           "label": "Grok Imagine Image 2.0",
-          "description": "Grok 第二代图像模型，支持 low 和 medium 画质文生图；编辑渠道待认证"
+          "description": "Grok 第二代图像模型，支持 low 和 medium 画质文生图；APIMart 编辑待认证"
         }
       },
       "operations": [

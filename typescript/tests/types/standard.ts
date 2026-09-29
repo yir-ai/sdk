@@ -2,10 +2,12 @@ import type {
   Job,
   JobCancellation,
   JobStatusResponse,
+  Quote,
   StandardImageGenerationRequest,
   StandardMediaSource,
   StandardVideoGenerationRequest,
   YirClient,
+  YirErrorCode,
 } from "../../src/index.js";
 import { YirTimeoutError } from "../../src/index.js";
 
@@ -51,4 +53,17 @@ function checkTimeout(err: YirTimeoutError) {
   return { jobId: err.jobId, lastStatus };
 }
 
-void [video, ambiguousSource, emptySource, readJob, readStatus, checkTimeout];
+function readQuoteSearch(quote: Quote) {
+  const flags: (boolean | undefined)[] = [quote.parameters.web_search, quote.parameters.image_search, quote.parameters.return_last_frame];
+  return flags;
+}
+
+function cancelWithTimeout(client: YirClient) {
+  return client.cancelJob("7001", { signal: AbortSignal.timeout(1000) });
+}
+
+const insufficientBalance: YirErrorCode = "YIR_INSUFFICIENT_BALANCE";
+// @ts-expect-error unknown codes are not stable public error codes
+const unknownCode: YirErrorCode = "YIR_NOT_A_CODE";
+
+void [video, ambiguousSource, emptySource, readJob, readStatus, checkTimeout, readQuoteSearch, cancelWithTimeout, insufficientBalance, unknownCode];

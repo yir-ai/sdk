@@ -82,14 +82,26 @@ type Job struct {
 	ParameterNotices []ParameterNotice `json:"parameter_notices,omitempty"`
 	ID               string            `json:"id"`
 	Object           string            `json:"object"`
+	FinalProvider    string            `json:"final_provider,omitempty"`
 	Model            string            `json:"model"`
 	Status           string            `json:"status"`
+	URLs             *JobURLs          `json:"urls,omitempty"`
+	Usage            *JobUsage         `json:"usage,omitempty"`
 	Error            *APIError         `json:"error"`
 	CreatedAt        int64             `json:"created_at"`
 	CompletedAt      *int64            `json:"completed_at,omitempty"`
 	Cancellation     *JobCancellation  `json:"cancellation,omitempty"`
 	Result           *JobResult        `json:"result,omitempty"`
 	Billing          *JobBilling       `json:"billing,omitempty"`
+}
+
+type JobURLs struct {
+	Get    string `json:"get"`
+	Cancel string `json:"cancel"`
+}
+
+type JobUsage struct {
+	Outputs int64 `json:"outputs"`
 }
 
 type JobCancellation struct {
@@ -115,9 +127,48 @@ type ResultFile struct {
 }
 
 type JobBilling struct {
-	Currency          string `json:"currency"`
-	TotalChargedByYir string `json:"total_charged_by_yir"`
-	MaxCost           string `json:"max_cost,omitempty"`
+	Currency           string              `json:"currency"`
+	ComputeCharges     []ComputeCharge     `json:"compute_charges"`
+	GatewayFee         GatewayFee          `json:"gateway_fee"`
+	TotalChargedByYir  string              `json:"total_charged_by_yir"`
+	MaxCost            string              `json:"max_cost,omitempty"`
+	Savings            *Savings            `json:"savings,omitempty"`
+	OfficialComparison *OfficialComparison `json:"official_comparison,omitempty"`
+}
+
+// ComputeCharge is a read-only billing fact. SupplyType "byok" appears only on
+// historical bills; new Cloud jobs use managed supply.
+type ComputeCharge struct {
+	SupplyType  string       `json:"supply_type"`
+	BilledBy    string       `json:"billed_by"`
+	Amount      *string      `json:"amount"`
+	AmountBasis string       `json:"amount_basis"`
+	Status      string       `json:"status"`
+	Usage       []UsageEntry `json:"usage,omitempty"`
+}
+
+type UsageEntry struct {
+	Metric   string `json:"metric"`
+	Quantity string `json:"quantity"`
+	Unit     string `json:"unit"`
+}
+
+type GatewayFee struct {
+	Amount string `json:"amount"`
+	Status string `json:"status"`
+}
+
+type Savings struct {
+	Amount           string `json:"amount"`
+	Kind             string `json:"kind"`
+	BaselineAmount   string `json:"baseline_amount"`
+	ActualUserCharge string `json:"actual_user_charge"`
+}
+
+type OfficialComparison struct {
+	BaselineAmount string `json:"baseline_amount"`
+	SavingsAmount  string `json:"savings_amount"`
+	SourceURL      string `json:"source_url,omitempty"`
 }
 
 func (job Job) IsTerminal() bool {
