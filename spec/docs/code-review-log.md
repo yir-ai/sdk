@@ -1,5 +1,13 @@
 # SDK 代码审查台账
 
+## 2026-09-30 文件分析等待与 file_id 合同候选
+
+- 实施/迁移 Codex，独立审查 AGY `review-mumztezu-63fa7c97`：检查 `f6d9653..0672b61a7efbc562384cabadf74eeda520b82616`。发现 SDK-FILE-01（P1，Go 六项旧 URL 夹具）及 SDK-FILE-02（P1，TS 四项旧 URL 夹具）；初审 Request Changes。历史工作区测试数字不代表此候选。
+- 修复 `f15e3eb363e9de4cbf9c7a59dafa221b3e77dbcf`，补归档消费者与公开示例 `7fe342f0f05fb5e0d973f44ae39369d989376045`。原审查方 `review-mun0ec10-73922ea9` 复审 `0672b61a7efbc562384cabadf74eeda520b82616..7fe342f0f05fb5e0d973f44ae39369d989376045` **APPROVE**，两项关闭；独立 Go 六项 0.839s、TS 六项 243ms 通过。
+- 同一候选完整 [SDK CI 36612198912](https://github.com/yir-ai/sdk/actions/runs/36612198912) 通过（51s），覆盖合同、TypeScript 测试/类型、实际归档消费及独立 Go 模块。主控定向 Go 0.888s、TS 六项 234ms 通过。
+- TypeScript 0.4.0、Go 0.5.0 为不兼容输入合同候选；要求先上传媒体再引用 file_id，上传辅助函数等待 processing 完成。未发布包或标签；当前正式安装说明仍指向已发布版本。
+- 真实上传/分析恢复/生成全链路尚未验证，未执行付费 Provider 请求或生产操作。
+
 ## 2026-09-29 服务端授权的无上限报价
 
 - 候选范围 `416c0c81ffdfd88cdd53239f7d29733fea97a766..3767033c5ef94f53e94d6d487ee9db88d00b3fca`，PR #15。Go/TypeScript 均允许服务端返回供应可用、无可验证上界、不要求 max_cost；其他格式、金额、供给和上界一致性校验保留，不修改服务端授权。
