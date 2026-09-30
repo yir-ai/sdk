@@ -32,6 +32,7 @@ export type StandardReference = {
 } & StandardMediaSource;
 
 export type StandardImageGenerationRequest = {
+	readonly billing_mode?: "actual";
   readonly max_cost?: string;
   readonly model: string;
   readonly input: StandardTextInput | StandardImageInput;
@@ -56,6 +57,7 @@ export type StandardVideoReferenceInput = {
 };
 
 export type StandardVideoGenerationRequest = {
+	readonly billing_mode?: "actual";
   readonly max_cost?: string;
 	readonly model: string;
 	readonly input:
@@ -175,7 +177,13 @@ export function validateModelParameters(
 /** Shared Quote/Submit preflight; availability and pricing remain server facts. */
 export function validateGeneration(operation: "generate_image" | "generate_video", request: unknown, catalog?: ModelContractCatalog): void {
   const body = requireObject(request, "request");
-  rejectUnknown(body, ["model", "input", "parameters", "routing", "max_cost", "webhook_url"], "request");
+  rejectUnknown(body, ["model", "input", "parameters", "routing", "billing_mode", "max_cost", "webhook_url"], "request");
+  if (Object.hasOwn(body, "billing_mode")) {
+    if (body.billing_mode !== "actual") throw new YirSDKValidationError("billing_mode_invalid", "billing_mode");
+    if (Object.hasOwn(body, "max_cost")) throw new YirSDKValidationError("billing_mode_conflict", "max_cost");
+    const routing = requireObject(body.routing, "routing");
+    if (!Array.isArray(routing.only) || routing.only.length === 0) throw new YirSDKValidationError("billing_mode_routing_required", "routing.only");
+  }
   if (typeof body.model !== "string" || !body.model.trim()) throw new YirSDKValidationError("model_required", "model");
   const input = requireObject(body.input, "input");
   rejectUnknown(input, ["type", "prompt", "references"], "input");

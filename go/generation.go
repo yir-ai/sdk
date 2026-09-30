@@ -11,6 +11,7 @@ import (
 // GenerationRequest is the common demand used for Quote and Submit.
 // The endpoint selects image or video generation; provider fields are not accepted.
 type GenerationRequest struct {
+	BillingMode string          `json:"billing_mode,omitempty"`
 	Model      string          `json:"model"`
 	Input      GenerationInput `json:"input"`
 	Parameters map[string]any  `json:"parameters"`
@@ -72,6 +73,14 @@ func ValidateGenerationProtocol(operation string, request GenerationRequest) err
 }
 
 func validateGenerationWithContract(operation string, request GenerationRequest, contract *ModelOperationContract) error {
+	if request.BillingMode != "" {
+		if request.BillingMode != "actual" {
+			return &ParameterError{"billing_mode", "invalid_value"}
+		}
+		if request.Routing == nil || len(request.Routing.Only) == 0 {
+			return &ParameterError{"routing.only", "required_parameter"}
+		}
+	}
 	if strings.TrimSpace(request.Model) == "" {
 		return &ParameterError{"model", "model_required"}
 	}

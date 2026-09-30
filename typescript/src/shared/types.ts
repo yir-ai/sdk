@@ -87,6 +87,7 @@ export type Job = {
     readonly official_comparison?: { readonly baseline_amount: string; readonly savings_amount: string; readonly source_url?: string };
     readonly currency: "USD";
     readonly total_charged_by_yir: string;
+	readonly billing_mode?: "actual";
     readonly max_cost?: string;
     readonly compute_charges: readonly ComputeCharge[];
     readonly gateway_fee: { readonly amount: string; readonly status: "settled" | "waived" };
@@ -108,6 +109,7 @@ export type QuotePrice =
   | { readonly kind: "unavailable"; readonly amount: null; readonly reason: string };
 
 export type Quote = {
+	readonly billing_mode?: "actual";
   readonly parameter_notices?: readonly ParameterNotice[];
   readonly parameter_handling_may_vary?: boolean;
   readonly supply: { readonly available: boolean; readonly requires_max_cost: boolean; readonly issues: readonly string[] };

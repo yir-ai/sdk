@@ -265,6 +265,9 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 	if err := c.validateGeneration(operation, request.GenerationRequest); err != nil {
 		return job, err
 	}
+	if request.BillingMode == "actual" && request.MaxCost != nil {
+		return job, &ParameterError{"max_cost", "billing_mode_conflict"}
+	}
 	warnParameterPolicies(operation, request.GenerationRequest, c.modelContracts)
 	if request.MaxCost != nil {
 		amount, ok := new(big.Rat).SetString(*request.MaxCost)
