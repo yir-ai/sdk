@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.5.0
+pnpm add @yir-ai/sdk@0.5.1
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.5.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.5.1.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -70,7 +70,7 @@ const client = createNodeYirClient();
 
 `YirJobError` 包含失败或取消的终态任务。`YirAPIError` 在可用时提供 status、code、retryable、action 和 requestId。应用逻辑应依赖稳定错误码，`YIR_ERROR_CODES` 与 `YirErrorCode` 类型列出全部稳定错误码。`cancelJob(id, options)` 显式申请取消，需检查 cancellation 和终态账单，不能假定立即取消或零费用。每个任务的 `billing.total_charged_by_yir` 只结算一次。结果 URL 会过期，应检查 `result.availability` 并及时复制到自己的资源库。
 
-尚未发布的 0.5.1 候选与 0.5.0 兼容。内置 `minimax/minimax-h3` 描述与服务端当前导出一致，API 无变化。
+0.5.1 与 0.5.0 兼容。内置 `minimax/minimax-h3` 描述与服务端当前导出一致，API 无变化。
 
 0.4.1 与 0.4.0 兼容。`cancelJob(id, options)` 支持中断信号，返回的不是所请求任务时抛出 `response_invalid`。`Quote.parameters` 新增 `return_last_frame`、`web_search`、`image_search`。新增 `YIR_ERROR_CODES` 与 `YirErrorCode`，`DEFAULT_USER_AGENT` 报告包版本。内置模型合同与服务端当前导出一致：新增 `alibaba/qwen-image-2.1`，Gemini Omni 接受 `duration`，`wan-2.6` 最多 5 个参考，移除 `kie/gemini-omni-video` 别名。仅使用内置目录的校验受影响。
 
