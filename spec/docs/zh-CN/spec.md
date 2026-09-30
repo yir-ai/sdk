@@ -30,11 +30,11 @@
 现有 `de-ci` runner 属于其他组织，本仓库不可使用。发布或其他较重验证，在 `de-ci` 的临时目录检出**已审查提交**后执行：
 
 ```sh
-bash spec/scripts/verify-release.sh
+bash spec/scripts/verify-release.sh go/vX.Y.Z typescript/vX.Y.Z
 ```
 
-脚本验证已提交的 HEAD，拒绝脏工作区，顺序运行限 2 核、4 GiB 的 Docker 容器，输出验证 SHA。Go 在不含仓库其他部分的模块目录中测试。退出时清理临时文件，不启动或重启服务。必要时按宿主已批准的直连下载方式预拉官方 Node/Go 镜像，不修改系统代理。不在该宿主执行未审查的 fork 或 PR 分支，只保留短期验证检出，不建立开发工作区。
+传入即将创建的标签；与 Go `Version` 或 TypeScript `package.json` 版本不一致时脚本拒绝继续。脚本验证已提交的 HEAD，拒绝脏工作区，顺序运行限 2 核、4 GiB 的 Docker 容器，输出验证 SHA。Go 在不含仓库其他部分的模块目录中测试。退出时清理临时文件，不启动或重启服务。必要时按宿主已批准的直连下载方式预拉官方 Node/Go 镜像，不修改系统代理。不在该宿主执行未审查的 fork 或 PR 分支，只保留短期验证检出，不建立开发工作区。
 
 将执行结果和 SHA 记录在 PR 或发布记录中。CI 通过不会自动发布；npm/Go 版本、标签和发布说明仍需分别授权。发布后验证匿名 registry 安装和版本身份。
 
-npm 发布使用不带 `--otp` 参数的 `pnpm publish`。需要验证时在本机终端或浏览器完成，不把验证码写进命令或聊天。返回 `EOTP` 或 `E400` 表示尚未发布成功，重试前先回读 registry。不要把 `YOUR_OTP` 等占位符当成验证码直接执行。
+npm 须从 TypeScript 标签的干净检出发布，不从更新后的 `main` 发布：`git worktree add --detach <目录> typescript/vX.Y.Z`，`pnpm install --frozen-lockfile`，再 `pnpm publish --no-git-checks`（分离的标签不在分支上）。`prepack` 会构建 `dist`，新检出不会发出空包。确认发布的 shasum 与 `pnpm pack` 输出一致。npm 发布使用不带 `--otp` 参数的 `pnpm publish`。需要验证时在本机终端或浏览器完成，不把验证码写进命令或聊天。返回 `EOTP` 或 `E400` 表示尚未发布成功，重试前先回读 registry。不要把 `YOUR_OTP` 等占位符当成验证码直接执行。
