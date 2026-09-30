@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.4.1
+pnpm add @yir-ai/sdk@0.5.0
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.4.1.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.5.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -73,7 +73,7 @@ Version 0.4.1 is compatible with 0.4.0. `cancelJob(id, options)` accepts an abor
 
 ## Model detail
 
-Unreleased 0.5.0 candidate: `getModel("creator/model")` reads the Market `ModelDetail`: `specifications` with per-channel `channels` display prices (`amount_micros` is absent when no price is published) and optional `channel_parameters`. Pass the canonical ID; aliases are not resource paths, and an invalid ID fails locally with `model_request_invalid`. Unknown fields are kept, but a mismatched ID or invalid required values fail with `model_response_invalid`. A missing model rejects with `YirAPIError` 404 `YIR_MODEL_NOT_FOUND`. Market prices are for display only; quote before submitting. `getModelContract` remains the versioned parameter contract (`view=contract`). `modelDetailPath` and `parseModelDetail` are also exported for custom transports.
+Since 0.5.0: `getModel("creator/model")` reads the Market `ModelDetail`: `specifications` with per-channel `channels` display prices (`amount_micros` is absent when no price is published) and optional `channel_parameters`. Pass the canonical ID; aliases are not resource paths, and an invalid ID fails locally with `model_request_invalid`. Unknown fields are kept, but a mismatched ID or invalid required values fail with `model_response_invalid`. A missing model rejects with `YirAPIError` 404 `YIR_MODEL_NOT_FOUND`. Market prices are for display only; quote before submitting. `getModelContract` remains the versioned parameter contract (`view=contract`). `modelDetailPath` and `parseModelDetail` are also exported for custom transports.
 
 ## Files and Webhooks
 
@@ -81,7 +81,7 @@ Version 0.4.0 requires `file_id` for every media reference; external reference U
 
 `createFiles(request, key)` creates upload plans; `uploadFile(client, plan, blob)` uploads and completes a plan. `createAndUploadFile(client, metadata, blob, key)` combines the steps. Use stable upload keys and retain returned file IDs; `getFile(id)` checks state and `completeFile(id)` completes a manually uploaded file. Only reference ready files in generation requests (`file_id` plus the appropriate role). Upload helpers support the server's single/multipart plans.
 
-Unreleased 0.5.0 candidate: `getFileContentURL(id)` resolves to the short-lived signed URL of a ready file. The Node transport reads it from the 307 `Location` header with `redirect: "manual"` and never follows it, so the API key is never sent to storage. Fetch the URL without Gateway credentials and ask again once it expires. Only an absolute `https` URL is accepted. Anything else rejects with `file_content_response_invalid`, and errors never include the URL. Missing files reject with `YirAPIError` 404 `YIR_FILE_NOT_FOUND`. Files not yet ready reject with 409 `YIR_FILE_NOT_READY` (wait with `waitForFileReady`, then retry). Expired files reject with 410 `YIR_FILE_EXPIRED` (upload them again).
+Since 0.5.0: `getFileContentURL(id)` resolves to the short-lived signed URL of a ready file. The Node transport reads it from the 307 `Location` header with `redirect: "manual"` and never follows it, so the API key is never sent to storage. Fetch the URL without Gateway credentials and ask again once it expires. Only an absolute `https` URL is accepted. Anything else rejects with `file_content_response_invalid`, and errors never include the URL. Missing files reject with `YirAPIError` 404 `YIR_FILE_NOT_FOUND`. Files not yet ready reject with 409 `YIR_FILE_NOT_READY` (wait with `waitForFileReady`, then retry). Expired files reject with 410 `YIR_FILE_EXPIRED` (upload them again).
 
 Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })` using the account's Webhook secret, not its API key. Pass the original request bytes before parsing JSON and map the delivery signature metadata into `id`, `timestamp` and `signature`. The default clock tolerance is 300 seconds. Reject invalid results, durably deduplicate by Webhook ID, and apply terminal settlement once even if polling also observes it. `constructWebhookEvent` verifies the same fields and resolves to `{ id, timestamp, job }`, or rejects with `YirWebhookVerificationError` carrying a stable `reason`. Durable workflows can treat a webhook as a wake-up signal, read the job with `getJob`, and keep `pollDelayMs` polling as a fallback.
 
@@ -95,7 +95,7 @@ Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported.
 
 ## 0.5.0 migration
 
-The unreleased 0.5.0 candidate adds `getModel` to `YirClient` and `getFileContentURL` to `YirFileClient`. Code that implements either type itself must add these methods; callers of `createYirClient` or `createNodeYirClient` need no change. `YirTransportRequest` gains an optional `redirect: "manual"`. A custom transport that ignores it keeps working for every other call, but `getFileContentURL` then rejects (with the transport's own redirect error or `file_content_response_invalid`) instead of returning a URL.
+Version 0.5.0 adds `getModel` to `YirClient` and `getFileContentURL` to `YirFileClient`. Code that implements either type itself must add these methods; callers of `createYirClient` or `createNodeYirClient` need no change. `YirTransportRequest` gains an optional `redirect: "manual"`. A custom transport that ignores it keeps working for every other call, but `getFileContentURL` then rejects (with the transport's own redirect error or `file_content_response_invalid`) instead of returning a URL.
 
 ## Changes in 0.3.0
 
