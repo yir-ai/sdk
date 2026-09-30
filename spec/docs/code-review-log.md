@@ -1,5 +1,11 @@
 # SDK 代码审查台账
 
+## 2026-09-30 Go 0.6.0 与 TypeScript 0.5.0 发布
+
+- 内容：PR #20 的 Market 模型详情（Go `GetModel`、TS `getModel`）与文件内容签名 URL（Go `GetFileContentURL`、TS `getFileContentURL`）。TS 因 `YirClient` / `YirFileClient` 新增方法升次版本，迁移说明见 TS 指南"0.5.0 迁移"；Go 为新功能升次版本，签名不变。
+- 候选：PR #23 合并为 `e64053b`，main CI [36649409435](https://github.com/yir-ai/sdk/actions/runs/36649409435) success；发布前核对 Go `Version` 0.6.0、TS `package.json` 与 `DEFAULT_USER_AGENT` 0.5.0 与计划 tag 一致。`go/v0.6.0`、`typescript/v0.5.0` annotated tag 指向 `e64053b` 并建 GitHub Release；proxy.golang.org 可解析 `go@v0.6.0`。
+- npm：首次按 PR #22 的新流程发布——在 `e64053b` 的干净 worktree 中 `pnpm install --frozen-lockfile` 后 `pnpm publish --no-git-checks`，`prepack` 自动构建 `dist`（64 个文件）。维护者完成 npm 验证后发布 `@yir-ai/sdk@0.5.0`，npm 回报 shasum `05084558c36412b294bc8466efb647ff77d16652`，与发布前本地打包一致。
+
 ## 2026-09-30 Go 0.5.1 与 TypeScript 0.4.1 发布
 
 - 候选：PR #19 合并为 `d2cfc0d`，main CI [36625948248](https://github.com/yir-ai/sdk/actions/runs/36625948248) success。`go/v0.5.1`、`typescript/v0.4.1` annotated tag 指向 `d2cfc0d` 并建 GitHub Release；proxy.golang.org 可解析 `go@v0.5.1`。
