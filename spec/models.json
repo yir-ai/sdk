@@ -5597,11 +5597,11 @@
       "locales": {
         "en": {
           "label": "MiniMax H3",
-          "description": "MiniMax H3 video generation with native audio"
+          "description": "Video generation with native audio, first/last frames, multimodal references, and 768P/2K output"
         },
         "zh-CN": {
           "label": "MiniMax H3",
-          "description": "MiniMax H3 原生音视频生成模型"
+          "description": "原生音频视频生成，支持首尾帧、多模态参考与 768P/2K 输出"
         }
       },
       "operations": [
