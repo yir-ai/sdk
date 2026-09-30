@@ -69,6 +69,8 @@ Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobSta
 
 `YirJobError` contains the failed/cancelled terminal job. `YirAPIError` exposes status, code, retryable, action and requestId where available. Keep error codes stable in application logic; `YIR_ERROR_CODES` and the `YirErrorCode` type list the stable codes. `cancelJob(id, options)` explicitly requests cancellation; inspect the returned cancellation and terminal billing instead of assuming immediate cancellation or zero charge. Reconcile `billing.total_charged_by_yir` once per job. Result URLs expire; inspect `result.availability` and copy files to your own asset store while available.
 
+The unreleased 0.5.1 candidate is compatible with 0.5.0. The bundled `minimax/minimax-h3` descriptions match the current server export; no API changes.
+
 Version 0.4.1 is compatible with 0.4.0. `cancelJob(id, options)` accepts an abort signal and rejects a response that is not the requested job with `response_invalid`. `Quote.parameters` adds `return_last_frame`, `web_search` and `image_search`. `YIR_ERROR_CODES` and `YirErrorCode` are new, and `DEFAULT_USER_AGENT` reports the package version. The bundled model contracts match the current server export: `alibaba/qwen-image-2.1` is added, Gemini Omni accepts `duration`, `wan-2.6` allows at most 5 references, and the `kie/gemini-omni-video` alias is removed. Only validation against the bundled catalog is affected.
 
 ## Model detail
