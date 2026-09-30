@@ -47,6 +47,7 @@ func (e *QuoteEstimate) UnmarshalJSON(data []byte) error {
 }
 
 type Quote struct {
+	BillingMode string `json:"billing_mode,omitempty"`
 	PriceDifferencePercent   *QuotePriceDifference `json:"price_difference_percent,omitempty"`
 	ParameterNotices         []ParameterNotice     `json:"parameter_notices,omitempty"`
 	ParameterHandlingMayVary bool                  `json:"parameter_handling_may_vary,omitempty"`
@@ -127,6 +128,7 @@ type ResultFile struct {
 }
 
 type JobBilling struct {
+	BillingMode string `json:"billing_mode,omitempty"`
 	Currency           string              `json:"currency"`
 	ComputeCharges     []ComputeCharge     `json:"compute_charges"`
 	GatewayFee         GatewayFee          `json:"gateway_fee"`
