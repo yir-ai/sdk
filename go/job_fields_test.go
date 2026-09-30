@@ -14,8 +14,7 @@ func TestJobDecodesRoutingUsageAndBillingFacts(t *testing.T) {
 		"urls":{"get":"/v1/jobs/7","cancel":"/v1/jobs/7/cancel"},"usage":{"outputs":2},"error":null,"created_at":1,
 		"billing":{"currency":"USD","total_charged_by_yir":"0.05","max_cost":"0.10",
 			"compute_charges":[{"supply_type":"managed","billed_by":"yir","amount":"0.04","amount_basis":"yir_price_rule","status":"settled",
-				"usage":[{"metric":"output_images","quantity":"2","unit":"image"}]},
-				{"supply_type":"byok","billed_by":"provider","amount":null,"amount_basis":"unknown","status":"external"}],
+				"usage":[{"metric":"output_images","quantity":"2","unit":"image"}]}],
 			"gateway_fee":{"amount":"0.01","status":"settled"},
 			"savings":{"amount":"0.03","kind":"estimated","baseline_amount":"0.08","actual_user_charge":"0.05"},
 			"official_comparison":{"baseline_amount":"0.08","savings_amount":"0.03","source_url":"https://example.com/pricing"}}}`
@@ -27,15 +26,12 @@ func TestJobDecodesRoutingUsageAndBillingFacts(t *testing.T) {
 		t.Fatalf("routing or usage lost: %+v", job)
 	}
 	billing := job.Billing
-	if billing == nil || len(billing.ComputeCharges) != 2 || billing.GatewayFee.Amount != "0.01" {
+	if billing == nil || len(billing.ComputeCharges) != 1 || billing.GatewayFee.Amount != "0.01" {
 		t.Fatalf("billing lost: %+v", billing)
 	}
-	managed, historical := billing.ComputeCharges[0], billing.ComputeCharges[1]
-	if managed.Amount == nil || *managed.Amount != "0.04" || len(managed.Usage) != 1 || managed.Usage[0].Quantity != "2" {
+	managed := billing.ComputeCharges[0]
+	if managed.Amount != "0.04" || len(managed.Usage) != 1 || managed.Usage[0].Quantity != "2" {
 		t.Fatalf("managed charge lost: %+v", managed)
-	}
-	if historical.Amount != nil || historical.Status != "external" {
-		t.Fatalf("null amount must stay nil: %+v", historical)
 	}
 	if billing.Savings == nil || billing.Savings.ActualUserCharge != "0.05" || billing.OfficialComparison == nil || billing.OfficialComparison.SourceURL == "" {
 		t.Fatalf("savings facts lost: %+v", billing)

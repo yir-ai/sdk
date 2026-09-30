@@ -1497,16 +1497,16 @@
       },
       "ComputeCharge": {
         "type": "object",
-        "description": "Read-only billing facts. New Yir Cloud jobs use managed supply only. Historical jobs may retain byok/provider/external facts; these values do not enable BYOK submission.",
+        "description": "Read-only billing facts for managed supply billed by Yir.",
         "additionalProperties": false,
         "required": ["supply_type", "billed_by", "amount", "amount_basis", "status"],
         "properties": {
-          "supply_type": { "type": "string", "enum": ["managed", "byok"], "description": "managed for new Cloud jobs; byok is retained only for historical billing records." },
-          "billed_by": { "type": "string", "enum": ["yir", "provider"] },
-          "amount": { "oneOf": [{ "$ref": "#/components/schemas/Decimal" }, { "type": "null" }] },
-          "amount_basis": { "type": "string", "enum": ["provider_reported", "yir_price_rule", "public_price_estimate", "unknown"] },
+          "supply_type": { "type": "string", "enum": ["managed"] },
+          "billed_by": { "type": "string", "enum": ["yir"] },
+          "amount": { "$ref": "#/components/schemas/Decimal" },
+          "amount_basis": { "type": "string", "enum": ["yir_price_rule"] },
           "usage": { "type": "array", "items": { "$ref": "#/components/schemas/Usage" } },
-          "status": { "type": "string", "enum": ["settled", "external", "waived"] }
+          "status": { "type": "string", "enum": ["settled", "waived"] }
         }
       },
       "Usage": {
@@ -1531,7 +1531,7 @@
       "OfficialComparison": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Successful jobs only. Complete fixed USD official price frozen at admission for the exact request. Savings is baseline minus all Yir charges, including recovery attempts; it may be negative. Omitted for historical jobs, dynamic prices, missing baselines and external billing.",
+        "description": "Successful jobs only. Complete fixed USD official price frozen at admission for the exact request. Savings is baseline minus all Yir charges, including recovery attempts; it may be negative. Omitted for historical jobs, dynamic prices and missing baselines.",
         "required": ["baseline_amount", "savings_amount"],
         "properties": {
           "baseline_amount": { "$ref": "#/components/schemas/Decimal" },
