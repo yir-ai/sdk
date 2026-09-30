@@ -7,7 +7,12 @@
 - SDK-PR20-02 / P3：Go `ModelChannelPrice.Estimated` 为 `bool`，缺失时静默当作 `false`。该类型已随 `go/v0.6.0` 发布，不改字段类型；`GetModel` 另行检查字段是否存在，缺失时报 `model_response_invalid`。
 - SDK-PR20-03 / P3：TS 缺少 `getFileContentURL` 的 404/409/410 透传测试。已补，经 Node 传输断言 `YirAPIError` 的 status 与 code。
 - SDK-PR20-04 / P3：台账日期倒序。发布准备时已改为 2026-09-30，本次无需修改。
-- 实现方 Claude Code；基准 `e64053b`。定向验证：`go test -count=1 -run 'TestGetModel' ./` 通过；TS `pnpm run build` 与 `tests/files.test.mjs` 共 14 项通过。Go 改动只收紧响应校验，公开类型不变，可随 0.6.1 发布；TS 只改测试，不影响尚未发布到 npm 的 0.5.0 归档。
+- 实现方 Claude Code；基准 `e64053b`。定向验证：`go test -count=1 -run 'TestGetModel' ./` 通过；TS `pnpm run build` 与 `tests/files.test.mjs` 共 14 项通过。Go 改动只收紧响应校验，公开类型不变，可随 0.6.1 发布；TS 只改测试，不影响已发布的 npm 0.5.0 归档。
+## 2026-09-30 Go 0.6.0 与 TypeScript 0.5.0 发布
+
+- 内容：PR #20 的 Market 模型详情（Go `GetModel`、TS `getModel`）与文件内容签名 URL（Go `GetFileContentURL`、TS `getFileContentURL`）。TS 因 `YirClient` / `YirFileClient` 新增方法升次版本，迁移说明见 TS 指南"0.5.0 迁移"；Go 为新功能升次版本，签名不变。
+- 候选：PR #23 合并为 `e64053b`，main CI [36649409435](https://github.com/yir-ai/sdk/actions/runs/36649409435) success；发布前核对 Go `Version` 0.6.0、TS `package.json` 与 `DEFAULT_USER_AGENT` 0.5.0 与计划 tag 一致。`go/v0.6.0`、`typescript/v0.5.0` annotated tag 指向 `e64053b` 并建 GitHub Release；proxy.golang.org 可解析 `go@v0.6.0`。
+- npm：首次按 PR #22 的新流程发布——在 `e64053b` 的干净 worktree 中 `pnpm install --frozen-lockfile` 后 `pnpm publish --no-git-checks`，`prepack` 自动构建 `dist`（64 个文件）。维护者完成 npm 验证后发布 `@yir-ai/sdk@0.5.0`，npm 回报 shasum `05084558c36412b294bc8466efb647ff77d16652`，与发布前本地打包一致。
 
 ## 2026-09-30 Go 0.5.1 与 TypeScript 0.4.1 发布
 
