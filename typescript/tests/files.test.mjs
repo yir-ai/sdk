@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createYirClient, uploadFile, createAndUploadFile } from "../dist/index.js";
+import { createYirClient, createNodeYirClient, uploadFile, createAndUploadFile, YirAPIError } from "../dist/index.js";
 
 const id = "file_11111111-1111-4111-8111-111111111111";
 
@@ -196,4 +196,19 @@ test("file content rejects unsafe redirects without echoing the URL", async () =
   const client = createYirClient(async () => { calls++; });
   await assert.rejects(client.getFileContentURL("file_bad"), /file_id_invalid/);
   assert.equal(calls, 0);
+});
+
+test("file content passes 404, 409 and 410 through as YirAPIError", async () => {
+  for (const [status, code] of [[404, "YIR_FILE_NOT_FOUND"], [409, "YIR_FILE_NOT_READY"], [410, "YIR_FILE_EXPIRED"]]) {
+    const client = createNodeYirClient({ apiKey: "fixture", fetch: async (url, init) => {
+      assert.equal(init.redirect, "manual");
+      return new Response(JSON.stringify({ error: { code, message: "x", retryable: false } }), { status, headers: { "Content-Type": "application/json" } });
+    } });
+    await assert.rejects(client.getFileContentURL(id), error => {
+      assert.ok(error instanceof YirAPIError);
+      assert.equal(error.status, status);
+      assert.equal(error.code, code);
+      return true;
+    });
+  }
 });

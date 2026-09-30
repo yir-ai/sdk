@@ -1,5 +1,13 @@
 # SDK 代码审查台账
 
+## 2026-09-30 PR #20 独立审查与 P3 修复
+
+- 独立审查 AGY `review-muncjg75-f5a218f5`，范围 `d2cfc0d..ad51f3b`（PR #20 合并内容），结论 Approve，无 P0–P2。已核实：Go 与 TS 的凭据边界、不支持 manual 的自定义传输会安全失败、错误中不含签名 URL，以及与服务端源码和 spec 一致。未验证浏览器环境的 manual 跳转（该能力仅限服务端），也未对真实存储桶发请求。
+- SDK-PR20-01 / P3：Go `validModelDetail` 未拒绝缺失的 `parameter_rules`（TS 会拒绝）。已补 `nil` 校验。
+- SDK-PR20-02 / P3：Go `ModelChannelPrice.Estimated` 为 `bool`，缺失时静默当作 `false`。该类型已随 `go/v0.6.0` 发布，不改字段类型；`GetModel` 另行检查字段是否存在，缺失时报 `model_response_invalid`。
+- SDK-PR20-03 / P3：TS 缺少 `getFileContentURL` 的 404/409/410 透传测试。已补，经 Node 传输断言 `YirAPIError` 的 status 与 code。
+- SDK-PR20-04 / P3：台账日期倒序。发布准备时已改为 2026-09-30，本次无需修改。
+- 实现方 Claude Code；基准 `e64053b`。定向验证：`go test -count=1 -run 'TestGetModel' ./` 通过；TS `pnpm run build` 与 `tests/files.test.mjs` 共 14 项通过。Go 改动只收紧响应校验，公开类型不变，可随 0.6.1 发布；TS 只改测试，不影响已发布的 npm 0.5.0 归档。
 ## 2026-09-30 Go 0.6.0 与 TypeScript 0.5.0 发布
 
 - 内容：PR #20 的 Market 模型详情（Go `GetModel`、TS `getModel`）与文件内容签名 URL（Go `GetFileContentURL`、TS `getFileContentURL`）。TS 因 `YirClient` / `YirFileClient` 新增方法升次版本，迁移说明见 TS 指南"0.5.0 迁移"；Go 为新功能升次版本，签名不变。

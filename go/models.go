@@ -2,6 +2,7 @@ package yir
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 )
@@ -39,12 +40,28 @@ func (c *Client) GetModel(ctx context.Context, model string) (ModelDetail, error
 	if !validModelContractPath(model) {
 		return ModelDetail{}, errors.New("model_request_invalid")
 	}
-	var detail ModelDetail
-	if err := c.do(ctx, http.MethodGet, "/v1/models/"+model, "", nil, &detail); err != nil {
+	var raw json.RawMessage
+	if err := c.do(ctx, http.MethodGet, "/v1/models/"+model, "", nil, &raw); err != nil {
 		return ModelDetail{}, err
 	}
-	if !validModelDetail(detail, model) {
+	var detail ModelDetail
+	// Estimated is a plain bool in the released type, so required presence is checked separately.
+	var presence struct {
+		Specifications []struct {
+			Channels []struct {
+				Estimated *bool `json:"estimated"`
+			} `json:"channels"`
+		} `json:"specifications"`
+	}
+	if json.Unmarshal(raw, &detail) != nil || json.Unmarshal(raw, &presence) != nil || !validModelDetail(detail, model) {
 		return ModelDetail{}, errors.New("model_response_invalid")
+	}
+	for _, specification := range presence.Specifications {
+		for _, channel := range specification.Channels {
+			if channel.Estimated == nil {
+				return ModelDetail{}, errors.New("model_response_invalid")
+			}
+		}
 	}
 	return detail, nil
 }
@@ -68,7 +85,7 @@ func validModelDetail(detail ModelDetail, model string) bool {
 		}
 	}
 	for _, channel := range detail.ChannelParameters {
-		if channel.Provider == "" || channel.ChannelVariant == "" || !validModelOperation(channel.Operation) || !validModelInputMode(channel.InputMode) {
+		if channel.Provider == "" || channel.ChannelVariant == "" || channel.ParameterRules == nil || !validModelOperation(channel.Operation) || !validModelInputMode(channel.InputMode) {
 			return false
 		}
 		for _, rule := range channel.ParameterRules {
