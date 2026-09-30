@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.6.0
+go get github.com/yir-ai/sdk/go@v0.6.1
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.6.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.6.1`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -66,7 +66,7 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 
 `CancelJob` 显式申请取消，应检查取消状态和终态账单，不假定立即成功或零费用。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径；`ComputeCharges`、`GatewayFee`、`Savings` 和 `OfficialComparison` 说明该总额的构成。`APIError.Code` 应与 `ErrCode*` 常量比较，而非字符串字面量。
 
-尚未发布的 0.6.1 候选与 0.6.0 兼容。渠道价格缺少 `estimated` 或渠道参数缺少 `parameter_rules` 时，`GetModel` 返回 `model_response_invalid`，不再按 `false` 或空值读取。内置 `minimax/minimax-h3` 描述与服务端当前导出一致。
+0.6.1 与 0.6.0 兼容。渠道价格缺少 `estimated` 或渠道参数缺少 `parameter_rules` 时，`GetModel` 返回 `model_response_invalid`，不再按 `false` 或空值读取。内置 `minimax/minimax-h3` 描述与服务端当前导出一致。
 
 0.5.1 与 0.5.0 兼容。`Job` 新增 `FinalProvider`、`URLs`、`Usage`；`JobBilling` 新增 `ComputeCharges`、`GatewayFee`、`Savings`、`OfficialComparison`。新增 `ErrCode*` 常量与 `Version`，User-Agent 改为报告 SDK 版本。内置模型合同与服务端当前导出一致：新增 `alibaba/qwen-image-2.1`，Gemini Omni 接受 `duration`，`wan-2.6` 最多 5 个参考，移除 `kie/gemini-omni-video` 别名。仅显式使用内置合同的校验入口受影响；未传调用方目录的运行时请求不变。检查 `Result.Availability`，在 URL 过期前复制可用结果文件。
 

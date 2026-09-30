@@ -11,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.6.0
+go get github.com/yir-ai/sdk/go@v0.6.1
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.6.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.6.1`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -66,7 +66,7 @@ Persist the returned job ID. `GetJob` queries full job details; `GetJobStatus` q
 
 `CancelJob` explicitly requests cancellation. Inspect cancellation status and terminal billing instead of assuming immediate success or zero charge. Apply `Billing.TotalChargedByYir` once per job, including error paths; `ComputeCharges`, `GatewayFee`, `Savings` and `OfficialComparison` explain that total. Compare `APIError.Code` with the `ErrCode*` constants rather than string literals.
 
-The unreleased 0.6.1 candidate is compatible with 0.6.0. `GetModel` now fails with `model_response_invalid` when a channel price omits `estimated` or a channel parameter entry omits `parameter_rules`, instead of reading them as `false` or empty. The bundled `minimax/minimax-h3` descriptions match the current server export.
+Version 0.6.1 is compatible with 0.6.0. `GetModel` now fails with `model_response_invalid` when a channel price omits `estimated` or a channel parameter entry omits `parameter_rules`, instead of reading them as `false` or empty. The bundled `minimax/minimax-h3` descriptions match the current server export.
 
 Version 0.5.1 is compatible with 0.5.0. `Job` adds `FinalProvider`, `URLs` and `Usage`; `JobBilling` adds `ComputeCharges`, `GatewayFee`, `Savings` and `OfficialComparison`. `ErrCode*` constants and `Version` are new, and the User-Agent now reports the SDK version. The bundled model contracts match the current server export: `alibaba/qwen-image-2.1` is added, Gemini Omni accepts `duration`, `wan-2.6` allows at most 5 references, and the `kie/gemini-omni-video` alias is removed. Only explicit bundled-contract validators are affected; runtime requests without a caller catalog are unchanged. Check `Result.Availability` and copy available result files before their URLs expire.
 

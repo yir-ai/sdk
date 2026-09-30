@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.5.0
+pnpm add @yir-ai/sdk@0.5.1
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.5.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.5.1.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -69,7 +69,7 @@ Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobSta
 
 `YirJobError` contains the failed/cancelled terminal job. `YirAPIError` exposes status, code, retryable, action and requestId where available. Keep error codes stable in application logic; `YIR_ERROR_CODES` and the `YirErrorCode` type list the stable codes. `cancelJob(id, options)` explicitly requests cancellation; inspect the returned cancellation and terminal billing instead of assuming immediate cancellation or zero charge. Reconcile `billing.total_charged_by_yir` once per job. Result URLs expire; inspect `result.availability` and copy files to your own asset store while available.
 
-The unreleased 0.5.1 candidate is compatible with 0.5.0. The bundled `minimax/minimax-h3` descriptions match the current server export; no API changes.
+Version 0.5.1 is compatible with 0.5.0. The bundled `minimax/minimax-h3` descriptions match the current server export; no API changes.
 
 Version 0.4.1 is compatible with 0.4.0. `cancelJob(id, options)` accepts an abort signal and rejects a response that is not the requested job with `response_invalid`. `Quote.parameters` adds `return_last_frame`, `web_search` and `image_search`. `YIR_ERROR_CODES` and `YirErrorCode` are new, and `DEFAULT_USER_AGENT` reports the package version. The bundled model contracts match the current server export: `alibaba/qwen-image-2.1` is added, Gemini Omni accepts `duration`, `wan-2.6` allows at most 5 references, and the `kie/gemini-omni-video` alias is removed. Only validation against the bundled catalog is affected.
 

@@ -8,6 +8,12 @@
 - SDK-PR20-03 / P3：TS 缺少 `getFileContentURL` 的 404/409/410 透传测试。已补，经 Node 传输断言 `YirAPIError` 的 status 与 code。
 - SDK-PR20-04 / P3：台账日期倒序。发布准备时已改为 2026-09-30，本次无需修改。
 - 实现方 Claude Code；基准 `e64053b`。定向验证：`go test -count=1 -run 'TestGetModel' ./` 通过；TS `pnpm run build` 与 `tests/files.test.mjs` 共 14 项通过。Go 改动只收紧响应校验，公开类型不变，可随 0.6.1 发布；TS 只改测试，不影响已发布的 npm 0.5.0 归档。
+## 2026-09-30 Go 0.6.1 与 TypeScript 0.5.1 发布
+
+- 内容：Go 0.6.1 包含 PR #25（`GetModel` 在渠道价格缺 `estimated`、渠道参数缺 `parameter_rules` 时返回 `model_response_invalid`）与 PR #26（内置 `minimax/minimax-h3` 描述与服务端导出同步）；TS 0.5.1 仅含 PR #26 的描述同步（PR #25 在 TS 侧只新增测试），API 无变化。两者均与上一版本兼容，按补丁版本发布。PR #26 源于服务端仓库新增的 SDK 快照漂移检查首次发现的差异。
+- 候选：PR #27 合并为 `abd5ccf`，PR CI [36658736537](https://github.com/yir-ai/sdk/actions/runs/36658736537) 与 main CI [36658881774](https://github.com/yir-ai/sdk/actions/runs/36658881774) success，合并提交与 PR head 代码树相同（`717cb53`）。发布前核对 Go `Version` 0.6.1、TS `package.json` 与 `DEFAULT_USER_AGENT` 0.5.1 与计划 tag 一致。`go/v0.6.1`、`typescript/v0.5.1` annotated tag 指向 `abd5ccf` 并建 GitHub Release；proxy.golang.org 可解析 `go@v0.6.1`，匿名 `go get` 安装成功。
+- npm：在 `typescript/v0.5.1` 的干净 detached worktree 中 `pnpm install --frozen-lockfile`，先 `pnpm pack` 得到 shasum `48879cde3f0677743a9503e357d6bf9187a7d9f5`（89 个文件，其中 `dist` 64 个）；维护者完成 npm 验证后 `pnpm publish --no-git-checks` 发布 `@yir-ai/sdk@0.5.1`，npm 回报 shasum 与本地打包一致；registry 回读 `latest=0.5.1`，干净目录匿名安装后 `DEFAULT_USER_AGENT` 为 `@yir-ai/sdk/0.5.1`。
+
 ## 2026-09-30 Go 0.6.0 与 TypeScript 0.5.0 发布
 
 - 内容：PR #20 的 Market 模型详情（Go `GetModel`、TS `getModel`）与文件内容签名 URL（Go `GetFileContentURL`、TS `getFileContentURL`）。TS 因 `YirClient` / `YirFileClient` 新增方法升次版本，迁移说明见 TS 指南"0.5.0 迁移"；Go 为新功能升次版本，签名不变。
