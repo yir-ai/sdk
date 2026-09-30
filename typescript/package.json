@@ -46,7 +46,8 @@
     "build": "pnpm run clean && tsc -p ./tsconfig.json",
     "test": "pnpm run build && node --test --test-concurrency=2 ./tests/*.test.mjs",
     "test:types": "tsc -p ./tsconfig.type-tests.json",
-    "test:package": "pnpm run build && node ./scripts/check-package.mjs",
+    "prepack": "pnpm run build",
+    "test:package": "node ./scripts/check-package.mjs",
     "generate:model-contracts": "node ../spec/scripts/generate-model-contracts.mjs",
     "check:model-contracts": "node ../spec/scripts/generate-model-contracts.mjs --check",
     "check": "pnpm check:model-contracts && pnpm test && pnpm test:types && pnpm test:package"

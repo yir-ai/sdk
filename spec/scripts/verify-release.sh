@@ -3,6 +3,18 @@
 set -euo pipefail
 root=$(git -C "$(dirname "${BASH_SOURCE[0]}")/../.." rev-parse --show-toplevel)
 revision=$(git -C "$root" rev-parse HEAD)
+# Optional arguments name the tags about to be created: go/vX.Y.Z typescript/vX.Y.Z.
+for tag in "$@"; do
+  case $tag in
+    go/v*) actual=$(sed -n 's/^const Version = "\(.*\)"$/\1/p' "$root/go/client.go") ;;
+    typescript/v*) actual=$(sed -n 's/^  "version": "\(.*\)",$/\1/p' "$root/typescript/package.json") ;;
+    *) echo "Unknown release tag: $tag" >&2; exit 1 ;;
+  esac
+  if [[ ${tag#*/v} != "$actual" ]]; then
+    echo "$tag does not match the committed version $actual." >&2
+    exit 1
+  fi
+done
 if [[ -n $(git -C "$root" status --porcelain) ]]; then
   echo 'Commit or stash changes before validating a release.' >&2
   exit 1
