@@ -533,7 +533,7 @@
       "ActualBillingMode": {
         "type": "string",
         "const": "actual",
-        "description": "Explicit consent to the authoritative final cost of the successful delivered Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Failed, cancelled and non-winning attempts are not charged to the user. Omit to retain ordinary capped billing."
+        "description": "Explicit consent to the authoritative final cost of the successful delivered Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Failed, cancelled and non-winning attempts are not charged to the user. Omit for the default contract: balance is not frozen, each attempt checks the live balance against its expected charge, usage-based routes with an output estimate are charged at the authoritative amount, and an explicit max_cost caps the charge."
       },
       "StandardImageGenerationRequest": {
         "type": "object",
@@ -1070,7 +1070,7 @@
         "type": "string",
         "pattern": "^[0-9]{1,13}(\\.[0-9]{1,6})?$",
         "maxLength": 20,
-        "description": "Whole-job authorization limit in USD, up to 9223372036854.775807. Omission uses the highest single-attempt user price upper bound among admission candidates. One Job hold is shared across attempts, never summed; an explicit limit does not reserve its whole amount. New Jobs charge only the successfully delivered result and release unused funds at the terminal state. Failed and late upstream costs are absorbed by Yir without additional customer charges. Routes exceeding the existing hold or authorization are skipped. Below-primary limits are rejected. Historical jobs retain their recorded billing terms."
+        "description": "Optional whole-job charge cap in USD, up to 9223372036854.775807. Balance is not frozen: admission and every attempt submission check the live available balance against that attempt's expected charge (fixed price, or the output estimate for usage-based routes). Only the successfully delivered result is charged; failed and late upstream costs are absorbed by Yir. Without max_cost, a usage-based result is charged at its authoritative amount, and any part the balance cannot cover becomes a negative balance that blocks new jobs until a top-up. With max_cost, routes above the remaining cap are skipped, the charge never exceeds it, and below-primary limits are rejected. Historical jobs retain their recorded billing terms."
       },
       "QuoteBatchRequest": {
         "type": "object",
@@ -1149,10 +1149,10 @@
             "required": ["available", "requires_max_cost", "issues"],
             "properties": {
               "available": { "type": "boolean" },
-              "requires_max_cost": { "type": "boolean", "description": "True when a selectable usage-based route requires an explicit max_cost of at least USD 0.01 at Submit. This is an authorization requirement, not an estimated price or guaranteed upper bound." },
+              "requires_max_cost": { "type": "boolean", "description": "True only when every selectable route is usage-based without an output estimate, so Submit needs an explicit max_cost of at least USD 0.01. Usage-based routes with an output estimate do not require max_cost: the live balance is checked against the estimate and the authoritative usage charge applies." },
               "issues": { "type": "array", "items": { "type": "string", "enum": ["no_matching_supply"] } }
             },
-            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array; requires_max_cost indicates that Submit needs an explicit authorization cap for usage-based charging. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
+            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array; requires_max_cost is true only when Submit needs an explicit max_cost because no selectable route has an output estimate. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
           },
           "object": {
             "type": "string",
@@ -1185,7 +1185,7 @@
             "const": "USD"
           },
           "single_attempt_upper_bound": {
-            "description": "Largest verified single-attempt customer charge ceiling among the currently selectable routes. One Job freezes one amount shared by its attempts. Null when any selectable route lacks a verifiable upper bound; this advisory value is neither a price lock nor the customer's max_cost authorization. A verifiable ceiling can exist even when the exact charge is usage-dependent and primary/max prices are unavailable.",
+            "description": "Largest verified single-attempt customer charge ceiling among the currently selectable routes. Null when any selectable route lacks a verifiable upper bound; this advisory value is neither a price lock nor the customer's max_cost authorization. A verifiable ceiling can exist even when the exact charge is usage-dependent and primary/max prices are unavailable.",
             "oneOf": [
               { "$ref": "#/components/schemas/Decimal" },
               { "type": "null" }
