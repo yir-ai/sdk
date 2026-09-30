@@ -209,7 +209,7 @@ function warnParameterPolicies(operation: "generate_image" | "generate_video", r
   }
 }
 // Keep in sync with package.json "version"; tests enforce it.
-export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.5.0";
+export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.5.1";
 /** @deprecated Former fixed default. `waitForJob` now backs off with `pollDelayMs` unless `pollIntervalMs` is set. */
 export const DEFAULT_POLL_INTERVAL_MS = 2000;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
