@@ -136,12 +136,11 @@ type JobBilling struct {
 	OfficialComparison *OfficialComparison `json:"official_comparison,omitempty"`
 }
 
-// ComputeCharge is a read-only billing fact. SupplyType "byok" appears only on
-// historical bills; new Cloud jobs use managed supply.
+// ComputeCharge is a read-only billing fact for managed supply billed by Yir.
 type ComputeCharge struct {
 	SupplyType  string       `json:"supply_type"`
 	BilledBy    string       `json:"billed_by"`
-	Amount      *string      `json:"amount"`
+	Amount      string       `json:"amount"`
 	AmountBasis string       `json:"amount_basis"`
 	Status      string       `json:"status"`
 	Usage       []UsageEntry `json:"usage,omitempty"`
