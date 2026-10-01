@@ -8,6 +8,13 @@
 - SDK-PR20-03 / P3：TS 缺少 `getFileContentURL` 的 404/409/410 透传测试。已补，经 Node 传输断言 `YirAPIError` 的 status 与 code。
 - SDK-PR20-04 / P3：台账日期倒序。发布准备时已改为 2026-09-30，本次无需修改。
 - 实现方 Claude Code；基准 `e64053b`。定向验证：`go test -count=1 -run 'TestGetModel' ./` 通过；TS `pnpm run build` 与 `tests/files.test.mjs` 共 14 项通过。Go 改动只收紧响应校验，公开类型不变，可随 0.6.1 发布；TS 只改测试，不影响已发布的 npm 0.5.0 归档。
+## 2026-10-01 Go 0.7.0 与 TypeScript 0.6.0 发布
+
+- 内容：PR #32 向前兼容（目录、模型详情、报价宽松读取，已知规则照常校验；无目录时只校验协议骨架；Go 新增 `GenerationRequest.Extra`；Vercel 适配 `seed`/`fps`）、PR #30 显式 `billing_mode: "actual"` 授权、PR #28 `ComputeCharge` 只保留托管供给。含不兼容类型变更，两种语言均升次版本，迁移说明见各指南“0.7.0 / 0.6.0 变化”。
+- 审查：PR #32 经 AGY `review-muphxuni-8563448e` 独立审查，修复 5 项（`Extra` 可注入已建模字段、`Extra` 反序列化丢失、未知约束键使已知约束失效、TS/Go 新价格类型缺金额不一致、非数值参数可设数值上下限）；未改 2 项：主/最高价金额为空时跳过上限比较（改动前既有，上限为服务端事实），Go 空路由值因 `omitempty` 不发送。
+- 候选：发版 PR #33 合并为 `171a8e0`，PR CI 与 main CI success。`go/v0.7.0`、`typescript/v0.6.0` annotated tag 指向 `171a8e0` 并建 GitHub Release；proxy.golang.org 可解析 `go@v0.7.0`。
+- npm：在 `typescript/v0.6.0` 的干净 detached worktree 中 `pnpm install --frozen-lockfile`，`pnpm pack` 得到 shasum `23dd52d660a16eee369c15a1420040b69111f915`（89 个文件）。首次 `pnpm publish` 因 npm 登录过期返回 E404，未发布；维护者重新登录后发布成功，npm 回报 shasum 一致。registry 约 20 分钟后才可见、tarball 再晚数分钟可下载；匿名安装后 `DEFAULT_USER_AGENT` 为 `@yir-ai/sdk/0.6.0`，下载归档 shasum 与本地一致，`latest=0.6.0`。
+
 ## 2026-09-30 Go 0.6.1 与 TypeScript 0.5.1 发布
 
 - 内容：Go 0.6.1 包含 PR #25（`GetModel` 在渠道价格缺 `estimated`、渠道参数缺 `parameter_rules` 时返回 `model_response_invalid`）与 PR #26（内置 `minimax/minimax-h3` 描述与服务端导出同步）；TS 0.5.1 仅含 PR #26 的描述同步（PR #25 在 TS 侧只新增测试），API 无变化。两者均与上一版本兼容，按补丁版本发布。PR #26 源于服务端仓库新增的 SDK 快照漂移检查首次发现的差异。

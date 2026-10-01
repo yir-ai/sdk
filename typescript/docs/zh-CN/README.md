@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.5.1
+pnpm add @yir-ai/sdk@0.6.0
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.5.1.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.6.0.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
