@@ -95,7 +95,12 @@ Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating 
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters, accepted only where the model contract declares them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
-## Unreleased: forward compatibility
+## 0.6.0 changes
+
+0.6.0 is a minor release with incompatible changes:
+
+- Explicit `billing_mode: "actual"` is supported; see the [repository overview](https://github.com/yir-ai/sdk/blob/main/README.md) for its consent and debt terms.
+- `ComputeCharge` describes only managed supply billed by Yir: `supply_type`, `billed_by` and `amount_basis` narrow to `managed`, `yir` and `yir_price_rule`, `amount` is never `null`, and `status` no longer includes `external`.
 
 Model, parameter and pricing changes that the existing protocol can express no longer need an SDK release:
 

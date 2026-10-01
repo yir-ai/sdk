@@ -59,7 +59,7 @@ const client = createNodeYirClient();
 
 [quickstart.mjs](../../examples/quickstart.mjs) 的 `prepareImage(client, input)` 构造请求并报价。它要求供给可用、主价格为固定价格且具备可验证上限，返回包含 `max_cost` 的请求。这是示例采用的保守策略，不改变 API 支持的报价类型。
 
-当前工作版本新增显式 `billing_mode: "actual"`，要求 `routing.only` 且不能同时携带 `max_cost`。首批只支持 KIE/APIMart Kling 2.6/3.0 Motion Control 与 FAL FLUX 2 Pro 图片编辑。成功交付 winner 的权威实际费用没有保证上限；余额不足形成钱包欠款，由后续手动充值偿还，欠款未清阻止新 Job。应用须将客户授权与完整请求、幂等键一起持久化。省略模式及已有 Job 保持原计费合同。本功能要求相应 Gateway 版本，尚未进入已发布 SDK 包。
+0.6.0 新增显式 `billing_mode: "actual"`，要求 `routing.only` 且不能同时携带 `max_cost`。首批只支持 KIE/APIMart Kling 2.6/3.0 Motion Control 与 FAL FLUX 2 Pro 图片编辑。成功交付 winner 的权威实际费用没有保证上限；余额不足形成钱包欠款，由后续手动充值偿还，欠款未清阻止新 Job。应用须将客户授权与完整请求、幂等键一起持久化。省略模式及已有 Job 保持原计费合同。本功能要求 Gateway 支持实际成本计费。
 
 应用必须先审批预算并持久化 `{ request, idempotencyKey }`，再调用 `submitSavedImage(client, saved)`。保存所有字段，包括参数、引用、路由、预算及 Webhook URL。每个预期操作只生成一次键，重试时不能生成新键。辅助函数不实现数据库、客户余额检查或审批。
 
@@ -98,7 +98,12 @@ const client = createNodeYirClient();
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数，仅在模型合同声明时被接受。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
-## 未发布：向前兼容
+## 0.6.0 变化
+
+0.6.0 为 minor 版本，含不兼容变更：
+
+- 新增显式 `billing_mode: "actual"`（见上文）。
+- `ComputeCharge` 只描述由 Yir 计费的托管供给：`supply_type`、`billed_by`、`amount_basis` 收窄为 `managed`、`yir`、`yir_price_rule`，`amount` 不再为 `null`，`status` 不再含 `external`。
 
 现有协议可以表达的模型、参数和价格变化，不再需要发布 SDK：
 
