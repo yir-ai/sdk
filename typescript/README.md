@@ -93,7 +93,17 @@ Install the adapter's tested AI SDK generation in your application with `pnpm ad
 
 Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
-Image masks, pixel `size`, seed, video pixel resolution and fps are unsupported. Use Yir parameters for resolution. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters, accepted only where the model contract declares them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+
+## Unreleased: forward compatibility
+
+Model, parameter and pricing changes that the existing protocol can express no longer need an SDK release:
+
+- Catalogs and model details keep fields and enum values newer than the SDK (new controls, parameter types, operations, input modes, availability or rule behaviors). Rule keys the SDK does not understand are left to the Gateway, while known rules keep their meaning and still apply; values of a newer parameter type are not checked locally. `model_contract_semantics_unsupported` is no longer thrown.
+- Without a catalog, request validation checks only the protocol skeleton: object shapes, non-empty `model`, `input.type`, prompt and reference roles, `max_cost`, `billing_mode`, HTTPS `webhook_url` and routing value types. Prompt length, reference roles and sources, `file_id` format, routing provider codes, preferences and limits are Gateway checks. Unknown top-level, `input`, reference and `routing` fields pass through unchanged instead of failing with `unknown_field`.
+- Quotes keep strict amounts, currency and price ordering, but accept newer price `kind`s (amount is a decimal or null), supply issues, reasons and estimate scopes/usage metrics. Batch quote items accept any error code.
+- Types widen with `(string & {})` so known values keep autocompletion; `Quote.parameters` allows additional keys and `QuotePrice` adds an open variant. Exhaustive `switch` statements need a default branch.
+- The Vercel adapter maps `seed` and video `fps` to same-named Yir parameters; the model contract decides whether they are accepted.
 
 ## 0.5.0 migration
 
@@ -117,7 +127,7 @@ This working revision adds optional `parameters.web_search` and `parameters.imag
 
 This working revision introduces `getJobStatus` (`GET /v1/jobs/{id}/status`) and migrates `waitForJob` to poll lightweight `JobStatusResponse` summaries, reading the full `Job` detail only once upon reaching terminal status (`succeeded`, `failed`, or `cancelled`). Terminal status mismatches throw an error with code `job_state_inconsistent`. `WaitForJobOptions.onPoll` now receives `JobStatusResponse` instead of `Job`, and `YirTimeoutError.lastJob` has been migrated to `lastStatus`. Wait errors (including aborts, timeouts, and transport errors) do not synthesize partial jobs. Status 404 does not silently fall back to the detail endpoint. Delivered results preserve optional `result.warnings`. These incompatible polling and error return changes are included in 0.2.0; follow the migration guide when upgrading from 0.1.0.
 
-Reference validation also enforces the bundled per-role counts, required alternative roles, output-duration limits and duplicate-reference rejection. Keep complete requests unchanged between quote, saved authorization and submission.
+Reference validation also enforces the catalog's per-role counts, required alternative roles, output-duration limits and duplicate-reference rejection. Keep complete requests unchanged between quote, saved authorization and submission.
 
 ## Verify and maintain
 

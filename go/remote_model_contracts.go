@@ -55,9 +55,10 @@ func (c *Client) GetModelContract(ctx context.Context, model string) (ModelContr
 	return detail, nil
 }
 
+// decodeModelContract ignores fields newer than this SDK; the Gateway enforces
+// them, while known rules keep their meaning and are still checked locally.
 func decodeModelContract(raw []byte, target any) error {
 	decoder := json.NewDecoder(bytes.NewReader(raw))
-	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
 		return err
 	}
@@ -92,11 +93,11 @@ func validRemoteModelContracts(catalog ModelContractCatalog) bool {
 			seen[alias] = true
 		}
 		for _, operation := range model.Operations {
-			if operation.Operation != "generate_image" && operation.Operation != "generate_video" && operation.Operation != "upscale_image" || len(operation.InputModes) == 0 {
+			if operation.Operation == "" || len(operation.InputModes) == 0 {
 				return false
 			}
 			for _, mode := range operation.InputModes {
-				if mode != "text" && mode != "image" && mode != "reference" {
+				if mode == "" {
 					return false
 				}
 				if _, ok := operation.InputConstraints[mode]; !ok {
@@ -104,7 +105,7 @@ func validRemoteModelContracts(catalog ModelContractCatalog) bool {
 				}
 			}
 			for _, parameter := range operation.Parameters {
-				if parameter.Name == "" || parameter.Type != "string" && parameter.Type != "integer" && parameter.Type != "number" && parameter.Type != "boolean" {
+				if parameter.Name == "" || parameter.Type == "" {
 					return false
 				}
 			}

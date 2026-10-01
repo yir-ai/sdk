@@ -36,11 +36,26 @@ func TestQuoteOutputEstimateDoesNotRequireOrCreateBudget(t *testing.T) {
 	if err := q.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	for _, assumption := range []*QuoteEstimate{nil, {Scope: "complete", OutputTokens: 1413}, {Scope: "output_only", OutputTokens: 0}, {Scope: "output_only", OutputTokens: 1_000_001}} {
+	for _, assumption := range []*QuoteEstimate{nil, {OutputTokens: 1413}, {Scope: "output_only", OutputTokens: -1}, {Scope: "output_only", OutputTokens: 1_000_001}} {
 		q.Official.Estimate = assumption
 		if q.Validate() == nil {
 			t.Fatal("invalid estimate accepted")
 		}
+	}
+	var newer QuotePrice
+	if err := json.Unmarshal([]byte(`{"kind":"estimate","amount":"0.04","estimate":{"scope":"complete","output_seconds":8}}`), &newer); err != nil {
+		t.Fatal(err)
+	}
+	q.Official = newer
+	if err := q.Validate(); err != nil {
+		t.Fatalf("newer estimate scope rejected: %v", err)
+	}
+	if err := json.Unmarshal([]byte(`{"kind":"estimate","amount":"0.04","estimate":{"scope":"output_only","output_tokens":0}}`), &newer); err != nil {
+		t.Fatal(err)
+	}
+	q.Official = newer
+	if q.Validate() == nil {
+		t.Fatal("zero usage accepted")
 	}
 }
 
@@ -101,11 +116,24 @@ func TestQuoteSupplyConsistency(t *testing.T) {
 			q.Supply.RequiresMaxCost = true
 		}, true},
 		{"available server-authorized uncapped", func(q *Quote) { q.HasVerifiableUpperBound = false; q.SingleAttemptUpperBound = nil }, true},
-		{"available with issue", func(q *Quote) { q.Supply.Issues = []string{"no_matching_supply"} }, false},
-		{"unknown issue", func(q *Quote) { q.Supply.Issues = []string{"unknown"} }, false},
-		{"available missing primary supply", func(q *Quote) { q.Primary = noSupply }, false},
-		{"available missing max supply", func(q *Quote) { q.Max = noSupply }, false},
+		// Issue names and price kinds are server data; amounts stay strict.
+		{"available with advisory issue", func(q *Quote) { q.Supply.Issues = []string{"slow_supply"} }, true},
+		{"blank issue", func(q *Quote) { q.Supply.Issues = []string{" "} }, false},
+		{"newer price kind", func(q *Quote) { q.Official = QuotePrice{Kind: "tiered", Amount: fixedQuotePrice("0.03").Amount} }, true},
+		{"newer price kind bad amount", func(q *Quote) { q.Official = QuotePrice{Kind: "tiered", Amount: fixedQuotePrice("1e-2").Amount} }, false},
 		{"unavailable bounded", func(q *Quote) { q.Supply = QuoteSupply{Issues: []string{"no_matching_supply"}} }, false},
+		{"unavailable without issue", func(q *Quote) {
+			q.Supply = QuoteSupply{}
+			q.Primary, q.Max = noSupply, noSupply
+			q.HasVerifiableUpperBound = false
+			q.SingleAttemptUpperBound = nil
+		}, false},
+		{"unavailable newer issue", func(q *Quote) {
+			q.Supply = QuoteSupply{Issues: []string{"region_restricted"}}
+			q.Primary, q.Max = QuotePrice{Kind: "unavailable", Reason: "region_restricted"}, QuotePrice{Kind: "unavailable", Reason: "region_restricted"}
+			q.HasVerifiableUpperBound = false
+			q.SingleAttemptUpperBound = nil
+		}, true},
 		{"unavailable consistent", func(q *Quote) {
 			q.Supply = QuoteSupply{Issues: []string{"no_matching_supply"}}
 			q.Primary, q.Max = noSupply, noSupply

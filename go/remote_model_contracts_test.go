@@ -99,7 +99,7 @@ func TestClientReadsVersionedModelContractsWithoutBundledAdmission(t *testing.T)
 	}
 }
 
-func TestRemoteModelContractRejectsUnknownSemantics(t *testing.T) {
+func TestRemoteModelContractToleratesUnknownSemantics(t *testing.T) {
 	model := cloneStaticModelContract(bundledModelContractCatalog.Models[0])
 	catalog := ModelContractCatalog{
 		SchemaVersion: "v1", SchemaRef: bundledModelContractCatalog.SchemaRef,
@@ -122,8 +122,11 @@ func TestRemoteModelContractRejectsUnknownSemantics(t *testing.T) {
 	}
 	changed, _ := json.Marshal(root)
 	var result ModelContractCatalog
-	if err := decodeModelContract(changed, &result); err == nil {
-		t.Fatal("unknown necessary rule ignored")
+	if err := decodeModelContract(changed, &result); err != nil {
+		t.Fatalf("newer rule broke the catalog: %v", err)
+	}
+	if !validRemoteModelContracts(result) {
+		t.Fatal("newer rule invalidated the catalog")
 	}
 }
 

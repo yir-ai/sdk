@@ -18,9 +18,29 @@ test("Official output estimate carries assumptions without authorizing a budget"
     supply: { available: true, requires_max_cost: true, issues: [] },
     official: { kind: "estimate", amount: "0.042390", estimate: { scope: "output_only", output_tokens: 1413 } } };
   assert.deepEqual(await read(value), value);
-  for (const estimate of [null, {}, { scope: "complete", output_tokens: 1413 }, { scope: "output_only", output_tokens: 0 }, { scope: "output_only", output_tokens: 1.5 }]) {
+  for (const estimate of [null, {}, { scope: "output_only", output_tokens: 0 }, { scope: "output_only", output_tokens: 1.5 },
+    { scope: "output_only", output_tokens: 1, output_megapixels: 1 }]) {
     await assert.rejects(read({ ...value, official: { ...value.official, estimate } }), /quote_response_invalid/);
   }
+  // Newer scopes and usage metrics are data, not a reason to drop the quote.
+  const newer = { ...value, official: { ...value.official, estimate: { scope: "complete", output_seconds: 8 } } };
+  assert.deepEqual(await read(newer), newer);
+});
+
+test("Quote accepts newer price kinds and supply issues while keeping amounts strict", async () => {
+  const value = { ...quoteFixture(request), official: { kind: "tiered", amount: "0.030000", reason: "volume" } };
+  assert.deepEqual(await read(value), value);
+  await assert.rejects(read({ ...value, official: { kind: "tiered", amount: "1e-2" } }), /quote_response_invalid/);
+  await assert.rejects(read({ ...value, official: { kind: "tiered", amount: 0.03 } }), /quote_response_invalid/);
+  const omitted = { ...value, official: { kind: "tiered", reason: "volume" } };
+  assert.deepEqual(await read(omitted), omitted);
+  const unavailable = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
+    supply: { available: false, requires_max_cost: false, issues: ["region_restricted"] },
+    primary: { kind: "unavailable", amount: null, reason: "region_restricted" },
+    max: { kind: "unavailable", amount: null, reason: "region_restricted" } };
+  assert.deepEqual(await read(unavailable), unavailable);
+  await assert.rejects(read({ ...unavailable, max: { kind: "fixed", amount: "0.05" } }), /quote_response_invalid/);
+  await assert.rejects(read({ ...unavailable, supply: { ...unavailable.supply, issues: [] } }), /quote_response_invalid/);
 });
 
 test("Quote rejects malformed or mismatched responses without exposing response contents", async () => {

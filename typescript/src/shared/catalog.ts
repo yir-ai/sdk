@@ -1,4 +1,4 @@
-import type { ModelContractCatalog, ModelOperationContract, StaticModelContract } from "./model-contracts.js";
+import type { ModelContractCatalog, ModelOperationContract, ModelParameterContract, StaticModelContract } from "./model-contracts.js";
 import type { ChannelParameters } from "./parameter-rules.js";
 
 export type { ModelContractCatalog, ModelOperationContract, StaticModelContract, ModelParameterContract, ModelInputConstraint } from "./model-contracts.js";
@@ -20,17 +20,17 @@ export type ModelChannelPrice = {
   readonly provider_code: string;
   readonly provider_label: string;
   readonly amount_micros?: number;
-  readonly availability: "available" | "unavailable";
+  readonly availability: "available" | "unavailable" | (string & {});
   readonly estimated: boolean;
   readonly specification_label: string;
 };
 
 export type ModelSpecification = {
   readonly request_model_id: string;
-  readonly operation: "generate_image" | "generate_video";
-  readonly input_mode: "text" | "image" | "reference";
+  readonly operation: "generate_image" | "generate_video" | (string & {});
+  readonly input_mode: "text" | "image" | "reference" | (string & {});
   readonly specification_label: string;
-  readonly currency: "USD";
+  readonly currency: "USD" | (string & {});
   readonly channels: readonly ModelChannelPrice[];
 };
 
@@ -51,19 +51,17 @@ export function parseModelDetail(value: unknown, requestedModel: string): ModelD
   const fail = (): never => { throw new Error("model_response_invalid"); };
   const record = (item: unknown): PlainObject => item && typeof item === "object" && !Array.isArray(item) ? item as PlainObject : fail();
   const text = (item: unknown) => typeof item === "string" && item.length > 0;
-  const operation = (item: unknown) => item === "generate_image" || item === "generate_video";
-  const inputMode = (item: unknown) => item === "text" || item === "image" || item === "reference";
   const root = record(value);
   if (root.id !== requestedModel || root.object !== "model" || !Array.isArray(root.specifications) || !root.specifications.length) fail();
   for (const item of root.specifications as unknown[]) {
     const specification = record(item);
-    if (!canonicalModelID(specification.request_model_id) || !operation(specification.operation) || !inputMode(specification.input_mode) ||
-        !text(specification.specification_label) || specification.currency !== "USD" ||
+    if (!canonicalModelID(specification.request_model_id) || !text(specification.operation) || !text(specification.input_mode) ||
+        !text(specification.specification_label) || !text(specification.currency) ||
         !Array.isArray(specification.channels) || !specification.channels.length) fail();
     for (const entry of specification.channels as unknown[]) {
       const channel = record(entry);
       if (!text(channel.provider_code) || !text(channel.provider_label) || !text(channel.specification_label) ||
-          (channel.availability !== "available" && channel.availability !== "unavailable") || typeof channel.estimated !== "boolean" ||
+          !text(channel.availability) || typeof channel.estimated !== "boolean" ||
           (channel.amount_micros !== undefined && (!Number.isSafeInteger(channel.amount_micros) || (channel.amount_micros as number) < 0))) fail();
     }
   }
@@ -71,10 +69,9 @@ export function parseModelDetail(value: unknown, requestedModel: string): ModelD
     if (!Array.isArray(root.channel_parameters)) fail();
     for (const entry of root.channel_parameters as unknown[]) {
       const channel = record(entry);
-      if (!text(channel.provider) || !text(channel.channel_variant) || !operation(channel.operation) || !inputMode(channel.input_mode)) fail();
+      if (!text(channel.provider) || !text(channel.channel_variant) || !text(channel.operation) || !text(channel.input_mode)) fail();
       for (const rule of Object.values(record(channel.parameter_rules))) {
-        const behavior = record(rule).behavior;
-        if (behavior !== "supported" && behavior !== "ignored" && behavior !== "rejected") fail();
+        if (!text(record(rule).behavior)) fail();
       }
     }
   }
@@ -88,7 +85,6 @@ function canonicalModelID(model: unknown): model is string {
 
 export function parseModelContractDetail(value: unknown, requestedModel: string): ModelContractDetail {
   const root = object(value);
-  knownKeys(root, ["schema_version", "schema_ref", "version", "model"]);
   if (typeof root.version !== "string" || !/^[a-f0-9]{64}$/.test(root.version)) invalid();
   const catalog = parseModelContractCatalog({
     schema_version: root.schema_version, schema_ref: root.schema_ref,
@@ -103,12 +99,14 @@ export function parseModelContractDetail(value: unknown, requestedModel: string)
 }
 
 type PlainObject = Record<string, unknown>;
-const referenceRoles = ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"];
 
-/** Parse external API data before using it for local validation. Unknown rules fail closed. */
+/**
+ * Parse external API data before using it for local validation. Fields and enum
+ * values newer than this SDK are kept and left to the Gateway; known rules keep
+ * their meaning and are still enforced. Malformed known fields still fail.
+ */
 export function parseModelContractCatalog(value: unknown): ModelContractCatalog {
   const root = object(value);
-  knownKeys(root, ["schema_version", "schema_ref", "version", "models"]);
   if (root.schema_version !== "v1") throw new Error("model_contract_schema_unsupported");
   nonemptyString(root.schema_ref);
   if (root.version !== undefined) nonemptyString(root.version);
@@ -117,7 +115,6 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
   const identities = new Set<string>();
   for (const rawModel of models) {
     const model = object(rawModel);
-    knownKeys(model, ["id", "aliases", "locales", "operations"]);
     nonemptyString(model.id);
     localized(model.locales);
     for (const id of [model.id, ...list(model.aliases)]) {
@@ -130,22 +127,20 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
     const operationModes = new Set<string>();
     for (const rawOperation of operations) {
       const operation = object(rawOperation);
-      knownKeys(operation, ["operation", "input_modes", "input_constraints", "request_schema", "parameters"]);
-      oneOf(operation.operation, ["generate_image", "generate_video", "upscale_image"]);
+      nonemptyString(operation.operation);
       nonemptyString(operation.request_schema);
       const modes = list(operation.input_modes);
       const constraints = object(operation.input_constraints);
-      if (modes.length === 0 || Object.keys(constraints).length !== modes.length) invalid();
+      if (modes.length === 0) invalid();
       for (const mode of modes) {
-        oneOf(mode, ["text", "image", "reference"]);
+        nonemptyString(mode);
         const key = `${operation.operation}:${mode}`;
         if (operationModes.has(key)) invalid();
         operationModes.add(key);
         const constraint = object(constraints[mode as string]);
-        knownKeys(constraint, ["min_references", "max_references", "allowed_reference_roles", "required_reference_roles", "max_duration_by_reference_role", "reference_counts_by_role", "required_any_reference_roles"]);
         integerRange(constraint.min_references, constraint.max_references);
         const allowed = list(constraint.allowed_reference_roles);
-        for (const role of allowed) oneOf(role, referenceRoles);
+        for (const role of allowed) nonemptyString(role);
         for (const key of ["required_reference_roles", "required_any_reference_roles"]) {
           if (constraint[key] !== undefined) for (const role of list(constraint[key])) oneOf(role, allowed);
         }
@@ -153,7 +148,6 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
           for (const [role, rawRange] of Object.entries(object(constraint.reference_counts_by_role))) {
             oneOf(role, allowed);
             const count = object(rawRange);
-            knownKeys(count, ["minimum", "maximum"]);
             integerRange(count.minimum, count.maximum);
           }
         }
@@ -168,21 +162,22 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
       const names = new Set<string>();
       for (const rawParameter of parameters) {
         const parameter = object(rawParameter);
-        knownKeys(parameter, ["policy", "name", "type", "required", "values", "default", "minimum", "maximum", "control", "locales"]);
         nonemptyString(parameter.name);
         if (names.has(parameter.name as string)) invalid();
         names.add(parameter.name as string);
-        oneOf(parameter.type, ["string", "integer", "number", "boolean"]);
+        nonemptyString(parameter.type);
         if (typeof parameter.required !== "boolean") invalid();
-        oneOf(parameter.control, ["select", "aspect_ratio", "number", "toggle", "file", "text"]);
+        nonemptyString(parameter.control);
         localized(parameter.locales);
         for (const bound of [parameter.minimum, parameter.maximum]) {
           if (bound !== undefined && (typeof bound !== "number" || !Number.isFinite(bound) ||
-              !["integer", "number"].includes(parameter.type as string))) invalid();
+              ["string", "boolean"].includes(parameter.type as string))) invalid();
         }
         if (typeof parameter.minimum === "number" && typeof parameter.maximum === "number" && parameter.minimum > parameter.maximum) invalid();
         const values = parameter.values === undefined ? undefined : list(parameter.values);
         if (values && values.length === 0) invalid();
+        // Values of a newer parameter type are left to the Gateway.
+        if (!knownParameterTypes.includes(parameter.type as string)) continue;
         for (const item of [...(values ?? []), ...(Object.hasOwn(parameter, "default") ? [parameter.default] : [])]) {
           const valid = parameter.type === "integer" ? typeof item === "number" && Number.isSafeInteger(item)
             : parameter.type === "number" ? typeof item === "number" && Number.isFinite(item)
@@ -194,7 +189,6 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
         if (values && Object.hasOwn(parameter, "default") && !values.includes(parameter.default)) invalid();
         if (parameter.policy !== undefined) {
           const policy = object(parameter.policy);
-          knownKeys(policy, ["only_provider", "reason", "message"]);
           nonemptyString(policy.only_provider);
           nonemptyString(policy.reason);
           nonemptyString(policy.message);
@@ -219,15 +213,18 @@ function integerRange(min: unknown, max: unknown): void {
   natural(min); natural(max);
   if ((min as number) > (max as number)) invalid();
 }
-function knownKeys(value: PlainObject, names: readonly string[]): void {
-  if (Object.keys(value).some(key => !names.includes(key))) throw new Error("model_contract_semantics_unsupported");
+
+const knownParameterTypes = ["string", "integer", "number", "boolean"];
+
+/** Values of a parameter type newer than this SDK are checked by the Gateway only. */
+export function parameterTypeKnown(parameter: ModelParameterContract): boolean {
+  return knownParameterTypes.includes(parameter.type);
 }
 function localized(value: unknown): void {
   const entries = Object.entries(object(value));
   if (entries.length === 0) invalid();
   for (const [, raw] of entries) {
     const text = object(raw);
-    knownKeys(text, ["label", "description"]);
     nonemptyString(text.label);
     if (typeof text.description !== "string") invalid();
   }

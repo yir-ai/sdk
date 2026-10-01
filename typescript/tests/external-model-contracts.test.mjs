@@ -41,15 +41,35 @@ test("a model absent from the bundled SDK reaches Quote; current API data valida
   assert.equal(sent, 2);
 });
 
-test("SDK reads the expanded API catalog and rejects unknown rule semantics", async () => {
+test("SDK reads the expanded API catalog, keeps known checks and leaves newer rules to the Gateway", async () => {
   const calls = [];
   const client = createYirClient(async call => { calls.push(call); return response; });
   const catalog = await client.getModelContracts();
   assert.equal(catalog.version, response.version);
   assert.deepEqual(calls.map(call => [call.method, call.path]), [["GET", "/v1/models?include=parameters"]]);
   const changed = structuredClone(response);
+  changed.future_root = true;
   changed.models[0].operations[0].input_constraints.text.new_requirement = true;
-  assert.throws(() => parseModelContractCatalog(changed), /model_contract_semantics_unsupported/);
+  const [resolution, aspectRatio] = changed.models[0].operations[0].parameters;
+  resolution.depends_on = { quality: "high" };
+  aspectRatio.control = "color_swatch";
+  changed.models[0].operations[0].parameters.push({ name: "mask", type: "region", required: false, control: "canvas", locales: { en: { label: "Mask", description: "" } } });
+  const tolerant = parseModelContractCatalog(changed);
+  // A newer parameter type is left to the Gateway; known rules beside newer keys still apply.
+  validateModelParameters(future.id, "generate_image", "text", { mask: { x: 1 } }, tolerant);
+  for (const parameters of [{ resolution: "unknown" }, { aspect_ratio: "nope" }]) {
+    assert.throws(() => validateModelParameters(future.id, "generate_image", "text", parameters, tolerant),
+      error => error.code === "parameter_value");
+  }
+  const sent = [];
+  await createYirClient(async call => { sent.push(call.body); return quoteFixture(call.body); }, tolerant)
+    .quoteImage({ ...request, input: { type: "text", prompt: "x", references: [] } });
+  assert.equal(sent.length, 1);
+  const image = changed.models[0].operations.find(item => item.input_modes.includes("image"));
+  image.input_constraints.image.per_tier_limit = { pro: 4 };
+  const imageRequest = { ...request, input: { type: "image", prompt: "x", references: [{ role: "first_frame", file_id: "f1" }] } };
+  assert.throws(() => createYirClient(async () => ({}), parseModelContractCatalog(changed)).quoteImage(imageRequest),
+    error => error.code === "reference_role_invalid");
   assert.throws(() => parseModelContractCatalog({ ...response, schema_version: "v2" }), /model_contract_schema_unsupported/);
 });
 
@@ -139,13 +159,16 @@ test("market model detail uses the plain path and tolerates additive fields", ()
   const detail = parseModelDetail(marketDetail(), "openai/gpt-image-2");
   assert.equal(detail.specifications[0].channels[0].amount_micros, 40000);
   assert.throws(() => parseModelDetail(marketDetail(), "openai/other"), /model_response_invalid/);
+  const newer = marketDetail();
+  newer.specifications[0].operation = "upscale_image";
+  newer.specifications[0].channels[0].availability = "limited";
+  newer.channel_parameters[0].parameter_rules.quality.behavior = "mapped";
+  assert.equal(parseModelDetail(newer, "openai/gpt-image-2").specifications[0].channels[0].availability, "limited");
   for (const mutate of [
     value => { value.object = "model_contract"; },
     value => { value.specifications = []; },
-    value => { value.specifications[0].operation = "upscale_image"; },
-    value => { value.specifications[0].channels[0].availability = "maybe"; },
     value => { value.specifications[0].channels[0].amount_micros = -1; },
-    value => { value.channel_parameters[0].parameter_rules.quality.behavior = "maybe"; },
+    value => { value.specifications[0].channels[0].availability = ""; },
   ]) {
     const value = marketDetail();
     mutate(value);

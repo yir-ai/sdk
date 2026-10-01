@@ -308,3 +308,13 @@ test("AI SDK generateImage waits for a running Yir job before downloading", asyn
   assert.equal(result.images.length, 1);
   assert.equal(result.providerMetadata.yir.images[0].jobId, "43");
 });
+
+test("AI SDK seed and fps map to same-named Yir parameters for the model contract to decide", async () => {
+  const calls = [];
+  const client = createYirClient(async request => { calls.push(request); return { object: "job", id: "43", model: request.body.model, status: "queued", created_at: 1786000000, error: null }; });
+  const model = createYirAIProvider({ client }).videoModel("future/video");
+  await model.doStart({ prompt: "fixture", n: 1, seed: 7, fps: 24, providerOptions: { yir: { idempotencyKey: "seed-test" } } });
+  assert.deepEqual(calls[0].body.parameters, { n: 1, fps: 24, seed: 7 });
+  const strict = fixture().provider.imageModel("openai/gpt-image-2");
+  await assert.rejects(strict.doGenerate({ prompt: "fixture", n: 1, seed: 7, providerOptions: {} }), error => error.code === "parameter_unknown");
+});

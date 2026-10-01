@@ -23,9 +23,15 @@ test("dynamic parameters fail locally before either Quote or Submit transport", 
   }
   assert.throws(() => client.quoteImage({ ...image(), model: "future/model" }),
     error => error.code === "model_contract_unavailable");
-  assert.throws(() => client.quoteImage({ ...image(), resolution: "1K" }),
-    error => error.path === "request.resolution");
   assert.equal(calls, 0);
+});
+
+test("top-level request fields newer than the SDK pass through to the Gateway", async () => {
+  const calls = [];
+  const client = createYirClient(async call => { calls.push(call.body); return quoteFixture(call.body); });
+  const request = { ...image(), future_field: { mode: "x" }, input: { ...image().input, future_input: 1 } };
+  await client.quoteImage(request);
+  assert.deepEqual(calls, [request]);
 });
 
 test("validation preserves input order, defaults and caller values", async () => {
@@ -44,18 +50,13 @@ test("validation preserves input order, defaults and caller values", async () =>
   assert.deepEqual(calls.map(call => call.body), [snapshot, snapshot]);
 });
 
-test("references reject ambiguous sources, invalid URL and unsupported roles", () => {
-  for (const reference of [
-    { role: "reference_image", url: "https://example.com/a", file_id: "file_1" },
-    { role: "reference_image", url: "http://example.com/a" },
-    { role: "reference_image", url: "https://secret@example.com/a" },
-    { role: "reference_image", file_id: "file_1" },
-    { role: "reference_audio", file_id: "file_1" },
-  ]) {
-    assert.throws(() => validateGeneration("generate_image", {
-      ...image(), input: { type: "image", prompt: "Edit", references: [reference] },
-    }), YirSDKValidationError);
+test("references check roles against current contracts and leave source formats to the Gateway", () => {
+  const request = reference => ({ ...image(), input: { type: "image", prompt: "Edit", references: [reference] } });
+  for (const reference of [{ role: "reference_audio", file_id: "file_1" }, { role: "", file_id: "file_1" }, { file_id: "file_1" }]) {
+    assert.throws(() => validateGeneration("generate_image", request(reference)), YirSDKValidationError);
   }
+  validateGeneration("generate_image", request({ role: "reference_image", file_id: "file_1" }));
+  validateGeneration("generate_image", request({ role: "reference_image", url: "https://example.com/a" }));
 });
 
 test("video image input requires exactly one first frame and at most one last frame", () => {

@@ -35,6 +35,12 @@ type ModelInputConstraint struct {
 	RequiredAnyReferenceRoles  []string                       `json:"required_any_reference_roles,omitempty"`
 }
 
+// localTypeKnown reports whether this SDK can check values of the parameter's type;
+// newer types are left to the Gateway.
+func (p ModelParameterContract) localTypeKnown() bool {
+	return p.Type == "string" || p.Type == "integer" || p.Type == "number" || p.Type == "boolean"
+}
+
 type ReferenceCountRange struct {
 	Minimum int `json:"minimum"`
 	Maximum int `json:"maximum"`

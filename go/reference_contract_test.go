@@ -96,20 +96,3 @@ func TestH3ReferenceRoleContract(t *testing.T) {
 		}
 	}
 }
-
-func TestValidateGenerationRejectsExternalURLs(t *testing.T) {
-	r := GenerationRequest{
-		Model: "minimax/minimax-h3",
-		Input: GenerationInput{
-			Type:   "reference",
-			Prompt: "fixture",
-			References: []Reference{
-				{Role: "reference_image", URL: "https://example.com/test.png"},
-			},
-		},
-	}
-	err := ValidateGeneration("generate_video", r)
-	if err == nil || err.Error() != "input.references[0].url: external_urls_deprecated" {
-		t.Fatalf("expected external_urls_deprecated error, got: %v", err)
-	}
-}

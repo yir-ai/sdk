@@ -70,6 +70,32 @@ type SubmitRequest struct {
 	WebhookURL string  `json:"webhook_url,omitempty"`
 }
 
+// UnmarshalJSON restores the Submit fields; the promoted GenerationRequest method would drop them.
+func (r *SubmitRequest) UnmarshalJSON(data []byte) error {
+	var fields struct {
+		MaxCost    *string `json:"max_cost,omitempty"`
+		WebhookURL string  `json:"webhook_url,omitempty"`
+	}
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	if err := r.GenerationRequest.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	r.MaxCost, r.WebhookURL = fields.MaxCost, fields.WebhookURL
+	return nil
+}
+
+// MarshalJSON keeps the Submit fields; the promoted GenerationRequest method would drop them.
+func (r SubmitRequest) MarshalJSON() ([]byte, error) {
+	type plain GenerationRequest
+	return marshalWithExtra(struct {
+		plain
+		MaxCost    *string `json:"max_cost,omitempty"`
+		WebhookURL string  `json:"webhook_url,omitempty"`
+	}{plain(r.GenerationRequest), r.MaxCost, r.WebhookURL}, r.Extra)
+}
+
 // Version is the SDK release reported in the User-Agent header. Bump it with each Go tag.
 const Version = "0.6.1"
 
@@ -148,7 +174,8 @@ func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestIte
 			return QuoteBatch{}, errors.New("quote_batch_response_invalid")
 		}
 		if item.Error != nil {
-			if item.Error.Code != ErrCodeInvalidRequest || strings.TrimSpace(item.Error.Message) == "" || item.Error.Retryable || item.Error.Action != "fix_request" {
+			// Per-item error codes are server facts; newer codes still parse.
+			if strings.TrimSpace(item.Error.Code) == "" || strings.TrimSpace(item.Error.Message) == "" {
 				return QuoteBatch{}, errors.New("quote_batch_response_invalid")
 			}
 			continue

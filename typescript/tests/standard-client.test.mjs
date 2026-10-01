@@ -147,12 +147,14 @@ test("SDK follows the shared RoutingOverride v1 contract", async () => {
       testCase.name,
     );
   }
+  // The SDK checks value shapes only; field names, codes and limits are Gateway facts.
+  const shapeReasons = new Set(["invalid_json", "null_value", "duplicate_provider"]);
   for (const testCase of fixture.invalidCases) {
-    assert.throws(
-      () => normalizeRoutingOverride(testCase.input),
-      YirSDKValidationError,
-      testCase.name,
-    );
+    if (shapeReasons.has(testCase.reason)) {
+      assert.throws(() => normalizeRoutingOverride(testCase.input), YirSDKValidationError, testCase.name);
+    } else {
+      assert.doesNotThrow(() => normalizeRoutingOverride(testCase.input), testCase.name);
+    }
   }
 });
 
@@ -171,12 +173,13 @@ test("budget validation matches int64 micro-dollar boundaries before transport",
   }
 });
 
-test("routing selectors fail closed before a request reaches the transport", () => {
-  assert.throws(
-    () => normalizeRoutingOverride({ preference: "cost", order: ["kie"] }),
-    (error) => error instanceof YirSDKValidationError
-      && error.code === "routing_unknown_field",
-  );
+test("routing fields newer than the SDK reach the Gateway unchanged", async () => {
+  const calls = [];
+  const client = createYirClient(async request => { calls.push(request.body); return quoteFixture(request.body); });
+  const routing = { preference: "speed", order: ["kie"] };
+  await client.quoteImage({ model: "openai/gpt-image-2", input: { type: "text", prompt: "x" }, parameters: { resolution: "1K" }, routing });
+  assert.deepEqual(calls[0].routing, routing);
+  assert.deepEqual(normalizeRoutingOverride(routing), routing);
 });
 
 test("the client delegates auth to a transport and fixes the public paths", async () => {
@@ -516,11 +519,7 @@ test("waitForJob status 404 does not silently fallback to detail", async () => {
   assert.equal(detailCalls, 0);
 });
 
-test("image request builder counts Unicode code points at the prompt limit", () => {
-  for (const character of ["a", "😀"]) {
-    const input = { model: "openai/gpt-image-2", prompt: character.repeat(20_000), parameters: { n: 1 } };
-    assert.equal(buildImageGenerationRequest(input).input.prompt, input.prompt);
-    assert.throws(() => buildImageGenerationRequest({ ...input, prompt: input.prompt + character }),
-      (error) => error instanceof YirSDKValidationError && error.code === "prompt_too_long");
-  }
+test("image request builder leaves prompt length limits to the Gateway", () => {
+  const input = { model: "openai/gpt-image-2", prompt: "😀".repeat(20_001), parameters: { n: 1 } };
+  assert.equal(buildImageGenerationRequest(input).input.prompt, input.prompt);
 });

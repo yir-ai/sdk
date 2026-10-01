@@ -11,6 +11,8 @@ import (
 var quoteAmountPattern = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?$`)
 
 // Validate checks public price semantics without inferring a price from a hold.
+// Amounts, currency and price ordering stay strict; price kinds, supply issues,
+// reasons and usage fields newer than this SDK are accepted as data.
 func (q Quote) Validate() error {
 	invalid := errors.New("quote_response_invalid")
 	if diff := q.PriceDifferencePercent; diff != nil {
@@ -22,22 +24,17 @@ func (q Quote) Validate() error {
 	if q.Object != "quote" || q.Model == "" || q.Currency != "USD" || q.ExpiresAt <= 0 || q.Parameters == nil {
 		return invalid
 	}
-	// Supply must agree with the prices, matching the TypeScript validator.
-	if q.Supply.Available {
-		if len(q.Supply.Issues) != 0 ||
-			(q.Primary.Kind == "unavailable" && q.Primary.Reason == "no_matching_supply") ||
-			(q.Max.Kind == "unavailable" && q.Max.Reason == "no_matching_supply") {
+	for _, issue := range q.Supply.Issues {
+		if strings.TrimSpace(issue) == "" {
 			return invalid
 		}
-	} else if q.Supply.RequiresMaxCost || len(q.Supply.Issues) != 1 || q.Supply.Issues[0] != "no_matching_supply" ||
-		q.HasVerifiableUpperBound || q.Primary.Kind != "unavailable" || q.Max.Kind != "unavailable" ||
-		q.Primary.Reason != "no_matching_supply" || q.Max.Reason != "no_matching_supply" {
+	}
+	// Without supply there is nothing to authorize, so no amount may be offered.
+	if !q.Supply.Available && (q.Supply.RequiresMaxCost || len(q.Supply.Issues) == 0 ||
+		q.HasVerifiableUpperBound || q.Primary.Amount != nil || q.Max.Amount != nil) {
 		return invalid
 	}
-	if q.Operation != "generate_image" && q.Operation != "generate_video" {
-		return invalid
-	}
-	if q.InputMode != "text" && q.InputMode != "image" && q.InputMode != "reference" {
+	if q.Operation == "" || q.InputMode == "" {
 		return invalid
 	}
 	for _, price := range []QuotePrice{q.Primary, q.Max, q.Official} {
@@ -47,7 +44,7 @@ func (q Quote) Validate() error {
 				return invalid
 			}
 		case "estimate":
-			if price.Amount == nil || !quoteAmountPattern.MatchString(*price.Amount) || price.Reason != "" || price.Estimate == nil || price.Estimate.Scope != "output_only" || !price.Estimate.validUsage() {
+			if price.Amount == nil || !quoteAmountPattern.MatchString(*price.Amount) || price.Reason != "" || price.Estimate == nil || strings.TrimSpace(price.Estimate.Scope) == "" || !price.Estimate.validUsage() {
 				return invalid
 			}
 		case "unavailable":
@@ -55,7 +52,10 @@ func (q Quote) Validate() error {
 				return invalid
 			}
 		default:
-			return invalid
+			// A price kind newer than this SDK: the amount must still be a decimal or null.
+			if strings.TrimSpace(price.Kind) == "" || price.Amount != nil && !quoteAmountPattern.MatchString(*price.Amount) {
+				return invalid
+			}
 		}
 	}
 	if q.Primary.Amount != nil && q.Max.Amount != nil && quoteAmount(*q.Primary.Amount).Cmp(quoteAmount(*q.Max.Amount)) > 0 {
@@ -83,8 +83,9 @@ func (e QuoteEstimate) validUsage() bool {
 		(e.outputTokensSet && e.OutputTokens <= 0) || (e.outputMegapixelsSet && e.OutputMegapixels <= 0) {
 		return false
 	}
-	return (e.OutputTokens > 0 && e.OutputTokens <= 1_000_000 && e.OutputMegapixels == 0 && !e.outputMegapixelsSet) ||
-		(e.OutputMegapixels > 0 && e.OutputMegapixels <= 1_000_000 && e.OutputTokens == 0 && !e.outputTokensSet)
+	// Newer usage metrics may replace these; known ones must still be sane and exclusive.
+	return e.OutputTokens >= 0 && e.OutputTokens <= 1_000_000 && e.OutputMegapixels >= 0 && e.OutputMegapixels <= 1_000_000 &&
+		!(e.outputTokensSet && e.outputMegapixelsSet)
 }
 
 func quoteAmount(value string) *big.Rat {

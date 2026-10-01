@@ -25,18 +25,20 @@ func TestGenerationValidation(t *testing.T) {
 			r.Input.Type = "image"
 			r.Input.References = []Reference{{Role: "last_frame", FileID: "file_1"}}
 		}, "input.references[0].role"},
-		{"two sources", func(r *GenerationRequest) {
+		{"empty role", func(r *GenerationRequest) {
 			r.Input.Type = "image"
-			r.Input.References = []Reference{{Role: "reference_image", FileID: "file_1", URL: "https://example.com/a"}}
-		}, "input.references[0]"},
-		{"unsafe URL", func(r *GenerationRequest) {
+			r.Input.References = []Reference{{FileID: "file_1"}}
+		}, "input.references[0].role"},
+		// Source formats and routing codes are Gateway facts.
+		{"gateway-owned source format", func(r *GenerationRequest) {
 			r.Input.Type = "image"
-			r.Input.References = []Reference{{Role: "reference_image", URL: "https://user:secret@example.com/a"}}
-		}, "input.references[0].url"},
+			r.Input.References = []Reference{{Role: "reference_image", URL: "https://example.com/a"}}
+		}, ""},
 		{"dynamic unknown parameter", func(r *GenerationRequest) { r.Parameters = map[string]any{"provider_key": "secret"} }, "parameters.provider_key"},
-		{"variant outside only", func(r *GenerationRequest) {
-			r.Routing = &Routing{Only: []string{"a"}, Variants: map[string]string{"b": "standard"}}
-		}, "routing.variants"},
+		{"gateway-owned routing values", func(r *GenerationRequest) {
+			r.Routing = &Routing{Only: []string{"Future"}, Variants: map[string]string{"b": "standard"}, Preference: "speed"}
+		}, ""},
+		{"duplicate provider", func(r *GenerationRequest) { r.Routing = &Routing{Only: []string{"a", "a"}} }, "routing.only"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := base
