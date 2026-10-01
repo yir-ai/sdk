@@ -1,4 +1,4 @@
-import type { ModelContractCatalog, ModelInputConstraint, ModelOperationContract, ModelParameterContract, StaticModelContract } from "./model-contracts.js";
+import type { ModelContractCatalog, ModelOperationContract, ModelParameterContract, StaticModelContract } from "./model-contracts.js";
 import type { ChannelParameters } from "./parameter-rules.js";
 
 export type { ModelContractCatalog, ModelOperationContract, StaticModelContract, ModelParameterContract, ModelInputConstraint } from "./model-contracts.js";
@@ -102,8 +102,8 @@ type PlainObject = Record<string, unknown>;
 
 /**
  * Parse external API data before using it for local validation. Fields and enum
- * values newer than this SDK are kept; local validation skips rules it cannot
- * evaluate and leaves them to the Gateway. Malformed known fields still fail.
+ * values newer than this SDK are kept and left to the Gateway; known rules keep
+ * their meaning and are still enforced. Malformed known fields still fail.
  */
 export function parseModelContractCatalog(value: unknown): ModelContractCatalog {
   const root = object(value);
@@ -170,7 +170,8 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
         nonemptyString(parameter.control);
         localized(parameter.locales);
         for (const bound of [parameter.minimum, parameter.maximum]) {
-          if (bound !== undefined && (typeof bound !== "number" || !Number.isFinite(bound))) invalid();
+          if (bound !== undefined && (typeof bound !== "number" || !Number.isFinite(bound) ||
+              ["string", "boolean"].includes(parameter.type as string))) invalid();
         }
         if (typeof parameter.minimum === "number" && typeof parameter.maximum === "number" && parameter.minimum > parameter.maximum) invalid();
         const values = parameter.values === undefined ? undefined : list(parameter.values);
@@ -214,17 +215,10 @@ function integerRange(min: unknown, max: unknown): void {
 }
 
 const knownParameterTypes = ["string", "integer", "number", "boolean"];
-const knownParameterKeys = ["policy", "name", "type", "required", "values", "default", "minimum", "maximum", "control", "locales"];
-const knownConstraintKeys = ["min_references", "max_references", "allowed_reference_roles", "required_reference_roles", "max_duration_by_reference_role", "reference_counts_by_role", "required_any_reference_roles"];
 
-/** True when this SDK understands every rule the parameter declares, so local checks are complete. */
-export function parameterRulesKnown(parameter: ModelParameterContract): boolean {
-  return knownParameterTypes.includes(parameter.type) && Object.keys(parameter).every(key => knownParameterKeys.includes(key));
-}
-
-/** True when this SDK understands every reference rule; otherwise the Gateway alone decides. */
-export function constraintRulesKnown(constraint: ModelInputConstraint): boolean {
-  return Object.keys(constraint).every(key => knownConstraintKeys.includes(key));
+/** Values of a parameter type newer than this SDK are checked by the Gateway only. */
+export function parameterTypeKnown(parameter: ModelParameterContract): boolean {
+  return knownParameterTypes.includes(parameter.type);
 }
 function localized(value: unknown): void {
   const entries = Object.entries(object(value));

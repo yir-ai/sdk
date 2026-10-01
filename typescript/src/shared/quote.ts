@@ -63,7 +63,7 @@ export function validateQuoteResponse(
     } else if (price.kind === "unavailable") {
       if (price.amount !== null || typeof price.reason !== "string" || !price.reason.trim() || price.estimate != null) return invalid();
     } else if (typeof price.kind !== "string" || !price.kind.trim()
-      || (price.amount !== null && (typeof price.amount !== "string" || !decimal.test(price.amount)))) return invalid();
+      || (price.amount != null && (typeof price.amount !== "string" || !decimal.test(price.amount)))) return invalid();
   }
   if (value.price_difference_percent !== undefined) {
     if (!record(value.price_difference_percent)) return invalid();

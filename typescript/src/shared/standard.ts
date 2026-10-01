@@ -1,4 +1,4 @@
-import { constraintRulesKnown, findModelOperationContract, parameterRulesKnown, type ModelContractCatalog } from "./catalog.js";
+import { findModelOperationContract, parameterTypeKnown, type ModelContractCatalog } from "./catalog.js";
 import type { ModelParameterContract, ReferenceRole } from "./model-contracts.js";
 
 export type RoutingPreference = "balanced" | "cost" | (string & {});
@@ -139,8 +139,8 @@ export function validateModelParameters(
   }
   for (const rule of contract.parameters) {
     const path = `parameters.${rule.name}`;
-    // Rules newer than this SDK are evaluated by the Gateway, not guessed locally.
-    if (!parameterRulesKnown(rule)) continue;
+    // A parameter type newer than this SDK is evaluated by the Gateway, not guessed locally.
+    if (!parameterTypeKnown(rule)) continue;
     if (!Object.hasOwn(values, rule.name)) {
       if (rule.required && rule.default === undefined) {
         const expected: ParameterExpectation = {
@@ -197,9 +197,8 @@ export function validateGeneration(operation: "generate_image" | "generate_video
   requireObject(body.parameters, "parameters");
   if (catalog) validateModelParameters(body.model, operation, input.type, body.parameters, catalog);
   const contract = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
-  const declared = contract?.input_constraints[input.type];
-  if (catalog && !declared) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
-  const constraint = declared && constraintRulesKnown(declared) ? declared : undefined;
+  const constraint = contract?.input_constraints[input.type];
+  if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
   const references = input.references === undefined ? [] : input.references;
   if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||
       ((input.type === "image" || input.type === "reference") && references.length === 0) ||

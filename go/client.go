@@ -70,6 +70,22 @@ type SubmitRequest struct {
 	WebhookURL string  `json:"webhook_url,omitempty"`
 }
 
+// UnmarshalJSON restores the Submit fields; the promoted GenerationRequest method would drop them.
+func (r *SubmitRequest) UnmarshalJSON(data []byte) error {
+	var fields struct {
+		MaxCost    *string `json:"max_cost,omitempty"`
+		WebhookURL string  `json:"webhook_url,omitempty"`
+	}
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	if err := r.GenerationRequest.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	r.MaxCost, r.WebhookURL = fields.MaxCost, fields.WebhookURL
+	return nil
+}
+
 // MarshalJSON keeps the Submit fields; the promoted GenerationRequest method would drop them.
 func (r SubmitRequest) MarshalJSON() ([]byte, error) {
 	type plain GenerationRequest

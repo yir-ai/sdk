@@ -32,6 +32,8 @@ test("Quote accepts newer price kinds and supply issues while keeping amounts st
   assert.deepEqual(await read(value), value);
   await assert.rejects(read({ ...value, official: { kind: "tiered", amount: "1e-2" } }), /quote_response_invalid/);
   await assert.rejects(read({ ...value, official: { kind: "tiered", amount: 0.03 } }), /quote_response_invalid/);
+  const omitted = { ...value, official: { kind: "tiered", reason: "volume" } };
+  assert.deepEqual(await read(omitted), omitted);
   const unavailable = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
     supply: { available: false, requires_max_cost: false, issues: ["region_restricted"] },
     primary: { kind: "unavailable", amount: null, reason: "region_restricted" },

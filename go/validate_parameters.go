@@ -47,8 +47,8 @@ func validateParameters(rules []ModelParameterContract, parameters map[string]an
 		}
 	}
 	for _, rule := range rules {
-		// Rules newer than this SDK are evaluated by the Gateway, not guessed locally.
-		if !rule.localRulesKnown() {
+		// A parameter type newer than this SDK is evaluated by the Gateway, not guessed locally.
+		if !rule.localTypeKnown() {
 			continue
 		}
 		path := "parameters." + rule.Name

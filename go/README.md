@@ -36,8 +36,8 @@ Keep the key on your server. The default base URL is `https://gateway.yir.ai`; c
 
 Model, parameter and pricing changes that the existing protocol can express no longer need an SDK release:
 
-- `GetModelContracts` and `GetModelContract` ignore fields newer than the SDK and accept new operations, input modes, parameter types and controls. Rule keys the SDK does not understand are listed in `ModelParameterContract.Unrecognized` or `ModelInputConstraint.Unrecognized`; local validation skips those entries and leaves them to the Gateway. Known rules still apply.
-- `ValidateGenerationProtocol`, used when no catalog is configured, checks only the protocol skeleton. Prompt length, reference sources and `file_id` format, routing provider codes, preferences and limits are Gateway checks. `GenerationRequest.Extra` sends top-level fields newer than the SDK; fields the SDK already sends take precedence.
+- `GetModelContracts` and `GetModelContract` ignore fields newer than the SDK and accept new operations, input modes, parameter types and controls. Rule keys the SDK does not understand are left to the Gateway, while known rules keep their meaning and still apply; values of a newer parameter type are not checked locally.
+- `ValidateGenerationProtocol`, used when no catalog is configured, checks only the protocol skeleton. Prompt length, reference sources and `file_id` format, routing provider codes, preferences and limits are Gateway checks. `GenerationRequest.Extra` sends top-level fields newer than the SDK and is restored when a persisted request is unmarshaled. Fields the SDK models (`model`, `input`, `parameters`, `routing`, `billing_mode`, `max_cost`, `webhook_url`) are rejected in `Extra` with `reserved_field` and never sent from it.
 - `Quote.Validate` keeps amounts, currency and price ordering strict, but accepts newer price kinds (amount is a decimal or nil), supply issues, reasons and estimate scopes/usage metrics. `QuoteBatch` items accept any error code.
 - `ValidateGeneration` and `ValidateModelParameters` are deprecated: they use the historical bundled catalog. Use `ValidateGenerationWithCatalog` with current `GetModelContracts` data.
 

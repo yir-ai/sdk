@@ -102,7 +102,7 @@ const client = createNodeYirClient();
 
 现有协议可以表达的模型、参数和价格变化，不再需要发布 SDK：
 
-- 模型目录与模型详情保留比 SDK 更新的字段和枚举值（新控件、参数类型、操作、输入方式、可用性或规则行为）。参数或引用约束含 SDK 不认识的规则时，本地校验跳过该项交由 Gateway 判断；已知规则照常校验。不再抛出 `model_contract_semantics_unsupported`。
+- 模型目录与模型详情保留比 SDK 更新的字段和枚举值（新控件、参数类型、操作、输入方式、可用性或规则行为）。SDK 不认识的规则键交由 Gateway 判断，已知规则含义不变、照常校验；新参数类型的取值不在本地检查。不再抛出 `model_contract_semantics_unsupported`。
 - 未传入目录时，请求校验只检查协议骨架：对象结构、非空 `model`、`input.type`、提示词与引用角色、`max_cost`、`billing_mode`、HTTPS `webhook_url` 及路由取值类型。提示词长度、引用角色与来源、`file_id` 格式、路由 provider 代码、偏好与上限由 Gateway 校验。顶层、`input`、引用和 `routing` 中的未知字段原样透传，不再以 `unknown_field` 失败。
 - 报价金额、币种与价格大小关系仍严格校验，但接受新的价格 `kind`（金额须为十进制或 null）、供给问题、原因以及估算范围和用量指标。批量报价条目接受任意错误码。
 - 类型以 `(string & {})` 放宽，已知取值仍可补全；`Quote.parameters` 允许额外键，`QuotePrice` 增加开放变体。穷举 `switch` 需补默认分支。

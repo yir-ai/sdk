@@ -55,8 +55,8 @@ func (c *Client) GetModelContract(ctx context.Context, model string) (ModelContr
 	return detail, nil
 }
 
-// decodeModelContract ignores fields newer than this SDK; rule keys it cannot
-// evaluate are recorded in Unrecognized so local validation defers to the Gateway.
+// decodeModelContract ignores fields newer than this SDK; the Gateway enforces
+// them, while known rules keep their meaning and are still checked locally.
 func decodeModelContract(raw []byte, target any) error {
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	if err := decoder.Decode(target); err != nil {

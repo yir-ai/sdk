@@ -1,6 +1,7 @@
 package yir
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -15,14 +16,31 @@ type GenerationRequest struct {
 	Input       GenerationInput `json:"input"`
 	Parameters  map[string]any  `json:"parameters"`
 	Routing     *Routing        `json:"routing,omitempty"`
-	// Extra carries top-level request fields newer than this SDK. Fields this
-	// SDK already sends take precedence; the Gateway validates the rest.
+	// Extra carries top-level request fields newer than this SDK; the Gateway
+	// validates them. Fields this SDK models (see reservedRequestFields) are
+	// rejected by validation and never sent from Extra. Unmarshal restores it.
 	Extra map[string]any `json:"-"`
 }
+
+// reservedRequestFields are the top-level fields GenerationRequest and SubmitRequest model.
+var reservedRequestFields = map[string]bool{"billing_mode": true, "model": true, "input": true, "parameters": true,
+	"routing": true, "max_cost": true, "webhook_url": true}
 
 func (r GenerationRequest) MarshalJSON() ([]byte, error) {
 	type plain GenerationRequest
 	return marshalWithExtra(plain(r), r.Extra)
+}
+
+func (r *GenerationRequest) UnmarshalJSON(data []byte) error {
+	type plain GenerationRequest
+	var value plain
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	extra, err := unmarshalExtra(data)
+	*r = GenerationRequest(value)
+	r.Extra = extra
+	return err
 }
 
 func marshalWithExtra(value any, extra map[string]any) ([]byte, error) {
@@ -35,7 +53,7 @@ func marshalWithExtra(value any, extra map[string]any) ([]byte, error) {
 		return nil, err
 	}
 	for key, item := range extra {
-		if _, exists := fields[key]; exists {
+		if reservedRequestFields[key] {
 			continue
 		}
 		if fields[key], err = json.Marshal(item); err != nil {
@@ -43,6 +61,31 @@ func marshalWithExtra(value any, extra map[string]any) ([]byte, error) {
 		}
 	}
 	return json.Marshal(fields)
+}
+
+// unmarshalExtra keeps unmodeled top-level fields so a persisted request round-trips.
+func unmarshalExtra(data []byte) (map[string]any, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return nil, err
+	}
+	var extra map[string]any
+	for key, raw := range fields {
+		if reservedRequestFields[key] {
+			continue
+		}
+		decoder := json.NewDecoder(bytes.NewReader(raw))
+		decoder.UseNumber()
+		var value any
+		if err := decoder.Decode(&value); err != nil {
+			return nil, err
+		}
+		if extra == nil {
+			extra = make(map[string]any)
+		}
+		extra[key] = value
+	}
+	return extra, nil
 }
 
 type GenerationInput struct {
@@ -124,16 +167,18 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	if strings.TrimSpace(request.Input.Prompt) == "" {
 		return &ParameterError{"input.prompt", "required_parameter"}
 	}
+	for key := range request.Extra {
+		if reservedRequestFields[key] {
+			return &ParameterError{"extra." + key, "reserved_field"}
+		}
+	}
 	var constraint *ModelInputConstraint
 	if contract != nil {
 		declared, ok := contract.InputConstraints[request.Input.Type]
 		if !ok {
 			return &ParameterError{"input.type", "input_contract_unavailable"}
 		}
-		// Reference rules newer than this SDK are left to the Gateway.
-		if len(declared.Unrecognized) == 0 {
-			constraint = &declared
-		}
+		constraint = &declared
 	}
 	count := len(request.Input.References)
 	if request.Input.Type == "text" && count != 0 || (request.Input.Type == "image" || request.Input.Type == "reference") && count == 0 ||

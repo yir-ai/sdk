@@ -41,7 +41,7 @@ test("a model absent from the bundled SDK reaches Quote; current API data valida
   assert.equal(sent, 2);
 });
 
-test("SDK reads the expanded API catalog and leaves unknown rule semantics to the Gateway", async () => {
+test("SDK reads the expanded API catalog, keeps known checks and leaves newer rules to the Gateway", async () => {
   const calls = [];
   const client = createYirClient(async call => { calls.push(call); return response; });
   const catalog = await client.getModelContracts();
@@ -55,10 +55,12 @@ test("SDK reads the expanded API catalog and leaves unknown rule semantics to th
   aspectRatio.control = "color_swatch";
   changed.models[0].operations[0].parameters.push({ name: "mask", type: "region", required: false, control: "canvas", locales: { en: { label: "Mask", description: "" } } });
   const tolerant = parseModelContractCatalog(changed);
-  // A rule this SDK cannot evaluate is not guessed locally; the Gateway decides.
-  validateModelParameters(future.id, "generate_image", "text", { resolution: "unknown", mask: { x: 1 } }, tolerant);
-  assert.throws(() => validateModelParameters(future.id, "generate_image", "text", { aspect_ratio: "nope" }, tolerant),
-    error => error.code === "parameter_value");
+  // A newer parameter type is left to the Gateway; known rules beside newer keys still apply.
+  validateModelParameters(future.id, "generate_image", "text", { mask: { x: 1 } }, tolerant);
+  for (const parameters of [{ resolution: "unknown" }, { aspect_ratio: "nope" }]) {
+    assert.throws(() => validateModelParameters(future.id, "generate_image", "text", parameters, tolerant),
+      error => error.code === "parameter_value");
+  }
   const sent = [];
   await createYirClient(async call => { sent.push(call.body); return quoteFixture(call.body); }, tolerant)
     .quoteImage({ ...request, input: { type: "text", prompt: "x", references: [] } });
@@ -66,8 +68,8 @@ test("SDK reads the expanded API catalog and leaves unknown rule semantics to th
   const image = changed.models[0].operations.find(item => item.input_modes.includes("image"));
   image.input_constraints.image.per_tier_limit = { pro: 4 };
   const imageRequest = { ...request, input: { type: "image", prompt: "x", references: [{ role: "first_frame", file_id: "f1" }] } };
-  await createYirClient(async call => quoteFixture(call.body), parseModelContractCatalog(changed)).quoteImage(imageRequest);
-  assert.throws(() => createYirClient(async () => ({}), tolerant).quoteImage(imageRequest), error => error.code === "reference_role_invalid");
+  assert.throws(() => createYirClient(async () => ({}), parseModelContractCatalog(changed)).quoteImage(imageRequest),
+    error => error.code === "reference_role_invalid");
   assert.throws(() => parseModelContractCatalog({ ...response, schema_version: "v2" }), /model_contract_schema_unsupported/);
 });
 
