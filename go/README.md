@@ -32,7 +32,12 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
 
-## Unreleased: forward compatibility
+## 0.7.0 changes
+
+0.7.0 is a minor release with incompatible changes:
+
+- Explicit `BillingMode: "actual"` is supported; see the [repository overview](https://github.com/yir-ai/sdk/blob/main/README.md) for its consent and debt terms.
+- `ComputeCharge` describes only managed supply billed by Yir: `Amount` changes from `*string` to `string`, and retired BYOK values no longer appear. Code reading `Amount` must drop the dereference.
 
 Model, parameter and pricing changes that the existing protocol can express no longer need an SDK release:
 

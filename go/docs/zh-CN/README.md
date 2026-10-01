@@ -32,7 +32,12 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
 
-## 未发布：向前兼容
+## 0.7.0 变化
+
+0.7.0 为 minor 版本，含不兼容变更：
+
+- 新增显式 `BillingMode: "actual"`（见下文“报价与提交”）。
+- `ComputeCharge` 只描述由 Yir 计费的托管供给：`Amount` 由 `*string` 改为 `string`，已退役的 BYOK 取值不再出现。读取 `Amount` 的代码需去掉解引用。
 
 现有协议可以表达的模型、参数和价格变化，不再需要发布 SDK：
 
@@ -69,7 +74,7 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 
 见[编译检查示例](../../client_example_test.go)和[集成指南](examples.md)。示例将客户授权及持久化留给应用实现。
 
-当前工作版本新增显式 `BillingMode: "actual"`，要求 `Routing.Only`，不能同时提供 `MaxCost`。首批只支持 KIE/APIMart Kling 2.6/3.0 Motion Control 与 FAL FLUX 2 Pro 图片编辑。成功交付 winner 的权威实际费用没有保证上限；余额不足形成欠款，由后续手动充值抵还，欠款未清阻止新 Job。应用须保存客户授权、完整请求与幂等键，重试不得改变授权。省略模式及已有 Job 保持原合同。本功能要求相应 Gateway 版本，尚未发布到 Go SDK。
+0.7.0 新增显式 `BillingMode: "actual"`，要求 `Routing.Only`，不能同时提供 `MaxCost`。首批只支持 KIE/APIMart Kling 2.6/3.0 Motion Control 与 FAL FLUX 2 Pro 图片编辑。成功交付 winner 的权威实际费用没有保证上限；余额不足形成欠款，由后续手动充值抵还，欠款未清阻止新 Job。应用须保存客户授权、完整请求与幂等键，重试不得改变授权。省略模式及已有 Job 保持原合同。本功能要求 Gateway 支持实际成本计费。
 
 ## 任务、文件与 Webhook
 
