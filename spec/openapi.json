@@ -1391,12 +1391,12 @@
               "YIR_FILE_NOT_FOUND", "YIR_FILE_NOT_READY", "YIR_FILE_EXPIRED", "YIR_MODEL_NOT_FOUND",
               "YIR_IDEMPOTENCY_CONFLICT", "YIR_JOB_NOT_CANCELLABLE", "YIR_NO_EXECUTABLE_ROUTE",
               "YIR_RATE_LIMITED", "YIR_TEMPORARILY_UNAVAILABLE", "YIR_EXECUTION_FAILED",
-              "YIR_OUTCOME_TIMEOUT", "YIR_RESULT_DELIVERY_FAILED"
+              "YIR_CONTENT_REJECTED", "YIR_OUTCOME_TIMEOUT", "YIR_RESULT_DELIVERY_FAILED"
             ]
           },
           "message": { "type": "string", "minLength": 1 },
           "retryable": { "type": "boolean" },
-          "action": { "type": "string", "enum": ["fix_request", "add_funds", "retry_later", "contact_support"] }
+          "action": { "type": "string", "enum": ["fix_request", "modify_input", "add_funds", "retry_later", "contact_support"] }
         }
       },
       "ErrorResponse": {

@@ -247,7 +247,7 @@ export class YirAPIError extends Error {
   readonly status: number;
   readonly code: string;
   readonly retryable: boolean;
-  readonly action?: "fix_request" | "add_funds" | "retry_later" | "contact_support";
+  readonly action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
   readonly requestId?: string;
   readonly details?: unknown;
 
@@ -256,7 +256,7 @@ export class YirAPIError extends Error {
     status: number;
     code?: string;
     retryable?: boolean;
-    action?: "fix_request" | "add_funds" | "retry_later" | "contact_support";
+    action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
     requestId?: string;
     details?: unknown;
   }) {
@@ -274,7 +274,7 @@ export class YirAPIError extends Error {
 export class YirJobError extends Error {
   readonly job: Job;
   readonly code: string;
-  readonly action?: "fix_request" | "add_funds" | "retry_later" | "contact_support";
+  readonly action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
   readonly retryable: boolean;
 
   constructor(job: Job) {

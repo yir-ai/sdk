@@ -22,6 +22,7 @@ export const YIR_ERROR_CODES = Object.freeze([
   "YIR_RATE_LIMITED",
   "YIR_TEMPORARILY_UNAVAILABLE",
   "YIR_EXECUTION_FAILED",
+  "YIR_CONTENT_REJECTED",
   "YIR_OUTCOME_TIMEOUT",
   "YIR_RESULT_DELIVERY_FAILED",
 ] as const);
@@ -33,7 +34,7 @@ export type YirPublicError = {
   readonly code: string;
   readonly message: string;
   readonly retryable: boolean;
-  readonly action?: "fix_request" | "add_funds" | "retry_later" | "contact_support";
+  readonly action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
 };
 
 export type JobCancellation = {

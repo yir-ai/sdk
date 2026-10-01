@@ -120,6 +120,7 @@ const (
 	ErrCodeRateLimited               = "YIR_RATE_LIMITED"
 	ErrCodeTemporarilyUnavailable    = "YIR_TEMPORARILY_UNAVAILABLE"
 	ErrCodeExecutionFailed           = "YIR_EXECUTION_FAILED"
+	ErrCodeContentRejected           = "YIR_CONTENT_REJECTED"
 	ErrCodeOutcomeTimeout            = "YIR_OUTCOME_TIMEOUT"
 	ErrCodeResultDeliveryFailed      = "YIR_RESULT_DELIVERY_FAILED"
 )
