@@ -32,6 +32,15 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
 
+## Unreleased: forward compatibility
+
+Model, parameter and pricing changes that the existing protocol can express no longer need an SDK release:
+
+- `GetModelContracts` and `GetModelContract` ignore fields newer than the SDK and accept new operations, input modes, parameter types and controls. Rule keys the SDK does not understand are listed in `ModelParameterContract.Unrecognized` or `ModelInputConstraint.Unrecognized`; local validation skips those entries and leaves them to the Gateway. Known rules still apply.
+- `ValidateGenerationProtocol`, used when no catalog is configured, checks only the protocol skeleton. Prompt length, reference sources and `file_id` format, routing provider codes, preferences and limits are Gateway checks. `GenerationRequest.Extra` sends top-level fields newer than the SDK; fields the SDK already sends take precedence.
+- `Quote.Validate` keeps amounts, currency and price ordering strict, but accepts newer price kinds (amount is a decimal or nil), supply issues, reasons and estimate scopes/usage metrics. `QuoteBatch` items accept any error code.
+- `ValidateGeneration` and `ValidateModelParameters` are deprecated: they use the historical bundled catalog. Use `ValidateGenerationWithCatalog` with current `GetModelContracts` data.
+
 ## 0.4.0 changes
 
 `WaitJob` without `WaitOptions.PollInterval` now backs off with `PollDelay` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `PollInterval` to keep a fixed interval. `ConstructWebhookEvent` is new. No call signatures change. In 0.4.1, `ConstructWebhookEvent` also rejects Job IDs that `GetJob` would reject, and `PollDelay` documents `poll` as the zero-based index of the query that just completed. In 0.4.2, `Quote.Validate` also rejects quotes whose `supply` disagrees with their prices, matching the TypeScript validator.

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"slices"
 	"strings"
 )
 
@@ -23,6 +24,9 @@ type ModelParameterContract struct {
 	Maximum  *float64                       `json:"maximum,omitempty"`
 	Control  string                         `json:"control"`
 	Locales  map[string]ModelContractLocale `json:"locales"`
+	// Unrecognized lists rule keys newer than this SDK. Local validation skips
+	// such a parameter, like one with an unknown Type, and leaves it to the Gateway.
+	Unrecognized []string `json:"-"`
 }
 
 type ModelInputConstraint struct {
@@ -33,6 +37,56 @@ type ModelInputConstraint struct {
 	MaxDurationByReferenceRole map[string]int                 `json:"max_duration_by_reference_role,omitempty"`
 	ReferenceCountsByRole      map[string]ReferenceCountRange `json:"reference_counts_by_role,omitempty"`
 	RequiredAnyReferenceRoles  []string                       `json:"required_any_reference_roles,omitempty"`
+	// Unrecognized lists reference rules newer than this SDK. Local validation
+	// then skips the whole constraint and leaves it to the Gateway.
+	Unrecognized []string `json:"-"`
+}
+
+var knownParameterKeys = []string{"policy", "name", "type", "required", "values", "default", "minimum", "maximum", "control", "locales"}
+var knownConstraintKeys = []string{"min_references", "max_references", "allowed_reference_roles", "required_reference_roles", "max_duration_by_reference_role", "reference_counts_by_role", "required_any_reference_roles"}
+
+func (p *ModelParameterContract) UnmarshalJSON(data []byte) error {
+	type plain ModelParameterContract
+	var value plain
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	unrecognized, err := unrecognizedKeys(data, knownParameterKeys)
+	*p = ModelParameterContract(value)
+	p.Unrecognized = unrecognized
+	return err
+}
+
+func (c *ModelInputConstraint) UnmarshalJSON(data []byte) error {
+	type plain ModelInputConstraint
+	var value plain
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	unrecognized, err := unrecognizedKeys(data, knownConstraintKeys)
+	*c = ModelInputConstraint(value)
+	c.Unrecognized = unrecognized
+	return err
+}
+
+func unrecognizedKeys(data []byte, known []string) ([]string, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return nil, err
+	}
+	var result []string
+	for key := range fields {
+		if !containsString(known, key) {
+			result = append(result, key)
+		}
+	}
+	slices.Sort(result)
+	return result, nil
+}
+
+// localRulesKnown reports whether this SDK can evaluate every rule of the parameter.
+func (p ModelParameterContract) localRulesKnown() bool {
+	return len(p.Unrecognized) == 0 && (p.Type == "string" || p.Type == "integer" || p.Type == "number" || p.Type == "boolean")
 }
 
 type ReferenceCountRange struct {
@@ -180,6 +234,7 @@ func cloneModelOperationContract(source ModelOperationContract) ModelOperationCo
 		constraint.ReferenceCountsByRole = maps.Clone(constraint.ReferenceCountsByRole)
 		constraint.RequiredAnyReferenceRoles = append([]string(nil), constraint.RequiredAnyReferenceRoles...)
 		constraint.MaxDurationByReferenceRole = cloneStringIntMap(constraint.MaxDurationByReferenceRole)
+		constraint.Unrecognized = slices.Clone(constraint.Unrecognized)
 		result.InputConstraints[inputMode] = constraint
 	}
 	result.Parameters = make([]ModelParameterContract, len(source.Parameters))
@@ -192,6 +247,7 @@ func cloneModelOperationContract(source ModelOperationContract) ModelOperationCo
 		parameter.Minimum = cloneFloatPointer(parameter.Minimum)
 		parameter.Maximum = cloneFloatPointer(parameter.Maximum)
 		parameter.Locales = cloneModelContractLocales(parameter.Locales)
+		parameter.Unrecognized = slices.Clone(parameter.Unrecognized)
 		result.Parameters[index] = parameter
 	}
 	return result

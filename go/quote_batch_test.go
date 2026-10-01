@@ -49,7 +49,7 @@ func TestClientQuoteBatchRejectsInvalidEnvelope(t *testing.T) {
 	for _, body := range []string{
 		`{"object":"quote_batch","request_id":"test","data":[]}`,
 		`{"object":"quote_batch","request_id":"test","data":[{"index":1,"error":{"code":"YIR_INVALID_REQUEST","message":"bad","action":"fix_request"}}]}`,
-		`{"object":"quote_batch","request_id":"test","data":[{"index":0,"error":{"code":"YIR_TEMPORARILY_UNAVAILABLE","message":"bad","retryable":true,"action":"retry_later"}}]}`,
+		`{"object":"quote_batch","request_id":"test","data":[{"index":0,"error":{"code":"","message":"bad","retryable":true}}]}`,
 	} {
 		t.Run(body, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { io.WriteString(w, body) }))

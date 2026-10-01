@@ -42,6 +42,3 @@ test("duplicate references fail before transport", () => {
   assert.throws(() => validateGeneration("generate_video", { model: "bytedance/seedance-2", input: { type: "reference", prompt: "fixture", references: [ref("reference_image"), ref("reference_image")] }, parameters: {} }), error => error.code === "duplicate_reference");
 });
 
-test("external URLs are rejected with url_deprecated", () => {
-  assert.throws(() => validateGeneration("generate_video", { model: "bytedance/seedance-2", input: { type: "reference", prompt: "fixture", references: [{ role: "reference_image", url: "https://example.com/a.png" }] }, parameters: {} }), error => error.code === "url_deprecated");
-});

@@ -105,8 +105,10 @@ export type Job = {
 
 export type QuotePrice =
   | { readonly kind: "fixed"; readonly amount: string }
-  | { readonly kind: "estimate"; readonly amount: string; readonly estimate: { readonly scope: "output_only"; readonly quality?: string; readonly aspect_ratio?: string } & ({ readonly output_tokens: number; readonly output_megapixels?: never } | { readonly output_megapixels: number; readonly output_tokens?: never }) }
-  | { readonly kind: "unavailable"; readonly amount: null; readonly reason: string };
+  | { readonly kind: "estimate"; readonly amount: string; readonly estimate: { readonly scope: "output_only" | (string & {}); readonly quality?: string; readonly aspect_ratio?: string } & ({ readonly output_tokens: number; readonly output_megapixels?: never } | { readonly output_megapixels: number; readonly output_tokens?: never }) }
+  | { readonly kind: "unavailable"; readonly amount: null; readonly reason: string }
+  /** A price kind newer than this SDK; the amount is still a validated decimal or null. */
+  | { readonly kind: string & {}; readonly amount: string | null; readonly reason?: string };
 
 export type Quote = {
 	readonly billing_mode?: "actual";
@@ -135,6 +137,8 @@ export type Quote = {
     readonly return_last_frame?: boolean;
     readonly web_search?: boolean;
     readonly image_search?: boolean;
+    /** Normalized parameters of newer models are echoed as returned. */
+    readonly [name: string]: unknown;
   };
   readonly currency: "USD";
   readonly single_attempt_upper_bound: string | null;

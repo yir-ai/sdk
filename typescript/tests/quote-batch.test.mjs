@@ -34,11 +34,15 @@ test("batch quote rejects mismatched or malformed result positions", async () =>
     { ...valid, data: [valid.data[0]] },
     { ...valid, data: [{ index: 0, quote: { ...valid.data[0].quote, model: video.model } }, valid.data[1]] },
     { ...valid, data: [{ index: 0, error: { code: "YIR_INVALID_REQUEST", message: "bad", retryable: false, action: "fix_request" }, quote: valid.data[0].quote }, valid.data[1]] },
-    { ...valid, data: [valid.data[0], { index: 1, error: { code: "YIR_TEMPORARILY_UNAVAILABLE", message: "bad", retryable: true, action: "retry_later" } }] },
+    { ...valid, data: [valid.data[0], { index: 1, error: { code: "", message: "bad", retryable: true } }] },
+    { ...valid, data: [valid.data[0], { index: 1, error: { code: "YIR_X", message: "bad", retryable: "yes" } }] },
   ]) {
     const client = createYirClient(async () => bad);
     await assert.rejects(client.quoteBatch(requests), { message: "quote_batch_response_invalid" });
   }
+  // Per-item error codes are server facts; newer codes still parse.
+  const retryable = { ...valid, data: [valid.data[0], { index: 1, error: { code: "YIR_TEMPORARILY_UNAVAILABLE", message: "busy", retryable: true, action: "retry_later" } }] };
+  assert.equal((await createYirClient(async () => retryable).quoteBatch(requests)).data[1].error.code, "YIR_TEMPORARILY_UNAVAILABLE");
 });
 
 test("batch quote rejects unbounded request counts before transport", () => {

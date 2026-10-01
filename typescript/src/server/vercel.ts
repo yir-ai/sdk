@@ -31,12 +31,13 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           call.abortSignal?.throwIfAborted();
           if (call.mask !== undefined) unsupported("image mask");
           if (call.size !== undefined) unsupported("pixel size; use Yir parameters");
-          if (call.seed !== undefined) unsupported("seed");
           rejectHeaders(call.headers);
           const extension = readOptions(call.providerOptions);
           const parameters = { ...extension.parameters };
           assign(parameters, "n", call.n);
           assign(parameters, "aspect_ratio", call.aspectRatio);
+          // Standard settings map to same-named Yir parameters; the model contract decides support.
+          assign(parameters, "seed", call.seed);
           const references = call.files?.map((file, index) => reference(file, "reference_image", index));
           let request: StandardImageGenerationRequest = {
             model: modelId,
@@ -71,8 +72,6 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
         async doStart(call) {
           call.abortSignal?.throwIfAborted();
           if (call.resolution !== undefined) unsupported("pixel resolution; use Yir parameters.resolution");
-          if (call.fps !== undefined) unsupported("fps");
-          if (call.seed !== undefined) unsupported("seed");
           // AI SDK adds its own transient key. Yir uses the explicitly persisted
           // providerOptions key so process restarts preserve Submit identity.
           rejectHeaders(call.headers, true);
@@ -82,6 +81,8 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "aspect_ratio", call.aspectRatio);
           assign(parameters, "duration", call.duration);
           assign(parameters, "generate_audio", call.generateAudio);
+          assign(parameters, "fps", call.fps);
+          assign(parameters, "seed", call.seed);
           const inputKinds = [call.image, call.frameImages?.length, call.inputReferences?.length].filter(Boolean).length;
           if (inputKinds > 1) throw new YirSDKValidationError("input_sources_ambiguous", "input");
           const references = call.image ? [reference(call.image, "first_frame", 0)]

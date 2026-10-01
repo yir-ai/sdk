@@ -18,7 +18,11 @@ function compare(a: string, b: string): number {
   return x === y ? 0 : x < y ? -1 : 1;
 }
 
-/** Validate the response before exposing prices as authorization inputs. */
+/**
+ * Validate the response before exposing prices as authorization inputs.
+ * Amounts, currency and price ordering stay strict; price kinds, supply issues,
+ * reasons and usage fields newer than this SDK are accepted as data.
+ */
 export function validateQuoteResponse(
   value: unknown,
   request: { readonly model: string; readonly input: { readonly type: string } },
@@ -37,7 +41,7 @@ export function validateQuoteResponse(
     || (value.expires_at as number) <= 0 || typeof value.has_verifiable_upper_bound !== "boolean") return invalid();
   if (!record(value.supply) || typeof value.supply.available !== "boolean"
     || typeof value.supply.requires_max_cost !== "boolean" || !Array.isArray(value.supply.issues)
-    || !value.supply.issues.every((issue) => issue === "no_matching_supply")) return invalid();
+    || !value.supply.issues.every((issue) => typeof issue === "string" && issue.trim())) return invalid();
   const prices = [value.primary, value.max, value.official];
   for (const price of prices) {
     if (!record(price)) return invalid();
@@ -47,17 +51,19 @@ export function validateQuoteResponse(
     } else if (price.kind === "estimate") {
       if (typeof price.amount !== "string" || !decimal.test(price.amount)
         || (price.reason !== undefined && price.reason !== "") || !record(price.estimate)
-        || price.estimate.scope !== "output_only") return invalid();
+        || typeof price.estimate.scope !== "string" || !price.estimate.scope.trim()) return invalid();
+      // Newer usage metrics may replace these; known ones must still be sane.
       const tokens = price.estimate.output_tokens, megapixels = price.estimate.output_megapixels;
-      const validQuantity = (v: unknown) => Number.isSafeInteger(v) && (v as number) > 0 && (v as number) <= 1_000_000;
-      if (!((validQuantity(tokens) && megapixels === undefined) || (validQuantity(megapixels) && tokens === undefined))) return invalid();
+      const validQuantity = (v: unknown) => v === undefined || Number.isSafeInteger(v) && (v as number) > 0 && (v as number) <= 1_000_000;
+      if (!validQuantity(tokens) || !validQuantity(megapixels) || (tokens !== undefined && megapixels !== undefined)) return invalid();
       for (const field of ["quality", "aspect_ratio"]) {
         const condition = price.estimate[field];
         if (condition !== undefined && (typeof condition !== "string" || !condition.trim())) return invalid();
       }
     } else if (price.kind === "unavailable") {
       if (price.amount !== null || typeof price.reason !== "string" || !price.reason.trim() || price.estimate != null) return invalid();
-    } else return invalid();
+    } else if (typeof price.kind !== "string" || !price.kind.trim()
+      || (price.amount !== null && (typeof price.amount !== "string" || !decimal.test(price.amount)))) return invalid();
   }
   if (value.price_difference_percent !== undefined) {
     if (!record(value.price_difference_percent)) return invalid();
@@ -77,14 +83,9 @@ export function validateQuoteResponse(
       if (price.amount !== null && compare(price.amount, quote.single_attempt_upper_bound) > 0) return invalid();
     }
   } else if (quote.single_attempt_upper_bound !== null) return invalid();
-  if (quote.supply.available) {
-    if (quote.supply.issues.length !== 0
-      || (quote.primary.kind === "unavailable" && quote.primary.reason === "no_matching_supply")
-      || (quote.max.kind === "unavailable" && quote.max.reason === "no_matching_supply")) return invalid();
-  } else if (quote.supply.requires_max_cost || quote.supply.issues.length !== 1
-    || quote.supply.issues[0] !== "no_matching_supply" || quote.has_verifiable_upper_bound
-    || quote.primary.kind !== "unavailable" || quote.max.kind !== "unavailable"
-    || quote.primary.reason !== "no_matching_supply" || quote.max.reason !== "no_matching_supply") return invalid();
+  // Without supply there is nothing to authorize, so no amount may be offered.
+  if (!quote.supply.available && (quote.supply.requires_max_cost || quote.supply.issues.length === 0
+    || quote.has_verifiable_upper_bound || quote.primary.amount !== null || quote.max.amount !== null)) return invalid();
   return quote;
 }
 
@@ -109,8 +110,9 @@ export function validateQuoteBatchResponse(
       continue;
     }
     const error = item.error;
-    if (!record(error) || error.code !== "YIR_INVALID_REQUEST" || typeof error.message !== "string"
-      || !error.message.trim() || error.retryable !== false || error.action !== "fix_request") return invalid();
+    if (!record(error) || typeof error.code !== "string" || !error.code.trim() || typeof error.message !== "string"
+      || !error.message.trim() || typeof error.retryable !== "boolean"
+      || (error.action !== undefined && typeof error.action !== "string")) return invalid();
   }
   return value as QuoteBatch;
 }

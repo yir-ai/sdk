@@ -1,6 +1,7 @@
-import { findModelOperationContract, type ModelContractCatalog } from "./catalog.js";
+import { constraintRulesKnown, findModelOperationContract, parameterRulesKnown, type ModelContractCatalog } from "./catalog.js";
+import type { ModelParameterContract, ReferenceRole } from "./model-contracts.js";
 
-export type RoutingPreference = "balanced" | "cost";
+export type RoutingPreference = "balanced" | "cost" | (string & {});
 
 /**
  * Request-scoped routing intent.
@@ -28,7 +29,7 @@ export type StandardImageInput = {
 };
 
 export type StandardReference = {
-  readonly role: "reference_image" | "first_frame" | "last_frame" | "reference_video" | "reference_audio";
+  readonly role: ReferenceRole;
 } & StandardMediaSource;
 
 export type StandardImageGenerationRequest = {
@@ -91,7 +92,7 @@ export type BuildImageQuoteRequest = Omit<
 >;
 
 export type ParameterExpectation = {
-  readonly type?: "string" | "integer" | "number" | "boolean";
+  readonly type?: ModelParameterContract["type"];
   readonly values?: readonly (string | number | boolean)[];
   readonly minimum?: number;
   readonly maximum?: number;
@@ -119,7 +120,7 @@ export class YirSDKValidationError extends Error {
 export function validateModelParameters(
   model: string,
   operation: "generate_image" | "generate_video",
-  inputMode: "text" | "image" | "reference",
+  inputMode: string,
   parameters: unknown,
   catalog: ModelContractCatalog,
 ): void {
@@ -138,6 +139,8 @@ export function validateModelParameters(
   }
   for (const rule of contract.parameters) {
     const path = `parameters.${rule.name}`;
+    // Rules newer than this SDK are evaluated by the Gateway, not guessed locally.
+    if (!parameterRulesKnown(rule)) continue;
     if (!Object.hasOwn(values, rule.name)) {
       if (rule.required && rule.default === undefined) {
         const expected: ParameterExpectation = {
@@ -174,10 +177,13 @@ export function validateModelParameters(
   }
 }
 
-/** Shared Quote/Submit preflight; availability and pricing remain server facts. */
+/**
+ * Shared Quote/Submit preflight. Without a catalog it checks only the protocol
+ * skeleton; model limits, roles, lengths and routing codes are Gateway facts.
+ * Fields newer than this SDK are passed through unchanged.
+ */
 export function validateGeneration(operation: "generate_image" | "generate_video", request: unknown, catalog?: ModelContractCatalog): void {
   const body = requireObject(request, "request");
-  rejectUnknown(body, ["model", "input", "parameters", "routing", "billing_mode", "max_cost", "webhook_url"], "request");
   if (Object.hasOwn(body, "billing_mode")) {
     if (body.billing_mode !== "actual") throw new YirSDKValidationError("billing_mode_invalid", "billing_mode");
     if (Object.hasOwn(body, "max_cost")) throw new YirSDKValidationError("billing_mode_conflict", "max_cost");
@@ -186,23 +192,17 @@ export function validateGeneration(operation: "generate_image" | "generate_video
   }
   if (typeof body.model !== "string" || !body.model.trim()) throw new YirSDKValidationError("model_required", "model");
   const input = requireObject(body.input, "input");
-  rejectUnknown(input, ["type", "prompt", "references"], "input");
-  if (input.type !== "text" && input.type !== "image" && input.type !== "reference") {
-    throw new YirSDKValidationError("input_mode_invalid", "input.type");
-  }
+  if (typeof input.type !== "string" || !input.type) throw new YirSDKValidationError("input_mode_invalid", "input.type");
   if (typeof input.prompt !== "string" || !input.prompt.trim()) throw new YirSDKValidationError("prompt_required", "input.prompt");
-  if ([...input.prompt].length > 20000) throw new YirSDKValidationError("prompt_too_long", "input.prompt");
   requireObject(body.parameters, "parameters");
-  if (operation === "generate_image" && input.type === "reference") {
-    throw new YirSDKValidationError("input_mode_invalid", "input.type");
-  }
   if (catalog) validateModelParameters(body.model, operation, input.type, body.parameters, catalog);
   const contract = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
-  const constraint = contract?.input_constraints[input.type];
-  if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
+  const declared = contract?.input_constraints[input.type];
+  if (catalog && !declared) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
+  const constraint = declared && constraintRulesKnown(declared) ? declared : undefined;
   const references = input.references === undefined ? [] : input.references;
   if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||
-      (input.type !== "text" && references.length === 0) ||
+      ((input.type === "image" || input.type === "reference") && references.length === 0) ||
       (constraint && (references.length < constraint.min_references || references.length > constraint.max_references))) {
     throw new YirSDKValidationError("reference_count", "input.references");
   }
@@ -211,24 +211,14 @@ export function validateGeneration(operation: "generate_image" | "generate_video
   for (const [index, value] of references.entries()) {
     const path = `input.references.${index}`;
     const reference = requireObject(value, path);
-    rejectUnknown(reference, ["role", "url", "file_id"], path);
-    const allowedRoles = constraint?.allowed_reference_roles ?? (operation === "generate_image"
-      ? ["reference_image"] : ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"]);
-    if (typeof reference.role !== "string" || !allowedRoles.some(role => role === reference.role)) {
+    if (typeof reference.role !== "string" || !reference.role ||
+        (constraint && !constraint.allowed_reference_roles.includes(reference.role))) {
       throw new YirSDKValidationError("reference_role_invalid", `${path}.role`);
     }
     roles.set(reference.role, (roles.get(reference.role) ?? 0) + 1);
     const identity = JSON.stringify([reference.role, reference.url ?? null, reference.file_id ?? null]);
     if (seenReferences.has(identity)) throw new YirSDKValidationError("duplicate_reference", "input.references");
     seenReferences.add(identity);
-    if (Object.hasOwn(reference, "url") === Object.hasOwn(reference, "file_id")) {
-      throw new YirSDKValidationError("reference_source_invalid", path);
-    }
-    if (Object.hasOwn(reference, "url")) {
-      throw new YirSDKValidationError("url_deprecated", `${path}.url`);
-    } else if (typeof reference.file_id !== "string" || !/^file_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(reference.file_id)) {
-      throw new YirSDKValidationError("file_id_invalid", `${path}.file_id`);
-    }
   }
   for (const role of constraint?.required_reference_roles ?? []) {
     if (!roles.has(role)) throw new YirSDKValidationError("reference_role_required", "input.references");
@@ -248,10 +238,6 @@ export function validateGeneration(operation: "generate_image" | "generate_video
     if (roles.has(role) && typeof duration === "number" && duration > maximum) {
       throw new YirSDKValidationError("reference_duration_limit", "parameters.duration");
     }
-  }
-  if (operation === "generate_video" && input.type === "image" &&
-      (roles.get("first_frame") !== 1 || (roles.get("last_frame") ?? 0) > 1)) {
-    throw new YirSDKValidationError("frame_roles_invalid", "input.references");
   }
   normalizeRoutingOverride(body.routing as RoutingOverride | undefined);
   if (Object.hasOwn(body, "max_cost")) {
@@ -276,12 +262,6 @@ function requireObject(value: unknown, path: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function rejectUnknown(value: Record<string, unknown>, allowed: readonly string[], path: string): void {
-  for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) throw new YirSDKValidationError("unknown_field", `${path}.${key}`);
-  }
-}
-
 function validateHTTPSURL(value: unknown, path: string): void {
   try {
     if (typeof value !== "string") throw new Error();
@@ -294,8 +274,8 @@ function validateHTTPSURL(value: unknown, path: string): void {
 
 /**
  * Normalize the caller-owned routing override without introducing route facts.
- * Provider availability, credentials, ordering and
- * pricing remain Gateway responsibilities.
+ * Provider codes, preferences, limits and fields newer than this SDK are
+ * validated by the Gateway; only the value shapes are checked here.
  */
 export function normalizeRoutingOverride(
   routing?: RoutingOverride,
@@ -304,40 +284,29 @@ export function normalizeRoutingOverride(
   if (routing === null || typeof routing !== "object" || Array.isArray(routing)) {
     throw new YirSDKValidationError("routing_invalid", "routing");
   }
-  const unknownField = Object.keys(routing).find(
-    (field) => !ROUTING_OVERRIDE_FIELDS.has(field),
-  );
-  if (unknownField) {
-    throw new YirSDKValidationError("routing_unknown_field", `routing.${unknownField}`);
-  }
-
-  const preference = routing.preference;
-  if (preference !== undefined && preference !== "balanced" && preference !== "cost") {
+  const { variants: rawVariants, preference, only: rawOnly, fallback, ...newer } = routing;
+  if (preference !== undefined && (typeof preference !== "string" || !preference)) {
     throw new YirSDKValidationError("routing_preference_invalid", "routing.preference");
   }
-  const only = normalizeProviders(routing.only, 16, true, "routing.only");
+  const only = normalizeProviders(rawOnly, "routing.only");
   let variants: Record<string, string> | undefined;
-  if (routing.variants !== undefined) {
-    if (!routing.variants || typeof routing.variants !== "object" || Array.isArray(routing.variants) || Object.keys(routing.variants).length === 0 || Object.keys(routing.variants).length > 16) {
+  if (rawVariants !== undefined) {
+    if (!rawVariants || typeof rawVariants !== "object" || Array.isArray(rawVariants) || Object.keys(rawVariants).length === 0 ||
+        Object.values(rawVariants).some(variant => typeof variant !== "string" || !variant)) {
       throw new YirSDKValidationError("routing_invalid", "routing.variants");
     }
-    for (const [provider, variant] of Object.entries(routing.variants)) {
-      const allowedByOnly = !only || only.includes(provider) || provider === "official" || only.includes("official");
-      if (provider.length > 50 || !ROUTING_PROVIDER_CODE_PATTERN.test(provider) || typeof variant !== "string" || variant.length > 50 || !ROUTING_PROVIDER_CODE_PATTERN.test(variant) || !allowedByOnly) {
-        throw new YirSDKValidationError("routing_invalid", "routing.variants");
-      }
-    }
-    variants = Object.fromEntries(Object.entries(routing.variants).sort(([a], [b]) => a.localeCompare(b)));
+    variants = Object.fromEntries(Object.entries(rawVariants).sort(([a], [b]) => a.localeCompare(b)));
   }
-  if (routing.fallback !== undefined && typeof routing.fallback !== "boolean") {
+  if (fallback !== undefined && typeof fallback !== "boolean") {
     throw new YirSDKValidationError("routing_fallback_invalid", "routing.fallback");
   }
 
   const normalized: RoutingOverride = {
+    ...newer,
     ...(variants ? { variants } : {}),
     ...(preference ? { preference } : {}),
     ...(only ? { only } : {}),
-    ...(routing.fallback === undefined ? {} : { fallback: routing.fallback }),
+    ...(fallback === undefined ? {} : { fallback }),
   };
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
@@ -351,8 +320,6 @@ export function buildImageGenerationRequest(
   if (!model) throw new YirSDKValidationError("model_required", "model");
   const prompt = input.prompt.trim();
   if (!prompt) throw new YirSDKValidationError("prompt_required", "input.prompt");
-  // Count Unicode code points, matching the server and line 188, not UTF-16 units.
-  if ([...prompt].length > 20_000) throw new YirSDKValidationError("prompt_too_long", "input.prompt");
   const parameters = input.parameters;
   if (!parameters || typeof parameters !== "object" || Array.isArray(parameters)) {
     throw new YirSDKValidationError("parameters_required", "parameters");
@@ -396,37 +363,19 @@ export function buildImageQuoteRequest(
   return request;
 }
 
-function normalizeProviders(
-  providers: readonly string[] | undefined,
-  maximum: number,
-  sort: boolean,
-  path: string,
-): readonly string[] | undefined {
+function normalizeProviders(providers: readonly string[] | undefined, path: string): readonly string[] | undefined {
   if (providers === undefined) return undefined;
-  if (!Array.isArray(providers) || providers.length === 0 || providers.length > maximum) {
+  if (!Array.isArray(providers) || providers.length === 0) {
     throw new YirSDKValidationError("routing_provider_count", path);
   }
-  const normalized: string[] = [];
   const seen = new Set<string>();
   for (const provider of providers) {
-    if (
-      typeof provider !== "string" ||
-      provider.length > 50 ||
-      !ROUTING_PROVIDER_CODE_PATTERN.test(provider)
-    ) {
-      throw new YirSDKValidationError("routing_provider_code_invalid", path);
-    }
-    if (seen.has(provider)) {
-      throw new YirSDKValidationError("routing_provider_duplicate", path);
-    }
+    if (typeof provider !== "string" || !provider) throw new YirSDKValidationError("routing_provider_code_invalid", path);
+    if (seen.has(provider)) throw new YirSDKValidationError("routing_provider_duplicate", path);
     seen.add(provider);
-    normalized.push(provider);
   }
-  return sort ? normalized.sort() : normalized;
+  return [...providers].sort();
 }
-
-const ROUTING_PROVIDER_CODE_PATTERN = /^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/;
-const ROUTING_OVERRIDE_FIELDS = new Set(["preference", "only", "fallback", "variants"]);
 
 function normalizeWebhookURL(value?: string): string | undefined {
   if (value === undefined) return undefined;

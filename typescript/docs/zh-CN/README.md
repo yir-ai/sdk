@@ -96,7 +96,17 @@ const client = createNodeYirClient();
 
 从 0.2.1 起，`providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
-不支持图像 mask、像素 `size`、seed、视频像素 resolution 和 fps；分辨率使用 Yir parameters。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数，仅在模型合同声明时被接受。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+
+## 未发布：向前兼容
+
+现有协议可以表达的模型、参数和价格变化，不再需要发布 SDK：
+
+- 模型目录与模型详情保留比 SDK 更新的字段和枚举值（新控件、参数类型、操作、输入方式、可用性或规则行为）。参数或引用约束含 SDK 不认识的规则时，本地校验跳过该项交由 Gateway 判断；已知规则照常校验。不再抛出 `model_contract_semantics_unsupported`。
+- 未传入目录时，请求校验只检查协议骨架：对象结构、非空 `model`、`input.type`、提示词与引用角色、`max_cost`、`billing_mode`、HTTPS `webhook_url` 及路由取值类型。提示词长度、引用角色与来源、`file_id` 格式、路由 provider 代码、偏好与上限由 Gateway 校验。顶层、`input`、引用和 `routing` 中的未知字段原样透传，不再以 `unknown_field` 失败。
+- 报价金额、币种与价格大小关系仍严格校验，但接受新的价格 `kind`（金额须为十进制或 null）、供给问题、原因以及估算范围和用量指标。批量报价条目接受任意错误码。
+- 类型以 `(string & {})` 放宽，已知取值仍可补全；`Quote.parameters` 允许额外键，`QuotePrice` 增加开放变体。穷举 `switch` 需补默认分支。
+- Vercel 适配器把 `seed` 与视频 `fps` 映射为同名 Yir 参数，是否接受由模型合同决定。
 
 ## 0.5.0 迁移
 

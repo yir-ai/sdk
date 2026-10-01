@@ -32,6 +32,15 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
 
+## 未发布：向前兼容
+
+现有协议可以表达的模型、参数和价格变化，不再需要发布 SDK：
+
+- `GetModelContracts` 与 `GetModelContract` 忽略比 SDK 更新的字段，接受新的操作、输入方式、参数类型与控件。SDK 不认识的规则键列在 `ModelParameterContract.Unrecognized` 或 `ModelInputConstraint.Unrecognized` 中，本地校验跳过这些条目交由 Gateway 判断；已知规则照常校验。
+- 未配置目录时使用的 `ValidateGenerationProtocol` 只检查协议骨架。提示词长度、引用来源与 `file_id` 格式、路由 provider 代码、偏好与上限由 Gateway 校验。`GenerationRequest.Extra` 用于发送比 SDK 更新的顶层字段，SDK 已发送的字段优先。
+- `Quote.Validate` 对金额、币种与价格大小关系仍严格校验，但接受新的价格类型（金额须为十进制或 nil）、供给问题、原因以及估算范围和用量指标。`QuoteBatch` 条目接受任意错误码。
+- `ValidateGeneration` 与 `ValidateModelParameters` 已弃用：它们使用随包的历史目录。请改用 `ValidateGenerationWithCatalog` 并传入当前 `GetModelContracts` 数据。
+
 ## 0.4.0 变化
 
 未设置 `WaitOptions.PollInterval` 时，`WaitJob` 改为按 `PollDelay` 退避（5 秒、10 秒、20 秒），不再每 2 秒轮询；需要固定间隔时设置 `PollInterval`。新增 `ConstructWebhookEvent`。调用签名不变。0.4.1 起 `ConstructWebhookEvent` 同样拒绝 `GetJob` 不接受的 Job ID，并明确 `PollDelay` 的 `poll` 为刚完成查询的 0 基序号。0.4.2 起 `Quote.Validate` 同样拒绝 `supply` 与价格矛盾的报价，与 TypeScript 校验一致。
