@@ -97,6 +97,20 @@ Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating 
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters, accepted only where the model contract declares them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
+## 0.7.0 changes
+
+0.7.0 is a minor release with incompatible changes:
+
+- `JobStatus` and `InputFile.status` widen with `(string & {})`. Only `succeeded`, `failed` and `cancelled` end a Job, and only `ready`, `failed` and `expired` settle a file; any other non-empty status is in progress. `getJob`, `getJobStatus`, `cancelJob` and file reads accept newer statuses, `waitForJob` and `uploadFile` keep waiting through them, and the Vercel adapter reports them as `pending`. Exhaustive `switch` statements need a default branch.
+- Error bodies without a code use `http_error` instead of `HTTP_<status>`, as in the Go SDK; the status stays in `YirAPIError.status`. The `YirAPIError` constructor uses the same default.
+- The Node transport limits each Gateway request to 30 seconds by default (`DEFAULT_REQUEST_TIMEOUT_MS`) and rejects with a `TimeoutError`. Set `timeoutMs` for slower calls, or `0` to disable it. Recover a timed-out submit with the same request and idempotency key.
+- `submitImage` and `submitVideo` reject a response that is not a Job with a valid ID and status with `response_invalid`.
+- `constructWebhookEvent` reports an authentic JSON object that is not a terminal Job, such as an event type newer than the SDK, with `reason` `unsupported_event` and the delivery `id` and `timestamp`, instead of `invalid_payload`. Acknowledge it with a 2xx response and log it. `invalid_payload` now means the body is not a JSON object.
+- A client created with a catalog, and the Vercel adapter, apply the catalog only to the models, operations and input modes it describes and leave others to the Gateway, instead of failing with `model_contract_unavailable`. `validateGeneration(operation, request, catalog)` and the request builders stay strict.
+- A quote in a currency other than USD rejects with `quote_currency_unsupported` instead of `quote_response_invalid`, also from `quoteBatch`. Such quotes are still rejected.
+
+Compatible additions: `YirErrorAction` is an open union for `action`, and `YirAPIError.requestId` is also kept for error bodies without a standard error object.
+
 ## 0.6.0 changes
 
 0.6.0 is a minor release with incompatible changes:
@@ -108,7 +122,7 @@ Model, parameter and pricing changes that the existing protocol can express no l
 
 - Catalogs and model details keep fields and enum values newer than the SDK (new controls, parameter types, operations, input modes, availability or rule behaviors). Rule keys the SDK does not understand are left to the Gateway, while known rules keep their meaning and still apply; values of a newer parameter type are not checked locally. `model_contract_semantics_unsupported` is no longer thrown.
 - Without a catalog, request validation checks only the protocol skeleton: object shapes, non-empty `model`, `input.type`, prompt and reference roles, `max_cost`, `billing_mode`, HTTPS `webhook_url` and routing value types. Prompt length, reference roles and sources, `file_id` format, routing provider codes, preferences and limits are Gateway checks. Unknown top-level, `input`, reference and `routing` fields pass through unchanged instead of failing with `unknown_field`.
-- Quotes keep strict amounts, currency and price ordering, but accept newer price `kind`s (amount is a decimal or null), supply issues, reasons and estimate scopes/usage metrics. Batch quote items accept any error code. A quote in a currency other than USD rejects with `quote_currency_unsupported` (also from `quoteBatch`) instead of `quote_response_invalid`; do not compare its amounts with USD budgets.
+- Quotes keep strict amounts, currency and price ordering, but accept newer price `kind`s (amount is a decimal or null), supply issues, reasons and estimate scopes/usage metrics. Batch quote items accept any error code.
 - Types widen with `(string & {})` so known values keep autocompletion; `Quote.parameters` allows additional keys and `QuotePrice` adds an open variant. Exhaustive `switch` statements need a default branch.
 - The Vercel adapter maps `seed` and video `fps` to same-named Yir parameters; the model contract decides whether they are accepted.
 
