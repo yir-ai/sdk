@@ -80,6 +80,8 @@ const client = createNodeYirClient();
 
 0.5.0 起：`getModel("creator/model")` 读取 Market `ModelDetail`：`specifications` 及各渠道展示价格 `channels`（未公布价格时没有 `amount_micros`），以及可选的 `channel_parameters`。须传规范 ID，别名不能作为资源路径；非法 ID 在本地以 `model_request_invalid` 失败。未知字段会保留，但 ID 不一致或必填值非法时以 `model_response_invalid` 失败。模型不存在时以 `YirAPIError` 404 `YIR_MODEL_NOT_FOUND` 拒绝。Market 价格仅供展示，提交前仍需报价。`getModelContract` 仍用于读取带版本的参数合同（`view=contract`）。另导出 `modelDetailPath` 与 `parseModelDetail`，供自定义传输使用。
 
+传入目录创建的客户端（`createYirClient(transport, catalog)` 或 `modelContracts`），只对该目录描述的模型、操作和输入方式校验参数与引用。其余请求（例如目录读取之后才上线的模型）只做协议检查，交由 Gateway 判断；需要对新模型做本地检查时，用 `getModelContracts` 刷新目录。Vercel 适配器行为相同。`validateGeneration(operation, request, catalog)` 和请求构造器仍然严格，目录外的模型抛出 `model_contract_unavailable`；要把请求限定在该目录内，请自行调用它们。
+
 ## 文件与 Webhook
 
 0.4.0 要求媒体引用使用 `file_id`，拒绝外部引用 URL。先上传原始字节；`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器支持上传内联字节；URL 输入需由应用先下载为字节。

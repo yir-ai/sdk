@@ -4,6 +4,7 @@ import { createNodeYirClient, waitForJob } from "./client.js";
 import type { CreateNodeYirClientOptions, YirClient, Job } from "./client.js";
 import { YirSDKValidationError, validateGeneration } from "../shared/standard.js";
 import { uploadFile } from "./files.js";
+import { coveringCatalog } from "./catalog-coverage.js";
 import type { RoutingOverride, StandardReference, StandardImageGenerationRequest, StandardVideoGenerationRequest } from "../shared/standard.js";
 
 type VideoModelV4File = NonNullable<Parameters<NonNullable<VideoModelV4["doGenerate"]>>[0]["image"]>;
@@ -45,7 +46,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             parameters, routing: extension.routing,
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
           };
-          validateGeneration("generate_image", request, options.modelContracts);
+          validateGeneration("generate_image", request, coveringCatalog(options.modelContracts, "generate_image", request));
           if (request.input.type === "image") {
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, call.files ?? [], extension.idempotencyKey, fetchResult, call.abortSignal) } };
           }
@@ -100,7 +101,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
             ...(call.webhookUrl === undefined ? {} : { webhook_url: call.webhookUrl }),
           };
-          validateGeneration("generate_video", request, options.modelContracts);
+          validateGeneration("generate_video", request, coveringCatalog(options.modelContracts, "generate_video", request));
           if (request.input.type !== "text") {
             const files = call.image ? [call.image] : call.frameImages?.length ? call.frameImages.map(frame => frame.image) : call.inputReferences ?? [];
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, files, extension.idempotencyKey, fetchResult, call.abortSignal) } };

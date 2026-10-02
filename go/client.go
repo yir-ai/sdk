@@ -189,11 +189,27 @@ func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestIte
 	return batch, nil
 }
 
+// validateGeneration applies the configured catalog only to the model, operation
+// and input mode it describes. Anything newer than that snapshot is left to the
+// Gateway, so a stale catalog never blocks a model published after it was read.
 func (c *Client) validateGeneration(operation string, request GenerationRequest) error {
-	if c != nil && c.modelContracts != nil {
+	if c != nil && c.modelContracts != nil && catalogCovers(*c.modelContracts, request.Model, operation, request.Input.Type) {
 		return ValidateGenerationWithCatalog(operation, request, *c.modelContracts)
 	}
 	return ValidateGenerationProtocol(operation, request)
+}
+
+func catalogCovers(catalog ModelContractCatalog, model, operation, inputMode string) bool {
+	contract, found := findContractInCatalog(catalog, model)
+	if !found {
+		return false
+	}
+	for _, candidate := range contract.Operations {
+		if candidate.Operation == operation && containsString(candidate.InputModes, inputMode) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Client) quote(ctx context.Context, resource, operation string, request GenerationRequest) (Quote, error) {

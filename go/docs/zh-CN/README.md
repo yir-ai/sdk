@@ -98,6 +98,8 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 
 0.6.0 起：`GetModel(ctx, "creator/model")` 读取 Market `ModelDetail`：`Specifications` 及各渠道展示价格 `Channels`（未公布价格时 `AmountMicros` 为 `nil`），以及可选的 `ChannelParameters`。须传规范 ID，别名不能作为资源路径；非法 ID 在本地返回 `model_request_invalid`。SDK 忽略未知字段，但 ID 不一致或必填值非法时返回 `model_response_invalid`。模型不存在返回 `*APIError` 404 `YIR_MODEL_NOT_FOUND`。Market 价格仅供展示，提交前仍需报价。`GetModelContract` 仍用于读取带版本的参数合同（`view=contract`）。
 
+通过 `ClientOptions.ModelContracts` 创建的客户端，只对该目录描述的模型、操作和输入方式校验参数与引用。其余请求（例如目录读取之后才上线的模型）只做协议检查，交由 Gateway 判断；需要对新模型做本地检查时，用 `GetModelContracts` 刷新目录。`ValidateGenerationWithCatalog` 仍然严格，目录外的模型返回 `model_contract_unavailable`；要把请求限定在该目录内，请自行调用它。
+
 ## 0.2.0 合同更新
 
 H3 reference 合同允许 1–15 项引用：图片最多 9 项、视频和音频各最多 3 项，可仅使用音频，保留 URL 与顺序。图生视频仍仅允许 adaptive。2026-09-16 已验证的 KIE 集成支持上述数量范围内的混合引用，但至少需要一项图片或视频；纯音频虽符合公共合同，仍不被该供应接受。每段视频或音频须为 2–15 秒，视频和音频各自总时长最多 15 秒。音视频须使用属于调用者、已完成可信测量且 ready 的 Files，以 `file_id` 引用；图片 URL 继续兼容。报价和准入使用可信测量，提交校验绑定的测量快照。其他渠道仍遵循各自支持的子集。完整请求必须取得有效报价；SDK 静态校验不代表在线可用或实际生成成功。此前 1–5 张图片的限制属于历史供应快照，不是当前 KIE 集成边界。

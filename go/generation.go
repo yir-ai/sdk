@@ -119,7 +119,9 @@ func ValidateGeneration(operation string, request GenerationRequest) error {
 	return ValidateGenerationWithCatalog(operation, request, bundledModelContractCatalog)
 }
 
-// ValidateGenerationWithCatalog checks current caller-supplied model rules.
+// ValidateGenerationWithCatalog checks current caller-supplied model rules and
+// rejects models, operations and input modes the catalog does not describe.
+// Clients configured with ModelContracts instead leave those to the Gateway.
 // It does not determine current price, supply, media usage or authorization.
 func ValidateGenerationWithCatalog(operation string, request GenerationRequest, catalog ModelContractCatalog) error {
 	model, ok := findContractInCatalog(catalog, request.Model)
