@@ -85,17 +85,35 @@ test("constructWebhookEvent returns the verified terminal Job", async () => {
   assert.equal(event.job.status, "succeeded");
 });
 
-test("constructWebhookEvent rejects bad signatures and non-terminal payloads", async () => {
+function signedBody(body) {
+  const signature = "v1=" + createHmac("sha256", vector.testOnlySecret)
+    .update(`${vector.timestamp}.${vector.id}.${body}`).digest("base64");
+  return verificationRequest({ rawBody: encoder.encode(body), signature });
+}
+
+test("constructWebhookEvent rejects bad signatures and non-object payloads", async () => {
   await assert.rejects(
     constructWebhookEvent(verificationRequest({ rawBody: encoder.encode('{"id":"7001","status":"failed"}') })),
     (error) => error instanceof YirWebhookVerificationError && error.reason === "invalid_signature",
   );
-  for (const body of ["not json", "null", '{"id":"","status":"succeeded"}', '{"id":" 7001","status":"succeeded"}', '{"id":"abc","status":"failed"}', '{"id":"7001","status":"running"}']) {
-    const signature = "v1=" + createHmac("sha256", vector.testOnlySecret)
-      .update(`${vector.timestamp}.${vector.id}.${body}`).digest("base64");
+  for (const body of ["not json", "null", "[]", '"7001"']) {
     await assert.rejects(
-      constructWebhookEvent(verificationRequest({ rawBody: encoder.encode(body), signature })),
-      (error) => error instanceof YirWebhookVerificationError && error.reason === "invalid_payload",
+      constructWebhookEvent(signedBody(body)),
+      (error) => error instanceof YirWebhookVerificationError && error.reason === "invalid_payload" && error.id === undefined,
+      body,
+    );
+  }
+});
+
+// An authentic body that is not a terminal Job, such as a newer event type, is
+// reported separately so receivers can acknowledge it instead of failing retries.
+test("constructWebhookEvent reports authentic unsupported events", async () => {
+  for (const body of ['{"id":"","status":"succeeded"}', '{"id":" 7001","status":"succeeded"}', '{"id":"abc","status":"failed"}',
+    '{"id":"7001","status":"running"}', '{"id":"7001","status":"pending_review"}', '{"type":"file.ready","data":{"id":"file_x"}}']) {
+    await assert.rejects(
+      constructWebhookEvent(signedBody(body)),
+      (error) => error instanceof YirWebhookVerificationError && error.reason === "unsupported_event" &&
+        error.id === vector.id && error.timestamp === Number(vector.timestamp),
       body,
     );
   }

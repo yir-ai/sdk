@@ -88,7 +88,7 @@ const client = createNodeYirClient();
 
 0.5.0 起：`getFileContentURL(id)` 返回 ready 文件的短时签名 URL。Node 传输以 `redirect: "manual"` 从 307 响应的 `Location` 头读取该 URL，从不跟随跳转，因此 API Key 不会发给存储端。请求该 URL 时不要带 Gateway 凭据；过期后重新获取。只接受绝对 `https` URL，其余情况以 `file_content_response_invalid` 拒绝，错误中不含该 URL。文件不存在以 `YirAPIError` 404 `YIR_FILE_NOT_FOUND` 拒绝；尚未 ready 返回 409 `YIR_FILE_NOT_READY`（用 `waitForFileReady` 等待后重试）；已过期返回 410 `YIR_FILE_EXPIRED`（需重新上传）。
 
-提交请求可设置 `webhook_url`。用账户 Webhook secret（不是 API Key）调用 `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })`。传入 JSON 解析前的原始字节，将回调签名元数据映射到 `id`、`timestamp` 和 `signature`。默认时钟容差为 300 秒。拒绝无效结果，按 Webhook ID 持久化去重；即使轮询也观察到终态，仍只结算一次。`constructWebhookEvent` 校验同样的字段，返回 `{ id, timestamp, job }`，失败时抛出带稳定 `reason` 的 `YirWebhookVerificationError`。持久化工作流可把 Webhook 当作唤醒信号，再用 `getJob` 回读，并保留 `pollDelayMs` 轮询兜底。
+提交请求可设置 `webhook_url`。用账户 Webhook secret（不是 API Key）调用 `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })`。传入 JSON 解析前的原始字节，将回调签名元数据映射到 `id`、`timestamp` 和 `signature`。默认时钟容差为 300 秒。拒绝无效结果，按 Webhook ID 持久化去重；即使轮询也观察到终态，仍只结算一次。`constructWebhookEvent` 校验同样的字段，返回 `{ id, timestamp, job }`，失败时抛出带稳定 `reason` 的 `YirWebhookVerificationError`。`reason` 为 `unsupported_event` 表示签名有效，但请求体不是本 SDK 能识别的终态 Job（例如比 SDK 更新的事件类型）：返回 2xx 确认收到，记录日志，并按其 `id` 去重。其他原因返回 4xx。持久化工作流可把 Webhook 当作唤醒信号，再用 `getJob` 回读，并保留 `pollDelayMs` 轮询兜底。
 
 ## Vercel AI SDK
 

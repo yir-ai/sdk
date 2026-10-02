@@ -92,7 +92,7 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 
 0.6.0 起：`GetFileContentURL(ctx, id)` 返回 ready 文件的短时签名 URL。SDK 从 307 响应的 `Location` 头读取该 URL，从不跟随跳转，因此 API Key 不会发给存储端。请求该 URL 时不要带 Gateway 凭据；过期后重新获取。只接受绝对 `https` URL，其余情况返回 `file_content_response_invalid`，错误中不含该 URL。文件不存在返回 `*APIError` 404 `YIR_FILE_NOT_FOUND`；尚未 ready 返回 409 `YIR_FILE_NOT_READY`（用 `WaitForFileReady` 等待后重试）；已过期返回 410 `YIR_FILE_EXPIRED`（需重新上传）。
 
-使用 `SubmitRequest.WebhookURL` 设置回调。`VerifyWebhookSignature` 接受 `Secret`、`ID`、`Timestamp`、`Signature` 和 `RawBody`。使用账户 Webhook secret，不是 API Key；传入 JSON 解析前的原始字节，并将回调签名元数据映射到这些字段。默认时钟容差为 300 秒。检查返回 error 和 `Valid`；按 Webhook ID 持久化去重，即使轮询同时观察到终态仍只结算一次。`ConstructWebhookEvent` 校验同样的字段，返回 Webhook ID 与终态 `Job`，失败时返回带稳定 `Reason` 的 `*WebhookVerificationError`。无法在 `WaitJob` 中阻塞的持久化工作流可把 Webhook 当作唤醒信号，再用 `GetJob` 回读，并保留 `PollDelay` 轮询兜底。
+使用 `SubmitRequest.WebhookURL` 设置回调。`VerifyWebhookSignature` 接受 `Secret`、`ID`、`Timestamp`、`Signature` 和 `RawBody`。使用账户 Webhook secret，不是 API Key；传入 JSON 解析前的原始字节，并将回调签名元数据映射到这些字段。默认时钟容差为 300 秒。检查返回 error 和 `Valid`；按 Webhook ID 持久化去重，即使轮询同时观察到终态仍只结算一次。`ConstructWebhookEvent` 校验同样的字段，返回 Webhook ID 与终态 `Job`，失败时返回带稳定 `Reason` 的 `*WebhookVerificationError`。`Reason` 为 `unsupported_event` 表示签名有效，但请求体不是本 SDK 能识别的终态 Job（例如比 SDK 更新的事件类型）：返回 2xx 确认收到，记录日志，并按其 `ID` 去重。其他原因返回 4xx。无法在 `WaitJob` 中阻塞的持久化工作流可把 Webhook 当作唤醒信号，再用 `GetJob` 回读，并保留 `PollDelay` 轮询兜底。
 
 ## 价格与合同
 
