@@ -112,7 +112,7 @@ const client = createNodeYirClient();
 - 传入目录创建的客户端及 Vercel 适配器只对目录描述的模型、操作和输入方式应用目录，其余交由 Gateway 判断，不再以 `model_contract_unavailable` 失败。`validateGeneration(operation, request, catalog)` 与请求构造器仍然严格。
 - 币种不是 USD 的报价以 `quote_currency_unsupported` 拒绝，不再是 `quote_response_invalid`；`quoteBatch` 同样如此。此类报价仍会被拒绝。
 
-兼容的新增：`action` 使用开放联合类型 `YirErrorAction`；错误响应体没有标准错误对象时也保留 `YirAPIError.requestId`。
+兼容的新增：`action` 使用开放联合类型 `YirErrorAction`；错误响应体没有标准错误对象时也保留 `YirAPIError.requestId`。`waitForJob`（以及 Vercel 适配器的图片等待）默认长轮询：每次状态查询请 Gateway 挂起最多 20 秒（`statusWaitSeconds`，设为 `0` 关闭）直到状态变化，Yir 记录终态后约 1 秒即可拿到；挂起时长收进等待超时之内，Gateway 未挂起时回退到 `pollDelayMs`。新增 `getJobStatus(id, { waitSeconds })` 与传输请求字段 `holdMs`，自带请求时限的自定义传输应按 `holdMs` 延长时限。
 
 ## 0.6.0 变化
 

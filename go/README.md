@@ -47,6 +47,7 @@ Compatible additions:
 - `GetModel` accepts operations, input modes, currencies, availability values and rule behaviors newer than the SDK.
 - `Job`, `JobStatusResponse`, `Quote`, `File` and `ModelDetail` add `RawJSON()`, which returns the JSON they were decoded from, so newer fields can be read before a release models them.
 - `APIError.RequestID` carries the `request_id` of a failed HTTP request.
+- `WaitJob` long-polls by default: each status query asks the Gateway to hold it for up to `DefaultStatusWait` (20s) until the status changes, so a terminal Job is seen about a second after Yir records it. It stays inside the HTTP client timeout and the context deadline, and falls back to `PollDelay` when the Gateway does not hold. Set `WaitOptions.StatusWait` below zero to disable it. `GetJobStatusWithWait` is new.
 
 ## 0.7.0 changes
 

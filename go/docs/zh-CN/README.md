@@ -47,6 +47,7 @@ _ = client
 - `GetModel` 接受比 SDK 更新的操作、输入方式、币种、可用性取值和规则行为。
 - `Job`、`JobStatusResponse`、`Quote`、`File` 与 `ModelDetail` 新增 `RawJSON()`，返回解码时的原始 JSON，新字段可在 SDK 发版前读取。
 - `APIError.RequestID` 是失败 HTTP 请求的 `request_id`。
+- `WaitJob` 默认长轮询：每次状态查询请 Gateway 挂起最多 `DefaultStatusWait`（20 秒）直到状态变化，Yir 记录终态后约 1 秒即可拿到。挂起时长收进 HTTP 客户端超时与 context 截止时间之内，Gateway 未挂起时回退到 `PollDelay`。`WaitOptions.StatusWait` 设为负值可关闭。新增 `GetJobStatusWithWait`。
 
 ## 0.7.0 变化
 

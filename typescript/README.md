@@ -109,7 +109,7 @@ Image masks, pixel `size` and video pixel resolution are unsupported; use Yir pa
 - A client created with a catalog, and the Vercel adapter, apply the catalog only to the models, operations and input modes it describes and leave others to the Gateway, instead of failing with `model_contract_unavailable`. `validateGeneration(operation, request, catalog)` and the request builders stay strict.
 - A quote in a currency other than USD rejects with `quote_currency_unsupported` instead of `quote_response_invalid`, also from `quoteBatch`. Such quotes are still rejected.
 
-Compatible additions: `YirErrorAction` is an open union for `action`, and `YirAPIError.requestId` is also kept for error bodies without a standard error object.
+Compatible additions: `YirErrorAction` is an open union for `action`, and `YirAPIError.requestId` is also kept for error bodies without a standard error object. `waitForJob` (and the Vercel adapter's image wait) long-polls by default: each status query asks the Gateway to hold it for up to 20 seconds (`statusWaitSeconds`, `0` disables) until the status changes, so a terminal Job is seen about a second after Yir records it; it stays inside the wait timeout and falls back to `pollDelayMs` when the Gateway does not hold. `getJobStatus(id, { waitSeconds })` and the transport request field `holdMs` are new; custom transports with their own request limit should extend it by `holdMs`.
 
 ## 0.6.0 changes
 
