@@ -182,7 +182,10 @@ test("a client catalog leaves models it does not describe to the Gateway", async
   const stale = parseModelContractCatalog({ ...response, models: [structuredClone(getModelContract("openai/gpt-image-2"))] });
   const newer = { ...request, model: "future/brand-new", parameters: { anything: true } };
   let sent = 0;
-  const client = createYirClient(async call => { sent++; return quoteFixture(call.body); }, stale);
+  const client = createYirClient(async call => {
+    sent++;
+    return call.path.endsWith("/generations") ? { id: "1", status: "queued" } : quoteFixture(call.body);
+  }, stale);
   await client.quoteImage(newer);
   await client.submitImage(newer, "key");
   // An input mode the catalog does not describe for a known model is also left to the Gateway.
