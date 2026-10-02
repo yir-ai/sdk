@@ -124,14 +124,13 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           const response = { timestamp: new Date(job.created_at * 1000), modelId, headers: undefined };
           const providerMetadata = { yir: { jobId: job.id, totalChargedByYir: job.billing?.total_charged_by_yir ?? null } };
           switch (job.status) {
-            case "queued": case "running": case "delivering":
-              return { status: "pending", response, providerMetadata };
             case "failed": case "cancelled":
               return { status: "error", error: job.error?.code ?? (job.status === "cancelled" ? "YIR_JOB_CANCELLED" : "YIR_EXECUTION_FAILED"), response, providerMetadata };
             case "succeeded":
               if (job.result?.availability !== "available" || !job.result.files.length) throw new Error("yir_result_unavailable");
               return { status: "completed", videos: job.result.files.map(file => ({ type: "url" as const, url: file.url, mediaType: file.media_type })), warnings: (job.parameter_notices ?? []).map(notice => ({type: "other" as const, message: notice.message})), response, providerMetadata };
-            default: throw new Error("yir_job_invalid");
+            // queued, running, delivering and statuses newer than this SDK are in progress.
+            default: return { status: "pending", response, providerMetadata };
           }
         },
       };

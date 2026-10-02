@@ -128,7 +128,7 @@ test("startVideo operation survives provider reconstruction and does not resubmi
   assert.equal(calls[0].headers["Idempotency-Key"], "persisted-key");
   const restored = JSON.parse(JSON.stringify(started.operation));
   const restoredModel = createYirAIProvider({ client }).videoModel("bytedance/seedance-2.0");
-  for (status of ["queued", "running", "delivering"]) {
+  for (status of ["queued", "running", "delivering", "pending_review"]) {
     const result = await getVideoStatus(restoredModel, { operation: restored, maxRetries: 0 });
     assert.equal(result.status, "pending");
   }

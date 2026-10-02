@@ -216,15 +216,10 @@ export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 
 export const TERMINAL_JOB_STATUSES = Object.freeze(["succeeded", "failed", "cancelled"] as const);
 
+// Statuses newer than this SDK are accepted as in progress, so waitForJob keeps
+// polling and a newer status never hides an accepted Job ID.
 function validJobStatus(status: unknown): status is JobStatus {
-  return typeof status === "string" && (
-    status === "queued" ||
-    status === "running" ||
-    status === "delivering" ||
-    status === "succeeded" ||
-    status === "failed" ||
-    status === "cancelled"
-  );
+  return typeof status === "string" && status.trim() !== "";
 }
 
 /**

@@ -212,3 +212,16 @@ test("file content passes 404, 409 and 410 through as YirAPIError", async () => 
     });
   }
 });
+
+test("uploadFile waits through a file status newer than this SDK", async () => {
+  let getCalls = 0;
+  const client = {
+    completeFile: async () => ({ ...plan(), status: "scanning" }),
+    getFile: async () => ({ ...plan(), status: ++getCalls < 2 ? "scanning" : "ready" }),
+  };
+  const result = await uploadFile(client, plan(), new Blob(["abcdef"]), { fetch: async () => new Response() });
+  assert.equal(result.status, "ready");
+  assert.equal(getCalls, 2);
+  await assert.rejects(() => uploadFile({ completeFile: async () => ({ ...plan(), status: " " }) }, plan(), new Blob(["abcdef"]),
+    { fetch: async () => new Response() }), /file_response_invalid/);
+});

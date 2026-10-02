@@ -446,10 +446,11 @@ test("createNodeYirClient provides client.waitForJob convenience method", async 
   assert.equal(job.status, "succeeded");
 });
 
-test("getJobStatus validates returned id and 6 statuses over HTTP transport", async () => {
+test("getJobStatus validates returned id and accepts newer statuses over HTTP transport", async () => {
   for (const invalidBody of [
     { id: "wrong_id", status: "running", error: null },
-    { id: "8001", status: "invalid_status", error: null },
+    { id: "8001", status: "", error: null },
+    { id: "8001", status: 7, error: null },
     null,
     "not_an_object",
   ]) {
@@ -467,7 +468,7 @@ test("getJobStatus validates returned id and 6 statuses over HTTP transport", as
     );
   }
 
-  for (const validStatus of ["queued", "running", "delivering", "succeeded", "failed", "cancelled"]) {
+  for (const validStatus of ["queued", "running", "delivering", "succeeded", "failed", "cancelled", "pending_review"]) {
     const client = createNodeYirClient({
       apiKey: "test_key",
       baseURL: "https://example.com",
@@ -504,4 +505,17 @@ test("waitForJob waits with the default backoff when no interval is set", async 
   }
   assert.equal((await pending).status, "succeeded");
   assert.equal(polls, 3);
+});
+
+test("waitForJob keeps polling through a status newer than this SDK", async () => {
+  let polls = 0;
+  const seen = [];
+  const client = {
+    getJobStatus: async (id) => ({ id, status: ++polls < 3 ? "pending_review" : "succeeded", error: null }),
+    getJob: async (id) => ({ id, object: "job", status: "succeeded", error: null, created_at: 1 }),
+  };
+  assert.equal(isTerminalJobStatus("pending_review"), false);
+  const job = await waitForJob(client, "9001", { pollIntervalMs: 1, onPoll: status => seen.push(status.status) });
+  assert.equal(job.status, "succeeded");
+  assert.deepEqual(seen, ["pending_review", "pending_review", "succeeded"]);
 });

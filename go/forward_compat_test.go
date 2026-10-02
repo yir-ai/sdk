@@ -1,9 +1,15 @@
 package yir
 
 import (
+	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestNewerContractRulesKeepKnownChecks(t *testing.T) {
@@ -89,5 +95,71 @@ func TestPersistedSubmitRequestRoundTripsExtra(t *testing.T) {
 	again, _ := json.Marshal(restored)
 	if string(again) != string(data) || restored.MaxCost == nil || *restored.MaxCost != cost || restored.WebhookURL != saved.WebhookURL || restored.Model != saved.Model {
 		t.Fatalf("round trip changed the request:\n%s\n%s", data, again)
+	}
+}
+
+func TestNewerJobStatusKeepsAcceptedJob(t *testing.T) {
+	var statusCalls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/images/generations":
+			io.WriteString(w, `{"id":"7","status":"pending_review"}`)
+		case "/v1/jobs/7/status":
+			if statusCalls.Add(1) < 3 {
+				io.WriteString(w, `{"id":"7","status":"pending_review","error":null}`)
+			} else {
+				io.WriteString(w, `{"id":"7","status":"succeeded","error":null}`)
+			}
+		case "/v1/jobs/7":
+			io.WriteString(w, `{"id":"7","status":"succeeded"}`)
+		default:
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	// A status newer than this SDK must not hide the ID of a Job the Gateway accepted.
+	job, err := client.SubmitImage(context.Background(), SubmitRequest{GenerationRequest: imageRequest()}, "key")
+	if err != nil || job.ID != "7" || job.Status != "pending_review" || job.IsTerminal() {
+		t.Fatalf("job=%+v err=%v", job, err)
+	}
+	var polled []string
+	job, err = client.WaitJob(context.Background(), "7", WaitOptions{PollInterval: time.Millisecond,
+		OnPoll: func(s JobStatusResponse) { polled = append(polled, s.Status) }})
+	if err != nil || job.Status != "succeeded" || strings.Join(polled, ",") != "pending_review,pending_review,succeeded" {
+		t.Fatalf("job=%+v err=%v polled=%v", job, err, polled)
+	}
+}
+
+func TestNewerFileStatusWaitsForReady(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status := "scanning"
+		if calls.Add(1) >= 3 {
+			status = "ready"
+		}
+		json.NewEncoder(w).Encode(File{ID: testFileID, Object: "file", Status: status, Name: "a.png", MediaType: "image/png", Size: 100})
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	// A status newer than this SDK is still being prepared, not a broken response.
+	file, err := client.GetFile(context.Background(), testFileID)
+	if err != nil || file.Status != "scanning" {
+		t.Fatalf("file=%+v err=%v", file, err)
+	}
+	ready, err := client.UploadFile(context.Background(), file, nil)
+	if err != nil || ready.Status != "ready" || calls.Load() != 3 {
+		t.Fatalf("file=%+v err=%v calls=%d", ready, err, calls.Load())
+	}
+}
+
+func TestEmptyFileStatusIsInvalid(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, `{"id":"`+testFileID+`","object":"file","status":" "}`)
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if _, err := client.GetFile(context.Background(), testFileID); err == nil || err.Error() != "response_invalid" {
+		t.Fatalf("err=%v", err)
 	}
 }
