@@ -182,7 +182,9 @@ func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestIte
 			continue
 		}
 		request := requests[index]
-		if err := item.Quote.Validate(); err != nil || !c.quoteMatchesRequest(*item.Quote, request.Request, request.Operation) {
+		if err := item.Quote.Validate(); errors.Is(err, ErrQuoteCurrencyUnsupported) {
+			return QuoteBatch{}, err
+		} else if err != nil || !c.quoteMatchesRequest(*item.Quote, request.Request, request.Operation) {
 			return QuoteBatch{}, errors.New("quote_batch_response_invalid")
 		}
 	}
