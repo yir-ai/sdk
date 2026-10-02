@@ -533,7 +533,7 @@
       "ActualBillingMode": {
         "type": "string",
         "const": "actual",
-        "description": "Explicit consent to the authoritative final cost of the successful delivered Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Failed, cancelled and non-winning attempts are not charged to the user. Omit for the default contract: balance is not frozen, each attempt checks the live balance against its expected charge, usage-based routes with an output estimate are charged at the authoritative amount, and an explicit max_cost caps the charge."
+        "description": "Explicit consent to the authoritative final cost of the successful delivered Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Failed, cancelled and non-winning attempts are not charged to the user. Omit for the default contract: balance is not frozen, each attempt checks the live balance against its route estimate, the successful result is charged at the authoritative upstream amount after the managed discount, and an explicit max_cost caps the charge."
       },
       "StandardImageGenerationRequest": {
         "type": "object",
@@ -1070,7 +1070,7 @@
         "type": "string",
         "pattern": "^[0-9]{1,13}(\\.[0-9]{1,6})?$",
         "maxLength": 20,
-        "description": "Optional whole-job charge cap in USD, up to 9223372036854.775807. Balance is not frozen: admission and every attempt submission check the live available balance against that attempt's expected charge (fixed price, or the output estimate for usage-based routes). Only the successfully delivered result is charged; failed and late upstream costs are absorbed by Yir. Without max_cost, a usage-based result is charged at its authoritative amount, and any part the balance cannot cover becomes a negative balance that blocks new jobs until a top-up. With max_cost, routes above the remaining cap are skipped, the charge never exceeds it, and below-primary limits are rejected. Historical jobs retain their recorded billing terms."
+        "description": "Optional whole-job settlement cap in USD, up to 9223372036854.775807. Balance is not frozen: admission and every attempt submission check the live available balance against that route's estimate (catalog price for fixed routes, output estimate for usage-based routes). Only the successfully delivered result is charged, at the authoritative upstream amount after the managed discount; failed and non-winning upstream costs are absorbed by Yir. Any part the balance cannot cover becomes a negative balance that blocks new jobs until a top-up. With max_cost, routes whose estimate exceeds it are skipped (no remaining route rejects the request), and the charge never exceeds it; Yir absorbs any excess. Historical jobs retain their recorded billing terms."
       },
       "QuoteBatchRequest": {
         "type": "object",
@@ -1149,10 +1149,10 @@
             "required": ["available", "requires_max_cost", "issues"],
             "properties": {
               "available": { "type": "boolean" },
-              "requires_max_cost": { "type": "boolean", "description": "True only when every selectable route is usage-based without an output estimate, so Submit needs an explicit max_cost of at least USD 0.01. Usage-based routes with an output estimate do not require max_cost: the live balance is checked against the estimate and the authoritative usage charge applies." },
+              "requires_max_cost": { "type": "boolean", "deprecated": true, "description": "Deprecated compatibility field, always false: no route requires max_cost. Routes without an estimate are not selectable." },
               "issues": { "type": "array", "items": { "type": "string", "enum": ["no_matching_supply"] } }
             },
-            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array; requires_max_cost is true only when Submit needs an explicit max_cost because no selectable route has an output estimate. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
+            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array; requires_max_cost is always false. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
           },
           "object": {
             "type": "string",
@@ -1185,7 +1185,8 @@
             "const": "USD"
           },
           "single_attempt_upper_bound": {
-            "description": "Largest verified single-attempt customer charge ceiling among the currently selectable routes. Null when any selectable route lacks a verifiable upper bound; this advisory value is neither a price lock nor the customer's max_cost authorization. A verifiable ceiling can exist even when the exact charge is usage-dependent and primary/max prices are unavailable.",
+            "deprecated": true,
+            "description": "Deprecated compatibility field, always null: every route settles at the authoritative upstream amount, so no verified ceiling exists. Use max_cost to cap a Job.",
             "oneOf": [
               { "$ref": "#/components/schemas/Decimal" },
               { "type": "null" }
@@ -1193,7 +1194,8 @@
           },
           "has_verifiable_upper_bound": {
             "type": "boolean",
-            "description": "True only when single_attempt_upper_bound is verified for all currently selectable routes. Submit resolves supply and price again. False on an unbounded provider-reported route or when supply is unavailable."
+            "deprecated": true,
+            "description": "Deprecated compatibility field, always false; see single_attempt_upper_bound."
           },
           "expires_at": {
             "type": "integer",
@@ -1201,7 +1203,7 @@
             "minimum": 1
           },
           "primary": {
-            "description": "Current preferred route's complete fixed customer price when provable, or an output-only estimate when supported by its selected tariff and model usage evidence; otherwise unavailable. An output-only estimate excludes input charges, is not a task total or authorization ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
+            "description": "Current preferred route's estimate: its catalog reference price for fixed-price routes, or an output-only estimate for usage-based routes; otherwise unavailable. The successful Job is charged at the authoritative upstream amount after the managed discount, which can differ from this estimate. An output-only estimate excludes input charges; neither is a charge ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
             "oneOf": [
               { "$ref": "#/components/schemas/OutputQuoteEstimate" },
               {
@@ -1244,7 +1246,7 @@
             ]
           },
           "max": {
-            "description": "Highest complete fixed customer price among currently selectable routes when all are provable; otherwise unavailable. This price is distinct from the authorization bound, and Submit rechecks current facts.",
+            "description": "Deprecated compatibility field; repeats primary. Not a charge ceiling. Set max_cost to bound the charge and the routes used, including fallback.",
             "oneOf": [
               { "$ref": "#/components/schemas/OutputQuoteEstimate" },
               {
@@ -1502,7 +1504,7 @@
           "gateway_fee": { "$ref": "#/components/schemas/GatewayFee" },
           "total_charged_by_yir": { "$ref": "#/components/schemas/Decimal" },
           "max_cost": { "$ref": "#/components/schemas/MaxCost" },
-          "savings": { "$ref": "#/components/schemas/Savings" },
+          "savings": { "$ref": "#/components/schemas/Savings", "deprecated": true, "description": "Deprecated: no longer returned since 2026-10-02. Post-pay charges the actual upstream amount, so an estimate-based saving would mislead. Kept for SDK compatibility; use official_comparison." },
           "official_comparison": { "$ref": "#/components/schemas/OfficialComparison" }
         }
       },
@@ -1551,6 +1553,7 @@
         }
       },
       "Savings": {
+        "deprecated": true,
         "type": "object",
         "additionalProperties": false,
         "required": ["amount", "kind", "baseline_amount", "actual_user_charge"],
