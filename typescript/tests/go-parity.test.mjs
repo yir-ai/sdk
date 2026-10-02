@@ -21,9 +21,15 @@ test("the Node transport limits each request to 30 seconds by default", async ()
 });
 
 test("a slow Gateway response times out", async () => {
-  const fetch = (_url, init) => new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason)));
-  await assert.rejects(createNodeHttpTransport({ apiKey: "k", fetch, timeoutMs: 20 })({ method: "GET", path: "/v1/jobs/1" }),
-    error => error.name === "TimeoutError");
+  // AbortSignal.timeout does not keep the event loop alive; a real request would.
+  const keepAlive = setInterval(() => {}, 1000);
+  try {
+    const fetch = (_url, init) => new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(init.signal.reason)));
+    await assert.rejects(createNodeHttpTransport({ apiKey: "k", fetch, timeoutMs: 20 })({ method: "GET", path: "/v1/jobs/1" }),
+      error => error.name === "TimeoutError");
+  } finally {
+    clearInterval(keepAlive);
+  }
 });
 
 test("error bodies without a code fall back to http_error and keep the request ID", async () => {
