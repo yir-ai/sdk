@@ -170,7 +170,7 @@ test("createNodeHttpTransport handles plain text error responses as YirAPIError"
     (error) => {
       assert.ok(error instanceof YirAPIError);
       assert.equal(error.status, 502);
-      assert.equal(error.code, "HTTP_502");
+      assert.equal(error.code, "http_error");
       assert.equal(error.message, "Bad Gateway upstream unreachable");
       return true;
     },

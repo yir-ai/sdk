@@ -44,7 +44,10 @@ test("validation preserves input order, defaults and caller values", async () =>
   validateGeneration("generate_image", request);
   assert.deepEqual(request, snapshot);
   const calls = [];
-  const client = createYirClient(async call => { calls.push(call); return quoteFixture(call.body); });
+  const client = createYirClient(async call => {
+    calls.push(call);
+    return call.path.endsWith("/generations") ? { id: "1", status: "queued" } : quoteFixture(call.body);
+  });
   await client.quoteImage(request);
   await client.submitImage(request, "request-1");
   assert.deepEqual(calls.map(call => call.body), [snapshot, snapshot]);

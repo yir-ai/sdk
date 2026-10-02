@@ -51,7 +51,7 @@ import type { Job } from '@yir-ai/sdk/shared';
 const client = createNodeYirClient();
 ```
 
-也可传入 `{ apiKey, baseURL, fetch, headers, userAgent }`。默认地址为 `https://gateway.yir.ai`。`createYirClient(transport)` 保留显式传输合同：注入的传输负责认证、HTTP 序列化、响应解码和错误处理，不是浏览器密钥客户端。要支持 `getFileContentURL`，自定义传输须遵守 `redirect: "manual"`：遇到 3xx 时不跟随，返回 `{ status, location }`；否则该调用会安全失败。
+也可传入 `{ apiKey, baseURL, fetch, headers, userAgent, timeoutMs }`。默认地址为 `https://gateway.yir.ai`。`timeoutMs` 限制每个 Gateway 请求（包括读取响应体）的时长，默认为 `DEFAULT_REQUEST_TIMEOUT_MS`（30 秒，与 Go SDK 一致）；设为 `0` 或 `Infinity` 时不限制，超时以 `TimeoutError` 拒绝。提交超时或结果未知时，须用同一请求和幂等键恢复。`createYirClient(transport)` 保留显式传输合同：注入的传输负责认证、HTTP 序列化、响应解码和错误处理，不是浏览器密钥客户端。要支持 `getFileContentURL`，自定义传输须遵守 `redirect: "manual"`：遇到 3xx 时不跟随，返回 `{ status, location }`；否则该调用会安全失败。
 
 ## 报价、授权、持久化、提交
 
@@ -70,7 +70,7 @@ const client = createNodeYirClient();
 
 保存返回的 `job.id`。`getJob(id)` 查询完整任务详情，`getJobStatus(id)` 查询轻量状态摘要 `JobStatusResponse`。使用 `waitForJob(id, options)`（Node 客户端）或 `waitForJob(client, id, options)`（自定义传输客户端）。默认按 `pollDelayMs` 退避轮询状态摘要（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒；设置 `pollIntervalMs` 可改为固定间隔），5 分钟超时，进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符抛出 `job_state_inconsistent` 错误。`YirTimeoutError` 保留任务 ID 与 `lastStatus`；超时和 abort 只停止本地等待，不取消任务或代表退款。用保存的 ID 恢复；提交未返回 ID 时，重交完全相同的请求与键。
 
-`YirJobError` 包含失败或取消的终态任务。`YirAPIError` 在可用时提供 status、code、retryable、action 和 requestId。应用逻辑应依赖稳定错误码，`YIR_ERROR_CODES` 与 `YirErrorCode` 类型列出全部稳定错误码。`cancelJob(id, options)` 显式申请取消，需检查 cancellation 和终态账单，不能假定立即取消或零费用。每个任务的 `billing.total_charged_by_yir` 只结算一次。结果 URL 会过期，应检查 `result.availability` 并及时复制到自己的资源库。
+`YirJobError` 包含失败或取消的终态任务。`YirAPIError` 在可用时提供 status、code、retryable、action 和 requestId。错误响应体没有错误码时，code 为 `http_error`（与 Go SDK 一致；旧版本为 `HTTP_<status>`），HTTP 状态见 `status`。`action` 可能出现比 SDK 更新的取值（`YirErrorAction`）。`submitImage` 与 `submitVideo` 收到的响应不是 ID 和状态都有效的 Job 时，以 `response_invalid` 拒绝。应用逻辑应依赖稳定错误码，`YIR_ERROR_CODES` 与 `YirErrorCode` 类型列出全部稳定错误码。`cancelJob(id, options)` 显式申请取消，需检查 cancellation 和终态账单，不能假定立即取消或零费用。每个任务的 `billing.total_charged_by_yir` 只结算一次。结果 URL 会过期，应检查 `result.availability` 并及时复制到自己的资源库。
 
 0.5.1 与 0.5.0 兼容。内置 `minimax/minimax-h3` 描述与服务端当前导出一致，API 无变化。
 

@@ -30,11 +30,14 @@ export const YIR_ERROR_CODES = Object.freeze([
 /** Stable public error codes. `YirPublicError.code` stays `string` so newer server codes still parse. */
 export type YirErrorCode = (typeof YIR_ERROR_CODES)[number];
 
+/** Suggested next step. Actions newer than this SDK still parse; compare known values and keep a default branch. */
+export type YirErrorAction = "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support" | (string & {});
+
 export type YirPublicError = {
   readonly code: string;
   readonly message: string;
   readonly retryable: boolean;
-  readonly action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
+  readonly action?: YirErrorAction;
 };
 
 export type JobCancellation = {
