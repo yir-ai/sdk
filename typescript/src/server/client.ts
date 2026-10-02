@@ -27,6 +27,11 @@ export type YirTransportRequest = {
    * ignore it make redirect-only calls fail closed.
    */
   readonly redirect?: "manual";
+  /**
+   * Milliseconds the Gateway may deliberately hold this request (status long
+   * polling). Transports with a per-request limit extend it by this amount.
+   */
+  readonly holdMs?: number;
 };
 
 /** Result of a `redirect: "manual"` request that received a 3xx response. */
@@ -36,6 +41,14 @@ export type YirTransport = <Response>(request: YirTransportRequest) => Promise<R
 
 export type YirRequestOptions = {
   readonly signal?: AbortSignal;
+};
+
+export type YirJobStatusOptions = YirRequestOptions & {
+  /**
+   * Long polling: whole seconds (0-30) the Gateway may hold the query until the
+   * status changes. A terminal Job answers at once. Defaults to 0.
+   */
+  readonly waitSeconds?: number;
 };
 
 export type YirClient = YirFileClient & {
@@ -49,7 +62,7 @@ export type YirClient = YirFileClient & {
   quoteVideo(request: StandardVideoQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
   submitVideo(request: StandardVideoGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
-  getJobStatus(id: string, options?: YirRequestOptions): Promise<JobStatusResponse>;
+  getJobStatus(id: string, options?: YirJobStatusOptions): Promise<JobStatusResponse>;
   cancelJob(id: string, options?: YirRequestOptions): Promise<Job>;
 };
 
@@ -167,10 +180,17 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       options?.signal?.throwIfAborted();
       const normalizedID = id.trim();
       if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
-      const request: { method: "GET"; path: string; signal?: AbortSignal } = {
+      const waitSeconds = options?.waitSeconds ?? 0;
+      if (!Number.isInteger(waitSeconds) || waitSeconds < 0 || waitSeconds > MAX_STATUS_WAIT_SECONDS) {
+        throw new Error("wait_invalid");
+      }
+      const request: { method: "GET"; path: string; signal?: AbortSignal; holdMs?: number } = {
         method: "GET",
-        path: `/v1/jobs/${normalizedID}/status`,
+        path: `/v1/jobs/${normalizedID}/status${waitSeconds > 0 ? `?wait=${waitSeconds}` : ""}`,
       };
+      if (waitSeconds > 0) {
+        request.holdMs = waitSeconds * 1000;
+      }
       if (options?.signal !== undefined) {
         request.signal = options.signal;
       }
@@ -214,13 +234,17 @@ export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.7.0";
 /** @deprecated Former fixed default. `waitForJob` now backs off with `pollDelayMs` unless `pollIntervalMs` is set. */
 export const DEFAULT_POLL_INTERVAL_MS = 2000;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
+/** Default long-poll hold of `waitForJob` status queries. */
+export const DEFAULT_STATUS_WAIT_SECONDS = 20;
+/** The Gateway's cap for the status `wait` query parameter. */
+export const MAX_STATUS_WAIT_SECONDS = 30;
 /** Default per-request limit of the Node transport, matching the Go SDK's HTTP client. */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
 
 // The timeout also covers reading the response body, which shares this signal.
-function requestSignal(signal: AbortSignal | undefined, timeoutMs: number): AbortSignal | undefined {
+function requestSignal(signal: AbortSignal | undefined, timeoutMs: number, holdMs = 0): AbortSignal | undefined {
   if (timeoutMs === 0 || timeoutMs === Infinity) return signal;
-  const timeout = AbortSignal.timeout(timeoutMs);
+  const timeout = AbortSignal.timeout(timeoutMs + holdMs);
   return signal ? AbortSignal.any([signal, timeout]) : timeout;
 }
 
@@ -324,6 +348,11 @@ export type WaitForJobOptions = {
    */
   readonly pollIntervalMs?: number;
   /**
+   * Seconds the Gateway may hold each status query until the status changes.
+   * Defaults to 20; 0 disables long polling and uses only `pollIntervalMs`/backoff.
+   */
+  readonly statusWaitSeconds?: number;
+  /**
    * Maximum wait time in milliseconds before timing out.
    * Defaults to 300000 (5 minutes). Set to 0 or Infinity to disable timeout.
    */
@@ -353,6 +382,8 @@ export async function waitForJob(
 
   const fixedInterval = options.pollIntervalMs;
   if (fixedInterval !== undefined && !(fixedInterval > 0)) throw new Error("poll_interval_invalid");
+  const statusWaitSeconds = options.statusWaitSeconds ?? DEFAULT_STATUS_WAIT_SECONDS;
+  if (!Number.isInteger(statusWaitSeconds) || statusWaitSeconds < 0) throw new Error("wait_invalid");
 
   const timeout = options.timeoutMs ?? DEFAULT_POLL_TIMEOUT_MS;
   const hasTimeout = typeof timeout === "number" && timeout > 0 && Number.isFinite(timeout);
@@ -372,7 +403,14 @@ export async function waitForJob(
     }
 
     const remaining = hasTimeout ? timeout - (Date.now() - startTime) : undefined;
-    const status = await getJobStatusWithDeadline(client, normalizedID, options.signal, remaining, timeout, lastStatus);
+    // Keep the hold inside the caller's timeout so it never ends mid-request.
+    const waitSeconds = Math.max(0, Math.min(
+      statusWaitSeconds, MAX_STATUS_WAIT_SECONDS,
+      remaining === undefined ? MAX_STATUS_WAIT_SECONDS : Math.floor(remaining / 1000) - 1,
+    ));
+    const previous = lastStatus;
+    const requestedAt = Date.now();
+    const status = await getJobStatusWithDeadline(client, normalizedID, options.signal, remaining, timeout, lastStatus, waitSeconds);
     lastStatus = status;
 
     if (options.onPoll) {
@@ -410,6 +448,13 @@ export async function waitForJob(
       return job;
     }
 
+    // A held query that returned on a change or after holding needs no extra
+    // delay. A quick unchanged answer means the Gateway did not hold it.
+    const changed = previous !== undefined && previous.status !== status.status;
+    if (waitSeconds > 0 && (changed || Date.now() - requestedAt >= (waitSeconds * 1000) / 2)) {
+      continue;
+    }
+
     if (hasTimeout) {
       const elapsed = Date.now() - startTime;
       const remaining = timeout - elapsed;
@@ -431,6 +476,7 @@ async function getJobStatusWithDeadline(
   remainingMs: number | undefined,
   timeoutMs: number,
   lastStatus: JobStatusResponse | undefined,
+  waitSeconds: number,
 ): Promise<JobStatusResponse> {
   const controller = new AbortController();
   let timedOut = false;
@@ -451,7 +497,8 @@ async function getJobStatusWithDeadline(
     );
   });
   try {
-    return await Promise.race([client.getJobStatus(jobId, { signal: controller.signal }), aborted]);
+    const statusOptions = waitSeconds > 0 ? { signal: controller.signal, waitSeconds } : { signal: controller.signal };
+    return await Promise.race([client.getJobStatus(jobId, statusOptions), aborted]);
   } catch (error) {
     if (timedOut) throw new YirTimeoutError(jobId, timeoutMs, lastStatus);
     if (signal?.aborted) throw signal.reason ?? new Error("aborted");
@@ -587,7 +634,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       method: request.method,
       headers,
       body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
-      signal: requestSignal(request.signal, timeoutMs),
+      signal: requestSignal(request.signal, timeoutMs, request.holdMs),
       redirect: request.redirect === "manual" ? "manual" : "error",
     });
     if (request.redirect === "manual" && response.status >= 300 && response.status < 400) {

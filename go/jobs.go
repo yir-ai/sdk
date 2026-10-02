@@ -212,8 +212,18 @@ func (e *JobError) Error() string {
 type WaitOptions struct {
 	// PollInterval fixes the delay between status queries. Zero uses PollDelay.
 	PollInterval time.Duration
-	OnPoll       func(JobStatusResponse)
+	// StatusWait is how long the Gateway may hold each status query until the
+	// status changes. Zero uses DefaultStatusWait; negative disables long polling.
+	StatusWait time.Duration
+	OnPoll     func(JobStatusResponse)
 }
+
+// DefaultStatusWait is the default long-poll hold of WaitJob, below the
+// default 30-second HTTP client timeout.
+const DefaultStatusWait = 20 * time.Second
+
+// maxStatusWait is the Gateway's cap for the wait query parameter.
+const maxStatusWait = 30 * time.Second
 
 // pollDelay lets tests observe WaitJob's default schedule without real sleeps.
 var pollDelay = PollDelay
@@ -239,8 +249,11 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 	if options.PollInterval < 0 {
 		return Job{}, errors.New("poll_interval_invalid")
 	}
+	var previous string
 	for poll := 0; ; poll++ {
-		status, err := c.GetJobStatus(ctx, id)
+		wait := c.statusWait(ctx, options.StatusWait)
+		started := time.Now()
+		status, err := c.GetJobStatusWithWait(ctx, id, wait)
 		if err != nil {
 			return Job{}, err
 		}
@@ -260,6 +273,13 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 			}
 			return job, &JobError{Job: job}
 		}
+		changed := poll > 0 && status.Status != previous
+		previous = status.Status
+		// A held query that returned on a change or after holding needs no extra
+		// delay. A quick unchanged answer means the Gateway did not hold it.
+		if wait > 0 && (changed || time.Since(started) >= wait/2) {
+			continue
+		}
 		interval := options.PollInterval
 		if interval == 0 {
 			interval = pollDelay(poll)
@@ -272,4 +292,24 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 		case <-timer.C:
 		}
 	}
+}
+
+// statusWait keeps a held status query inside the HTTP client timeout and the
+// caller's deadline, in whole seconds.
+func (c *Client) statusWait(ctx context.Context, requested time.Duration) time.Duration {
+	if requested < 0 {
+		return 0
+	}
+	wait := requested
+	if wait == 0 {
+		wait = DefaultStatusWait
+	}
+	wait = min(wait, maxStatusWait)
+	if c != nil && c.httpClient != nil && c.httpClient.Timeout > 0 {
+		wait = min(wait, c.httpClient.Timeout-10*time.Second)
+	}
+	if deadline, ok := ctx.Deadline(); ok {
+		wait = min(wait, time.Until(deadline)-time.Second)
+	}
+	return max(wait.Truncate(time.Second), 0)
 }

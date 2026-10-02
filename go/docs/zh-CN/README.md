@@ -47,6 +47,7 @@ _ = client
 - `GetModel` 接受比 SDK 更新的操作、输入方式、币种、可用性取值和规则行为。
 - `Job`、`JobStatusResponse`、`Quote`、`File` 与 `ModelDetail` 新增 `RawJSON()`，返回解码时的原始 JSON，新字段可在 SDK 发版前读取。
 - `APIError.RequestID` 是失败 HTTP 请求的 `request_id`。
+- `WaitJob` 默认长轮询：每次状态查询请 Gateway 挂起最多 `DefaultStatusWait`（20 秒）直到状态变化，Yir 记录终态后约 1 秒即可拿到。挂起时长收进 HTTP 客户端超时与 context 截止时间之内，Gateway 未挂起时回退到 `PollDelay`。`WaitOptions.StatusWait` 设为负值可关闭。新增 `GetJobStatusWithWait`。
 
 ## 0.7.0 变化
 
@@ -94,7 +95,7 @@ submit := func(ctx context.Context, request yir.SubmitRequest, key string) (yir.
 
 ## 任务、文件与 Webhook
 
-保存返回的任务 ID。`GetJob` 查询完整任务详情，`GetJobStatus` 查询轻量状态摘要 `JobStatusResponse`。`WaitJob` 默认按 `PollDelay` 退避轮询状态摘要（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒）；设置 `WaitOptions.PollInterval` 可改为固定间隔。进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符返回 `ErrJobStateInconsistent`。取消或超时 context 只停止本地等待，返回零值 `Job{}`，不取消远端任务或表示退款；用保存的 ID 恢复。`JobError` 包含失败或取消的终态任务；`APIError` 包含 HTTP status、code、message、retryable 和 action。业务判断使用稳定错误码。
+保存返回的任务 ID。`GetJob` 查询完整任务详情，`GetJobStatus` 查询轻量状态摘要 `JobStatusResponse`。`WaitJob` 默认长轮询状态摘要：`GetJobStatusWithWait` 让 Gateway 挂起查询直到状态变化（最长 30 秒），`WaitOptions.StatusWait` 默认 `DefaultStatusWait`（20 秒，自动收进 HTTP 客户端超时与 context 截止时间之内；负值关闭），无需 Webhook，Yir 记录终态后约 1 秒即可拿到。Gateway 未挂起直接返回时，回退到 `PollDelay` 退避（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒）；设置 `WaitOptions.PollInterval` 可改为固定间隔。进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符返回 `ErrJobStateInconsistent`。取消或超时 context 只停止本地等待，返回零值 `Job{}`，不取消远端任务或表示退款；用保存的 ID 恢复。`JobError` 包含失败或取消的终态任务；`APIError` 包含 HTTP status、code、message、retryable 和 action。业务判断使用稳定错误码。
 
 `CancelJob` 显式申请取消，应检查取消状态和终态账单，不假定立即成功或零费用。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径；`ComputeCharges`、`GatewayFee`、`Savings` 和 `OfficialComparison` 说明该总额的构成。`APIError.Code` 应与 `ErrCode*` 常量比较，而非字符串字面量。`APIError.RequestID` 是失败 HTTP 请求的 `request_id`，联系 Yir 支持时请一并提供。
 

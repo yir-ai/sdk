@@ -295,7 +295,7 @@ test("AI SDK generateImage waits for a running Yir job before downloading", asyn
   const client = createYirClient(async request => {
     paths.push(request.path);
     if (request.path === "/v1/images/generations") return { ...done, status: "running", result: undefined };
-    if (request.path === "/v1/jobs/43/status") return { id: "43", status: ++statusPolls < 2 ? "running" : "succeeded", error: null };
+    if (request.path.startsWith("/v1/jobs/43/status")) return { id: "43", status: ++statusPolls < 2 ? "running" : "succeeded", error: null };
     if (request.path === "/v1/jobs/43") return done;
     throw new Error(`unexpected ${request.path}`);
   });
@@ -304,7 +304,7 @@ test("AI SDK generateImage waits for a running Yir job before downloading", asyn
     fetch: async () => new Response(Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]), { status: 200 }),
   });
   const result = await generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: "Observatory", maxRetries: 0 });
-  assert.deepEqual(paths, ["/v1/images/generations", "/v1/jobs/43/status", "/v1/jobs/43/status", "/v1/jobs/43"]);
+  assert.deepEqual(paths, ["/v1/images/generations", "/v1/jobs/43/status?wait=20", "/v1/jobs/43/status?wait=20", "/v1/jobs/43"]);
   assert.equal(result.images.length, 1);
   assert.equal(result.providerMetadata.yir.images[0].jobId, "43");
 });
