@@ -4,6 +4,7 @@ import { createNodeYirClient, waitForJob } from "./client.js";
 import type { CreateNodeYirClientOptions, YirClient, Job } from "./client.js";
 import { YirSDKValidationError, validateGeneration } from "../shared/standard.js";
 import { uploadFile } from "./files.js";
+import { coveringCatalog } from "./catalog-coverage.js";
 import type { RoutingOverride, StandardReference, StandardImageGenerationRequest, StandardVideoGenerationRequest } from "../shared/standard.js";
 
 type VideoModelV4File = NonNullable<Parameters<NonNullable<VideoModelV4["doGenerate"]>>[0]["image"]>;
@@ -45,7 +46,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             parameters, routing: extension.routing,
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
           };
-          validateGeneration("generate_image", request, options.modelContracts);
+          validateGeneration("generate_image", request, coveringCatalog(options.modelContracts, "generate_image", request));
           if (request.input.type === "image") {
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, call.files ?? [], extension.idempotencyKey, fetchResult, call.abortSignal) } };
           }
@@ -100,7 +101,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
             ...(call.webhookUrl === undefined ? {} : { webhook_url: call.webhookUrl }),
           };
-          validateGeneration("generate_video", request, options.modelContracts);
+          validateGeneration("generate_video", request, coveringCatalog(options.modelContracts, "generate_video", request));
           if (request.input.type !== "text") {
             const files = call.image ? [call.image] : call.frameImages?.length ? call.frameImages.map(frame => frame.image) : call.inputReferences ?? [];
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, files, extension.idempotencyKey, fetchResult, call.abortSignal) } };
@@ -124,14 +125,13 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           const response = { timestamp: new Date(job.created_at * 1000), modelId, headers: undefined };
           const providerMetadata = { yir: { jobId: job.id, totalChargedByYir: job.billing?.total_charged_by_yir ?? null } };
           switch (job.status) {
-            case "queued": case "running": case "delivering":
-              return { status: "pending", response, providerMetadata };
             case "failed": case "cancelled":
               return { status: "error", error: job.error?.code ?? (job.status === "cancelled" ? "YIR_JOB_CANCELLED" : "YIR_EXECUTION_FAILED"), response, providerMetadata };
             case "succeeded":
               if (job.result?.availability !== "available" || !job.result.files.length) throw new Error("yir_result_unavailable");
               return { status: "completed", videos: job.result.files.map(file => ({ type: "url" as const, url: file.url, mediaType: file.media_type })), warnings: (job.parameter_notices ?? []).map(notice => ({type: "other" as const, message: notice.message})), response, providerMetadata };
-            default: throw new Error("yir_job_invalid");
+            // queued, running, delivering and statuses newer than this SDK are in progress.
+            default: return { status: "pending", response, providerMetadata };
           }
         },
       };

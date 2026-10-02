@@ -137,14 +137,32 @@ func TestConstructWebhookEventRejectsBadSignatureAndPayload(t *testing.T) {
 	if _, err := ConstructWebhookEvent(tampered); !errors.As(err, &rejected) || rejected.Reason != "invalid_signature" {
 		t.Fatalf("tampered body must fail signature, got %v", err)
 	}
-	for _, body := range []string{`not json`, `{"id":"","status":"succeeded"}`, `{"id":" 7001","status":"succeeded"}`, `{"id":"abc","status":"failed"}`, `{"id":"7001","status":"running"}`} {
-		request := webhookVector(t)
-		request.RawBody = []byte(body)
-		mac := hmac.New(sha256.New, []byte(request.Secret))
-		mac.Write([]byte(request.Timestamp + "." + request.ID + "." + body))
-		request.Signature = "v1=" + base64.StdEncoding.EncodeToString(mac.Sum(nil))
-		if _, err := ConstructWebhookEvent(request); !errors.As(err, &rejected) || rejected.Reason != "invalid_payload" {
+	for _, body := range []string{`not json`, `null`, `[]`, `"7001"`} {
+		_, err := ConstructWebhookEvent(signedWebhook(t, body))
+		if !errors.As(err, &rejected) || rejected.Reason != "invalid_payload" || rejected.ID != "" {
 			t.Fatalf("body %q must be rejected as invalid_payload, got %v", body, err)
 		}
 	}
+}
+
+// An authentic body that is not a terminal Job, such as a newer event type, is
+// reported separately so receivers can acknowledge it instead of failing retries.
+func TestConstructWebhookEventReportsUnsupportedEvent(t *testing.T) {
+	for _, body := range []string{`{"id":"","status":"succeeded"}`, `{"id":" 7001","status":"succeeded"}`, `{"id":"abc","status":"failed"}`,
+		`{"id":"7001","status":"running"}`, `{"id":"7001","status":"pending_review"}`, `{"type":"file.ready","data":{"id":"file_x"}}`} {
+		var rejected *WebhookVerificationError
+		_, err := ConstructWebhookEvent(signedWebhook(t, body))
+		if !errors.As(err, &rejected) || rejected.Reason != "unsupported_event" || rejected.ID != "yir_evt_94101" || rejected.Timestamp != 1785974442 {
+			t.Fatalf("body %q must be reported as unsupported_event, got %#v", body, err)
+		}
+	}
+}
+
+func signedWebhook(t *testing.T, body string) VerifyWebhookSignatureRequest {
+	request := webhookVector(t)
+	request.RawBody = []byte(body)
+	mac := hmac.New(sha256.New, []byte(request.Secret))
+	mac.Write([]byte(request.Timestamp + "." + request.ID + "." + body))
+	request.Signature = "v1=" + base64.StdEncoding.EncodeToString(mac.Sum(nil))
+	return request
 }

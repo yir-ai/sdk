@@ -119,13 +119,26 @@ export interface WebhookEvent {
   readonly job: Job;
 }
 
+/**
+ * `unsupported_event` means the signature is valid but the body is not a terminal
+ * Job this SDK understands, such as an event type newer than this SDK. Acknowledge
+ * it with a 2xx response so Yir does not retry, and log it; `id` and `timestamp`
+ * are set only for this reason. Other reasons are not authentic or not a JSON
+ * object and should be answered with a 4xx response.
+ */
 export class YirWebhookVerificationError extends Error {
-  readonly reason: WebhookVerificationFailureReason | "invalid_payload";
+  readonly reason: WebhookVerificationFailureReason | "invalid_payload" | "unsupported_event";
+  readonly id?: string;
+  readonly timestamp?: number;
 
-  constructor(reason: WebhookVerificationFailureReason | "invalid_payload") {
+  constructor(reason: WebhookVerificationFailureReason | "invalid_payload" | "unsupported_event", event?: { readonly id: string; readonly timestamp: number }) {
     super(`yir webhook rejected: ${reason}`);
     this.name = "YirWebhookVerificationError";
     this.reason = reason;
+    if (event) {
+      this.id = event.id;
+      this.timestamp = event.timestamp;
+    }
   }
 }
 
@@ -145,11 +158,12 @@ export async function constructWebhookEvent(
   } catch {
     throw new YirWebhookVerificationError("invalid_payload");
   }
-  if (
-    typeof job !== "object" || job === null || typeof job.id !== "string" || !/^[1-9][0-9]*$/.test(job.id) ||
-    (job.status !== "succeeded" && job.status !== "failed" && job.status !== "cancelled")
-  ) {
+  if (typeof job !== "object" || job === null || Array.isArray(job)) {
     throw new YirWebhookVerificationError("invalid_payload");
+  }
+  if (typeof job.id !== "string" || !/^[1-9][0-9]*$/.test(job.id) ||
+      (job.status !== "succeeded" && job.status !== "failed" && job.status !== "cancelled")) {
+    throw new YirWebhookVerificationError("unsupported_event", { id: request.id, timestamp: result.timestamp });
   }
   return { id: request.id, timestamp: result.timestamp, job };
 }

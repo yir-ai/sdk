@@ -6,7 +6,8 @@ export type CreateFilesRequest = { readonly files: readonly CreateFile[]; readon
 export type InputFile = CreateFile & {
   readonly id: string;
   readonly object: "file";
-  readonly status: "pending_upload" | "processing" | "ready" | "expired" | "failed";
+  /** Statuses newer than this SDK are still processing; only ready, failed and expired are settled. */
+  readonly status: "pending_upload" | "processing" | "ready" | "expired" | "failed" | (string & {});
   readonly url?: string;
   readonly expires_at?: number;
   readonly width?: number;
@@ -82,7 +83,12 @@ function normalizeFileMetadata(file: CreateFile, path: string): CreateFile {
 }
 
 function validateFileResponse(file: InputFile) {
-  if (!file || !fileIDPattern.test(file.id) || file.object !== "file" || !["pending_upload", "processing", "ready", "expired", "failed"].includes(file.status)) throw new Error("file_response_invalid");
+  if (!file || !fileIDPattern.test(file.id) || file.object !== "file" || typeof file.status !== "string" || !file.status.trim()) throw new Error("file_response_invalid");
+}
+
+// Processing or a status newer than this SDK: the Gateway is still preparing the file.
+function fileProcessing(status: string): boolean {
+  return status !== "pending_upload" && status !== "ready" && status !== "failed" && status !== "expired";
 }
 
 export async function waitForFileReady(client: Pick<YirFileClient, "getFile">, id: string, timeoutMs: number = 300000, options?: YirRequestOptions): Promise<InputFile> {
@@ -117,7 +123,7 @@ export async function uploadFile(client: Pick<YirFileClient, "completeFile"> | P
   validateFileResponse(file);
   if (!(data instanceof Blob) || data.size !== file.size || file.size < 1 || file.size > 2147483648) invalid("upload_source_invalid", "data");
   if (file.status === "ready") return file;
-  if (file.status === "processing" && "getFile" in client) {
+  if (fileProcessing(file.status) && "getFile" in client) {
     const ready = await waitForFileReady(client, file.id, undefined, options);
     if (ready.name !== file.name || ready.media_type !== file.media_type || ready.size !== file.size) throw new Error("file_response_invalid");
     return ready;
@@ -153,7 +159,7 @@ export async function uploadFile(client: Pick<YirFileClient, "completeFile"> | P
   }
   let ready = await client.completeFile(file.id, options);
   validateFileResponse(ready);
-  if (ready.status === "processing" && "getFile" in client) {
+  if (fileProcessing(ready.status) && "getFile" in client) {
     ready = await waitForFileReady(client, file.id, undefined, options);
   }
   if (ready.status !== "ready" || ready.id !== file.id || ready.name !== file.name || ready.media_type !== file.media_type || ready.size !== file.size) throw new Error("file_response_invalid");

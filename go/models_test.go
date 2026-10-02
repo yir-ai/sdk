@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -63,14 +64,36 @@ func TestGetModelRejectsInvalidRequestsAndResponses(t *testing.T) {
 	for _, body := range []string{
 		`{"id":"openai/gpt-image-2","object":"model","specifications":[]}`,
 		`{"id":"openai/gpt-image-2","object":"model_contract","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","specification_label":"x","currency":"USD","channels":[{"provider_code":"a","provider_label":"A","availability":"available","estimated":false,"specification_label":"x"}]}]}`,
-		`{"id":"openai/gpt-image-2","object":"model","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"upscale_image","input_mode":"text","specification_label":"x","currency":"USD","channels":[{"provider_code":"a","provider_label":"A","availability":"available","estimated":false,"specification_label":"x"}]}]}`,
-		`{"id":"openai/gpt-image-2","object":"model","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","specification_label":"x","currency":"USD","channels":[{"provider_code":"a","provider_label":"A","availability":"maybe","estimated":false,"specification_label":"x"}]}]}`,
+		`{"id":"openai/gpt-image-2","object":"model","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"","input_mode":"text","specification_label":"x","currency":"USD","channels":[{"provider_code":"a","provider_label":"A","availability":"available","estimated":false,"specification_label":"x"}]}]}`,
+		`{"id":"openai/gpt-image-2","object":"model","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","specification_label":"x","currency":"USD","channels":[{"provider_code":"a","provider_label":"A","availability":"","estimated":false,"specification_label":"x"}]}]}`,
 		`{"id":"openai/gpt-image-2","object":"model","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","specification_label":"x","currency":"USD","channels":[{"provider_code":"a","provider_label":"A","availability":"available","specification_label":"x"}]}]}`,
 		`{"id":"openai/gpt-image-2","object":"model","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","specification_label":"x","currency":"USD","channels":[{"provider_code":"a","provider_label":"A","availability":"available","estimated":false,"specification_label":"x"}]}],"channel_parameters":[{"provider":"a","channel_variant":"default","operation":"generate_image","input_mode":"text"}]}`,
 	} {
 		bad, _ := modelDetailClient(t, body, 200)
 		if _, err := bad.GetModel(context.Background(), "openai/gpt-image-2"); err == nil || err.Error() != "model_response_invalid" {
 			t.Fatalf("invalid detail accepted: %v", err)
+		}
+	}
+}
+
+// Values newer than this SDK are data, not a broken response; TypeScript accepts them too.
+func TestGetModelAcceptsNewerValues(t *testing.T) {
+	body := `{"id":"openai/gpt-image-2","object":"model","specifications":[{"request_model_id":"openai/gpt-image-2","operation":"upscale_image","input_mode":"video","specification_label":"x","currency":"EUR",
+"channels":[{"provider_code":"a","provider_label":"A","availability":"limited","estimated":false,"specification_label":"x"}]}],
+"channel_parameters":[{"provider":"a","channel_variant":"default","operation":"upscale_image","input_mode":"video","parameter_rules":{"quality":{"behavior":"clamped"}}}]}`
+	client, _ := modelDetailClient(t, body, 200)
+	detail, err := client.GetModel(context.Background(), "openai/gpt-image-2")
+	if err != nil || detail.Specifications[0].InputMode != "video" || detail.Specifications[0].Channels[0].Availability != "limited" ||
+		detail.ChannelParameters[0].ParameterRules["quality"].Behavior != "clamped" {
+		t.Fatalf("detail=%+v err=%v", detail, err)
+	}
+	for _, bad := range []string{
+		strings.Replace(body, `"behavior":"clamped"`, `"behavior":""`, 1),
+		strings.Replace(body, `"input_mode":"video","parameter_rules"`, `"input_mode":"","parameter_rules"`, 1),
+	} {
+		client, _ := modelDetailClient(t, bad, 200)
+		if _, err := client.GetModel(context.Background(), "openai/gpt-image-2"); err == nil || err.Error() != "model_response_invalid" {
+			t.Fatalf("empty value accepted: %v", err)
 		}
 	}
 }

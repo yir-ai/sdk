@@ -80,6 +80,8 @@ const client = createNodeYirClient();
 
 0.5.0 起：`getModel("creator/model")` 读取 Market `ModelDetail`：`specifications` 及各渠道展示价格 `channels`（未公布价格时没有 `amount_micros`），以及可选的 `channel_parameters`。须传规范 ID，别名不能作为资源路径；非法 ID 在本地以 `model_request_invalid` 失败。未知字段会保留，但 ID 不一致或必填值非法时以 `model_response_invalid` 失败。模型不存在时以 `YirAPIError` 404 `YIR_MODEL_NOT_FOUND` 拒绝。Market 价格仅供展示，提交前仍需报价。`getModelContract` 仍用于读取带版本的参数合同（`view=contract`）。另导出 `modelDetailPath` 与 `parseModelDetail`，供自定义传输使用。
 
+传入目录创建的客户端（`createYirClient(transport, catalog)` 或 `modelContracts`），只对该目录描述的模型、操作和输入方式校验参数与引用。其余请求（例如目录读取之后才上线的模型）只做协议检查，交由 Gateway 判断；需要对新模型做本地检查时，用 `getModelContracts` 刷新目录。Vercel 适配器行为相同。`validateGeneration(operation, request, catalog)` 和请求构造器仍然严格，目录外的模型抛出 `model_contract_unavailable`；要把请求限定在该目录内，请自行调用它们。
+
 ## 文件与 Webhook
 
 0.4.0 要求媒体引用使用 `file_id`，拒绝外部引用 URL。先上传原始字节；`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器支持上传内联字节；URL 输入需由应用先下载为字节。
@@ -88,7 +90,7 @@ const client = createNodeYirClient();
 
 0.5.0 起：`getFileContentURL(id)` 返回 ready 文件的短时签名 URL。Node 传输以 `redirect: "manual"` 从 307 响应的 `Location` 头读取该 URL，从不跟随跳转，因此 API Key 不会发给存储端。请求该 URL 时不要带 Gateway 凭据；过期后重新获取。只接受绝对 `https` URL，其余情况以 `file_content_response_invalid` 拒绝，错误中不含该 URL。文件不存在以 `YirAPIError` 404 `YIR_FILE_NOT_FOUND` 拒绝；尚未 ready 返回 409 `YIR_FILE_NOT_READY`（用 `waitForFileReady` 等待后重试）；已过期返回 410 `YIR_FILE_EXPIRED`（需重新上传）。
 
-提交请求可设置 `webhook_url`。用账户 Webhook secret（不是 API Key）调用 `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })`。传入 JSON 解析前的原始字节，将回调签名元数据映射到 `id`、`timestamp` 和 `signature`。默认时钟容差为 300 秒。拒绝无效结果，按 Webhook ID 持久化去重；即使轮询也观察到终态，仍只结算一次。`constructWebhookEvent` 校验同样的字段，返回 `{ id, timestamp, job }`，失败时抛出带稳定 `reason` 的 `YirWebhookVerificationError`。持久化工作流可把 Webhook 当作唤醒信号，再用 `getJob` 回读，并保留 `pollDelayMs` 轮询兜底。
+提交请求可设置 `webhook_url`。用账户 Webhook secret（不是 API Key）调用 `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })`。传入 JSON 解析前的原始字节，将回调签名元数据映射到 `id`、`timestamp` 和 `signature`。默认时钟容差为 300 秒。拒绝无效结果，按 Webhook ID 持久化去重；即使轮询也观察到终态，仍只结算一次。`constructWebhookEvent` 校验同样的字段，返回 `{ id, timestamp, job }`，失败时抛出带稳定 `reason` 的 `YirWebhookVerificationError`。`reason` 为 `unsupported_event` 表示签名有效，但请求体不是本 SDK 能识别的终态 Job（例如比 SDK 更新的事件类型）：返回 2xx 确认收到，记录日志，并按其 `id` 去重。其他原因返回 4xx。持久化工作流可把 Webhook 当作唤醒信号，再用 `getJob` 回读，并保留 `pollDelayMs` 轮询兜底。
 
 ## Vercel AI SDK
 
@@ -109,7 +111,7 @@ const client = createNodeYirClient();
 
 - 模型目录与模型详情保留比 SDK 更新的字段和枚举值（新控件、参数类型、操作、输入方式、可用性或规则行为）。SDK 不认识的规则键交由 Gateway 判断，已知规则含义不变、照常校验；新参数类型的取值不在本地检查。不再抛出 `model_contract_semantics_unsupported`。
 - 未传入目录时，请求校验只检查协议骨架：对象结构、非空 `model`、`input.type`、提示词与引用角色、`max_cost`、`billing_mode`、HTTPS `webhook_url` 及路由取值类型。提示词长度、引用角色与来源、`file_id` 格式、路由 provider 代码、偏好与上限由 Gateway 校验。顶层、`input`、引用和 `routing` 中的未知字段原样透传，不再以 `unknown_field` 失败。
-- 报价金额、币种与价格大小关系仍严格校验，但接受新的价格 `kind`（金额须为十进制或 null）、供给问题、原因以及估算范围和用量指标。批量报价条目接受任意错误码。
+- 报价金额、币种与价格大小关系仍严格校验，但接受新的价格 `kind`（金额须为十进制或 null）、供给问题、原因以及估算范围和用量指标。批量报价条目接受任意错误码。币种不是 USD 的报价以 `quote_currency_unsupported` 拒绝（`quoteBatch` 同样如此），不再是 `quote_response_invalid`；不要拿其金额与 USD 预算比较。
 - 类型以 `(string & {})` 放宽，已知取值仍可补全；`Quote.parameters` 允许额外键，`QuotePrice` 增加开放变体。穷举 `switch` 需补默认分支。
 - Vercel 适配器把 `seed` 与视频 `fps` 映射为同名 Yir 参数，是否接受由模型合同决定。
 

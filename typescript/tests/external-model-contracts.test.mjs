@@ -6,7 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { createYirClient, getModelContract } from "../dist/index.js";
+import { createYirClient, getModelContract, validateGeneration } from "../dist/index.js";
 import { findModelContract, parseModelContractCatalog, parseModelContractDetail, modelContractPath, modelDetailPath, parseModelDetail, validateModelParameters } from "../dist/frontend.js";
 import { quoteFixture } from "./quote-fixture.mjs";
 
@@ -174,4 +174,24 @@ test("market model detail uses the plain path and tolerates additive fields", ()
     mutate(value);
     assert.throws(() => parseModelDetail(value, "openai/gpt-image-2"), /model_response_invalid/);
   }
+});
+
+// A catalog read before a model was published must not block that model: the
+// client leaves it to the Gateway, while explicit catalog validation stays strict.
+test("a client catalog leaves models it does not describe to the Gateway", async () => {
+  const stale = parseModelContractCatalog({ ...response, models: [structuredClone(getModelContract("openai/gpt-image-2"))] });
+  const newer = { ...request, model: "future/brand-new", parameters: { anything: true } };
+  let sent = 0;
+  const client = createYirClient(async call => { sent++; return quoteFixture(call.body); }, stale);
+  await client.quoteImage(newer);
+  await client.submitImage(newer, "key");
+  // An input mode the catalog does not describe for a known model is also left to the Gateway.
+  await client.quoteImage({ ...request, model: "openai/gpt-image-2", input: { type: "future_mode", prompt: "x" }, parameters: {} });
+  assert.equal(sent, 3);
+  // Protocol checks and covered models still fail locally.
+  assert.throws(() => client.quoteImage({ ...newer, input: { type: "text", prompt: " " } }), error => error.code === "prompt_required");
+  assert.throws(() => client.quoteImage({ ...request, model: "openai/gpt-image-2", parameters: { resolution: "unknown" } }),
+    error => error.code === "parameter_value");
+  assert.equal(sent, 3);
+  assert.throws(() => validateGeneration("generate_image", newer, stale), error => error.code === "model_contract_unavailable");
 });

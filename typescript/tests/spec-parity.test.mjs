@@ -34,7 +34,7 @@ test("cancelJob forwards the abort signal and rejects an aborted signal before s
 });
 
 test("cancelJob rejects a response that is not the cancelled job", async () => {
-  for (const response of [{}, null, { id: "9999", status: "cancelled" }, { id: "7001", status: "unknown" }]) {
+  for (const response of [{}, null, { id: "9999", status: "cancelled" }, { id: "7001", status: "" }, { id: "7001", status: 7 }]) {
     const client = createYirClient(async () => response);
     await assert.rejects(client.cancelJob("7001"), /response_invalid/);
   }

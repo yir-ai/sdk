@@ -21,7 +21,8 @@ test("dynamic parameters fail locally before either Quote or Submit transport", 
       assert.throws(submit, YirSDKValidationError);
     }
   }
-  assert.throws(() => client.quoteImage({ ...image(), model: "future/model" }),
+  // Explicit catalog validation stays strict; the client leaves uncovered models to the Gateway.
+  assert.throws(() => validateGeneration("generate_image", { ...image(), model: "future/model" }),
     error => error.code === "model_contract_unavailable");
   assert.equal(calls, 0);
 });

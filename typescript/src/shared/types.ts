@@ -1,7 +1,8 @@
 import type { ParameterNotice } from "./parameter-rules.js";
 import type { StandardImageQuoteRequest, StandardVideoQuoteRequest } from "./standard.js";
 
-export type JobStatus = "queued" | "running" | "delivering" | "succeeded" | "failed" | "cancelled";
+/** Statuses newer than this SDK are in progress; only succeeded, failed and cancelled are terminal. */
+export type JobStatus = "queued" | "running" | "delivering" | "succeeded" | "failed" | "cancelled" | (string & {});
 
 export const YIR_ERROR_CODES = Object.freeze([
   "YIR_INVALID_REQUEST",

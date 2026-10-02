@@ -316,7 +316,7 @@ func TestSubmitUnknownOutcomeIsNotRetried(t *testing.T) {
 }
 
 func TestWaitRejectsMismatchedJobAndInvalidStatus(t *testing.T) {
-	for _, body := range []string{`{"id":"2","status":"succeeded"}`, `{"id":"1","status":"unknown"}`, `null`} {
+	for _, body := range []string{`{"id":"2","status":"succeeded"}`, `{"id":"1","status":""}`, `{"id":"1","status":"  "}`, `null`} {
 		t.Run(body, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, body) }))
 			defer server.Close()
@@ -365,5 +365,43 @@ func TestWaitRejectsTerminalStatusDetailMismatch(t *testing.T) {
 	_, err := client.WaitJob(context.Background(), "1", WaitOptions{})
 	if !errors.Is(err, ErrJobStateInconsistent) {
 		t.Fatalf("error=%v", err)
+	}
+}
+
+// A catalog read before a model was published must not block that model: the
+// client leaves it to the Gateway, while explicit catalog validation stays strict.
+func TestClientLeavesModelsOutsideCatalogToGateway(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Write([]byte(`{"object":"quote","supply":{"available":true,"requires_max_cost":false,"issues":[]},"model":"future/new-image","operation":"generate_image","input_mode":"text","parameters":{"size":"s"},"currency":"USD","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`))
+	}))
+	defer server.Close()
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL, ModelContracts: testModelContracts()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := GenerationRequest{Model: "future/new-image", Input: GenerationInput{Type: "text", Prompt: "observatory"}, Parameters: map[string]any{"size": "s"}}
+	if quote, err := client.QuoteImage(context.Background(), request); err != nil || quote.Model != "future/new-image" || calls.Load() != 1 {
+		t.Fatalf("quote=%+v err=%v calls=%d", quote, err, calls.Load())
+	}
+	// An input mode the catalog does not describe for a known model is also left to the Gateway.
+	known := imageRequest()
+	known.Input = GenerationInput{Type: "future_mode", Prompt: "observatory"}
+	if catalogCovers(*testModelContracts(), known.Model, "generate_image", known.Input.Type) {
+		t.Fatal("fixture unexpectedly describes future_mode")
+	}
+	if err := client.validateGeneration("generate_image", known); err != nil {
+		t.Fatalf("uncovered input mode rejected locally: %v", err)
+	}
+	// Protocol checks still apply outside the catalog.
+	request.Input.Prompt = " "
+	if _, err := client.QuoteImage(context.Background(), request); err == nil || calls.Load() != 1 {
+		t.Fatalf("empty prompt reached the Gateway: %v", err)
+	}
+	request.Input.Prompt = "observatory"
+	var field *ParameterError
+	if err := ValidateGenerationWithCatalog("generate_image", request, *testModelContracts()); !errors.As(err, &field) || field.Code != "model_contract_unavailable" {
+		t.Fatalf("explicit catalog validation must stay strict: %v", err)
 	}
 }

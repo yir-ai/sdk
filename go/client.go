@@ -131,6 +131,9 @@ type APIError struct {
 	Message   string `json:"message"`
 	Retryable bool   `json:"retryable"`
 	Action    string `json:"action,omitempty"`
+	// RequestID identifies a failed HTTP request for Yir support. It comes from
+	// the error response envelope and is empty for Job and quote batch item errors.
+	RequestID string `json:"-"`
 }
 
 func (e *APIError) Error() string {
@@ -182,18 +185,36 @@ func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestIte
 			continue
 		}
 		request := requests[index]
-		if err := item.Quote.Validate(); err != nil || !c.quoteMatchesRequest(*item.Quote, request.Request, request.Operation) {
+		if err := item.Quote.Validate(); errors.Is(err, ErrQuoteCurrencyUnsupported) {
+			return QuoteBatch{}, err
+		} else if err != nil || !c.quoteMatchesRequest(*item.Quote, request.Request, request.Operation) {
 			return QuoteBatch{}, errors.New("quote_batch_response_invalid")
 		}
 	}
 	return batch, nil
 }
 
+// validateGeneration applies the configured catalog only to the model, operation
+// and input mode it describes. Anything newer than that snapshot is left to the
+// Gateway, so a stale catalog never blocks a model published after it was read.
 func (c *Client) validateGeneration(operation string, request GenerationRequest) error {
-	if c != nil && c.modelContracts != nil {
+	if c != nil && c.modelContracts != nil && catalogCovers(*c.modelContracts, request.Model, operation, request.Input.Type) {
 		return ValidateGenerationWithCatalog(operation, request, *c.modelContracts)
 	}
 	return ValidateGenerationProtocol(operation, request)
+}
+
+func catalogCovers(catalog ModelContractCatalog, model, operation, inputMode string) bool {
+	contract, found := findContractInCatalog(catalog, model)
+	if !found {
+		return false
+	}
+	for _, candidate := range contract.Operations {
+		if candidate.Operation == operation && containsString(candidate.InputModes, inputMode) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Client) quote(ctx context.Context, resource, operation string, request GenerationRequest) (Quote, error) {
@@ -415,11 +436,13 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 
 func responseAPIError(status int, raw []byte) error {
 	var envelope struct {
-		Error *APIError `json:"error"`
+		Error     *APIError `json:"error"`
+		RequestID string    `json:"request_id"`
 	}
 	if json.Unmarshal(raw, &envelope) != nil || envelope.Error == nil || envelope.Error.Code == "" {
-		return &APIError{Status: status, Code: "http_error"}
+		return &APIError{Status: status, Code: "http_error", RequestID: envelope.RequestID}
 	}
 	envelope.Error.Status = status
+	envelope.Error.RequestID = envelope.RequestID
 	return envelope.Error
 }

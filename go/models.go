@@ -14,6 +14,7 @@ type ModelDetail struct {
 	Object            string               `json:"object"`
 	Specifications    []ModelSpecification `json:"specifications"`
 	ChannelParameters []ChannelParameters  `json:"channel_parameters,omitempty"`
+	raw               string
 }
 
 type ModelSpecification struct {
@@ -66,41 +67,35 @@ func (c *Client) GetModel(ctx context.Context, model string) (ModelDetail, error
 	return detail, nil
 }
 
+// validModelDetail requires the documented fields but accepts operations, input
+// modes, currencies, availability values and rule behaviors newer than this SDK,
+// matching the TypeScript parser, so a new value never hides the whole model.
 func validModelDetail(detail ModelDetail, model string) bool {
 	if detail.ID != model || detail.Object != "model" || len(detail.Specifications) == 0 {
 		return false
 	}
 	for _, specification := range detail.Specifications {
-		if !validModelContractPath(specification.RequestModelID) || !validModelOperation(specification.Operation) ||
-			!validModelInputMode(specification.InputMode) || specification.SpecificationLabel == "" ||
-			specification.Currency != "USD" || len(specification.Channels) == 0 {
+		if !validModelContractPath(specification.RequestModelID) || specification.Operation == "" ||
+			specification.InputMode == "" || specification.SpecificationLabel == "" ||
+			specification.Currency == "" || len(specification.Channels) == 0 {
 			return false
 		}
 		for _, channel := range specification.Channels {
 			if channel.ProviderCode == "" || channel.ProviderLabel == "" || channel.SpecificationLabel == "" ||
-				channel.Availability != "available" && channel.Availability != "unavailable" ||
-				channel.AmountMicros != nil && *channel.AmountMicros < 0 {
+				channel.Availability == "" || channel.AmountMicros != nil && *channel.AmountMicros < 0 {
 				return false
 			}
 		}
 	}
 	for _, channel := range detail.ChannelParameters {
-		if channel.Provider == "" || channel.ChannelVariant == "" || channel.ParameterRules == nil || !validModelOperation(channel.Operation) || !validModelInputMode(channel.InputMode) {
+		if channel.Provider == "" || channel.ChannelVariant == "" || channel.ParameterRules == nil || channel.Operation == "" || channel.InputMode == "" {
 			return false
 		}
 		for _, rule := range channel.ParameterRules {
-			if rule.Behavior != "supported" && rule.Behavior != "ignored" && rule.Behavior != "rejected" {
+			if rule.Behavior == "" {
 				return false
 			}
 		}
 	}
 	return true
-}
-
-func validModelOperation(operation string) bool {
-	return operation == "generate_image" || operation == "generate_video"
-}
-
-func validModelInputMode(mode string) bool {
-	return mode == "text" || mode == "image" || mode == "reference"
 }

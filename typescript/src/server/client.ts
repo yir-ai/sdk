@@ -2,6 +2,7 @@ import { validateGeneration } from "../shared/standard.js";
 import { findModelOperationContract, modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
 import { checkParameterPolicies } from "../shared/parameter-rules.js";
 import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
+import { coveringCatalog } from "./catalog-coverage.js";
 import { createFileClient } from "./files.js";
 import type { YirFileClient } from "./files.js";
 import type {
@@ -86,7 +87,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     },
     quoteImage(request, options) {
       options?.signal?.throwIfAborted();
-      validateGeneration("generate_image", request, localCatalog);
+      validateGeneration("generate_image", request, coveringCatalog(localCatalog, "generate_image", request));
       warnParameterPolicies("generate_image", request, localCatalog);
       return transport<Quote>({
         method: "POST",
@@ -109,7 +110,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       options?.signal?.throwIfAborted();
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
-      validateGeneration("generate_image", request, localCatalog);
+      validateGeneration("generate_image", request, coveringCatalog(localCatalog, "generate_image", request));
       warnParameterPolicies("generate_image", request, localCatalog);
       return transport<Job>({
         method: "POST",
@@ -121,7 +122,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     },
     quoteVideo(request, options) {
       options?.signal?.throwIfAborted();
-      validateGeneration("generate_video", request, localCatalog);
+      validateGeneration("generate_video", request, coveringCatalog(localCatalog, "generate_video", request));
       warnParameterPolicies("generate_video", request, localCatalog);
       return transport<Quote>({
         method: "POST",
@@ -134,7 +135,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       options?.signal?.throwIfAborted();
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
-      validateGeneration("generate_video", request, localCatalog);
+      validateGeneration("generate_video", request, coveringCatalog(localCatalog, "generate_video", request));
       warnParameterPolicies("generate_video", request, localCatalog);
       return transport<Job>({
         method: "POST",
@@ -234,15 +235,10 @@ function validateSubmittedJob(job: Job): Job {
 
 export const TERMINAL_JOB_STATUSES = Object.freeze(["succeeded", "failed", "cancelled"] as const);
 
+// Statuses newer than this SDK are accepted as in progress, so waitForJob keeps
+// polling and a newer status never hides an accepted Job ID.
 function validJobStatus(status: unknown): status is JobStatus {
-  return typeof status === "string" && (
-    status === "queued" ||
-    status === "running" ||
-    status === "delivering" ||
-    status === "succeeded" ||
-    status === "failed" ||
-    status === "cancelled"
-  );
+  return typeof status === "string" && status.trim() !== "";
 }
 
 /**

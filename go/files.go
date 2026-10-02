@@ -37,6 +37,7 @@ type File struct {
 	ExpiresAt int64       `json:"expires_at,omitempty"`
 	Width     *int        `json:"width,omitempty"`
 	Height    *int        `json:"height,omitempty"`
+	raw       string
 }
 
 type FileUpload struct {
@@ -65,10 +66,11 @@ func (c *Client) CreateAndUploadFile(ctx context.Context, metadata CreateFile, s
 		return File{}, err
 	}
 	file := files[0]
-	switch file.Status {
-	case "ready":
+	switch {
+	case file.Status == "ready":
 		return file, nil
-	case "pending_upload":
+	case file.Status == "pending_upload" || fileProcessing(file.Status):
+		// UploadFile streams a pending plan or waits for a replay still being prepared.
 		ready, err := c.UploadFile(ctx, file, source)
 		if err != nil {
 			return File{}, err
@@ -130,9 +132,15 @@ func normalizeCreateFile(file CreateFile) CreateFile {
 	return file
 }
 
+// validFile accepts statuses newer than this SDK; see fileProcessing.
 func validFile(file File) bool {
-	return fileIDPattern.MatchString(file.ID) && file.Object == "file" &&
-		(file.Status == "pending_upload" || file.Status == "processing" || file.Status == "ready" || file.Status == "expired" || file.Status == "failed")
+	return fileIDPattern.MatchString(file.ID) && file.Object == "file" && strings.TrimSpace(file.Status) != ""
+}
+
+// fileProcessing reports a file the Gateway is still preparing: processing or a
+// status newer than this SDK. Only ready, failed and expired are settled.
+func fileProcessing(status string) bool {
+	return status != "pending_upload" && status != "ready" && status != "failed" && status != "expired"
 }
 
 func (c *Client) GetFile(ctx context.Context, id string) (File, error) {
@@ -187,10 +195,8 @@ func (c *Client) WaitForFileReady(ctx context.Context, id string, timeout time.D
 			return file, errors.New("file_processing_failed")
 		case "expired":
 			return file, errors.New("file_expired")
-		case "processing", "pending_upload":
-			// bounded wait
 		default:
-			return file, errors.New("file_not_ready")
+			// pending_upload, processing and newer statuses: bounded wait.
 		}
 
 		select {
@@ -223,7 +229,7 @@ func (c *Client) UploadFile(ctx context.Context, file File, source io.ReaderAt) 
 	if validFile(file) && file.Status == "ready" {
 		return file, nil
 	}
-	if validFile(file) && file.Status == "processing" {
+	if validFile(file) && fileProcessing(file.Status) {
 		ready, err := c.WaitForFileReady(ctx, file.ID, 0)
 		if err == nil && (ready.Name != file.Name || ready.MediaType != file.MediaType || ready.Size != file.Size) {
 			return File{}, errors.New("response_invalid")
@@ -271,7 +277,7 @@ func (c *Client) UploadFile(ctx context.Context, file File, source io.ReaderAt) 
 	if err != nil {
 		return File{}, err
 	}
-	if ready.Status == "processing" {
+	if fileProcessing(ready.Status) {
 		ready, err = c.WaitForFileReady(ctx, file.ID, 0)
 		if err != nil {
 			return File{}, err
