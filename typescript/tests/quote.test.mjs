@@ -45,7 +45,7 @@ test("Quote accepts newer price kinds and supply issues while keeping amounts st
 
 test("Quote rejects malformed or mismatched responses without exposing response contents", async () => {
   for (const patch of [null, {}, { model: "future/model" }, { operation: "generate_video" },
-    { input_mode: "image" }, { currency: "EUR" }, { parameters: null }, { expires_at: 0 },
+    { input_mode: "image" }, { parameters: null }, { expires_at: 0 },
     { primary: { kind: "fixed", amount: 0.02 } },
     { primary: { kind: "fixed", amount: "1e-2" } },
     { primary: { kind: "fixed", amount: "0.02", reason: "secret" } },
@@ -72,4 +72,16 @@ test("Quote compares exact decimals and does not cap official reference prices",
   value.single_attempt_upper_bound = null;
   value.supply.requires_max_cost = true;
   assert.deepEqual(await read(value), value);
+});
+
+// A quote in another currency fails closed with its own error so callers can
+// tell it apart from a malformed response.
+test("Quote reports an unsupported currency separately", async () => {
+  await assert.rejects(read({ ...quoteFixture(request), currency: "EUR" }), { message: "quote_currency_unsupported" });
+  for (const currency of ["", " ", undefined, 840]) {
+    await assert.rejects(read({ ...quoteFixture(request), currency }), { message: "quote_response_invalid" });
+  }
+  const batch = createYirClient(async () => ({ object: "quote_batch", request_id: "test",
+    data: [{ index: 0, quote: { ...quoteFixture(request), currency: "EUR" } }] }));
+  await assert.rejects(batch.quoteBatch([{ operation: "generate_image", request }]), { message: "quote_currency_unsupported" });
 });

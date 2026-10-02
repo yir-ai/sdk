@@ -10,18 +10,30 @@ import (
 
 var quoteAmountPattern = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?$`)
 
+// ErrQuoteCurrencyUnsupported reports a quote priced in a currency other than
+// USD. Amounts in another currency must not be compared with USD budgets, so
+// the quote is rejected; upgrade the SDK once Yir documents the new currency.
+var ErrQuoteCurrencyUnsupported = errors.New("quote_currency_unsupported")
+
 // Validate checks public price semantics without inferring a price from a hold.
 // Amounts, currency and price ordering stay strict; price kinds, supply issues,
 // reasons and usage fields newer than this SDK are accepted as data.
 func (q Quote) Validate() error {
 	invalid := errors.New("quote_response_invalid")
+	if q.Object != "quote" || strings.TrimSpace(q.Currency) == "" {
+		return invalid
+	}
+	// Checked first so a quote in another currency is reported as such.
+	if q.Currency != "USD" {
+		return ErrQuoteCurrencyUnsupported
+	}
 	if diff := q.PriceDifferencePercent; diff != nil {
 		if math.IsNaN(diff.Min) || math.IsInf(diff.Min, 0) || math.IsNaN(diff.Max) || math.IsInf(diff.Max, 0) || diff.Min > diff.Max ||
 			(diff.ReferenceAmountMicros != nil && *diff.ReferenceAmountMicros < 0) {
 			return invalid
 		}
 	}
-	if q.Object != "quote" || q.Model == "" || q.Currency != "USD" || q.ExpiresAt <= 0 || q.Parameters == nil {
+	if q.Model == "" || q.ExpiresAt <= 0 || q.Parameters == nil {
 		return invalid
 	}
 	for _, issue := range q.Supply.Issues {

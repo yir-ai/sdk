@@ -30,12 +30,14 @@ export function validateQuoteResponse(
   catalog?: ModelContractCatalog,
 ): Quote {
   const invalid = () => { throw new Error("quote_response_invalid"); };
-  if (!record(value)) return invalid();
+  if (!record(value) || value.object !== "quote" || typeof value.currency !== "string" || !value.currency.trim()) return invalid();
+  // Amounts in another currency must not be compared with USD budgets; fail
+  // closed with a distinct error so callers can tell it from a malformed quote.
+  if (value.currency !== "USD") throw new Error("quote_currency_unsupported");
   const expectedModel = catalog ? findModelContract(catalog, request.model)?.id ?? request.model : request.model;
   const returnedModel = catalog && typeof value.model === "string"
     ? findModelContract(catalog, value.model)?.id ?? value.model : value.model;
-  if (value.object !== "quote" || value.currency !== "USD"
-    || typeof value.model !== "string" || !expectedModel || returnedModel !== expectedModel
+  if (typeof value.model !== "string" || !expectedModel || returnedModel !== expectedModel
     || value.operation !== operation || value.input_mode !== request.input.type
     || !record(value.parameters) || !Number.isSafeInteger(value.expires_at)
     || (value.expires_at as number) <= 0 || typeof value.has_verifiable_upper_bound !== "boolean") return invalid();
@@ -104,7 +106,8 @@ export function validateQuoteBatchResponse(
       const request = requests[i]!;
       try {
         validateQuoteResponse(item.quote, request.request, request.operation, catalog);
-      } catch {
+      } catch (error) {
+        if (error instanceof Error && error.message === "quote_currency_unsupported") throw error;
         return invalid();
       }
       continue;

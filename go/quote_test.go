@@ -1,8 +1,13 @@
 package yir
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"math"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -148,5 +153,35 @@ func TestQuoteSupplyConsistency(t *testing.T) {
 				t.Fatalf("valid=%v, error=%v", tc.valid, err)
 			}
 		})
+	}
+}
+
+// A quote in another currency fails closed with its own error so callers can
+// tell it apart from a malformed response.
+func TestQuoteReportsUnsupportedCurrency(t *testing.T) {
+	q := Quote{Object: "quote", Currency: "EUR"}
+	if err := q.Validate(); !errors.Is(err, ErrQuoteCurrencyUnsupported) {
+		t.Fatalf("EUR: %v", err)
+	}
+	for _, currency := range []string{"", " "} {
+		q.Currency = currency
+		if err := q.Validate(); err == nil || err.Error() != "quote_response_invalid" {
+			t.Fatalf("%q: %v", currency, err)
+		}
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		quote := `{"object":"quote","supply":{"available":true,"requires_max_cost":false,"issues":[]},"model":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","parameters":{},"currency":"EUR","expires_at":3000000000,"has_verifiable_upper_bound":true,"single_attempt_upper_bound":"0.05","primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.05"},"official":{"kind":"unavailable","amount":null,"reason":"official_price_unavailable"}}`
+		if r.URL.Path == "/v1/quotes" {
+			quote = `{"object":"quote_batch","request_id":"test","data":[{"index":0,"quote":` + quote + `}]}`
+		}
+		io.WriteString(w, quote)
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if _, err := client.QuoteImage(context.Background(), imageRequest()); !errors.Is(err, ErrQuoteCurrencyUnsupported) {
+		t.Fatalf("QuoteImage: %v", err)
+	}
+	if _, err := client.QuoteBatch(context.Background(), []QuoteBatchRequestItem{{Operation: "generate_image", Request: imageRequest()}}); !errors.Is(err, ErrQuoteCurrencyUnsupported) {
+		t.Fatalf("QuoteBatch: %v", err)
 	}
 }
