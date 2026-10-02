@@ -12,8 +12,8 @@ import type {
   StandardVideoQuoteRequest,
 } from "../shared/standard.js";
 
-export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
-import type { JobStatus, JobStatusResponse, Job, Quote, YirPublicError, QuoteBatchRequestItem, QuoteBatch } from "../shared/types.js";
+export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirErrorAction, YirPublicError, JobResultFile, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
+import type { JobStatus, JobStatusResponse, Job, Quote, YirErrorAction, YirPublicError, QuoteBatchRequestItem, QuoteBatch } from "../shared/types.js";
 
 export type YirTransportRequest = {
   readonly method: "GET" | "POST";
@@ -118,7 +118,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
-      });
+      }).then(validateSubmittedJob);
     },
     quoteVideo(request, options) {
       options?.signal?.throwIfAborted();
@@ -143,7 +143,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
-      });
+      }).then(validateSubmittedJob);
     },
     getJob(id, options) {
       options?.signal?.throwIfAborted();
@@ -214,6 +214,24 @@ export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.6.0";
 /** @deprecated Former fixed default. `waitForJob` now backs off with `pollDelayMs` unless `pollIntervalMs` is set. */
 export const DEFAULT_POLL_INTERVAL_MS = 2000;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
+/** Default per-request limit of the Node transport, matching the Go SDK's HTTP client. */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+
+// The timeout also covers reading the response body, which shares this signal.
+function requestSignal(signal: AbortSignal | undefined, timeoutMs: number): AbortSignal | undefined {
+  if (timeoutMs === 0 || timeoutMs === Infinity) return signal;
+  const timeout = AbortSignal.timeout(timeoutMs);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
+// Same check as the Go SDK. An invalid body after a submit is an unknown
+// outcome: recover with the same request and idempotency key.
+function validateSubmittedJob(job: Job): Job {
+  if (typeof job !== "object" || job === null || typeof job.id !== "string" || !/^[1-9][0-9]*$/.test(job.id) || !validJobStatus(job.status)) {
+    throw new Error("response_invalid");
+  }
+  return job;
+}
 
 export const TERMINAL_JOB_STATUSES = Object.freeze(["succeeded", "failed", "cancelled"] as const);
 
@@ -243,7 +261,7 @@ export class YirAPIError extends Error {
   readonly status: number;
   readonly code: string;
   readonly retryable: boolean;
-  readonly action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
+  readonly action?: YirErrorAction;
   readonly requestId?: string;
   readonly details?: unknown;
 
@@ -252,14 +270,15 @@ export class YirAPIError extends Error {
     status: number;
     code?: string;
     retryable?: boolean;
-    action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
+    action?: YirErrorAction;
     requestId?: string;
     details?: unknown;
   }) {
     super(params.message);
     this.name = "YirAPIError";
     this.status = params.status;
-    this.code = params.code ?? `HTTP_${params.status}`;
+    // Same fallback as the Go SDK; the HTTP status stays in `status`.
+    this.code = params.code || "http_error";
     this.retryable = params.retryable ?? false;
     this.action = params.action;
     this.requestId = params.requestId;
@@ -270,7 +289,7 @@ export class YirAPIError extends Error {
 export class YirJobError extends Error {
   readonly job: Job;
   readonly code: string;
-  readonly action?: "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support";
+  readonly action?: YirErrorAction;
   readonly retryable: boolean;
 
   constructor(job: Job) {
@@ -506,6 +525,12 @@ export type CreateNodeYirClientOptions = {
   readonly userAgent?: string;
   readonly fetch?: typeof globalThis.fetch;
   readonly headers?: Readonly<Record<string, string>>;
+  /**
+   * Per-request limit in milliseconds for Gateway calls, matching the Go SDK's
+   * 30-second default. 0 or Infinity disables it. A timed-out submit has an
+   * unknown outcome: recover with the same request and idempotency key.
+   */
+  readonly timeoutMs?: number;
 };
 
 export type NodeYirClient = YirClient & {
@@ -541,6 +566,10 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
   if (typeof fetchFn !== "function") {
     throw new Error("fetch_unavailable");
   }
+  const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+  if (timeoutMs !== Infinity && !(Number.isInteger(timeoutMs) && timeoutMs >= 0 && timeoutMs <= 2147483647)) {
+    throw new Error("timeout_invalid");
+  }
 
   return async <Response>(request: YirTransportRequest): Promise<Response> => {
     const path = request.path.startsWith("/") ? request.path : `/${request.path}`;
@@ -558,7 +587,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       method: request.method,
       headers,
       body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
-      signal: request.signal,
+      signal: requestSignal(request.signal, timeoutMs),
       redirect: request.redirect === "manual" ? "manual" : "error",
     });
     if (request.redirect === "manual" && response.status >= 300 && response.status < 400) {
@@ -601,7 +630,8 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       throw new YirAPIError({
         message,
         status: response.status,
-        code: `HTTP_${response.status}`,
+        requestId: typeof data === "object" && data !== null && typeof (data as { request_id?: unknown }).request_id === "string"
+          ? (data as { request_id: string }).request_id : undefined,
         details: data,
       });
     }
