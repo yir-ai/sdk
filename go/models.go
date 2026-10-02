@@ -14,6 +14,7 @@ type ModelDetail struct {
 	Object            string               `json:"object"`
 	Specifications    []ModelSpecification `json:"specifications"`
 	ChannelParameters []ChannelParameters  `json:"channel_parameters,omitempty"`
+	raw               string
 }
 
 type ModelSpecification struct {

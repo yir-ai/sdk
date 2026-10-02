@@ -37,6 +37,7 @@ type File struct {
 	ExpiresAt int64       `json:"expires_at,omitempty"`
 	Width     *int        `json:"width,omitempty"`
 	Height    *int        `json:"height,omitempty"`
+	raw       string
 }
 
 type FileUpload struct {
