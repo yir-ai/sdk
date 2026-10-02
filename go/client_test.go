@@ -316,7 +316,7 @@ func TestSubmitUnknownOutcomeIsNotRetried(t *testing.T) {
 }
 
 func TestWaitRejectsMismatchedJobAndInvalidStatus(t *testing.T) {
-	for _, body := range []string{`{"id":"2","status":"succeeded"}`, `{"id":"1","status":"unknown"}`, `null`} {
+	for _, body := range []string{`{"id":"2","status":"succeeded"}`, `{"id":"1","status":""}`, `{"id":"1","status":"  "}`, `null`} {
 		t.Run(body, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, body) }))
 			defer server.Close()

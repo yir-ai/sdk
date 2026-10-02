@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -192,8 +193,11 @@ func (s JobStatusResponse) IsTerminal() bool {
 // returned Job, so WaitJob returns no partial Job in this case.
 var ErrJobStateInconsistent = errors.New("job_state_inconsistent")
 
+// validJobStatus accepts statuses newer than this SDK. Only succeeded, failed
+// and cancelled are terminal; any other status is in progress, so WaitJob keeps
+// polling and a newer status never hides an accepted Job ID.
 func validJobStatus(status string) bool {
-	return status == "queued" || status == "running" || status == "delivering" || status == "succeeded" || status == "failed" || status == "cancelled"
+	return strings.TrimSpace(status) != ""
 }
 
 type JobError struct{ Job Job }
