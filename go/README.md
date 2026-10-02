@@ -32,6 +32,10 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
 
+## 0.8.1 changes
+
+0.8.1 is compatible with 0.8.0. `RoutingPreferenceCost`, `RoutingPreferenceSpeed` and the deprecated `RoutingPreferenceBalanced` name the `Routing.Preference` values. `speed` orders channels by ascending observed upstream latency, with channels that have too few samples following in price order; `cost` stays the default; `balanced` is an alias of `cost` that the Gateway still accepts. `Preference` remains a string validated by the Gateway, so earlier SDK versions can already send `speed` to a Gateway that supports it.
+
 ## 0.8.0 changes
 
 0.8.0 is a minor release. Call signatures do not change, but these behaviours do; check code that branches on them:

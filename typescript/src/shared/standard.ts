@@ -1,7 +1,13 @@
 import { findModelOperationContract, parameterTypeKnown, type ModelContractCatalog } from "./catalog.js";
 import type { ModelParameterContract, ReferenceRole } from "./model-contracts.js";
 
-export type RoutingPreference = "balanced" | "cost" | (string & {});
+/**
+ * Channel ordering for a request; the Gateway validates the value.
+ * - "cost" (default): ascending price.
+ * - "speed": ascending observed upstream latency; channels with too few samples follow in price order.
+ * - "balanced": deprecated alias of "cost"; still accepted, use "cost" instead.
+ */
+export type RoutingPreference = "cost" | "speed" | "balanced" | (string & {});
 
 /**
  * Request-scoped routing intent.

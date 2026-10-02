@@ -100,6 +100,10 @@ const client = createNodeYirClient();
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数，仅在模型合同声明时被接受。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
+## 0.7.1 变化
+
+0.7.1 与 0.7.0 兼容。`RoutingPreference` 新增 `speed`，按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序。默认仍为 `cost`；`balanced` 标为已弃用，是 `cost` 的别名，Gateway 仍接受。该值仍由 Gateway 校验，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
+
 ## 0.7.0 变化
 
 0.7.0 为 minor 版本，含不兼容变更：

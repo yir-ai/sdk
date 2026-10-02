@@ -19,6 +19,16 @@
       "canonicalIdentity": "{\"preference\":\"cost\",\"only\":[\"apimart\",\"kie\"],\"fallback\":true}"
     },
     {
+      "name": "speed_preference",
+      "input": { "preference": "speed" },
+      "canonicalIdentity": "{\"preference\":\"speed\"}"
+    },
+    {
+      "name": "deprecated_balanced_preference",
+      "input": { "preference": "balanced" },
+      "canonicalIdentity": "{\"preference\":\"balanced\"}"
+    },
+    {
       "name": "sixteen_provider_only_range",
       "input": {
         "only": [
@@ -55,7 +65,7 @@
     {
       "name": "unknown_preference",
       "input": {
-        "preference": "speed"
+        "preference": "fastest"
       },
       "reason": "invalid_preference",
       "field": "preference"
