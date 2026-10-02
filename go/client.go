@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -352,11 +353,25 @@ func (c *Client) GetJob(ctx context.Context, id string) (Job, error) {
 }
 
 func (c *Client) GetJobStatus(ctx context.Context, id string) (JobStatusResponse, error) {
+	return c.GetJobStatusWithWait(ctx, id, 0)
+}
+
+// GetJobStatusWithWait long-polls: the Gateway holds the query for up to wait
+// (whole seconds, capped at 30s) until the status changes, and answers a
+// terminal Job at once. Keep the HTTP client timeout longer than wait.
+func (c *Client) GetJobStatusWithWait(ctx context.Context, id string, wait time.Duration) (JobStatusResponse, error) {
 	var status JobStatusResponse
 	if !jobIDPattern.MatchString(id) {
 		return status, errors.New("job_id_invalid")
 	}
-	err := c.do(ctx, http.MethodGet, "/v1/jobs/"+id+"/status", "", nil, &status)
+	if wait < 0 {
+		return status, errors.New("wait_invalid")
+	}
+	path := "/v1/jobs/" + id + "/status"
+	if seconds := int(wait / time.Second); seconds > 0 {
+		path += "?wait=" + strconv.Itoa(seconds)
+	}
+	err := c.do(ctx, http.MethodGet, path, "", nil, &status)
 	if err == nil && (status.ID != id || !validJobStatus(status.Status)) {
 		err = errors.New("response_invalid")
 	}

@@ -68,7 +68,7 @@ const client = createNodeYirClient();
 
 ## 任务和恢复
 
-保存返回的 `job.id`。`getJob(id)` 查询完整任务详情，`getJobStatus(id)` 查询轻量状态摘要 `JobStatusResponse`。使用 `waitForJob(id, options)`（Node 客户端）或 `waitForJob(client, id, options)`（自定义传输客户端）。默认按 `pollDelayMs` 退避轮询状态摘要（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒；设置 `pollIntervalMs` 可改为固定间隔），5 分钟超时，进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符抛出 `job_state_inconsistent` 错误。`YirTimeoutError` 保留任务 ID 与 `lastStatus`；超时和 abort 只停止本地等待，不取消任务或代表退款。用保存的 ID 恢复；提交未返回 ID 时，重交完全相同的请求与键。
+保存返回的 `job.id`。`getJob(id)` 查询完整任务详情，`getJobStatus(id)` 查询轻量状态摘要 `JobStatusResponse`。使用 `waitForJob(id, options)`（Node 客户端）或 `waitForJob(client, id, options)`（自定义传输客户端）。状态查询默认长轮询：`getJobStatus(id, { waitSeconds })` 让 Gateway 挂起查询直到状态变化（最长 30 秒），`waitForJob` 使用 `statusWaitSeconds`（默认 20，自动收进超时之内；设为 0 关闭），无需 Webhook，Yir 记录终态后约 1 秒即可拿到。Gateway 未挂起直接返回时，回退到 `pollDelayMs` 退避（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒；设置 `pollIntervalMs` 可改为固定间隔）。默认 5 分钟超时，进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符抛出 `job_state_inconsistent` 错误。`YirTimeoutError` 保留任务 ID 与 `lastStatus`；超时和 abort 只停止本地等待，不取消任务或代表退款。用保存的 ID 恢复；提交未返回 ID 时，重交完全相同的请求与键。
 
 `YirJobError` 包含失败或取消的终态任务。`YirAPIError` 在可用时提供 status、code、retryable、action 和 requestId。错误响应体没有错误码时，code 为 `http_error`（与 Go SDK 一致；旧版本为 `HTTP_<status>`），HTTP 状态见 `status`。`action` 可能出现比 SDK 更新的取值（`YirErrorAction`）。`submitImage` 与 `submitVideo` 收到的响应不是 ID 和状态都有效的 Job 时，以 `response_invalid` 拒绝。应用逻辑应依赖稳定错误码，`YIR_ERROR_CODES` 与 `YirErrorCode` 类型列出全部稳定错误码。`cancelJob(id, options)` 显式申请取消，需检查 cancellation 和终态账单，不能假定立即取消或零费用。每个任务的 `billing.total_charged_by_yir` 只结算一次。结果 URL 会过期，应检查 `result.availability` 并及时复制到自己的资源库。
 

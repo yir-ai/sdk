@@ -252,3 +252,73 @@ func TestWaitJobDefaultUsesPollDelaySchedule(t *testing.T) {
 		t.Fatalf("fixed PollInterval must bypass PollDelay, got %v", polls)
 	}
 }
+
+func TestWaitJobLongPollsWithoutClientDelay(t *testing.T) {
+	var statusCalls atomic.Int32
+	var waits []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/jobs/105/status":
+			waits = append(waits, r.URL.Query().Get("wait"))
+			switch statusCalls.Add(1) {
+			case 1:
+				io.WriteString(w, `{"id":"105","status":"queued"}`)
+			case 2:
+				io.WriteString(w, `{"id":"105","status":"running"}`)
+			default:
+				io.WriteString(w, `{"id":"105","status":"succeeded"}`)
+			}
+		case "/v1/jobs/105":
+			io.WriteString(w, `{"id":"105","status":"succeeded"}`)
+		}
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	// The first quick unchanged answer sleeps PollInterval; the change after it
+	// returns early from a held query and is followed at once.
+	job, err := client.WaitJob(context.Background(), "105", WaitOptions{PollInterval: time.Millisecond})
+	if err != nil || job.Status != "succeeded" || statusCalls.Load() != 3 {
+		t.Fatalf("job=%+v err=%v calls=%d", job, err, statusCalls.Load())
+	}
+	for _, wait := range waits {
+		if wait != "20" {
+			t.Fatalf("wait query: %v", waits)
+		}
+	}
+}
+
+func TestWaitJobStatusWaitFitsClientTimeoutAndDeadline(t *testing.T) {
+	client, _ := NewClient("test-key", ClientOptions{HTTPClient: &http.Client{Timeout: 15 * time.Second}})
+	if got := client.statusWait(context.Background(), 0); got != 5*time.Second {
+		t.Fatalf("client timeout clamp: %v", got)
+	}
+	if got := client.statusWait(context.Background(), -1); got != 0 {
+		t.Fatalf("disabled: %v", got)
+	}
+	unlimited, _ := NewClient("test-key", ClientOptions{HTTPClient: &http.Client{}})
+	if got := unlimited.statusWait(context.Background(), time.Minute); got != 30*time.Second {
+		t.Fatalf("gateway cap: %v", got)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 4500*time.Millisecond)
+	defer cancel()
+	if got := unlimited.statusWait(ctx, 0); got != 3*time.Second {
+		t.Fatalf("deadline clamp: %v", got)
+	}
+}
+
+func TestGetJobStatusWithWaitQuery(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RawQuery != "wait=7" {
+			t.Errorf("query: %q", r.URL.RawQuery)
+		}
+		io.WriteString(w, `{"id":"1","status":"running"}`)
+	}))
+	defer server.Close()
+	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if _, err := client.GetJobStatusWithWait(context.Background(), "1", 7500*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.GetJobStatusWithWait(context.Background(), "1", -time.Second); err == nil || err.Error() != "wait_invalid" {
+		t.Fatalf("negative wait: %v", err)
+	}
+}

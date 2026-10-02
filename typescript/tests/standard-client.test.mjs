@@ -341,7 +341,7 @@ test("waitForJob polls status and only fetches full job detail upon terminal sta
   let pollCount = 0;
   const client = createYirClient(async request => {
     calls.push(request);
-    if (request.path === "/v1/jobs/202/status") {
+    if (request.path.startsWith("/v1/jobs/202/status")) {
       pollCount++;
       if (pollCount === 1) {
         return { id: "202", status: "queued", error: null };
@@ -380,9 +380,9 @@ test("waitForJob polls status and only fetches full job detail upon terminal sta
 
   // 3 status calls + 1 detail call
   assert.equal(calls.length, 4);
-  assert.equal(calls[0].path, "/v1/jobs/202/status");
-  assert.equal(calls[1].path, "/v1/jobs/202/status");
-  assert.equal(calls[2].path, "/v1/jobs/202/status");
+  assert.equal(calls[0].path, "/v1/jobs/202/status?wait=20");
+  assert.equal(calls[1].path, "/v1/jobs/202/status?wait=20");
+  assert.equal(calls[2].path, "/v1/jobs/202/status?wait=20");
   assert.equal(calls[3].path, "/v1/jobs/202");
 
   assert.deepEqual(polledStatuses, ["queued", "running", "succeeded"]);
@@ -392,7 +392,7 @@ test("waitForJob throws YirJobError with full detail on terminal failure", async
   const calls = [];
   const client = createYirClient(async request => {
     calls.push(request);
-    if (request.path === "/v1/jobs/303/status") {
+    if (request.path.startsWith("/v1/jobs/303/status")) {
       return { id: "303", status: "failed", error: { code: "YIR_CONTENT_POLICY_VIOLATION", message: "Policy violation", retryable: false } };
     }
     if (request.path === "/v1/jobs/303") {
@@ -421,7 +421,7 @@ test("waitForJob throws YirJobError with full detail on terminal failure", async
   );
 
   assert.equal(calls.length, 2);
-  assert.equal(calls[0].path, "/v1/jobs/303/status");
+  assert.equal(calls[0].path, "/v1/jobs/303/status?wait=20");
   assert.equal(calls[1].path, "/v1/jobs/303");
 });
 
@@ -445,7 +445,7 @@ test("waitForJob times out and includes lastStatus on timeout", async () => {
 
 test("waitForJob rejects terminal status detail mismatch with job_state_inconsistent", async () => {
   const client = createYirClient(async request => {
-    if (request.path === "/v1/jobs/405/status") {
+    if (request.path.startsWith("/v1/jobs/405/status")) {
       return { id: "405", status: "succeeded", error: null };
     }
     if (request.path === "/v1/jobs/405") {
@@ -522,4 +522,46 @@ test("waitForJob status 404 does not silently fallback to detail", async () => {
 test("image request builder leaves prompt length limits to the Gateway", () => {
   const input = { model: "openai/gpt-image-2", prompt: "😀".repeat(20_001), parameters: { n: 1 } };
   assert.equal(buildImageGenerationRequest(input).input.prompt, input.prompt);
+});
+
+test("getJobStatus long-polls with waitSeconds and asks the transport to extend its limit", async () => {
+  const calls = [];
+  const client = createYirClient(async request => {
+    calls.push(request);
+    return { id: "111", status: "running", error: null };
+  });
+  await client.getJobStatus("111", { waitSeconds: 7 });
+  assert.equal(calls[0].path, "/v1/jobs/111/status?wait=7");
+  assert.equal(calls[0].holdMs, 7000);
+  for (const waitSeconds of [-1, 1.5, 31]) {
+    assert.throws(() => client.getJobStatus("111", { waitSeconds }), /wait_invalid/);
+  }
+});
+
+test("waitForJob keeps the long-poll hold inside its timeout and can disable it", async () => {
+  const paths = [];
+  const client = createYirClient(async request => {
+    paths.push(request.path);
+    return request.path.includes("/status")
+      ? { id: "112", status: "succeeded", error: null }
+      : { id: "112", object: "job", status: "succeeded", error: null, created_at: 1786000000 };
+  });
+  await waitForJob(client, "112", { timeoutMs: 8500 });
+  await waitForJob(client, "112", { statusWaitSeconds: 0 });
+  assert.deepEqual(paths, ["/v1/jobs/112/status?wait=7", "/v1/jobs/112", "/v1/jobs/112/status", "/v1/jobs/112"]);
+});
+
+test("waitForJob falls back to backoff when the Gateway answers without holding", async () => {
+  let statusCalls = 0;
+  const client = createYirClient(async request => {
+    if (request.path.startsWith("/v1/jobs/113/status")) {
+      statusCalls++;
+      return { id: "113", status: statusCalls < 3 ? "running" : "succeeded", error: null };
+    }
+    return { id: "113", object: "job", status: "succeeded", error: null, created_at: 1786000000 };
+  });
+  const started = Date.now();
+  await waitForJob(client, "113", { pollIntervalMs: 40 });
+  assert.equal(statusCalls, 3);
+  assert.ok(Date.now() - started >= 70, "unchanged quick answers must sleep the poll interval");
 });
