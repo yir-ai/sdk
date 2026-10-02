@@ -48,7 +48,7 @@ func (e *QuoteEstimate) UnmarshalJSON(data []byte) error {
 }
 
 type Quote struct {
-	BillingMode string `json:"billing_mode,omitempty"`
+	BillingMode              string                `json:"billing_mode,omitempty"`
 	PriceDifferencePercent   *QuotePriceDifference `json:"price_difference_percent,omitempty"`
 	ParameterNotices         []ParameterNotice     `json:"parameter_notices,omitempty"`
 	ParameterHandlingMayVary bool                  `json:"parameter_handling_may_vary,omitempty"`
@@ -65,6 +65,7 @@ type Quote struct {
 	SingleAttemptUpperBound  *string               `json:"single_attempt_upper_bound"`
 	HasVerifiableUpperBound  bool                  `json:"has_verifiable_upper_bound"`
 	ExpiresAt                int64                 `json:"expires_at"`
+	raw                      string
 }
 
 // QuotePriceDifference is comparison metadata, never a charge or authorization.
@@ -95,6 +96,7 @@ type Job struct {
 	Cancellation     *JobCancellation  `json:"cancellation,omitempty"`
 	Result           *JobResult        `json:"result,omitempty"`
 	Billing          *JobBilling       `json:"billing,omitempty"`
+	raw              string
 }
 
 type JobURLs struct {
@@ -129,7 +131,7 @@ type ResultFile struct {
 }
 
 type JobBilling struct {
-	BillingMode string `json:"billing_mode,omitempty"`
+	BillingMode        string              `json:"billing_mode,omitempty"`
 	Currency           string              `json:"currency"`
 	ComputeCharges     []ComputeCharge     `json:"compute_charges"`
 	GatewayFee         GatewayFee          `json:"gateway_fee"`
@@ -182,6 +184,7 @@ type JobStatusResponse struct {
 	Status       string           `json:"status"`
 	Error        *APIError        `json:"error"`
 	Cancellation *JobCancellation `json:"cancellation,omitempty"`
+	raw          string
 }
 
 func (s JobStatusResponse) IsTerminal() bool {

@@ -131,6 +131,9 @@ type APIError struct {
 	Message   string `json:"message"`
 	Retryable bool   `json:"retryable"`
 	Action    string `json:"action,omitempty"`
+	// RequestID identifies a failed HTTP request for Yir support. It comes from
+	// the error response envelope and is empty for Job and quote batch item errors.
+	RequestID string `json:"-"`
 }
 
 func (e *APIError) Error() string {
@@ -433,11 +436,13 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 
 func responseAPIError(status int, raw []byte) error {
 	var envelope struct {
-		Error *APIError `json:"error"`
+		Error     *APIError `json:"error"`
+		RequestID string    `json:"request_id"`
 	}
 	if json.Unmarshal(raw, &envelope) != nil || envelope.Error == nil || envelope.Error.Code == "" {
-		return &APIError{Status: status, Code: "http_error"}
+		return &APIError{Status: status, Code: "http_error", RequestID: envelope.RequestID}
 	}
 	envelope.Error.Status = status
+	envelope.Error.RequestID = envelope.RequestID
 	return envelope.Error
 }
