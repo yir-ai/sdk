@@ -100,6 +100,20 @@ const client = createNodeYirClient();
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数，仅在模型合同声明时被接受。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
+## 0.7.0 变化
+
+0.7.0 为 minor 版本，含不兼容变更：
+
+- `JobStatus` 与 `InputFile.status` 以 `(string & {})` 放宽。只有 `succeeded`、`failed`、`cancelled` 表示 Job 结束，只有 `ready`、`failed`、`expired` 表示文件有结果；其余非空状态都视为进行中。`getJob`、`getJobStatus`、`cancelJob` 与文件读取接受新状态，`waitForJob` 与 `uploadFile` 会继续等待，Vercel 适配器将其报告为 `pending`。穷举的 `switch` 需要 default 分支。
+- 错误响应体没有错误码时，code 为 `http_error`，不再是 `HTTP_<status>`，与 Go SDK 一致；HTTP 状态仍见 `YirAPIError.status`。`YirAPIError` 构造函数的默认值相同。
+- Node 传输默认将每个 Gateway 请求限制为 30 秒（`DEFAULT_REQUEST_TIMEOUT_MS`），超时以 `TimeoutError` 拒绝。较慢的调用请设置 `timeoutMs`，设为 `0` 则不限制。提交超时时，用同一请求和幂等键恢复。
+- `submitImage` 与 `submitVideo` 收到的响应不是 ID 和状态都有效的 Job 时，以 `response_invalid` 拒绝。
+- `constructWebhookEvent` 收到签名有效、但不是终态 Job 的 JSON 对象（例如比 SDK 更新的事件类型）时，以 `reason` `unsupported_event` 报告，并带上投递的 `id` 与 `timestamp`，不再是 `invalid_payload`。应返回 2xx 确认收到并记录日志。`invalid_payload` 现在只表示请求体不是 JSON 对象。
+- 传入目录创建的客户端及 Vercel 适配器只对目录描述的模型、操作和输入方式应用目录，其余交由 Gateway 判断，不再以 `model_contract_unavailable` 失败。`validateGeneration(operation, request, catalog)` 与请求构造器仍然严格。
+- 币种不是 USD 的报价以 `quote_currency_unsupported` 拒绝，不再是 `quote_response_invalid`；`quoteBatch` 同样如此。此类报价仍会被拒绝。
+
+兼容的新增：`action` 使用开放联合类型 `YirErrorAction`；错误响应体没有标准错误对象时也保留 `YirAPIError.requestId`。
+
 ## 0.6.0 变化
 
 0.6.0 为 minor 版本，含不兼容变更：
@@ -111,7 +125,7 @@ const client = createNodeYirClient();
 
 - 模型目录与模型详情保留比 SDK 更新的字段和枚举值（新控件、参数类型、操作、输入方式、可用性或规则行为）。SDK 不认识的规则键交由 Gateway 判断，已知规则含义不变、照常校验；新参数类型的取值不在本地检查。不再抛出 `model_contract_semantics_unsupported`。
 - 未传入目录时，请求校验只检查协议骨架：对象结构、非空 `model`、`input.type`、提示词与引用角色、`max_cost`、`billing_mode`、HTTPS `webhook_url` 及路由取值类型。提示词长度、引用角色与来源、`file_id` 格式、路由 provider 代码、偏好与上限由 Gateway 校验。顶层、`input`、引用和 `routing` 中的未知字段原样透传，不再以 `unknown_field` 失败。
-- 报价金额、币种与价格大小关系仍严格校验，但接受新的价格 `kind`（金额须为十进制或 null）、供给问题、原因以及估算范围和用量指标。批量报价条目接受任意错误码。币种不是 USD 的报价以 `quote_currency_unsupported` 拒绝（`quoteBatch` 同样如此），不再是 `quote_response_invalid`；不要拿其金额与 USD 预算比较。
+- 报价金额、币种与价格大小关系仍严格校验，但接受新的价格 `kind`（金额须为十进制或 null）、供给问题、原因以及估算范围和用量指标。批量报价条目接受任意错误码。
 - 类型以 `(string & {})` 放宽，已知取值仍可补全；`Quote.parameters` 允许额外键，`QuotePrice` 增加开放变体。穷举 `switch` 需补默认分支。
 - Vercel 适配器把 `seed` 与视频 `fps` 映射为同名 Yir 参数，是否接受由模型合同决定。
 

@@ -32,6 +32,22 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
 
+## 0.8.0 changes
+
+0.8.0 is a minor release. Call signatures do not change, but these behaviours do; check code that branches on them:
+
+- Job and file statuses newer than the SDK are accepted. Only `succeeded`, `failed` and `cancelled` end a Job, and only `ready`, `failed` and `expired` settle a file; any other non-empty status is in progress. Submit, `GetJob`, `GetJobStatus`, `CancelJob` and file reads no longer fail with `response_invalid` on a new status, and `WaitJob` keeps polling through it, so bound it with its context. A `switch` on `Status` needs a default branch.
+- `WaitForFileReady`, `UploadFile` and `CreateAndUploadFile` wait on `processing` and newer statuses. `CreateAndUploadFile` previously returned `file_not_ready` for a replay that was still `processing`.
+- `ConstructWebhookEvent` reports an authentic JSON object that is not a terminal Job, such as an event type newer than the SDK, with `Reason` `unsupported_event` and the delivery `ID` and `Timestamp`, instead of `invalid_payload`. Acknowledge it with a 2xx response and log it. `invalid_payload` now means the body is not a JSON object.
+- A client created with `ClientOptions.ModelContracts` applies the catalog only to the models, operations and input modes it describes and leaves others to the Gateway, instead of failing with `model_contract_unavailable`. Call `ValidateGenerationWithCatalog`, which stays strict, to keep limiting requests to the catalog.
+- A quote in a currency other than USD fails with `ErrQuoteCurrencyUnsupported` (`quote_currency_unsupported`) instead of `quote_response_invalid`, from `Quote.Validate`, `QuoteImage`, `QuoteVideo` and `QuoteBatch`. Such quotes are still rejected.
+
+Compatible additions:
+
+- `GetModel` accepts operations, input modes, currencies, availability values and rule behaviors newer than the SDK.
+- `Job`, `JobStatusResponse`, `Quote`, `File` and `ModelDetail` add `RawJSON()`, which returns the JSON they were decoded from, so newer fields can be read before a release models them.
+- `APIError.RequestID` carries the `request_id` of a failed HTTP request.
+
 ## 0.7.0 changes
 
 0.7.0 is a minor release with incompatible changes:
@@ -43,7 +59,7 @@ Model, parameter and pricing changes that the existing protocol can express no l
 
 - `GetModelContracts` and `GetModelContract` ignore fields newer than the SDK and accept new operations, input modes, parameter types and controls. Rule keys the SDK does not understand are left to the Gateway, while known rules keep their meaning and still apply; values of a newer parameter type are not checked locally.
 - `ValidateGenerationProtocol`, used when no catalog is configured, checks only the protocol skeleton. Prompt length, reference sources and `file_id` format, routing provider codes, preferences and limits are Gateway checks. `GenerationRequest.Extra` sends top-level fields newer than the SDK and is restored when a persisted request is unmarshaled. Fields the SDK models (`model`, `input`, `parameters`, `routing`, `billing_mode`, `max_cost`, `webhook_url`) are rejected in `Extra` with `reserved_field` and never sent from it.
-- `Quote.Validate` keeps amounts, currency and price ordering strict, but accepts newer price kinds (amount is a decimal or nil), supply issues, reasons and estimate scopes/usage metrics. `QuoteBatch` items accept any error code. A quote in a currency other than USD fails with `ErrQuoteCurrencyUnsupported` (`quote_currency_unsupported`, also from `QuoteImage`, `QuoteVideo` and `QuoteBatch`) instead of `quote_response_invalid`; do not compare its amounts with USD budgets.
+- `Quote.Validate` keeps amounts, currency and price ordering strict, but accepts newer price kinds (amount is a decimal or nil), supply issues, reasons and estimate scopes/usage metrics. `QuoteBatch` items accept any error code.
 - `ValidateGeneration` and `ValidateModelParameters` are deprecated: they use the historical bundled catalog. Use `ValidateGenerationWithCatalog` with current `GetModelContracts` data.
 
 ## 0.4.0 changes

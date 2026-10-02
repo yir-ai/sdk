@@ -32,6 +32,22 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
 
+## 0.8.0 变化
+
+0.8.0 为 minor 版本。调用签名不变，但以下行为有变化，请检查依赖这些行为的代码：
+
+- 接受比 SDK 更新的 Job 与文件状态。只有 `succeeded`、`failed`、`cancelled` 表示 Job 结束，只有 `ready`、`failed`、`expired` 表示文件有结果；其余非空状态都视为进行中。提交、`GetJob`、`GetJobStatus`、`CancelJob` 与文件读取遇到新状态不再返回 `response_invalid`，`WaitJob` 会继续轮询，请用 context 限定等待时间。对 `Status` 的 `switch` 需要 default 分支。
+- `WaitForFileReady`、`UploadFile` 与 `CreateAndUploadFile` 遇到 `processing` 及更新的状态会等待。此前 `CreateAndUploadFile` 遇到仍在 `processing` 的重放会返回 `file_not_ready`。
+- `ConstructWebhookEvent` 收到签名有效、但不是终态 Job 的 JSON 对象（例如比 SDK 更新的事件类型）时，以 `Reason` `unsupported_event` 报告，并带上投递的 `ID` 与 `Timestamp`，不再是 `invalid_payload`。应返回 2xx 确认收到并记录日志。`invalid_payload` 现在只表示请求体不是 JSON 对象。
+- 通过 `ClientOptions.ModelContracts` 创建的客户端只对目录描述的模型、操作和输入方式应用目录，其余交由 Gateway 判断，不再以 `model_contract_unavailable` 失败。要继续把请求限定在目录内，请调用仍然严格的 `ValidateGenerationWithCatalog`。
+- 币种不是 USD 的报价返回 `ErrQuoteCurrencyUnsupported`（`quote_currency_unsupported`），不再是 `quote_response_invalid`；`Quote.Validate`、`QuoteImage`、`QuoteVideo` 与 `QuoteBatch` 均如此。此类报价仍会被拒绝。
+
+兼容的新增：
+
+- `GetModel` 接受比 SDK 更新的操作、输入方式、币种、可用性取值和规则行为。
+- `Job`、`JobStatusResponse`、`Quote`、`File` 与 `ModelDetail` 新增 `RawJSON()`，返回解码时的原始 JSON，新字段可在 SDK 发版前读取。
+- `APIError.RequestID` 是失败 HTTP 请求的 `request_id`。
+
 ## 0.7.0 变化
 
 0.7.0 为 minor 版本，含不兼容变更：
@@ -43,7 +59,7 @@ _ = client
 
 - `GetModelContracts` 与 `GetModelContract` 忽略比 SDK 更新的字段，接受新的操作、输入方式、参数类型与控件。SDK 不认识的规则键交由 Gateway 判断，已知规则含义不变、照常校验；新参数类型的取值不在本地检查。
 - 未配置目录时使用的 `ValidateGenerationProtocol` 只检查协议骨架。提示词长度、引用来源与 `file_id` 格式、路由 provider 代码、偏好与上限由 Gateway 校验。`GenerationRequest.Extra` 用于发送比 SDK 更新的顶层字段，反序列化已保存的请求时会恢复。SDK 已建模的字段（`model`、`input`、`parameters`、`routing`、`billing_mode`、`max_cost`、`webhook_url`）放进 `Extra` 会以 `reserved_field` 拒绝，且不会从中发送。
-- `Quote.Validate` 对金额、币种与价格大小关系仍严格校验，但接受新的价格类型（金额须为十进制或 nil）、供给问题、原因以及估算范围和用量指标。`QuoteBatch` 条目接受任意错误码。币种不是 USD 的报价返回 `ErrQuoteCurrencyUnsupported`（`quote_currency_unsupported`，`QuoteImage`、`QuoteVideo` 与 `QuoteBatch` 同样返回），不再是 `quote_response_invalid`；不要拿其金额与 USD 预算比较。
+- `Quote.Validate` 对金额、币种与价格大小关系仍严格校验，但接受新的价格类型（金额须为十进制或 nil）、供给问题、原因以及估算范围和用量指标。`QuoteBatch` 条目接受任意错误码。
 - `ValidateGeneration` 与 `ValidateModelParameters` 已弃用：它们使用随包的历史目录。请改用 `ValidateGenerationWithCatalog` 并传入当前 `GetModelContracts` 数据。
 
 ## 0.4.0 变化
