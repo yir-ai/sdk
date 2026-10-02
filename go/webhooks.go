@@ -93,7 +93,17 @@ type WebhookEvent struct {
 }
 
 // WebhookVerificationError reports why ConstructWebhookEvent rejected a request.
-type WebhookVerificationError struct{ Reason string }
+//
+// Reason "unsupported_event" means the signature is valid but the body is not a
+// terminal Job this SDK understands, such as an event type newer than this SDK.
+// Acknowledge it with a 2xx response so Yir does not retry, and log it; ID and
+// Timestamp are set only for this reason. Other reasons are not authentic or
+// not a JSON object and should be answered with a 4xx response.
+type WebhookVerificationError struct {
+	Reason    string
+	ID        string
+	Timestamp int64
+}
 
 func (e *WebhookVerificationError) Error() string { return "yir webhook rejected: " + e.Reason }
 
@@ -108,9 +118,13 @@ func ConstructWebhookEvent(request VerifyWebhookSignatureRequest) (WebhookEvent,
 	if !result.Valid {
 		return WebhookEvent{}, &WebhookVerificationError{Reason: result.Reason}
 	}
+	var object map[string]json.RawMessage
+	if json.Unmarshal(request.RawBody, &object) != nil || object == nil {
+		return WebhookEvent{}, &WebhookVerificationError{Reason: "invalid_payload"}
+	}
 	var job Job
 	if err := json.Unmarshal(request.RawBody, &job); err != nil || !jobIDPattern.MatchString(job.ID) || !job.IsTerminal() {
-		return WebhookEvent{}, &WebhookVerificationError{Reason: "invalid_payload"}
+		return WebhookEvent{}, &WebhookVerificationError{Reason: "unsupported_event", ID: request.ID, Timestamp: result.Timestamp}
 	}
 	return WebhookEvent{ID: request.ID, Timestamp: result.Timestamp, Job: job}, nil
 }
