@@ -6356,16 +6356,10 @@ export const generatedModelContractCatalog = {
               }
             },
             {
-              "policy": {
-                "only_provider": "openai",
-                "reason": "quality_requires_official_channel",
-                "message": "GPT Image quality is ignored unless routing.only is [\"openai\"]."
-              },
               "name": "quality",
               "type": "string",
               "required": false,
               "values": [
-                "auto",
                 "low",
                 "medium",
                 "high"
@@ -6487,16 +6481,10 @@ export const generatedModelContractCatalog = {
               }
             },
             {
-              "policy": {
-                "only_provider": "openai",
-                "reason": "quality_requires_official_channel",
-                "message": "GPT Image quality is ignored unless routing.only is [\"openai\"]."
-              },
               "name": "quality",
               "type": "string",
               "required": false,
               "values": [
-                "auto",
                 "low",
                 "medium",
                 "high"
@@ -6633,16 +6621,10 @@ export const generatedModelContractCatalog = {
               }
             },
             {
-              "policy": {
-                "only_provider": "openai",
-                "reason": "quality_requires_official_channel",
-                "message": "GPT Image quality is ignored unless routing.only is [\"openai\"]."
-              },
               "name": "quality",
               "type": "string",
               "required": false,
               "values": [
-                "auto",
                 "low",
                 "medium",
                 "high"
@@ -6779,16 +6761,10 @@ export const generatedModelContractCatalog = {
               }
             },
             {
-              "policy": {
-                "only_provider": "openai",
-                "reason": "quality_requires_official_channel",
-                "message": "GPT Image quality is ignored unless routing.only is [\"openai\"]."
-              },
               "name": "quality",
               "type": "string",
               "required": false,
               "values": [
-                "auto",
                 "low",
                 "medium",
                 "high",
@@ -6927,16 +6903,10 @@ export const generatedModelContractCatalog = {
               }
             },
             {
-              "policy": {
-                "only_provider": "openai",
-                "reason": "quality_requires_official_channel",
-                "message": "GPT Image quality is ignored unless routing.only is [\"openai\"]."
-              },
               "name": "quality",
               "type": "string",
               "required": false,
               "values": [
-                "auto",
                 "low",
                 "medium",
                 "high",

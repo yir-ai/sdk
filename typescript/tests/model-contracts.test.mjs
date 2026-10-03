@@ -16,7 +16,7 @@ test("SDK bundles multilingual static contracts for published image and video mo
   const image = getModelOperationContract("gpt-image-2", "generate_image", "text");
   assert.ok(image);
   const quality = image.parameters.find(({ name }) => name === "quality");
-  assert.deepEqual(quality?.values, ["auto", "low", "medium", "high"]);
+  assert.deepEqual(quality?.values, ["low", "medium", "high"]);
   assert.equal(quality.required, false);
   assert.equal(quality.default, undefined);
 	assert.deepEqual(

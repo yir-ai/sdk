@@ -7,7 +7,8 @@ import (
 	"testing"
 )
 
-func TestGPTImageQualityWarning(t *testing.T) {
+// GPT Image quality is a server-side routing constraint, so no routing triggers a warning.
+func TestGPTImageQualityNoLongerWarns(t *testing.T) {
 	var output bytes.Buffer
 	previous := log.Writer()
 	log.SetOutput(&output)
@@ -19,8 +20,7 @@ func TestGPTImageQualityWarning(t *testing.T) {
 		request.Parameters = map[string]any{"quality": "high"}
 		request.Routing = &Routing{Only: only}
 		warnParameterPolicies("generate_image", request)
-		want := len(only) != 1 || only[0] != "openai"
-		if (output.Len() > 0) != want {
+		if output.Len() > 0 {
 			t.Fatalf("only=%v: %q", only, output.String())
 		}
 		if strings.Contains(output.String(), "private prompt") {

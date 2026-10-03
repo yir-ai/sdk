@@ -4,11 +4,15 @@ import "testing"
 
 func TestQualityValidatesAgainstBundledModel(t *testing.T) {
 	request := GenerationRequest{Model: "openai/gpt-image-2", Input: GenerationInput{Type: "text", Prompt: "observatory"}}
-	for _, quality := range []string{"auto", "low", "medium", "high"} {
+	for _, quality := range []string{"low", "medium", "high"} {
 		request.Parameters = map[string]any{"quality": quality}
 		if err := ValidateGeneration("generate_image", request); err != nil {
 			t.Fatal(err)
 		}
+	}
+	request.Parameters = map[string]any{"quality": "auto"}
+	if err := ValidateGeneration("generate_image", request); err == nil {
+		t.Fatal("auto quality accepted")
 	}
 	request.Parameters = map[string]any{"quality": "unknown"}
 	if err := ValidateGeneration("generate_image", request); err == nil {
