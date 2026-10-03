@@ -97,6 +97,10 @@ Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating 
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters, accepted only where the model contract declares them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
+## 0.7.1 changes
+
+0.7.1 is compatible with 0.7.0. `RoutingPreference` adds `speed`, which orders channels by ascending observed upstream latency, with channels that have too few samples following in price order. `cost` stays the default, and `balanced` is marked deprecated as an alias of `cost` that the Gateway still accepts. The value is still validated by the Gateway, so earlier SDK versions can already send `speed` to a Gateway that supports it.
+
 ## 0.7.0 changes
 
 0.7.0 is a minor release with incompatible changes:

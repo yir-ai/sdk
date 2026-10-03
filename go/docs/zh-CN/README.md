@@ -32,6 +32,10 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
 
+## 0.8.1 变化
+
+0.8.1 与 0.8.0 兼容。新增 `RoutingPreferenceCost`、`RoutingPreferenceSpeed` 与已弃用的 `RoutingPreferenceBalanced`，对应 `Routing.Preference` 的取值。`speed` 按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序；默认仍为 `cost`；`balanced` 是 `cost` 的别名，Gateway 仍接受。`Preference` 仍是由 Gateway 校验的字符串，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
+
 ## 0.8.0 变化
 
 0.8.0 为 minor 版本。调用签名不变，但以下行为有变化，请检查依赖这些行为的代码：

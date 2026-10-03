@@ -103,11 +103,29 @@ type Reference struct {
 	FileID string `json:"file_id,omitempty"`
 }
 
+// Routing preferences known to this SDK release. Routing.Preference is a
+// plain string and the Gateway validates it, so newer values need no release.
+const (
+	// RoutingPreferenceCost orders channels by ascending price. It is the
+	// Gateway default when Preference is empty.
+	RoutingPreferenceCost = "cost"
+	// RoutingPreferenceSpeed orders channels by ascending observed upstream
+	// latency; channels with too few samples follow in price order.
+	RoutingPreferenceSpeed = "speed"
+	// RoutingPreferenceBalanced is an alias of RoutingPreferenceCost that the
+	// Gateway still accepts.
+	//
+	// Deprecated: use RoutingPreferenceCost.
+	RoutingPreferenceBalanced = "balanced"
+)
+
 type Routing struct {
-	Only       []string          `json:"only,omitempty"`
-	Variants   map[string]string `json:"variants,omitempty"`
-	Preference string            `json:"preference,omitempty"`
-	Fallback   *bool             `json:"fallback,omitempty"`
+	Only     []string          `json:"only,omitempty"`
+	Variants map[string]string `json:"variants,omitempty"`
+	// Preference is one of the RoutingPreference constants; empty uses the
+	// Gateway default (cost).
+	Preference string `json:"preference,omitempty"`
+	Fallback   *bool  `json:"fallback,omitempty"`
 }
 
 // ValidateGeneration checks against the historical catalog bundled with this

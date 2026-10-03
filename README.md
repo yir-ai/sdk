@@ -37,6 +37,8 @@ A quote or static price table does not authorize a purchase or guarantee current
 
 Go 0.7.0 and TypeScript 0.6.0 add explicit `billing_mode: "actual"` (`BillingMode: "actual"` in Go). It requires `routing.only` and cannot be combined with `max_cost`. Supported channels are KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing. The delivered winner's authoritative actual cost has no guaranteed ceiling; insufficient funds become wallet debt repaid by later manual recharge, and outstanding debt blocks new Jobs. Persist this customer consent with the exact request and idempotency key. Omitted mode and existing Jobs retain their original billing terms. This feature requires a Gateway that supports actual-cost billing.
 
+`routing.preference` orders the eligible channels: `cost` (default) by ascending price, `speed` by ascending observed upstream latency, with channels that have too few samples following in price order. `balanced` is a deprecated alias of `cost` that the Gateway still accepts. `speed` requires a Gateway that supports it; the SDKs pass the value through and leave validation to the Gateway.
+
 See the [TypeScript examples](typescript/examples/README.md) and [Go example guide](go/examples/README.md) for the full workflow.
 
 ## Development

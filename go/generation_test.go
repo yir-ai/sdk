@@ -36,7 +36,7 @@ func TestGenerationValidation(t *testing.T) {
 		}, ""},
 		{"dynamic unknown parameter", func(r *GenerationRequest) { r.Parameters = map[string]any{"provider_key": "secret"} }, "parameters.provider_key"},
 		{"gateway-owned routing values", func(r *GenerationRequest) {
-			r.Routing = &Routing{Only: []string{"Future"}, Variants: map[string]string{"b": "standard"}, Preference: "speed"}
+			r.Routing = &Routing{Only: []string{"Future"}, Variants: map[string]string{"b": "standard"}, Preference: RoutingPreferenceSpeed}
 		}, ""},
 		{"duplicate provider", func(r *GenerationRequest) { r.Routing = &Routing{Only: []string{"a", "a"}} }, "routing.only"},
 	} {

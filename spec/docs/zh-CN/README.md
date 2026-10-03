@@ -33,6 +33,8 @@ TypeScript 使用 `pnpm add @yir-ai/sdk@0.6.0` 安装。入口和本地归档安
 
 报价和静态价格表不会授权购买，也不保证实时供给或最终计费。客户零售价、账户授权、余额和持久化由应用负责。Yir Key 只保留在服务端；浏览器入口仅提供纯逻辑与类型。
 
+`routing.preference` 决定候选渠道顺序：`cost`（默认）按价格升序；`speed` 按观测到的上游耗时升序，样本不足的渠道排在其后并按价格排序。`balanced` 是 `cost` 的已弃用别名，Gateway 仍接受。`speed` 需要 Gateway 支持；SDK 原样透传该值，由 Gateway 校验。
+
 完整流程见 [TypeScript 示例](../../../typescript/docs/zh-CN/examples.md) 和 [Go 示例指南](../../../go/docs/zh-CN/examples.md)。
 
 ## 开发

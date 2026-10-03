@@ -344,19 +344,15 @@
       "get": {
         "operationId": "getJobStatus",
         "summary": "Get a lightweight status summary of a job",
-        "description": "Returns a minimal status projection without loading attempts, billing ledgers, or result assets. Follows the same 90-day retention window as job snapshots. With wait, the request long-polls: a terminal job returns immediately; otherwise the response is held until the status or cancellation state changes or the wait elapses, then returns the current summary.",
+        "description": "Returns a minimal status projection without loading attempts, billing ledgers, or result assets. Follows the same 90-day retention window as job snapshots.",
         "tags": ["Jobs"],
         "security": [{ "BearerAuth": [] }],
-        "parameters": [
-          { "$ref": "#/components/parameters/JobID" },
-          { "name": "wait", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0, "default": 0 }, "description": "Seconds to hold the request while the job is not terminal. 0 or omitted returns immediately; values above 30 are treated as 30. Keep the client request timeout longer than the wait." }
-        ],
+        "parameters": [{ "$ref": "#/components/parameters/JobID" }],
         "responses": {
           "200": {
             "description": "Current job status summary",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobStatusResponse" } } }
           },
-          "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
@@ -469,7 +465,7 @@
             "propertyNames": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" },
             "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" }
           },
-          "preference": { "type": "string", "enum": ["balanced", "cost"] },
+          "preference": { "type": "string", "enum": ["cost", "speed", "balanced"], "description": "Overrides the routing profile default for route ordering. cost (the default for new profiles) orders routes by estimated price, lowest first. speed orders routes by observed upstream median latency for the same model and specification, fastest first; routes with fewer than 10 recent samples follow, ordered by estimated price. balanced is a deprecated alias of cost kept for existing integrations. max_cost, only and fallback apply unchanged." },
           "only": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" } },
           "fallback": { "type": "boolean" }
         }
