@@ -344,15 +344,19 @@
       "get": {
         "operationId": "getJobStatus",
         "summary": "Get a lightweight status summary of a job",
-        "description": "Returns a minimal status projection without loading attempts, billing ledgers, or result assets. Follows the same 90-day retention window as job snapshots.",
+        "description": "Returns a minimal status projection without loading attempts, billing ledgers, or result assets. Follows the same 90-day retention window as job snapshots. With wait, the request long-polls: a terminal job returns immediately; otherwise the response is held until the status or cancellation state changes or the wait elapses, then returns the current summary.",
         "tags": ["Jobs"],
         "security": [{ "BearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/JobID" }],
+        "parameters": [
+          { "$ref": "#/components/parameters/JobID" },
+          { "name": "wait", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0, "default": 0 }, "description": "Seconds to hold the request while the job is not terminal. 0 or omitted returns immediately; values above 30 are treated as 30. Keep the client request timeout longer than the wait." }
+        ],
         "responses": {
           "200": {
             "description": "Current job status summary",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobStatusResponse" } } }
           },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
