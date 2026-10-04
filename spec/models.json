@@ -2767,28 +2767,9 @@
           "operation": "generate_video",
           "input_modes": [
             "text",
-            "image",
             "reference"
           ],
           "input_constraints": {
-            "image": {
-              "min_references": 1,
-              "max_references": 2,
-              "allowed_reference_roles": [
-                "first_frame",
-                "last_frame"
-              ],
-              "reference_counts_by_role": {
-                "first_frame": {
-                  "minimum": 1,
-                  "maximum": 1
-                },
-                "last_frame": {
-                  "minimum": 0,
-                  "maximum": 1
-                }
-              }
-            },
             "reference": {
               "min_references": 1,
               "max_references": 50,
@@ -2874,6 +2855,136 @@
                 "9:16"
               ],
               "default": "16:9",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": true,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": true,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs",
+                  "description": "Number of generated outputs."
+                },
+                "zh-CN": {
+                  "label": "输出数量",
+                  "description": "本次生成的内容数量。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 2,
+              "allowed_reference_roles": [
+                "first_frame",
+                "last_frame"
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": true,
+              "default": 4,
+              "minimum": 4,
+              "maximum": 30,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": true,
+              "values": [
+                "480p",
+                "720p"
+              ],
+              "default": "720p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": true,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
@@ -6981,11 +7092,7 @@
               "type": "string",
               "required": true,
               "values": [
-                "1:1",
-                "4:3",
-                "3:4",
-                "16:9",
-                "9:16"
+                "1:1"
               ],
               "default": "1:1",
               "control": "aspect_ratio",
