@@ -30,8 +30,7 @@ validateModelParameters("bytedance/seedance-2.0", "generate_video", "text", { re
 validateModelParameters("bytedance/seedance-2.0", "generate_video", "text", { aspect_ratio: "adaptive", return_last_frame: true });
 assert.throws(() => validateModelParameters("google/nano-banana-2", "generate_image", "text", { return_last_frame: false }), { code: "parameter_unknown" });
 for (const mode of ["text", "image"]) {
-  validateModelParameters("google/nano-banana-pro", "generate_image", mode, { web_search: true });
-  assert.throws(() => validateModelParameters("google/nano-banana-pro", "generate_image", mode, { image_search: false }), { code: "parameter_unknown" });
+  assert.throws(() => validateModelParameters("google/nano-banana-pro", "generate_image", mode, { web_search: true }), { code: "parameter_unknown" });
 }
 assert.equal(getModelOperationContract("bytedance/seedance-2", "generate_video", "reference").input_constraints.reference.reference_counts_by_role.reference_image.maximum, 9);
 
