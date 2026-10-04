@@ -56,7 +56,6 @@
       "post": {
         "operationId": "submitImageGeneration",
         "summary": "Submit an asynchronous image generation job",
-        "description": "Yir checks the prompt and image references for sexual content (including sexualized edits of real people or minors) before quoting, routing or charging. A rejection returns 400 `YIR_CONTENT_REJECTED`: no job is created and nothing is charged. If the check itself is unavailable the request fails closed with a retryable 503 `YIR_TEMPORARILY_UNAVAILABLE`.",
         "tags": ["Images"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
@@ -144,7 +143,6 @@
       "post": {
         "operationId": "submitVideoGeneration",
         "summary": "Submit an asynchronous video generation job",
-        "description": "Yir checks the prompt and image references for sexual content (including sexualized edits of real people or minors) before quoting, routing or charging. A rejection returns 400 `YIR_CONTENT_REJECTED`: no job is created and nothing is charged. If the check itself is unavailable the request fails closed with a retryable 503 `YIR_TEMPORARILY_UNAVAILABLE`.",
         "tags": ["Videos"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
@@ -1461,7 +1459,7 @@
         "type": "object",
         "additionalProperties": false,
         "required": ["status"],
-        "description": "NSFW check outcome for the delivered result. `passed` with `checked_by: provider` means the upstream provider enforces content moderation; `passed` with `checked_by: yir` means Yir checked the output itself. `unchecked` means the output check was unavailable or could not be applied. Yir's output check only blocks explicit adult content; the main check runs on the input before the job is created. Omitted for historical results.",
+        "description": "NSFW check outcome for the delivered result. `passed` with `checked_by: provider` means the upstream provider enforces content moderation; `passed` with `checked_by: yir` means Yir checked the output itself. `unchecked` means the output check was unavailable or could not be applied. Yir's output check only blocks explicit adult content. Omitted for historical results.",
         "properties": {
           "status": { "type": "string", "enum": ["passed", "unchecked"] },
           "checked_by": { "type": "string", "enum": ["provider", "yir"] }
