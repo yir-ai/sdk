@@ -104,7 +104,7 @@ const client = createNodeYirClient();
 
 0.8.0 为 minor 版本，与 0.7.0 兼容。
 
-- `Job.result.content_safety`（类型 `JobResultContentSafety`）说明交付的结果是否通过 NSFW 检测、由谁检测：上游渠道对该路线执行审核时为 `{ status: "passed", checked_by: "provider" }`，Yir 自行检测时为 `{ status: "passed", checked_by: "yir" }`，无法检测时为 `{ status: "unchecked" }`。该字段上线前交付的结果没有此字段。为 `passed` 时可以跳过你自己的 NSFW 检测，否则按你自己的策略处理。未通过检测的输出不会交付，Job 以 `YIR_CONTENT_REJECTED` 失败。
+- `Job.result.content_safety`（类型 `JobResultContentSafety`）说明交付的结果是否通过 NSFW 检测、由谁检测：上游渠道对该路线执行审核时为 `{ status: "passed", checked_by: "provider" }`，Yir 自行检测时为 `{ status: "passed", checked_by: "yir" }`，无法检测时为 `{ status: "unchecked" }`。该字段上线前交付的结果没有此字段。为 `passed` 时可以跳过你自己的 NSFW 检测，否则按你自己的策略处理。Yir 自己的输出检测只拦露骨成人内容；主防线是提交时的输入检测，被拦时返回 HTTP 400 `YIR_CONTENT_REJECTED`（不建 Job、不收费）。未通过检测的输出不会交付，Job 以 `YIR_CONTENT_REJECTED` 失败；上游已生成并计费，因此按上游费用收费。
 - `RoutingPreference` 新增 `speed`，按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序。默认仍为 `cost`；`balanced` 标为已弃用，是 `cost` 的别名，Gateway 仍接受。该值仍由 Gateway 校验，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
 
 ## 0.7.0 变化
