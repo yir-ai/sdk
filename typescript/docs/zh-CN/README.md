@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.6.0
+pnpm add @yir-ai/sdk@0.8.0
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.6.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.8.0.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -100,9 +100,12 @@ const client = createNodeYirClient();
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数，仅在模型合同声明时被接受。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
-## 0.7.1 变化
+## 0.8.0 变化
 
-0.7.1 与 0.7.0 兼容。`RoutingPreference` 新增 `speed`，按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序。默认仍为 `cost`；`balanced` 标为已弃用，是 `cost` 的别名，Gateway 仍接受。该值仍由 Gateway 校验，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
+0.8.0 为 minor 版本，与 0.7.0 兼容。
+
+- `Job.result.content_safety`（类型 `JobResultContentSafety`）说明交付的结果是否通过 NSFW 检测、由谁检测：上游渠道对该路线执行审核时为 `{ status: "passed", checked_by: "provider" }`，Yir 自行检测时为 `{ status: "passed", checked_by: "yir" }`，无法检测时为 `{ status: "unchecked" }`。该字段上线前交付的结果没有此字段。为 `passed` 时可以跳过你自己的 NSFW 检测，否则按你自己的策略处理。未通过检测的输出不会交付，Job 以 `YIR_CONTENT_REJECTED` 失败。
+- `RoutingPreference` 新增 `speed`，按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序。默认仍为 `cost`；`balanced` 标为已弃用，是 `cost` 的别名，Gateway 仍接受。该值仍由 Gateway 校验，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
 
 ## 0.7.0 变化
 

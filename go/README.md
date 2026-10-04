@@ -11,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.7.0
+go get github.com/yir-ai/sdk/go@v0.9.0
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.7.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.9.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -32,9 +32,12 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
 
-## 0.8.1 changes
+## 0.9.0 changes
 
-0.8.1 is compatible with 0.8.0. `RoutingPreferenceCost`, `RoutingPreferenceSpeed` and the deprecated `RoutingPreferenceBalanced` name the `Routing.Preference` values. `speed` orders channels by ascending observed upstream latency, with channels that have too few samples following in price order; `cost` stays the default; `balanced` is an alias of `cost` that the Gateway still accepts. `Preference` remains a string validated by the Gateway, so earlier SDK versions can already send `speed` to a Gateway that supports it.
+0.9.0 is a minor release and is compatible with 0.8.0.
+
+- `Result.ContentSafety` (`*ResultContentSafety`) reports whether the delivered result passed an NSFW check and who ran it: `Status` `"passed"` with `CheckedBy` `"provider"` when the upstream provider moderates the route or `"yir"` when Yir checked the output itself, or `Status` `"unchecked"` when no check could be applied. It is `nil` on results delivered before the field existed. When it is `passed` you can skip your own NSFW check; otherwise apply your own policy. Output that fails a check is not delivered and the Job fails with `YIR_CONTENT_REJECTED`.
+- `RoutingPreferenceCost`, `RoutingPreferenceSpeed` and the deprecated `RoutingPreferenceBalanced` name the `Routing.Preference` values. `speed` orders channels by ascending observed upstream latency, with channels that have too few samples following in price order; `cost` stays the default; `balanced` is an alias of `cost` that the Gateway still accepts. `Preference` remains a string validated by the Gateway, so earlier SDK versions can already send `speed` to a Gateway that supports it.
 
 ## 0.8.0 changes
 
