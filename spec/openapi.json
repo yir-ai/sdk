@@ -458,6 +458,13 @@
         "type": "string",
         "pattern": "^file_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
       },
+      "InputURL": {
+        "type": "string",
+        "format": "uri",
+        "maxLength": 2048,
+        "pattern": "^https://",
+        "description": "Public HTTPS URL of a reference image, video or audio file. Yir downloads it once at submission (up to 100 MiB, 3 redirects, private and reserved addresses refused), detects the type from the file contents, and stores it as an input file so every attempt and fallback reads the same bytes. Data URLs are not accepted. A URL that cannot be imported returns YIR_INVALID_REQUEST naming the reference; retryable is true only for remote timeouts, connection failures, HTTP 429 and 5xx. Quote does not download URLs, so prices that depend on input media are only estimated; upload through the Files API for larger files or exact media-dependent quotes."
+      },
       "RoutingOverride": {
         "type": "object",
         "additionalProperties": false,
@@ -520,12 +527,20 @@
                 },
                 "file_id": {
                   "$ref": "#/components/schemas/FileID"
+                },
+                "url": {
+                  "$ref": "#/components/schemas/InputURL"
                 }
               },
               "oneOf": [
                 {
                   "required": [
                     "file_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "url"
                   ]
                 }
               ]
@@ -862,12 +877,20 @@
                 },
                 "file_id": {
                   "$ref": "#/components/schemas/FileID"
+                },
+                "url": {
+                  "$ref": "#/components/schemas/InputURL"
                 }
               },
               "oneOf": [
                 {
                   "required": [
                     "file_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "url"
                   ]
                 }
               ]
@@ -915,12 +938,20 @@
                 },
                 "file_id": {
                   "$ref": "#/components/schemas/FileID"
+                },
+                "url": {
+                  "$ref": "#/components/schemas/InputURL"
                 }
               },
               "oneOf": [
                 {
                   "required": [
                     "file_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "url"
                   ]
                 }
               ]

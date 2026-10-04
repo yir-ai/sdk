@@ -98,7 +98,8 @@ type GenerationInput struct {
 // model contract data; the Gateway decides which roles and sources it accepts.
 type Reference struct {
 	Role string `json:"role"`
-	// Deprecated: the Gateway rejects external URLs; upload the media and use FileID.
+	// URL is a public HTTPS URL that Yir imports at submission (up to 100 MiB);
+	// use FileID for larger media. Set exactly one of URL or FileID.
 	URL    string `json:"url,omitempty"`
 	FileID string `json:"file_id,omitempty"`
 }
