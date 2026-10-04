@@ -115,12 +115,20 @@ type JobCancellation struct {
 }
 
 type JobResult struct {
-	Availability string       `json:"availability"`
-	Files        []ResultFile `json:"files,omitempty"`
-	Warnings     []string     `json:"warnings,omitempty"`
+	Availability  string               `json:"availability"`
+	Files         []ResultFile         `json:"files,omitempty"`
+	Warnings      []string             `json:"warnings,omitempty"`
+	ContentSafety *ResultContentSafety `json:"content_safety,omitempty"`
 }
 
 const ResultWarningAdditionalResultsUnavailable = "additional_results_unavailable"
+
+// ResultContentSafety reports whether the result passed an NSFW check and who ran it.
+// Status is "passed" (CheckedBy "provider" or "yir") or "unchecked"; it is absent on historical results.
+type ResultContentSafety struct {
+	Status    string `json:"status"`
+	CheckedBy string `json:"checked_by,omitempty"`
+}
 
 type ResultFile struct {
 	URL       string `json:"url"`

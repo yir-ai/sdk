@@ -62,6 +62,11 @@ export type JobResultFile = {
   readonly expires_at: number;
 };
 
+/** NSFW check outcome for a delivered result; absent on historical results. */
+export type JobResultContentSafety =
+  | { readonly status: "passed"; readonly checked_by: "provider" | "yir" }
+  | { readonly status: "unchecked" };
+
 export type ComputeCharge = {
   readonly supply_type: "managed";
   readonly billed_by: "yir";
@@ -86,8 +91,8 @@ export type Job = {
   readonly usage?: { readonly outputs: number };
   readonly cancellation?: JobCancellation;
   readonly result?:
-    | { readonly availability: "available"; readonly files: readonly JobResultFile[]; readonly warnings?: readonly "additional_results_unavailable"[] }
-    | { readonly availability: "expired"; readonly warnings?: readonly "additional_results_unavailable"[] };
+    | { readonly availability: "available"; readonly files: readonly JobResultFile[]; readonly warnings?: readonly "additional_results_unavailable"[]; readonly content_safety?: JobResultContentSafety }
+    | { readonly availability: "expired"; readonly warnings?: readonly "additional_results_unavailable"[]; readonly content_safety?: JobResultContentSafety };
   readonly billing?: {
     readonly official_comparison?: { readonly baseline_amount: string; readonly savings_amount: string; readonly source_url?: string };
     readonly currency: "USD";
