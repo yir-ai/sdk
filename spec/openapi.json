@@ -1455,6 +1455,16 @@
           "cancel": { "type": "string", "pattern": "^/v1/jobs/[1-9][0-9]*/cancel$" }
         }
       },
+      "ResultContentSafety": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status"],
+        "description": "NSFW check outcome for the delivered result. `passed` with `checked_by: provider` means the upstream provider enforces content moderation; `passed` with `checked_by: yir` means Yir checked the output itself. `unchecked` means no check could be applied (for example, video from a provider without moderation). Omitted for historical results.",
+        "properties": {
+          "status": { "type": "string", "enum": ["passed", "unchecked"] },
+          "checked_by": { "type": "string", "enum": ["provider", "yir"] }
+        }
+      },
       "Result": {
         "type": "object",
         "additionalProperties": false,
@@ -1462,7 +1472,8 @@
         "properties": {
           "availability": { "type": "string", "enum": ["available", "expired"] },
           "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ResultFile" } },
-          "warnings": { "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["additional_results_unavailable"] }, "description": "The primary result was delivered, but an optional additional result could not be delivered. Derived from frozen delivery facts; does not change Job success or authorize regeneration. Omitted when no delivery warning exists, including historical results." }
+          "warnings": { "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["additional_results_unavailable"] }, "description": "The primary result was delivered, but an optional additional result could not be delivered. Derived from frozen delivery facts; does not change Job success or authorize regeneration. Omitted when no delivery warning exists, including historical results." },
+          "content_safety": { "$ref": "#/components/schemas/ResultContentSafety" }
         },
         "oneOf": [
           { "properties": { "availability": { "const": "available" } }, "required": ["files"] },
