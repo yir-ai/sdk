@@ -36,7 +36,7 @@ _ = client
 
 0.9.0 为 minor 版本，与 0.8.0 兼容。
 
-- `Result.ContentSafety`（`*ResultContentSafety`）说明交付的结果是否通过 NSFW 检测、由谁检测：`Status` 为 `"passed"` 时，`CheckedBy` 为 `"provider"` 表示上游渠道对该路线执行审核，为 `"yir"` 表示 Yir 自行检测；`Status` 为 `"unchecked"` 表示无法检测。该字段上线前交付的结果为 `nil`。为 `passed` 时可以跳过你自己的 NSFW 检测，否则按你自己的策略处理。Yir 自己的输出检测只拦露骨成人内容；主防线是提交时的输入检测，被拦时返回 HTTP 400 `YIR_CONTENT_REJECTED`（不建 Job、不收费）。未通过检测的输出不会交付，Job 以 `YIR_CONTENT_REJECTED` 失败；上游已生成并计费，因此按上游费用收费。
+- `Result.ContentSafety`（`*ResultContentSafety`）说明交付的结果是否通过 NSFW 检测、由谁检测：`Status` 为 `"passed"` 时，`CheckedBy` 为 `"provider"` 表示上游渠道对该路线执行审核，为 `"yir"` 表示 Yir 自行检测；`Status` 为 `"unchecked"` 表示无法检测。该字段上线前交付的结果为 `nil`。为 `passed` 时可以跳过你自己的 NSFW 检测，否则按你自己的策略处理。Yir 自己的输出检测只拦露骨成人内容。未通过检测的输出不会交付，Job 以 `YIR_CONTENT_REJECTED` 失败；上游已生成并计费，因此按上游费用收费。
 - 新增 `RoutingPreferenceCost`、`RoutingPreferenceSpeed` 与已弃用的 `RoutingPreferenceBalanced`，对应 `Routing.Preference` 的取值。`speed` 按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序；默认仍为 `cost`；`balanced` 是 `cost` 的别名，Gateway 仍接受。`Preference` 仍是由 Gateway 校验的字符串，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
 
 ## 0.8.0 变化
