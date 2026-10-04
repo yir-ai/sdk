@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.7.0
+go get github.com/yir-ai/sdk/go@v0.9.0
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.7.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.9.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -32,9 +32,12 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
 
-## 0.8.1 变化
+## 0.9.0 变化
 
-0.8.1 与 0.8.0 兼容。新增 `RoutingPreferenceCost`、`RoutingPreferenceSpeed` 与已弃用的 `RoutingPreferenceBalanced`，对应 `Routing.Preference` 的取值。`speed` 按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序；默认仍为 `cost`；`balanced` 是 `cost` 的别名，Gateway 仍接受。`Preference` 仍是由 Gateway 校验的字符串，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
+0.9.0 为 minor 版本，与 0.8.0 兼容。
+
+- `Result.ContentSafety`（`*ResultContentSafety`）说明交付的结果是否通过 NSFW 检测、由谁检测：`Status` 为 `"passed"` 时，`CheckedBy` 为 `"provider"` 表示上游渠道对该路线执行审核，为 `"yir"` 表示 Yir 自行检测；`Status` 为 `"unchecked"` 表示无法检测。该字段上线前交付的结果为 `nil`。为 `passed` 时可以跳过你自己的 NSFW 检测，否则按你自己的策略处理。未通过检测的输出不会交付，Job 以 `YIR_CONTENT_REJECTED` 失败。
+- 新增 `RoutingPreferenceCost`、`RoutingPreferenceSpeed` 与已弃用的 `RoutingPreferenceBalanced`，对应 `Routing.Preference` 的取值。`speed` 按观测到的上游耗时升序排列渠道，样本不足的渠道排在其后并按价格排序；默认仍为 `cost`；`balanced` 是 `cost` 的别名，Gateway 仍接受。`Preference` 仍是由 Gateway 校验的字符串，旧版 SDK 也可向支持的 Gateway 发送 `speed`。
 
 ## 0.8.0 变化
 

@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.6.0
+pnpm add @yir-ai/sdk@0.8.0
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.6.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.8.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -97,9 +97,12 @@ Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating 
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters, accepted only where the model contract declares them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
-## 0.7.1 changes
+## 0.8.0 changes
 
-0.7.1 is compatible with 0.7.0. `RoutingPreference` adds `speed`, which orders channels by ascending observed upstream latency, with channels that have too few samples following in price order. `cost` stays the default, and `balanced` is marked deprecated as an alias of `cost` that the Gateway still accepts. The value is still validated by the Gateway, so earlier SDK versions can already send `speed` to a Gateway that supports it.
+0.8.0 is a minor release and is compatible with 0.7.0.
+
+- `Job.result.content_safety` (type `JobResultContentSafety`) reports whether the delivered result passed an NSFW check and who ran it: `{ status: "passed", checked_by: "provider" }` when the upstream provider moderates the route, `{ status: "passed", checked_by: "yir" }` when Yir checked the output itself, or `{ status: "unchecked" }` when no check could be applied. It is absent on results delivered before the field existed. When it is `passed` you can skip your own NSFW check; otherwise apply your own policy. Output that fails a check is not delivered and the Job fails with `YIR_CONTENT_REJECTED`.
+- `RoutingPreference` adds `speed`, which orders channels by ascending observed upstream latency, with channels that have too few samples following in price order. `cost` stays the default, and `balanced` is marked deprecated as an alias of `cost` that the Gateway still accepts. The value is still validated by the Gateway, so earlier SDK versions can already send `speed` to a Gateway that supports it.
 
 ## 0.7.0 changes
 
