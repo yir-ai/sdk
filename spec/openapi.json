@@ -581,7 +581,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "quality": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"], "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
               "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
               "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
@@ -634,7 +634,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"], "description": "Model-specific image quality. GPT Image ignores quality unless routing.only is [openai]; omission uses channel defaults." },
+              "quality": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"], "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
               "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
               "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
@@ -1364,7 +1364,7 @@
               "scope": { "const": "output_only" },
               "output_tokens": { "type": "integer", "minimum": 1, "maximum": 1000000 },
               "output_megapixels": { "type": "integer", "minimum": 1, "maximum": 1000000, "description": "Billable whole output megapixels using the model's declared pixel unit; excludes input megapixels. Mutually exclusive with output_tokens." },
-              "quality": { "type": "string", "minLength": 1, "description": "Reference quality used for the output estimate. Automatic or omitted quality uses the catalog's medium reference when available; this does not change generation parameters." },
+              "quality": { "type": "string", "minLength": 1, "description": "Reference quality used for the output estimate. Omitted quality uses the catalog's medium reference when available; this does not change generation parameters." },
               "aspect_ratio": { "type": "string", "minLength": 1, "description": "Reference aspect ratio used for the output estimate. Automatic aspect ratio uses a declared square reference when available; explicitly selected unsupported ratios remain unavailable." }
             }
           }
@@ -1375,7 +1375,7 @@
         "additionalProperties": false,
         "required": ["duration", "resolution", "aspect_ratio", "generate_audio", "n"],
         "properties": {
-          "quality": { "type": "string", "enum": ["auto", "low", "medium", "high", "xhigh", "max"] },
+          "quality": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
           "web_search": { "type": "boolean" },
           "image_search": { "type": "boolean" },
           "return_last_frame": { "type": "boolean" },
