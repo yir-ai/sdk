@@ -94,7 +94,7 @@ const client = createNodeYirClient();
 
 `providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
-不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 仅在客户端目录为该模型声明时映射为同名 Yir 参数，否则丢弃并返回 `unsupported` 警告。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数；客户端目录描述了该模型但合同没有它们时丢弃并返回 `unsupported` 警告，未配置目录时由 Gateway 判断。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
 ## 升级到 0.10.0
 
@@ -102,10 +102,10 @@ const client = createNodeYirClient();
 
 - 移除内置模型目录：`listModelContracts`、`getModelContract`、`getModelOperationContract`、`KnownModelID` 与 `@yir-ai/sdk/model-contracts` 入口已删除。用 `client.getModelContracts()` 获取目录（或据此生成 `models.ts`），再用 `findModelContract`、`findModelOperationContract` 与 `validateGeneration(operation, request, catalog)`。新增模型和参数调整都不需要发布 SDK。
 - Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受（`isValidJobID`）；按字符串保存，不要解析。
-- 未配置目录时，报价可能把你传入的别名回显为规范模型 ID，SDK 只检查模型字段存在；配置目录时仍按解析后的 ID 比对。Vercel 视频适配器不再要求 `job.model` 等于创建时使用的别名。
+- 未配置目录时，报价可能把你传入的别名回显为 `creator/model` 形式的规范 ID，其他不同的模型会校验失败；配置目录时按解析后的 ID 比对。Vercel 视频适配器不再要求 `job.model` 等于创建时使用的别名。
 - `YirPublicError.details`（`YirErrorDetail[]`）定位 `YIR_INVALID_REQUEST` 的无效字段：`field`、稳定的 `reason`（如 `unsupported`、`required`）以及合同允许值 `allowed`。
 - `StandardMediaSource` 与 `StandardReference` 除 `file_id` 外也接受 `url`，与 API 一致；`buildImageGenerationRequest` 接受 `image: { url }`。
-- Vercel 适配器仅在客户端目录为该模型声明了 `seed`、视频 `fps` 时才映射它们；否则按 AI SDK 惯例丢弃并返回 `unsupported` 警告，不再让请求在 Gateway 失败。
+- 客户端目录描述了该模型时，Vercel 适配器会丢弃其合同没有的 `seed`、视频 `fps`，按 AI SDK 惯例返回 `unsupported` 警告，不再让请求在 Gateway 失败；未配置目录时照常发送，由 Gateway 判断。
 - 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
 
 更早的版本说明见[变更记录](CHANGELOG.md)。

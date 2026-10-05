@@ -199,18 +199,18 @@ function readOptions(options: SharedV4ProviderOptions) {
 type AdapterWarning = { readonly type: "unsupported"; readonly feature: string; readonly details?: string } | { readonly type: "other"; readonly message: string };
 
 /**
- * AI SDK settings without a Yir equivalent on this model are dropped with an
- * unsupported warning, as AI SDK providers do, instead of failing the request.
- * Without a catalog no model is known to accept them.
+ * When the client's catalog describes the model, AI SDK settings the model
+ * contract lacks are dropped with an unsupported warning, as AI SDK providers
+ * do. Otherwise they are sent and the Gateway decides.
  */
 function assignOptional(parameters: Record<string, unknown>, catalog: ModelContractCatalog | undefined, modelId: string,
   settings: Readonly<Record<string, unknown>>): AdapterWarning[] {
-  const declared = new Set((catalog ? findModelContract(catalog, modelId)?.operations ?? [] : [])
-    .flatMap(operation => operation.parameters.map(parameter => parameter.name)));
+  const contract = catalog ? findModelContract(catalog, modelId) : undefined;
+  const declared = new Set((contract?.operations ?? []).flatMap(operation => operation.parameters.map(parameter => parameter.name)));
   const warnings: AdapterWarning[] = [];
   for (const [name, value] of Object.entries(settings)) {
     if (value === undefined) continue;
-    if (declared.has(name)) assign(parameters, name, value);
+    if (!contract || declared.has(name)) assign(parameters, name, value);
     else warnings.push({ type: "unsupported", feature: name, details: `${modelId} does not accept ${name}` });
   }
   return warnings;

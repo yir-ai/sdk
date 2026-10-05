@@ -23,7 +23,7 @@ func TestJobIDsAreOpaque(t *testing.T) {
 	if _, err := client.GetJob(context.Background(), "job_01HZX"); err != nil {
 		t.Fatal(err)
 	}
-	for _, id := range []string{"", " 7001", "a/b", "a?b", "a#b", "a%2fb"} {
+	for _, id := range []string{"", ".", "..", " 7001", "a/b", "a?b", "a#b", "a%2fb"} {
 		if _, err := client.GetJob(context.Background(), id); err == nil || err.Error() != "job_id_invalid" {
 			t.Fatalf("%q: %v", id, err)
 		}
@@ -57,5 +57,9 @@ func TestQuoteMayEchoCanonicalModelForAlias(t *testing.T) {
 	quote.Model = "openai/gpt-image-1"
 	if client.quoteMatchesRequest(quote, request, "generate_image") {
 		t.Fatal("a different known model must be rejected")
+	}
+	var bare *Client
+	if bare.quoteMatchesRequest(Quote{Model: "nano banana", Operation: "generate_image", InputMode: "text"}, request, "generate_image") {
+		t.Fatal("without a catalog a different echo must be a canonical creator/model ID")
 	}
 }

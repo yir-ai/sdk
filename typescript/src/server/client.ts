@@ -247,7 +247,7 @@ function validateSubmittedJob(job: Job): Job {
  * accepted, so a new server ID format needs no SDK release.
  */
 export function isValidJobID(id: unknown): id is string {
-  return typeof id === "string" && id.length > 0 && id.length <= 64 && !/[\s/?#%\\\u0000-\u001f\u007f]/.test(id);
+  return typeof id === "string" && id.length > 0 && id !== "." && id !== ".." && id.length <= 64 && !/[\s/?#%\\\u0000-\u001f\u007f]/.test(id);
 }
 
 export const TERMINAL_JOB_STATUSES = Object.freeze(["succeeded", "failed", "cancelled"] as const);

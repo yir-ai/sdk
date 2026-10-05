@@ -184,6 +184,9 @@ test("waitForJob validates inputs", async () => {
     () => waitForJob(dummyClient, "invalid/job-id"),
     /job_id_invalid/,
   );
+  for (const dotSegment of [".", ".."]) {
+    await assert.rejects(() => waitForJob(dummyClient, dotSegment), /job_id_invalid/);
+  }
   await assert.rejects(
     () => waitForJob(dummyClient, "1001", { pollIntervalMs: 0 }),
     /poll_interval_invalid/,

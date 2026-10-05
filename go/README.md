@@ -38,7 +38,7 @@ Keep the key on your server. The default base URL is `https://gateway.yir.ai`; c
 
 - The bundled model catalog is removed: package-level `ListModelContracts`, `GetModelContract`, `GetModelOperationContract`, `ValidateGeneration` and `ValidateModelParameters` are gone. Fetch the catalog with `client.GetModelContracts` and pass it to `ValidateGenerationWithCatalog` or `ClientOptions.ModelContracts`. New models and parameter changes never need an SDK release.
 - Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted; store it as a string and do not parse it.
-- Without a catalog, a quote may echo the canonical model ID for an alias you sent; the SDK only checks that a model is present. With a catalog it still compares the resolved IDs.
+- Without a catalog, a quote may echo the canonical `creator/model` ID for an alias you sent; any other different model fails validation. With a catalog the SDK compares the resolved IDs.
 - `APIError.Details` (`[]ErrorDetail`) locates invalid fields of `YIR_INVALID_REQUEST`: `Field`, a stable `Reason` such as `unsupported` or `required`, and `Allowed` contract values.
 - Gateway changes released together with this SDK: `parameters` is required; top-level `resolution`, `aspect_ratio`, `n`, `duration` and `generate_audio`, `input.image`, and case-variant `input.type` or reference roles are rejected; `resolution` and `aspect_ratio` must use a model contract value (case-insensitive), so `1024`, `2048x2048` or `16x9` are rejected. Model aliases are reduced to the short name, the vendor model ID and, where one exists, the Vercel AI Gateway ID; prefer canonical IDs such as `bytedance/seedance-2.0`.
 

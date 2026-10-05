@@ -314,8 +314,8 @@ test("AI SDK seed and fps reach Yir only where the catalog declares them", async
   const transport = async request => { calls.push(request); return { object: "job", id: "job_43", model: request.body.model, status: "queued", created_at: 1786000000, error: null }; };
   const options = { prompt: "fixture", n: 1, seed: 7, fps: 24, providerOptions: { yir: { idempotencyKey: "seed-test" } } };
   const bare = await createYirAIProvider({ client: createYirClient(transport) }).videoModel("future/video").doStart(options);
-  assert.deepEqual(calls[0].body.parameters, { n: 1 });
-  assert.deepEqual(bare.warnings.map(warning => [warning.type, warning.feature]), [["unsupported", "fps"], ["unsupported", "seed"]]);
+  assert.deepEqual(calls[0].body.parameters, { n: 1, fps: 24, seed: 7 }, "without a catalog the Gateway decides");
+  assert.deepEqual(bare.warnings, []);
   assert.deepEqual(bare.operation, { jobId: "job_43", modelId: "future/video" });
 
   const base = structuredClone(catalog.models.find(model => model.id === "bytedance/seedance-2.0"));
@@ -325,8 +325,11 @@ test("AI SDK seed and fps reach Yir only where the catalog declares them", async
   base.aliases = [];
   for (const operation of base.operations) operation.parameters = [...operation.parameters, seed];
   const declared = { ...catalog, models: [...catalog.models, base] };
+  const undeclared = await createYirAIProvider({ client: createYirClient(transport, catalog) }).videoModel("bytedance/seedance-2.0").doStart(options);
+  assert.equal("seed" in calls[1].body.parameters || "fps" in calls[1].body.parameters, false);
+  assert.deepEqual(undeclared.warnings.map(warning => [warning.type, warning.feature]), [["unsupported", "fps"], ["unsupported", "seed"]]);
   const result = await createYirAIProvider({ client: createYirClient(transport, declared) }).videoModel("future/video").doStart(options);
-  assert.equal(calls[1].body.parameters.seed, 7);
-  assert.equal("fps" in calls[1].body.parameters, false);
+  assert.equal(calls[2].body.parameters.seed, 7);
+  assert.equal("fps" in calls[2].body.parameters, false);
   assert.deepEqual(result.warnings.map(warning => warning.feature), ["fps"]);
 });

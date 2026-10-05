@@ -249,10 +249,10 @@ func (c *Client) quote(ctx context.Context, resource, operation string, request 
 }
 
 // quoteMatchesRequest compares models through the catalog when it knows the
-// requested model. Otherwise an alias may be echoed as its canonical ID, so
-// only a present model is required.
+// requested model. Otherwise an alias may be echoed as its canonical
+// creator/model ID, so a different echo must at least have that form.
 func (c *Client) quoteMatchesRequest(quote Quote, request GenerationRequest, operation string) bool {
-	modelMatches := strings.TrimSpace(quote.Model) != ""
+	modelMatches := quote.Model == strings.TrimSpace(request.Model) || canonicalModelIDPattern.MatchString(quote.Model)
 	if c != nil && c.modelContracts != nil {
 		if requested, found := findContractInCatalog(*c.modelContracts, request.Model); found {
 			returned, returnedFound := findContractInCatalog(*c.modelContracts, quote.Model)
@@ -272,10 +272,12 @@ func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempot
 
 var decimalCostPattern = regexp.MustCompile(`^[0-9]{1,13}(\.[0-9]{1,6})?$`)
 
+var canonicalModelIDPattern = regexp.MustCompile(`^[a-z0-9._-]+/[a-z0-9._-]+$`)
+
 // validJobID accepts any opaque ID that is safe as one path segment; the
 // Gateway owns the ID format.
 func validJobID(id string) bool {
-	return id != "" && len(id) <= 64 && strings.TrimSpace(id) == id && !strings.ContainsAny(id, "/?#%\\") &&
+	return id != "" && id != "." && id != ".." && len(id) <= 64 && strings.TrimSpace(id) == id && !strings.ContainsAny(id, "/?#%\\") &&
 		strings.IndexFunc(id, func(r rune) bool { return r < 0x21 || r == 0x7f }) < 0
 }
 

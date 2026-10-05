@@ -86,6 +86,8 @@ test("Quote compares models through the catalog and accepts a canonical echo for
   assert.equal((await createYirClient(async () => echoed, catalog).quoteImage(aliasRequest)).model, "openai/gpt-image-2");
   const other = { ...quoteFixture(request), model: "openai/gpt-image-1" };
   await assert.rejects(createYirClient(async () => other, catalog).quoteImage(request), { message: "quote_response_invalid" });
+  const mixedUp = { ...quoteFixture(aliasRequest), model: "nano banana" };
+  await assert.rejects(createYirClient(async () => mixedUp).quoteImage(aliasRequest), { message: "quote_response_invalid" });
   const unknown = { ...quoteFixture(request), model: "future/model" };
   await assert.rejects(createYirClient(async () => unknown, catalog).quoteImage(request), { message: "quote_response_invalid" });
 });
