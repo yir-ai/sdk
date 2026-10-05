@@ -47,16 +47,17 @@ func ExampleClient() {
 	if err != nil {
 		panic(err)
 	}
-	if !quote.Supply.Available || quote.Primary.Kind != "fixed" ||
-		!quote.HasVerifiableUpperBound || quote.SingleAttemptUpperBound == nil {
+	if !quote.Supply.Available || quote.Primary.Amount == nil {
 		return
 	}
-	// Integration requirement: approve the customer budget and durably save the
-	// full SubmitRequest and key below before calling SubmitImage.
-	// This sketch omits application-specific authorization and storage.
+	// Integration requirement: show the estimate in quote.Primary, approve the
+	// customer budget as MaxCost and durably save the full SubmitRequest and key
+	// below before calling SubmitImage. The Job is charged the upstream amount,
+	// capped by MaxCost. This sketch omits application-specific authorization and storage.
+	approvedMaxCost := "0.05"
 	key := "application-task-123-slot-1"
 	job, err := client.SubmitImage(ctx, yir.SubmitRequest{
-		GenerationRequest: request, MaxCost: quote.SingleAttemptUpperBound,
+		GenerationRequest: request, MaxCost: &approvedMaxCost,
 	}, key)
 	if err != nil {
 		// A transport timeout is not proof of failure. Recover with this same key.

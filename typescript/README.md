@@ -1,6 +1,6 @@
 # Yir TypeScript SDK
 
-> 0.2.0 protocol / 协议升级：模型参数来自 API，SDK 不再以内置模型清单限制请求；旧全量价格表与客户端计价已移除。升级前阅读 [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md)。
+> Beta (0.x). Incompatible changes ship only in minor releases, with migration notes in the README and [changelog](https://github.com/yir-ai/sdk/blob/main/typescript/CHANGELOG.md). Fields and values newer than the SDK are read as data, so new models and options do not need an SDK release.
 
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.8.0
+pnpm add @yir-ai/sdk@0.9.0
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.8.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.9.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -54,9 +54,11 @@ You can also pass `{ apiKey, baseURL, fetch, headers, userAgent, timeoutMs }`. T
 
 ## Quote, authorize, persist, submit
 
-Starting in 0.2.1, `client.submitImage(request)` and `client.submitVideo(request)` create a random idempotency key per call. Explicit keys are trimmed and must be non-empty with no CR/LF. Submit has no hidden retries. For recovery across calls or process restarts, pass a saved key as the second argument and reuse the exact request. Server fallback within an accepted Job is independent of the client key.
+`client.submitImage(request)` and `client.submitVideo(request)` create a random idempotency key per call. Explicit keys are trimmed and must be non-empty with no CR/LF. Submit has no hidden retries. For recovery across calls or process restarts, pass a saved key as the second argument and reuse the exact request. Server fallback within an accepted Job is independent of the client key.
 
-Use [quickstart.mjs](examples/quickstart.mjs)'s `prepareImage(client, input)` to build a request and quote it. It requires available supply, a fixed primary price and a verifiable upper bound, and returns a request containing `max_cost`. This is a conservative example policy, not a change to the API's supported quote kinds.
+Use [quickstart.mjs](examples/quickstart.mjs)'s `prepareImage(client, input, maxCost)` to build a request and quote it. It requires available supply with a priced primary estimate and returns that estimate with a request carrying your approved `max_cost`.
+
+Billing: the balance is not frozen. Every attempt the upstream actually bills is charged at its authoritative upstream amount after the managed discount, including failed attempts and attempts followed by a fallback; attempts the upstream never billed, and Yir's own delivery failures and outcome timeouts, cost nothing. `max_cost` caps the Job's total charge and skips routes whose estimate exceeds it. The quote's primary price is an estimate, not a ceiling. Explicit `billing_mode: "actual"` (KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing only) requires `routing.only`, cannot be combined with `max_cost` and has no ceiling; amounts the balance cannot cover become debt, repaid by a later manual top-up, that blocks new Jobs. Persist that customer consent with the exact request and idempotency key.
 
 Your application must approve the budget and durably save `{ request, idempotencyKey }` before calling `submitSavedImage(client, saved)`. Store all request fields, including parameters, references, routing, budget and any Webhook URL. Generate the key once per intended operation; never generate a new key inside a retry. The helpers do not implement a database, customer balance checks or approval.
 
@@ -69,23 +71,19 @@ Persist the returned `job.id`. `getJob(id)` queries full job details; `getJobSta
 
 `YirJobError` contains the failed/cancelled terminal job. `YirAPIError` exposes status, code, retryable, action and requestId where available. An error body without a code uses `http_error` (as in the Go SDK; earlier versions used `HTTP_<status>`), with the HTTP status in `status`. `action` may carry values newer than the SDK (`YirErrorAction`). `submitImage` and `submitVideo` reject a response that is not a Job with a valid ID and status with `response_invalid`. Keep error codes stable in application logic; `YIR_ERROR_CODES` and the `YirErrorCode` type list the stable codes. `cancelJob(id, options)` explicitly requests cancellation; inspect the returned cancellation and terminal billing instead of assuming immediate cancellation or zero charge. Reconcile `billing.total_charged_by_yir` once per job. Result URLs expire; inspect `result.availability` and copy files to your own asset store while available.
 
-Version 0.5.1 is compatible with 0.5.0. The bundled `minimax/minimax-h3` descriptions match the current server export; no API changes.
-
-Version 0.4.1 is compatible with 0.4.0. `cancelJob(id, options)` accepts an abort signal and rejects a response that is not the requested job with `response_invalid`. `Quote.parameters` adds `return_last_frame`, `web_search` and `image_search`. `YIR_ERROR_CODES` and `YirErrorCode` are new, and `DEFAULT_USER_AGENT` reports the package version. The bundled model contracts match the current server export: `alibaba/qwen-image-2.1` is added, Gemini Omni accepts `duration`, `wan-2.6` allows at most 5 references, and the `kie/gemini-omni-video` alias is removed. Only validation against the bundled catalog is affected.
-
 ## Model detail
 
-Since 0.5.0: `getModel("creator/model")` reads the Market `ModelDetail`: `specifications` with per-channel `channels` display prices (`amount_micros` is absent when no price is published) and optional `channel_parameters`. Pass the canonical ID; aliases are not resource paths, and an invalid ID fails locally with `model_request_invalid`. Unknown fields are kept, but a mismatched ID or invalid required values fail with `model_response_invalid`. A missing model rejects with `YirAPIError` 404 `YIR_MODEL_NOT_FOUND`. Market prices are for display only; quote before submitting. `getModelContract` remains the versioned parameter contract (`view=contract`). `modelDetailPath` and `parseModelDetail` are also exported for custom transports.
+`getModel("creator/model")` reads the Market `ModelDetail`: `specifications` with per-channel `channels` display prices (`amount_micros` is absent when no price is published) and optional `channel_parameters`. Pass the canonical ID; aliases are not resource paths, and an invalid ID fails locally with `model_request_invalid`. Unknown fields are kept, but a mismatched ID or invalid required values fail with `model_response_invalid`. A missing model rejects with `YirAPIError` 404 `YIR_MODEL_NOT_FOUND`. Market prices are for display only; quote before submitting. `getModelContract` remains the versioned parameter contract (`view=contract`). `modelDetailPath` and `parseModelDetail` are also exported for custom transports.
 
 A client created with a catalog (`createYirClient(transport, catalog)` or `modelContracts`) validates parameters and references only for the models, operations and input modes that catalog describes. Anything else, such as a model published after the catalog was read, gets protocol checks only and is left to the Gateway, so refresh the catalog with `getModelContracts` when you need local checks for new models. The Vercel adapter behaves the same way. `validateGeneration(operation, request, catalog)` and the request builders stay strict and reject a model outside the catalog with `model_contract_unavailable`; call them yourself to limit requests to that catalog.
 
 ## Files and Webhooks
 
-Version 0.4.0 requires `file_id` for every media reference; external reference URLs are rejected. Upload the original bytes first. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter accepts inline bytes for upload; download URL inputs in your application before passing their bytes to the adapter.
+A media reference carries exactly one of `file_id` (a ready File) or `url` (a public HTTPS URL that Yir imports at submission, up to 100 MiB; data URLs are refused). Use Files for larger media or media that is not publicly reachable. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter accepts inline bytes for upload; download URL inputs in your application before passing their bytes to the adapter.
 
 `createFiles(request, key)` creates upload plans; `uploadFile(client, plan, blob)` uploads and completes a plan. `createAndUploadFile(client, metadata, blob, key)` combines the steps. Use stable upload keys and retain returned file IDs; `getFile(id)` checks state and `completeFile(id)` completes a manually uploaded file. Only reference ready files in generation requests (`file_id` plus the appropriate role). Upload helpers support the server's single/multipart plans.
 
-Since 0.5.0: `getFileContentURL(id)` resolves to the short-lived signed URL of a ready file. The Node transport reads it from the 307 `Location` header with `redirect: "manual"` and never follows it, so the API key is never sent to storage. Fetch the URL without Gateway credentials and ask again once it expires. Only an absolute `https` URL is accepted. Anything else rejects with `file_content_response_invalid`, and errors never include the URL. Missing files reject with `YirAPIError` 404 `YIR_FILE_NOT_FOUND`. Files not yet ready reject with 409 `YIR_FILE_NOT_READY` (wait with `waitForFileReady`, then retry). Expired files reject with 410 `YIR_FILE_EXPIRED` (upload them again).
+`getFileContentURL(id)` resolves to the short-lived signed URL of a ready file. The Node transport reads it from the 307 `Location` header with `redirect: "manual"` and never follows it, so the API key is never sent to storage. Fetch the URL without Gateway credentials and ask again once it expires. Only an absolute `https` URL is accepted. Anything else rejects with `file_content_response_invalid`, and errors never include the URL. Missing files reject with `YirAPIError` 404 `YIR_FILE_NOT_FOUND`. Files not yet ready reject with 409 `YIR_FILE_NOT_READY` (wait with `waitForFileReady`, then retry). Expired files reject with 410 `YIR_FILE_EXPIRED` (upload them again).
 
 Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ secret, id, timestamp, signature, rawBody })` using the account's Webhook secret, not its API key. Pass the original request bytes before parsing JSON and map the delivery signature metadata into `id`, `timestamp` and `signature`. The default clock tolerance is 300 seconds. Reject invalid results, durably deduplicate by Webhook ID, and apply terminal settlement once even if polling also observes it. `constructWebhookEvent` verifies the same fields and resolves to `{ id, timestamp, job }`, or rejects with `YirWebhookVerificationError` carrying a stable `reason`. `unsupported_event` means the signature is valid but the body is not a terminal Job this SDK understands, such as an event type newer than the SDK; acknowledge it with a 2xx response, log it and deduplicate by its `id`. Answer other reasons with a 4xx response. Durable workflows can treat a webhook as a wake-up signal, read the job with `getJob`, and keep `pollDelayMs` polling as a fallback.
 
@@ -93,69 +91,22 @@ Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ sec
 
 Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces.
 
-Starting in 0.2.1, `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
+`providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters, accepted only where the model contract declares them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
-## 0.8.0 changes
+## Upgrading to 0.9.0
 
-0.8.0 is a minor release and is compatible with 0.7.0.
+0.9.0 is a minor release with incompatible changes. It removes surface that the Gateway no longer uses:
 
-- `Job.result.content_safety` (type `JobResultContentSafety`) reports whether the delivered result passed an NSFW check and who ran it: `{ status: "passed", checked_by: "provider" }` when the upstream provider moderates the route, `{ status: "passed", checked_by: "yir" }` when Yir checked the output itself, or `{ status: "unchecked" }` when no check could be applied. It is absent on results delivered before the field existed. When it is `passed` you can skip your own NSFW check; otherwise apply your own policy. Yir's own output check only blocks explicit adult content. Output that fails a check is not delivered and the Job fails with `YIR_CONTENT_REJECTED`; because the upstream already generated and billed it, that upstream cost is charged.
-- `RoutingPreference` adds `speed`, which orders channels by ascending observed upstream latency, with channels that have too few samples following in price order. `cost` stays the default, and `balanced` is marked deprecated as an alias of `cost` that the Gateway still accepts. The value is still validated by the Gateway, so earlier SDK versions can already send `speed` to a Gateway that supports it.
+- `Quote` drops `max`, `single_attempt_upper_bound`, `has_verifiable_upper_bound` and `supply.requires_max_cost`. The Gateway still returns them as constants for older SDKs (`max` repeats `primary`; the others are `null` or `false`), and this SDK ignores them. Read `primary` for the estimate and set your own `max_cost`.
+- `Job.billing.savings` is removed; the Gateway stopped returning it on 2026-10-02. Use `billing.official_comparison`.
+- `checkParameterPolicies`, `ModelParameterContract.policy` and the console warnings on quote/submit are removed. Model contracts no longer carry policies; quotes and Jobs report actual handling in `parameter_notices`.
+- `RoutingPreference` no longer lists `balanced`. The Gateway still accepts it as an alias of `cost`; send `cost`.
+- `DEFAULT_POLL_INTERVAL_MS` is removed; set `pollIntervalMs` for a fixed interval.
+- `examples/quickstart.mjs` takes the approved `max_cost` as a third argument instead of deriving it from the removed upper bound.
 
-## 0.7.0 changes
-
-0.7.0 is a minor release with incompatible changes:
-
-- `JobStatus` and `InputFile.status` widen with `(string & {})`. Only `succeeded`, `failed` and `cancelled` end a Job, and only `ready`, `failed` and `expired` settle a file; any other non-empty status is in progress. `getJob`, `getJobStatus`, `cancelJob` and file reads accept newer statuses, `waitForJob` and `uploadFile` keep waiting through them, and the Vercel adapter reports them as `pending`. Exhaustive `switch` statements need a default branch.
-- Error bodies without a code use `http_error` instead of `HTTP_<status>`, as in the Go SDK; the status stays in `YirAPIError.status`. The `YirAPIError` constructor uses the same default.
-- The Node transport limits each Gateway request to 30 seconds by default (`DEFAULT_REQUEST_TIMEOUT_MS`) and rejects with a `TimeoutError`. Set `timeoutMs` for slower calls, or `0` to disable it. Recover a timed-out submit with the same request and idempotency key.
-- `submitImage` and `submitVideo` reject a response that is not a Job with a valid ID and status with `response_invalid`.
-- `constructWebhookEvent` reports an authentic JSON object that is not a terminal Job, such as an event type newer than the SDK, with `reason` `unsupported_event` and the delivery `id` and `timestamp`, instead of `invalid_payload`. Acknowledge it with a 2xx response and log it. `invalid_payload` now means the body is not a JSON object.
-- A client created with a catalog, and the Vercel adapter, apply the catalog only to the models, operations and input modes it describes and leave others to the Gateway, instead of failing with `model_contract_unavailable`. `validateGeneration(operation, request, catalog)` and the request builders stay strict.
-- A quote in a currency other than USD rejects with `quote_currency_unsupported` instead of `quote_response_invalid`, also from `quoteBatch`. Such quotes are still rejected.
-
-Compatible additions: `YirErrorAction` is an open union for `action`, and `YirAPIError.requestId` is also kept for error bodies without a standard error object. `waitForJob` (and the Vercel adapter's image wait) long-polls by default: each status query asks the Gateway to hold it for up to 20 seconds (`statusWaitSeconds`, `0` disables) until the status changes, so a terminal Job is seen about a second after Yir records it; it stays inside the wait timeout and falls back to `pollDelayMs` when the Gateway does not hold. `getJobStatus(id, { waitSeconds })` and the transport request field `holdMs` are new; custom transports with their own request limit should extend it by `holdMs`.
-
-## 0.6.0 changes
-
-0.6.0 is a minor release with incompatible changes:
-
-- Explicit `billing_mode: "actual"` is supported; see the [repository overview](https://github.com/yir-ai/sdk/blob/main/README.md) for its consent and debt terms.
-- `ComputeCharge` describes only managed supply billed by Yir: `supply_type`, `billed_by` and `amount_basis` narrow to `managed`, `yir` and `yir_price_rule`, `amount` is never `null`, and `status` no longer includes `external`.
-
-Model, parameter and pricing changes that the existing protocol can express no longer need an SDK release:
-
-- Catalogs and model details keep fields and enum values newer than the SDK (new controls, parameter types, operations, input modes, availability or rule behaviors). Rule keys the SDK does not understand are left to the Gateway, while known rules keep their meaning and still apply; values of a newer parameter type are not checked locally. `model_contract_semantics_unsupported` is no longer thrown.
-- Without a catalog, request validation checks only the protocol skeleton: object shapes, non-empty `model`, `input.type`, prompt and reference roles, `max_cost`, `billing_mode`, HTTPS `webhook_url` and routing value types. Prompt length, reference roles and sources, `file_id` format, routing provider codes, preferences and limits are Gateway checks. Unknown top-level, `input`, reference and `routing` fields pass through unchanged instead of failing with `unknown_field`.
-- Quotes keep strict amounts, currency and price ordering, but accept newer price `kind`s (amount is a decimal or null), supply issues, reasons and estimate scopes/usage metrics. Batch quote items accept any error code.
-- Types widen with `(string & {})` so known values keep autocompletion; `Quote.parameters` allows additional keys and `QuotePrice` adds an open variant. Exhaustive `switch` statements need a default branch.
-- The Vercel adapter maps `seed` and video `fps` to same-named Yir parameters; the model contract decides whether they are accepted.
-
-## 0.5.0 migration
-
-Version 0.5.0 adds `getModel` to `YirClient` and `getFileContentURL` to `YirFileClient`. Code that implements either type itself must add these methods; callers of `createYirClient` or `createNodeYirClient` need no change. `YirTransportRequest` gains an optional `redirect: "manual"`. A custom transport that ignores it keeps working for every other call, but `getFileContentURL` then rejects (with the transport's own redirect error or `file_content_response_invalid`) instead of returning a URL.
-
-## Changes in 0.3.0
-
-`waitForJob` (and the Vercel adapter's image wait) without `pollIntervalMs` now backs off with `pollDelayMs` (5s, then 10s, then 20s) instead of polling every 2 seconds. Set `pollIntervalMs` to keep a fixed interval. `DEFAULT_POLL_INTERVAL_MS` is deprecated. `constructWebhookEvent` and `YirWebhookVerificationError` are new. No call signatures change. In 0.3.1, `constructWebhookEvent` also rejects Job IDs that `getJob` would reject, and `pollDelayMs` documents `poll` as the zero-based index of the query that just completed. In 0.3.2, request builders count the 20,000-character prompt limit in Unicode code points, so prompts with emoji are no longer rejected early.
-
-## Contract updates in 0.2.0
-
-H3 reference input accepts 1–15 references: up to 9 images, 3 videos and 3 audio files, including audio-only input, preserving URLs and order. Image-to-video remains adaptive-only. The KIE integration verified on 2026-09-16 supports mixed references within those limits, but requires at least one image or video; audio-only input passes the public contract but is not accepted by this supply. Each video/audio clip must be 2–15 seconds, with video and audio each totaling at most 15 seconds. Video/audio references require measured, ready Files owned by the caller, supplied as `file_id`; image URLs remain supported. Quote and admission use trusted measurements, and submission checks the bound measurement snapshot. Other channels retain their own supported subsets. A valid quote covering the complete request is required; static SDK validation does not establish live availability or successful generation. The earlier 1–5-image limit describes a historical supply snapshot, not the current KIE integration.
-
-Job results may include `result.warnings: ["additional_results_unavailable"]` when the primary result was delivered but an optional additional result was not. The job remains `succeeded` and `files` contains only delivered files. Normal and historical responses may omit warnings; expired results may retain historical warnings. This is not generation failure, does not authorize automatic regeneration, and does not change charges or `parameter_notices`.
-
-Seedance 2.0 accepts optional boolean `return_last_frame` (default false); other models reject it. Requesting a last frame requires a valid quote covering its full cost, not ordinary video pricing. Actual last-frame delivery remains unverified.
-
-Seedream 5.0 text and image contracts now accept `4K`; image input allows up to 14 references. Other parameters are unchanged. This contract update does not establish live 4K availability, pricing or exact output dimensions; those remain subject to server integration and quotes.
-
-This working revision adds optional `parameters.web_search` and `parameters.image_search` for Nano Banana 2 text and image requests. Both default to false; `image_search: true` requires `web_search: true`. Nano Banana Pro accepts only optional boolean `web_search` (default false) for text and image input; it rejects `image_search`, including explicit false. All other models reject both fields. Provider search execution remains to be verified; this metadata update does not change prices or enable supply. Validation preserves the caller's parameters. Search requires an explicitly supported supply and a valid quote; static support does not establish availability or free search. This is not included in the published `0.1.0` package.
-
-This working revision introduces `getJobStatus` (`GET /v1/jobs/{id}/status`) and migrates `waitForJob` to poll lightweight `JobStatusResponse` summaries, reading the full `Job` detail only once upon reaching terminal status (`succeeded`, `failed`, or `cancelled`). Terminal status mismatches throw an error with code `job_state_inconsistent`. `WaitForJobOptions.onPoll` now receives `JobStatusResponse` instead of `Job`, and `YirTimeoutError.lastJob` has been migrated to `lastStatus`. Wait errors (including aborts, timeouts, and transport errors) do not synthesize partial jobs. Status 404 does not silently fall back to the detail endpoint. Delivered results preserve optional `result.warnings`. These incompatible polling and error return changes are included in 0.2.0; follow the migration guide when upgrading from 0.1.0.
-
-Reference validation also enforces the catalog's per-role counts, required alternative roles, output-duration limits and duplicate-reference rejection. Keep complete requests unchanged between quote, saved authorization and submission.
+Earlier release notes are in the [changelog](https://github.com/yir-ai/sdk/blob/main/typescript/CHANGELOG.md).
 
 ## Verify and maintain
 

@@ -130,11 +130,6 @@ function validateOperation(model, operation, specification) {
     assert(property.type === parameter.type, `${model.id} parameter ${parameter.name} type drift`);
     assert(!parameter.required || parameter.default !== undefined || required.has(parameter.name), `${model.id} parameter ${parameter.name} missing default or required constraint`);
     assertLocalized(parameter.locales, `${model.id}.${parameter.name}`);
-    if (parameter.policy !== undefined) {
-      for (const key of ["only_provider", "reason", "message"]) {
-        assert(typeof parameter.policy[key] === "string" && parameter.policy[key].trim(), `${model.id}.${parameter.name} policy ${key} missing`);
-      }
-    }
     if (parameter.values !== undefined) {
       assert(Array.isArray(parameter.values) && parameter.values.length > 0, `${model.id}.${parameter.name} values empty`);
       assert(new Set(parameter.values.map(String)).size === parameter.values.length, `${model.id}.${parameter.name} values duplicate`);

@@ -101,12 +101,6 @@ export type Job = {
     readonly max_cost?: string;
     readonly compute_charges: readonly ComputeCharge[];
     readonly gateway_fee: { readonly amount: string; readonly status: "settled" | "waived" };
-    readonly savings?: {
-      readonly amount: string;
-      readonly kind: "actual" | "estimated";
-      readonly baseline_amount: string;
-      readonly actual_user_charge: string;
-    };
   };
   readonly error: YirPublicError | null;
   readonly created_at: number;
@@ -124,9 +118,8 @@ export type Quote = {
 	readonly billing_mode?: "actual";
   readonly parameter_notices?: readonly ParameterNotice[];
   readonly parameter_handling_may_vary?: boolean;
-  readonly supply: { readonly available: boolean; readonly requires_max_cost: boolean; readonly issues: readonly string[] };
+  readonly supply: { readonly available: boolean; readonly issues: readonly string[] };
   readonly primary: QuotePrice;
-  readonly max: QuotePrice;
   readonly official: QuotePrice;
   readonly price_difference_percent?: {
     readonly min: number;
@@ -151,8 +144,6 @@ export type Quote = {
     readonly [name: string]: unknown;
   };
   readonly currency: "USD";
-  readonly single_attempt_upper_bound: string | null;
-  readonly has_verifiable_upper_bound: boolean;
   readonly expires_at: number;
 };
 

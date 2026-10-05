@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -98,7 +97,7 @@ func (r SubmitRequest) MarshalJSON() ([]byte, error) {
 }
 
 // Version is the SDK release reported in the User-Agent header. Bump it with each Go tag.
-const Version = "0.9.0"
+const Version = "0.10.0"
 
 // Stable public error codes carried in APIError.Code. The server may add codes,
 // so compare against these constants instead of switching exhaustively.
@@ -226,7 +225,6 @@ func (c *Client) quote(ctx context.Context, resource, operation string, request 
 	if err := c.validateGeneration(operation, request); err != nil {
 		return quote, err
 	}
-	warnParameterPolicies(operation, request, c.modelContracts)
 	err := c.do(ctx, http.MethodPost, "/v1/"+resource+"/quotes", "", request, &quote)
 	if err == nil {
 		err = quote.Validate()
@@ -262,39 +260,6 @@ func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempot
 var decimalCostPattern = regexp.MustCompile(`^[0-9]{1,13}(\.[0-9]{1,6})?$`)
 var jobIDPattern = regexp.MustCompile(`^[1-9][0-9]*$`)
 
-// 只记录固定说明，不将输入内容或参数值写入日志。
-func warnParameterPolicies(operation string, request GenerationRequest, catalogs ...*ModelContractCatalog) {
-	var contract ModelOperationContract
-	var ok bool
-	if len(catalogs) == 0 {
-		contract, ok = GetModelOperationContract(request.Model, operation, request.Input.Type)
-	} else if catalogs[0] != nil {
-		model, found := findContractInCatalog(*catalogs[0], request.Model)
-		if found {
-			for _, candidate := range model.Operations {
-				if candidate.Operation == operation && containsString(candidate.InputModes, request.Input.Type) {
-					contract, ok = candidate, true
-					break
-				}
-			}
-		}
-	}
-	if !ok {
-		return
-	}
-	for _, parameter := range contract.Parameters {
-		_, provided := request.Parameters[parameter.Name]
-		policy := parameter.Policy
-		if !provided || policy == nil {
-			continue
-		}
-		if request.Routing != nil && len(request.Routing.Only) == 1 && request.Routing.Only[0] == policy.OnlyProvider {
-			continue
-		}
-		log.Print("[Yir] " + policy.Message)
-	}
-}
-
 func (c *Client) submit(ctx context.Context, resource, operation string, request SubmitRequest, keys ...string) (Job, error) {
 	var job Job
 	if request.Parameters == nil {
@@ -318,7 +283,6 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 	if request.BillingMode == "actual" && request.MaxCost != nil {
 		return job, &ParameterError{"max_cost", "billing_mode_conflict"}
 	}
-	warnParameterPolicies(operation, request.GenerationRequest, c.modelContracts)
 	if request.MaxCost != nil {
 		amount, ok := new(big.Rat).SetString(*request.MaxCost)
 		maximum, _ := new(big.Rat).SetString("9223372036854.775807")

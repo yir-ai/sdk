@@ -26,9 +26,7 @@ test("Seedance 2 last-frame intent survives quote and submit for every input mod
         return call.path.endsWith("/quotes") ? {
           ...quoteFixture(call.body, "generate_video"),
           primary: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
-          max: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
-          supply: { available: false, requires_max_cost: false, issues: ["no_matching_supply"] },
-          has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
+          supply: { available: false, issues: ["no_matching_supply"] },
         } : { object: "job", id: "1", status: "queued" };
       });
       const quote = await client.quoteVideo(request);

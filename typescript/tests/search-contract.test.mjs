@@ -68,14 +68,11 @@ test("builders retain search intent and unavailable quotes remain unavailable", 
   const request = buildImageQuoteRequest({ model, prompt: "fixture", parameters });
   assert.deepEqual(request.parameters, parameters);
   const client = createYirClient(async () => ({
-    ...quoteFixture(request), supply: { available: false, requires_max_cost: false, issues: ["no_matching_supply"] },
+    ...quoteFixture(request), supply: { available: false, issues: ["no_matching_supply"] },
     primary: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
-    max: { kind: "unavailable", amount: null, reason: "no_matching_supply" },
-    has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
   }));
   const quote = await client.quoteImage(request);
   assert.equal(quote.supply.available, false);
   assert.equal(quote.primary.kind, "unavailable");
   assert.equal(quote.primary.amount, null);
-  assert.equal(quote.single_attempt_upper_bound, null);
 });

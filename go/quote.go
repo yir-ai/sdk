@@ -3,7 +3,6 @@ package yir
 import (
 	"errors"
 	"math"
-	"math/big"
 	"regexp"
 	"strings"
 )
@@ -16,8 +15,8 @@ var quoteAmountPattern = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?$`)
 var ErrQuoteCurrencyUnsupported = errors.New("quote_currency_unsupported")
 
 // Validate checks public price semantics without inferring a price from a hold.
-// Amounts, currency and price ordering stay strict; price kinds, supply issues,
-// reasons and usage fields newer than this SDK are accepted as data.
+// Amounts and currency stay strict; deprecated fields are ignored, and price kinds,
+// supply issues, reasons and usage fields newer than this SDK are accepted as data.
 func (q Quote) Validate() error {
 	invalid := errors.New("quote_response_invalid")
 	if q.Object != "quote" || strings.TrimSpace(q.Currency) == "" {
@@ -42,14 +41,13 @@ func (q Quote) Validate() error {
 		}
 	}
 	// Without supply there is nothing to authorize, so no amount may be offered.
-	if !q.Supply.Available && (q.Supply.RequiresMaxCost || len(q.Supply.Issues) == 0 ||
-		q.HasVerifiableUpperBound || q.Primary.Amount != nil || q.Max.Amount != nil) {
+	if !q.Supply.Available && (len(q.Supply.Issues) == 0 || q.Primary.Amount != nil) {
 		return invalid
 	}
 	if q.Operation == "" || q.InputMode == "" {
 		return invalid
 	}
-	for _, price := range []QuotePrice{q.Primary, q.Max, q.Official} {
+	for _, price := range []QuotePrice{q.Primary, q.Official} {
 		switch price.Kind {
 		case "fixed":
 			if price.Amount == nil || !quoteAmountPattern.MatchString(*price.Amount) || price.Reason != "" || price.Estimate != nil {
@@ -70,22 +68,6 @@ func (q Quote) Validate() error {
 			}
 		}
 	}
-	if q.Primary.Amount != nil && q.Max.Amount != nil && quoteAmount(*q.Primary.Amount).Cmp(quoteAmount(*q.Max.Amount)) > 0 {
-		return invalid
-	}
-	if q.HasVerifiableUpperBound {
-		if q.SingleAttemptUpperBound == nil || !quoteAmountPattern.MatchString(*q.SingleAttemptUpperBound) {
-			return invalid
-		}
-		upper := quoteAmount(*q.SingleAttemptUpperBound)
-		for _, price := range []QuotePrice{q.Primary, q.Max} {
-			if price.Amount != nil && quoteAmount(*price.Amount).Cmp(upper) > 0 {
-				return invalid
-			}
-		}
-	} else if q.SingleAttemptUpperBound != nil {
-		return invalid
-	}
 	return nil
 }
 
@@ -98,12 +80,4 @@ func (e QuoteEstimate) validUsage() bool {
 	// Newer usage metrics may replace these; known ones must still be sane and exclusive.
 	return e.OutputTokens >= 0 && e.OutputTokens <= 1_000_000 && e.OutputMegapixels >= 0 && e.OutputMegapixels <= 1_000_000 &&
 		!(e.outputTokensSet && e.outputMegapixelsSet)
-}
-
-func quoteAmount(value string) *big.Rat {
-	if !strings.Contains(value, ".") {
-		value += ".0"
-	}
-	amount, _ := new(big.Rat).SetString(value)
-	return amount
 }

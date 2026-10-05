@@ -124,7 +124,7 @@ func TestNanoSearchQuoteAndSubmit(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if quote.Primary.Kind != "unavailable" || quote.Primary.Amount != nil || quote.SingleAttemptUpperBound != nil {
+			if quote.Primary.Kind != "unavailable" || quote.Primary.Amount != nil {
 				t.Fatal("unavailable quote changed")
 			}
 			// Independently exercise submission serialization; an unavailable quote is not authorization.

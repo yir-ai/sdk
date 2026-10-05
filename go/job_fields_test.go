@@ -16,7 +16,6 @@ func TestJobDecodesRoutingUsageAndBillingFacts(t *testing.T) {
 			"compute_charges":[{"supply_type":"managed","billed_by":"yir","amount":"0.04","amount_basis":"yir_price_rule","status":"settled",
 				"usage":[{"metric":"output_images","quantity":"2","unit":"image"}]}],
 			"gateway_fee":{"amount":"0.01","status":"settled"},
-			"savings":{"amount":"0.03","kind":"estimated","baseline_amount":"0.08","actual_user_charge":"0.05"},
 			"official_comparison":{"baseline_amount":"0.08","savings_amount":"0.03","source_url":"https://example.com/pricing"}}}`
 	var job Job
 	if err := json.Unmarshal([]byte(raw), &job); err != nil {
@@ -33,8 +32,8 @@ func TestJobDecodesRoutingUsageAndBillingFacts(t *testing.T) {
 	if managed.Amount != "0.04" || len(managed.Usage) != 1 || managed.Usage[0].Quantity != "2" {
 		t.Fatalf("managed charge lost: %+v", managed)
 	}
-	if billing.Savings == nil || billing.Savings.ActualUserCharge != "0.05" || billing.OfficialComparison == nil || billing.OfficialComparison.SourceURL == "" {
-		t.Fatalf("savings facts lost: %+v", billing)
+	if billing.OfficialComparison == nil || billing.OfficialComparison.SourceURL == "" {
+		t.Fatalf("official comparison lost: %+v", billing)
 	}
 }
 

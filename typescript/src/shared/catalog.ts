@@ -187,12 +187,6 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
              typeof parameter.maximum === "number" && item > parameter.maximum)) invalid();
         }
         if (values && Object.hasOwn(parameter, "default") && !values.includes(parameter.default)) invalid();
-        if (parameter.policy !== undefined) {
-          const policy = object(parameter.policy);
-          nonemptyString(policy.only_provider);
-          nonemptyString(policy.reason);
-          nonemptyString(policy.message);
-        }
       }
     }
   }

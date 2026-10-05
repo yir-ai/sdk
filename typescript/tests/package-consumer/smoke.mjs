@@ -71,9 +71,9 @@ let calls = 0;
 const client = createYirClient(async () => {
   calls++;
   return { object: "quote", model: request.model, operation: "generate_image", input_mode: "text", parameters: {}, currency: "USD",
-    primary: { kind: "fixed", amount: "0.02" }, max: { kind: "fixed", amount: "0.05" },
+    primary: { kind: "fixed", amount: "0.02" },
     official: { kind: "estimate", amount: "0.04239", estimate: { scope: "output_only", output_tokens: 1413 } },
-    supply: { available: true, requires_max_cost: false, issues: [] }, has_verifiable_upper_bound: true, single_attempt_upper_bound: "0.05", expires_at: 1900000000 };
+    supply: { available: true, issues: [] }, expires_at: 1900000000 };
 }, catalog);
 assert.equal((await client.quoteImage(request)).official.estimate.scope, "output_only");
 assert.throws(() => client.quoteImage({ ...request, parameters: { unknown_parameter: true } }), { code: "parameter_unknown" });

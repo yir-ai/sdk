@@ -35,8 +35,8 @@ func fixedQuotePrice(amount string) QuotePrice { return QuotePrice{Kind: "fixed"
 
 func TestQuoteOutputEstimateDoesNotRequireOrCreateBudget(t *testing.T) {
 	q := Quote{Object: "quote", Model: "openai/gpt-image-2", Operation: "generate_image", InputMode: "text", Parameters: map[string]any{}, Currency: "USD", ExpiresAt: 1,
-		Supply:  QuoteSupply{Available: true, RequiresMaxCost: true},
-		Primary: QuotePrice{Kind: "unavailable", Reason: "missing"}, Max: QuotePrice{Kind: "unavailable", Reason: "missing"},
+		Supply:   QuoteSupply{Available: true},
+		Primary:  QuotePrice{Kind: "unavailable", Reason: "missing"},
 		Official: QuotePrice{Kind: "estimate", Amount: fixedQuotePrice("0.042390").Amount, Estimate: &QuoteEstimate{Scope: "output_only", OutputTokens: 1413}}}
 	if err := q.Validate(); err != nil {
 		t.Fatal(err)
@@ -67,23 +67,16 @@ func TestQuoteOutputEstimateDoesNotRequireOrCreateBudget(t *testing.T) {
 func TestQuoteValidatesUnavailableAndExactAmounts(t *testing.T) {
 	base := Quote{Object: "quote", Model: "openai/gpt-image-2", Operation: "generate_image", InputMode: "text", Parameters: map[string]any{}, Currency: "USD", ExpiresAt: 1,
 		Supply:  QuoteSupply{Available: true},
-		Primary: fixedQuotePrice("0.02"), Max: fixedQuotePrice("0.05"), Official: QuotePrice{Kind: "unavailable", Reason: "missing"}, HasVerifiableUpperBound: true, SingleAttemptUpperBound: fixedQuotePrice("0.05").Amount}
+		Primary: fixedQuotePrice("0.02"), Official: QuotePrice{Kind: "unavailable", Reason: "missing"}}
 	if err := base.Validate(); err != nil {
 		t.Fatal(err)
 	}
 	for _, change := range []func(*Quote){
 		func(q *Quote) { q.Primary.Amount = nil },
+		func(q *Quote) { q.Primary = fixedQuotePrice("1e-2") },
 		func(q *Quote) { q.Official.Amount = fixedQuotePrice("0").Amount },
 		func(q *Quote) { q.Official.Reason = "" },
-		func(q *Quote) { q.Max = fixedQuotePrice("0.01") },
-		func(q *Quote) { q.SingleAttemptUpperBound = fixedQuotePrice("0.04").Amount },
 		func(q *Quote) { q.Currency = "CNY" },
-		func(q *Quote) { q.HasVerifiableUpperBound = false },
-		func(q *Quote) {
-			q.Primary = fixedQuotePrice("1000000000000.000002")
-			q.Max = fixedQuotePrice("1000000000000.000001")
-			q.SingleAttemptUpperBound = fixedQuotePrice("1000000000001").Amount
-		},
 	} {
 		q := base
 		change(&q)
@@ -93,11 +86,18 @@ func TestQuoteValidatesUnavailableAndExactAmounts(t *testing.T) {
 	}
 	unknown := base
 	unknown.Primary = QuotePrice{Kind: "unavailable", Reason: "missing"}
-	unknown.Max = unknown.Primary
-	unknown.SingleAttemptUpperBound = nil
-	unknown.HasVerifiableUpperBound = false
-	unknown.Supply.RequiresMaxCost = true
 	if err := unknown.Validate(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The Gateway still returns deprecated compatibility fields; this SDK ignores them.
+func TestQuoteIgnoresDeprecatedCompatibilityFields(t *testing.T) {
+	var q Quote
+	if err := json.Unmarshal([]byte(`{"object":"quote","supply":{"available":true,"requires_max_cost":false,"issues":[]},"model":"openai/gpt-image-2","operation":"generate_image","input_mode":"text","parameters":{},"currency":"USD","expires_at":1,"primary":{"kind":"fixed","amount":"0.02"},"max":{"kind":"fixed","amount":"0.02"},"official":{"kind":"fixed","amount":"0.04"},"has_verifiable_upper_bound":false,"single_attempt_upper_bound":null}`), &q); err != nil {
+		t.Fatal(err)
+	}
+	if err := q.Validate(); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -105,45 +105,32 @@ func TestQuoteValidatesUnavailableAndExactAmounts(t *testing.T) {
 func TestQuoteSupplyConsistency(t *testing.T) {
 	base := Quote{Object: "quote", Model: "openai/gpt-image-2", Operation: "generate_image", InputMode: "text",
 		Parameters: map[string]any{}, Currency: "USD", ExpiresAt: 1,
-		Supply: QuoteSupply{Available: true}, Primary: fixedQuotePrice("0.02"), Max: fixedQuotePrice("0.05"),
-		Official:                QuotePrice{Kind: "unavailable", Reason: "official_price_unavailable"},
-		HasVerifiableUpperBound: true, SingleAttemptUpperBound: fixedQuotePrice("0.05").Amount}
+		Supply: QuoteSupply{Available: true}, Primary: fixedQuotePrice("0.02"),
+		Official: QuotePrice{Kind: "unavailable", Reason: "official_price_unavailable"}}
 	noSupply := QuotePrice{Kind: "unavailable", Reason: "no_matching_supply"}
 	for _, tc := range []struct {
 		name   string
 		change func(*Quote)
 		valid  bool
 	}{
-		{"available bounded", func(q *Quote) {}, true},
-		{"available explicit budget", func(q *Quote) {
-			q.HasVerifiableUpperBound = false
-			q.SingleAttemptUpperBound = nil
-			q.Supply.RequiresMaxCost = true
-		}, true},
-		{"available server-authorized uncapped", func(q *Quote) { q.HasVerifiableUpperBound = false; q.SingleAttemptUpperBound = nil }, true},
+		{"available priced", func(q *Quote) {}, true},
 		// Issue names and price kinds are server data; amounts stay strict.
 		{"available with advisory issue", func(q *Quote) { q.Supply.Issues = []string{"slow_supply"} }, true},
 		{"blank issue", func(q *Quote) { q.Supply.Issues = []string{" "} }, false},
 		{"newer price kind", func(q *Quote) { q.Official = QuotePrice{Kind: "tiered", Amount: fixedQuotePrice("0.03").Amount} }, true},
 		{"newer price kind bad amount", func(q *Quote) { q.Official = QuotePrice{Kind: "tiered", Amount: fixedQuotePrice("1e-2").Amount} }, false},
-		{"unavailable bounded", func(q *Quote) { q.Supply = QuoteSupply{Issues: []string{"no_matching_supply"}} }, false},
+		{"unavailable priced", func(q *Quote) { q.Supply = QuoteSupply{Issues: []string{"no_matching_supply"}} }, false},
 		{"unavailable without issue", func(q *Quote) {
 			q.Supply = QuoteSupply{}
-			q.Primary, q.Max = noSupply, noSupply
-			q.HasVerifiableUpperBound = false
-			q.SingleAttemptUpperBound = nil
+			q.Primary = noSupply
 		}, false},
 		{"unavailable newer issue", func(q *Quote) {
 			q.Supply = QuoteSupply{Issues: []string{"region_restricted"}}
-			q.Primary, q.Max = QuotePrice{Kind: "unavailable", Reason: "region_restricted"}, QuotePrice{Kind: "unavailable", Reason: "region_restricted"}
-			q.HasVerifiableUpperBound = false
-			q.SingleAttemptUpperBound = nil
+			q.Primary = QuotePrice{Kind: "unavailable", Reason: "region_restricted"}
 		}, true},
 		{"unavailable consistent", func(q *Quote) {
 			q.Supply = QuoteSupply{Issues: []string{"no_matching_supply"}}
-			q.Primary, q.Max = noSupply, noSupply
-			q.HasVerifiableUpperBound = false
-			q.SingleAttemptUpperBound = nil
+			q.Primary = noSupply
 		}, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

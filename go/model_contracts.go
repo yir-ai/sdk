@@ -13,7 +13,6 @@ type ModelContractLocale struct {
 }
 
 type ModelParameterContract struct {
-	Policy   *ParameterPolicy               `json:"policy,omitempty"`
 	Name     string                         `json:"name"`
 	Type     string                         `json:"type"`
 	Required bool                           `json:"required"`
@@ -44,12 +43,6 @@ func (p ModelParameterContract) localTypeKnown() bool {
 type ReferenceCountRange struct {
 	Minimum int `json:"minimum"`
 	Maximum int `json:"maximum"`
-}
-
-type ParameterPolicy struct {
-	OnlyProvider string `json:"only_provider"`
-	Reason       string `json:"reason"`
-	Message      string `json:"message"`
 }
 
 type ModelOperationContract struct {
@@ -190,10 +183,6 @@ func cloneModelOperationContract(source ModelOperationContract) ModelOperationCo
 	}
 	result.Parameters = make([]ModelParameterContract, len(source.Parameters))
 	for index, parameter := range source.Parameters {
-		if parameter.Policy != nil {
-			policy := *parameter.Policy
-			parameter.Policy = &policy
-		}
 		parameter.Values = append([]any(nil), parameter.Values...)
 		parameter.Minimum = cloneFloatPointer(parameter.Minimum)
 		parameter.Maximum = cloneFloatPointer(parameter.Maximum)

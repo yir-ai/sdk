@@ -8,7 +8,6 @@ export type ModelContractLocale = {
 export type ModelParameterValue = string | number | boolean;
 
 export type ModelParameterContract = {
-  readonly policy?: { readonly only_provider: string; readonly reason: string; readonly message: string };
   readonly name: string;
   /** Newer types may appear; local validation skips them. */
   readonly type: "string" | "integer" | "number" | "boolean" | (string & {});

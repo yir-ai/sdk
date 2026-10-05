@@ -6,16 +6,16 @@ import { quoteFixture } from "./quote-fixture.mjs";
 const request = { model: "openai/gpt-image-2", input: { type: "text", prompt: "test" }, parameters: {} };
 const read = value => createYirClient(async () => value).quoteImage(request);
 
-test("Quote accepts server-authorized supply without an upper bound or required cap", async () => {
-  const value = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
+test("Quote ignores deprecated compatibility fields the Gateway still returns", async () => {
+  const value = { ...quoteFixture(request), max: { kind: "fixed", amount: "0.02" },
+    has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
     supply: { available: true, requires_max_cost: false, issues: [] } };
   assert.deepEqual(await read(value), value);
-  await assert.rejects(read({ ...value, single_attempt_upper_bound: "0.05" }), /quote_response_invalid/);
+  assert.deepEqual(await read(quoteFixture(request)), quoteFixture(request));
 });
 
 test("Official output estimate carries assumptions without authorizing a budget", async () => {
-  const value = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
-    supply: { available: true, requires_max_cost: true, issues: [] },
+  const value = { ...quoteFixture(request),
     official: { kind: "estimate", amount: "0.042390", estimate: { scope: "output_only", output_tokens: 1413 } } };
   assert.deepEqual(await read(value), value);
   for (const estimate of [null, {}, { scope: "output_only", output_tokens: 0 }, { scope: "output_only", output_tokens: 1.5 },
@@ -34,12 +34,11 @@ test("Quote accepts newer price kinds and supply issues while keeping amounts st
   await assert.rejects(read({ ...value, official: { kind: "tiered", amount: 0.03 } }), /quote_response_invalid/);
   const omitted = { ...value, official: { kind: "tiered", reason: "volume" } };
   assert.deepEqual(await read(omitted), omitted);
-  const unavailable = { ...quoteFixture(request), has_verifiable_upper_bound: false, single_attempt_upper_bound: null,
-    supply: { available: false, requires_max_cost: false, issues: ["region_restricted"] },
-    primary: { kind: "unavailable", amount: null, reason: "region_restricted" },
-    max: { kind: "unavailable", amount: null, reason: "region_restricted" } };
+  const unavailable = { ...quoteFixture(request),
+    supply: { available: false, issues: ["region_restricted"] },
+    primary: { kind: "unavailable", amount: null, reason: "region_restricted" } };
   assert.deepEqual(await read(unavailable), unavailable);
-  await assert.rejects(read({ ...unavailable, max: { kind: "fixed", amount: "0.05" } }), /quote_response_invalid/);
+  await assert.rejects(read({ ...unavailable, primary: { kind: "fixed", amount: "0.05" } }), /quote_response_invalid/);
   await assert.rejects(read({ ...unavailable, supply: { ...unavailable.supply, issues: [] } }), /quote_response_invalid/);
 });
 
@@ -49,29 +48,22 @@ test("Quote rejects malformed or mismatched responses without exposing response 
     { primary: { kind: "fixed", amount: 0.02 } },
     { primary: { kind: "fixed", amount: "1e-2" } },
     { primary: { kind: "fixed", amount: "0.02", reason: "secret" } },
-    { max: { kind: "unavailable", amount: "0", reason: "unknown" } },
-    { max: { kind: "unavailable", amount: null, reason: " " } },
-    { max: { kind: "estimate", amount: "0.05" } },
-    { has_verifiable_upper_bound: "true" }, { has_verifiable_upper_bound: false },
-    { single_attempt_upper_bound: "0.01" }]) {
+    { official: { kind: "unavailable", amount: "0", reason: "unknown" } },
+    { official: { kind: "unavailable", amount: null, reason: " " } },
+    { official: { kind: "estimate", amount: "0.05" } },
+    { supply: { available: true } }]) {
     const value = patch === null ? null : Object.keys(patch).length ? { ...quoteFixture(request), ...patch } : {};
     await assert.rejects(read(value), { message: "quote_response_invalid" });
   }
 });
 
-test("Quote compares exact decimals and does not cap official reference prices", async () => {
+test("Quote keeps amounts strict and does not cap official reference prices", async () => {
   const value = quoteFixture(request);
-  value.primary.amount = "000.050000000000000001";
-  await assert.rejects(read(value), /quote_response_invalid/);
   value.primary.amount = "000.0200";
+  value.official.amount = "0.010000000000000001";
   assert.deepEqual(await read(value), value);
-  value.max = { kind: "unavailable", amount: null, reason: "candidate_price_unavailable" };
-  value.single_attempt_upper_bound = "0.019999999999999999";
+  value.primary.amount = "0.02.0";
   await assert.rejects(read(value), /quote_response_invalid/);
-  value.has_verifiable_upper_bound = false;
-  value.single_attempt_upper_bound = null;
-  value.supply.requires_max_cost = true;
-  assert.deepEqual(await read(value), value);
 });
 
 // A quote in another currency fails closed with its own error so callers can

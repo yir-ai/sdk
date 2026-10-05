@@ -113,11 +113,6 @@ const (
 	// RoutingPreferenceSpeed orders channels by ascending observed upstream
 	// latency; channels with too few samples follow in price order.
 	RoutingPreferenceSpeed = "speed"
-	// RoutingPreferenceBalanced is an alias of RoutingPreferenceCost that the
-	// Gateway still accepts.
-	//
-	// Deprecated: use RoutingPreferenceCost.
-	RoutingPreferenceBalanced = "balanced"
 )
 
 type Routing struct {

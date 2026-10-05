@@ -60,10 +60,7 @@ type Quote struct {
 	Parameters               map[string]any        `json:"parameters"`
 	Currency                 string                `json:"currency"`
 	Primary                  QuotePrice            `json:"primary"`
-	Max                      QuotePrice            `json:"max"`
 	Official                 QuotePrice            `json:"official"`
-	SingleAttemptUpperBound  *string               `json:"single_attempt_upper_bound"`
-	HasVerifiableUpperBound  bool                  `json:"has_verifiable_upper_bound"`
 	ExpiresAt                int64                 `json:"expires_at"`
 	raw                      string
 }
@@ -76,9 +73,8 @@ type QuotePriceDifference struct {
 }
 
 type QuoteSupply struct {
-	Available       bool     `json:"available"`
-	RequiresMaxCost bool     `json:"requires_max_cost"`
-	Issues          []string `json:"issues"`
+	Available bool     `json:"available"`
+	Issues    []string `json:"issues"`
 }
 
 type Job struct {
@@ -145,7 +141,6 @@ type JobBilling struct {
 	GatewayFee         GatewayFee          `json:"gateway_fee"`
 	TotalChargedByYir  string              `json:"total_charged_by_yir"`
 	MaxCost            string              `json:"max_cost,omitempty"`
-	Savings            *Savings            `json:"savings,omitempty"`
 	OfficialComparison *OfficialComparison `json:"official_comparison,omitempty"`
 }
 
@@ -168,13 +163,6 @@ type UsageEntry struct {
 type GatewayFee struct {
 	Amount string `json:"amount"`
 	Status string `json:"status"`
-}
-
-type Savings struct {
-	Amount           string `json:"amount"`
-	Kind             string `json:"kind"`
-	BaselineAmount   string `json:"baseline_amount"`
-	ActualUserCharge string `json:"actual_user_charge"`
 }
 
 type OfficialComparison struct {

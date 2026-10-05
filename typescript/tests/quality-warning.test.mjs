@@ -2,23 +2,6 @@ import { createYirClient } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { checkParameterPolicies } from "../dist/shared/parameter-rules.js";
-import { getModelOperationContract } from "../dist/shared/model-contracts.js";
-
-test("parameter diagnostics follow the declared parameter and provider, without model-name rules", () => {
-  const contract = structuredClone(getModelOperationContract("gpt-image-2", "generate_image", "text"));
-  const parameter = contract.parameters.find(p => p.name === "quality");
-  parameter.name = "custom_parameter";
-  parameter.policy = { only_provider: "declared-provider", reason: "declared_reason", message: "Declared safe warning" };
-  const parameters = Object.freeze({ custom_parameter: "secret value" });
-  assert.equal(checkParameterPolicies(contract, parameters)[0].message, "Declared safe warning");
-  assert.deepEqual(checkParameterPolicies(contract, parameters, ["declared-provider"]), []);
-  assert.equal(checkParameterPolicies(contract, parameters, ["declared-provider", "other"]).length, 1);
-  assert.deepEqual(checkParameterPolicies(contract, {}), []);
-  assert.deepEqual(checkParameterPolicies(contract, { custom_parameter: undefined }), []);
-  assert.ok(!JSON.stringify(checkParameterPolicies(contract, parameters)).includes("secret value"));
-});
-
 // GPT Image quality is a routing constraint on the server: channels that do not serve the tier are excluded, so the SDK no longer warns.
 test("GPT Image quality no longer triggers a warning for any routing", async () => {
   const warnings = [];

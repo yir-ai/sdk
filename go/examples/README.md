@@ -2,7 +2,7 @@
 
 English | [简体中文](../docs/zh-CN/examples.md) · [Go guide](../README.md)
 
-[client_example_test.go](../client_example_test.go) is a compile-checked lifecycle sketch: create a client, quote an image, require a verifiable fixed-price budget, then submit and wait. It is not a standalone command. Before adapting its Submit call, implement customer budget approval and persist the complete `SubmitRequest` and stable key in your own task record. Recovery reads that record without replacing its request or key. Save the returned job ID and resume polling by ID when available.
+[client_example_test.go](../client_example_test.go) is a compile-checked lifecycle sketch: create a client, quote an image, require available supply with a priced estimate, set the approved `MaxCost`, then submit and wait. It is not a standalone command. Before adapting its Submit call, implement customer budget approval and persist the complete `SubmitRequest` and stable key in your own task record. Recovery reads that record without replacing its request or key. Save the returned job ID and resume polling by ID when available.
 
 The example has no `Output` directive, so `go test` compiles it without executing API calls. Copying it into an application and calling it can submit paid work; only do so after implementing the approval/persistence step. A timeout does not prove failure or imply a refund. Reconcile terminal billing once, including `JobError` paths, and copy result files before expiry.
 

@@ -5,22 +5,9 @@ const decimal = /^[0-9]+(?:\.[0-9]+)?$/;
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
-// Compare decimal strings without rounding customer money through Number.
-function compare(a: string, b: string): number {
-  const [ai, af = ""] = a.split(".");
-  const [bi, bf = ""] = b.split(".");
-  const left = ai!.replace(/^0+/, "") || "0";
-  const right = bi!.replace(/^0+/, "") || "0";
-  if (left.length !== right.length) return left.length - right.length;
-  if (left !== right) return left < right ? -1 : 1;
-  const width = Math.max(af.length, bf.length);
-  const x = af.padEnd(width, "0"), y = bf.padEnd(width, "0");
-  return x === y ? 0 : x < y ? -1 : 1;
-}
-
 /**
  * Validate the response before exposing prices as authorization inputs.
- * Amounts, currency and price ordering stay strict; price kinds, supply issues,
+ * Amounts and currency stay strict; deprecated fields are ignored, and price kinds, supply issues,
  * reasons and usage fields newer than this SDK are accepted as data.
  */
 export function validateQuoteResponse(
@@ -40,11 +27,10 @@ export function validateQuoteResponse(
   if (typeof value.model !== "string" || !expectedModel || returnedModel !== expectedModel
     || value.operation !== operation || value.input_mode !== request.input.type
     || !record(value.parameters) || !Number.isSafeInteger(value.expires_at)
-    || (value.expires_at as number) <= 0 || typeof value.has_verifiable_upper_bound !== "boolean") return invalid();
-  if (!record(value.supply) || typeof value.supply.available !== "boolean"
-    || typeof value.supply.requires_max_cost !== "boolean" || !Array.isArray(value.supply.issues)
+    || (value.expires_at as number) <= 0) return invalid();
+  if (!record(value.supply) || typeof value.supply.available !== "boolean" || !Array.isArray(value.supply.issues)
     || !value.supply.issues.every((issue) => typeof issue === "string" && issue.trim())) return invalid();
-  const prices = [value.primary, value.max, value.official];
+  const prices = [value.primary, value.official];
   for (const price of prices) {
     if (!record(price)) return invalid();
     if (price.kind === "fixed") {
@@ -77,17 +63,8 @@ export function validateQuoteResponse(
       && (!Number.isSafeInteger(diff.reference_amount_micros) || (diff.reference_amount_micros as number) < 0)) return invalid();
   }
   const quote = value as unknown as Quote;
-  if (quote.primary.amount !== null && quote.max.amount !== null
-    && compare(quote.primary.amount, quote.max.amount) > 0) return invalid();
-  if (quote.has_verifiable_upper_bound) {
-    if (typeof quote.single_attempt_upper_bound !== "string" || !decimal.test(quote.single_attempt_upper_bound)) return invalid();
-    for (const price of [quote.primary, quote.max]) {
-      if (price.amount !== null && compare(price.amount, quote.single_attempt_upper_bound) > 0) return invalid();
-    }
-  } else if (quote.single_attempt_upper_bound !== null) return invalid();
   // Without supply there is nothing to authorize, so no amount may be offered.
-  if (!quote.supply.available && (quote.supply.requires_max_cost || quote.supply.issues.length === 0
-    || quote.has_verifiable_upper_bound || quote.primary.amount !== null || quote.max.amount !== null)) return invalid();
+  if (!quote.supply.available && (quote.supply.issues.length === 0 || quote.primary.amount !== null)) return invalid();
   return quote;
 }
 

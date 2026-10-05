@@ -2,6 +2,8 @@
 
 [English](../../../README.md) | 简体中文
 
+> 内测阶段（0.x）。不兼容变更只随 minor 版本发布，迁移说明写在各 SDK 的 README 与变更记录中。
+
 Yir 图像与视频 API 的官方 Go 和 TypeScript SDK。公开源码：[yir-ai/sdk](https://github.com/yir-ai/sdk)，采用 [MIT](../../../LICENSE) 许可证。
 
 | 包 | 使用指南 | 范围 |
@@ -15,25 +17,25 @@ Yir 图像与视频 API 的官方 Go 和 TypeScript SDK。公开源码：[yir-ai
 Go 1.25 及以上，在应用的模块目录执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.7.0
+go get github.com/yir-ai/sdk/go@v0.10.0
 ```
 
-TypeScript 使用 `pnpm add @yir-ai/sdk@0.6.0` 安装。入口和本地归档安装方式见 [TypeScript 指南](../../../typescript/docs/zh-CN/README.md#安装)。
+TypeScript 使用 `pnpm add @yir-ai/sdk@0.9.0` 安装。入口和本地归档安装方式见 [TypeScript 指南](../../../typescript/docs/zh-CN/README.md#安装)。
 
 ## 安全的生成流程
 
-生成键可选从 **TypeScript 0.2.1** 和 **Go 0.3.0** 起支持。TypeScript 可选参数兼容原调用；Go 将最后一个参数改为 `...string`，普通带键调用仍可编译，但固定签名的自定义接口和方法函数赋值需要迁移，见 [Go 指南](../../../go/docs/zh-CN/README.md#030-迁移)。
+生成幂等键可省略，省略时 SDK 每次调用自动生成一个随机键。Submit 只发送一次；再次调用或跨进程恢复必须复用调用方已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖该 Header。
 
-上述版本允许省略生成幂等键，每次 SDK 调用自动生成一个随机键。Submit 只发送一次；再次调用或跨进程恢复必须复用调用方已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖该 Header。
-
-1. 构造明确的请求并取得报价，检查供给和可验证的单次尝试费用上限。
+1. 构造明确的请求并取得报价，检查供给；主价格是估价，不是上限。
 2. 由应用审批预算；提交前持久化包含 `max_cost` 的完整提交请求和稳定幂等键。
 3. 提交已保存的请求。结果未知时使用同一请求与键恢复；取得任务 ID 后保存它，按 ID 恢复轮询。
 4. 对终态账单只结算一次，并在结果 URL 过期前保存可用文件。
 
 报价和静态价格表不会授权购买，也不保证实时供给或最终计费。客户零售价、账户授权、余额和持久化由应用负责。Yir Key 只保留在服务端；浏览器入口仅提供纯逻辑与类型。
 
-`routing.preference` 决定候选渠道顺序：`cost`（默认）按价格升序；`speed` 按观测到的上游耗时升序，样本不足的渠道排在其后并按价格排序。`balanced` 是 `cost` 的已弃用别名，Gateway 仍接受。`speed` 需要 Gateway 支持；SDK 原样透传该值，由 Gateway 校验。
+上游实际计费的每个 Attempt 都按上游权威金额乘托管折扣收取，包括失败的 Attempt 和其后发生回退的 Attempt；上游未计费的 Attempt，以及 Yir 自身的交付失败和结果超时，不收费。`max_cost` 封顶整个 Job 的总费用。显式 `billing_mode: "actual"`（Go 为 `BillingMode: "actual"`）要求 `routing.only`，不能同时设置 `max_cost`，仅支持 KIE/APIMart Kling 2.6/3.0 Motion Control 与 FAL FLUX 2 Pro 图片编辑；它没有上限，余额不足形成钱包欠款，由后续手动充值偿还，欠款未清阻止新 Job。应用须将客户授权与完整请求、幂等键一起持久化。
+
+`routing.preference` 决定候选渠道顺序：`cost`（默认）按价格升序；`speed` 按观测到的上游耗时升序，样本不足的渠道排在其后并按价格排序。SDK 原样透传该值，由 Gateway 校验。
 
 完整流程见 [TypeScript 示例](../../../typescript/docs/zh-CN/examples.md) 和 [Go 示例指南](../../../go/docs/zh-CN/examples.md)。
 

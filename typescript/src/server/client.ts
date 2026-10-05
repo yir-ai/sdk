@@ -1,6 +1,5 @@
 import { validateGeneration } from "../shared/standard.js";
-import { findModelOperationContract, modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
-import { checkParameterPolicies } from "../shared/parameter-rules.js";
+import { modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
 import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
 import { coveringCatalog } from "./catalog-coverage.js";
 import { createFileClient } from "./files.js";
@@ -101,7 +100,6 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     quoteImage(request, options) {
       options?.signal?.throwIfAborted();
       validateGeneration("generate_image", request, coveringCatalog(localCatalog, "generate_image", request));
-      warnParameterPolicies("generate_image", request, localCatalog);
       return transport<Quote>({
         method: "POST",
         path: "/v1/images/quotes",
@@ -124,7 +122,6 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
       validateGeneration("generate_image", request, coveringCatalog(localCatalog, "generate_image", request));
-      warnParameterPolicies("generate_image", request, localCatalog);
       return transport<Job>({
         method: "POST",
         path: "/v1/images/generations",
@@ -136,7 +133,6 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     quoteVideo(request, options) {
       options?.signal?.throwIfAborted();
       validateGeneration("generate_video", request, coveringCatalog(localCatalog, "generate_video", request));
-      warnParameterPolicies("generate_video", request, localCatalog);
       return transport<Quote>({
         method: "POST",
         path: "/v1/videos/quotes",
@@ -149,7 +145,6 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
       validateGeneration("generate_video", request, coveringCatalog(localCatalog, "generate_video", request));
-      warnParameterPolicies("generate_video", request, localCatalog);
       return transport<Job>({
         method: "POST",
         path: "/v1/videos/generations",
@@ -221,18 +216,8 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
 
 export const DEFAULT_GATEWAY_BASE_URL = "https://gateway.yir.ai";
 
-// 固定日志不包含提示词、参数值、密钥或服务端任意文本。
-function warnParameterPolicies(operation: "generate_image" | "generate_video", request: StandardImageQuoteRequest | StandardVideoQuoteRequest, catalog?: ModelContractCatalog): void {
-  const contract = catalog && findModelOperationContract(catalog, request.model, operation, request.input.type);
-  if (!contract) return;
-  for (const notice of checkParameterPolicies(contract, request.parameters, request.routing?.only)) {
-    console.warn(`[Yir] ${notice.message}`);
-  }
-}
 // Keep in sync with package.json "version"; tests enforce it.
-export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.8.0";
-/** @deprecated Former fixed default. `waitForJob` now backs off with `pollDelayMs` unless `pollIntervalMs` is set. */
-export const DEFAULT_POLL_INTERVAL_MS = 2000;
+export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.9.0";
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 /** Default long-poll hold of `waitForJob` status queries. */
 export const DEFAULT_STATUS_WAIT_SECONDS = 20;

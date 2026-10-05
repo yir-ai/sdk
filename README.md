@@ -1,6 +1,6 @@
 # Yir SDK
 
-> 0.2.0 protocol / 协议升级：模型参数来自 API，SDK 不再以内置模型清单限制请求；旧全量价格表与客户端计价已移除。升级前阅读 [migration guide](https://github.com/yir-ai/sdk/blob/main/typescript/docs/parameter-contracts.md)。
+> Beta (0.x). Incompatible changes ship only in minor releases, with migration notes in each SDK's README and changelog.
 
 English | [简体中文](spec/docs/zh-CN/README.md)
 
@@ -17,27 +17,25 @@ Official Go and TypeScript SDKs for the Yir image and video API. Public source: 
 Go 1.25 or later, from your application's module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.9.0
+go get github.com/yir-ai/sdk/go@v0.10.0
 ```
 
-Install TypeScript with `pnpm add @yir-ai/sdk@0.8.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
+Install TypeScript with `pnpm add @yir-ai/sdk@0.9.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
 
 ## Safe generation lifecycle
 
-Use **TypeScript 0.2.1** or **Go 0.3.0** for optional generation keys. TypeScript's optional argument is compatible with existing calls. Go changes the final argument to `...string`: ordinary calls with a key still compile, while custom fixed-signature interfaces and method function assignments need migration. See the [Go guide](go/README.md#030-migration).
+The generation idempotency key is optional: the SDKs create a new random key per call when it is omitted. Submit is issued once. Recovery across calls/processes requires the same caller-persisted key and exact request. Server fallback within an accepted Job is independent of this header.
 
-These versions allow omitting the generation idempotency key and create a new random key per SDK call. Submit is issued once. Recovery across calls/processes requires the same caller-persisted key and exact request. Server fallback within an accepted Job is independent of this header.
-
-1. Build an explicit request and obtain a quote. Check supply and a verifiable single-attempt upper bound.
+1. Build an explicit request and obtain a quote. Check supply; the primary price is an estimate, not a ceiling.
 2. Have your application approve the budget. Persist the exact submit request, including `max_cost`, and a stable idempotency key before submitting.
 3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID.
 4. Reconcile terminal billing once and copy available result files before their URLs expire.
 
 A quote or static price table does not authorize a purchase or guarantee current supply or final billing. Customer pricing, account authorization, balances and persistence belong to your application. Keep Yir API keys on the server; the browser entry exposes only pure helpers and types.
 
-Go 0.7.0 and TypeScript 0.6.0 add explicit `billing_mode: "actual"` (`BillingMode: "actual"` in Go). It requires `routing.only` and cannot be combined with `max_cost`. Supported channels are KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing. The delivered winner's authoritative actual cost has no guaranteed ceiling; insufficient funds become wallet debt repaid by later manual recharge, and outstanding debt blocks new Jobs. Persist this customer consent with the exact request and idempotency key. Omitted mode and existing Jobs retain their original billing terms. This feature requires a Gateway that supports actual-cost billing.
+Every attempt the upstream actually bills is charged at its authoritative upstream amount after the managed discount, including failed attempts and attempts followed by a fallback; attempts the upstream never billed, and Yir's own delivery failures and outcome timeouts, cost nothing. `max_cost` caps the Job's total charge. Explicit `billing_mode: "actual"` (`BillingMode: "actual"` in Go) requires `routing.only`, cannot be combined with `max_cost` and supports only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing. It has no ceiling; insufficient funds become wallet debt repaid by a later manual top-up, and outstanding debt blocks new Jobs. Persist this customer consent with the exact request and idempotency key.
 
-`routing.preference` orders the eligible channels: `cost` (default) by ascending price, `speed` by ascending observed upstream latency, with channels that have too few samples following in price order. `balanced` is a deprecated alias of `cost` that the Gateway still accepts. `speed` requires a Gateway that supports it; the SDKs pass the value through and leave validation to the Gateway.
+`routing.preference` orders the eligible channels: `cost` (default) by ascending price, `speed` by ascending observed upstream latency, with channels that have too few samples following in price order. The SDKs pass the value through and leave validation to the Gateway.
 
 See the [TypeScript examples](typescript/examples/README.md) and [Go example guide](go/examples/README.md) for the full workflow.
 
