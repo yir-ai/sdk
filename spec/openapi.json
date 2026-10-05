@@ -369,7 +369,7 @@
       "post": {
         "operationId": "cancelJob",
         "summary": "Cancel a job",
-        "description": "Before any provider submission, the job becomes cancelled and nothing is charged. After a submission, Yir starts no further fallback attempts while the current attempt keeps running; every attempt the upstream billed is still charged.",
+        "description": "Before any provider submission, the job becomes cancelled and nothing is charged. After a submission, Yir starts no further fallback attempts while the current attempt keeps running; every attempt the upstream billed is still charged. A job waiting to confirm an unknown attempt outcome becomes cancelled immediately; only attempts with a confirmed upstream charge are billed.",
         "tags": ["Jobs"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/JobID" }],
@@ -1262,7 +1262,8 @@
               "YIR_FILE_NOT_FOUND", "YIR_FILE_NOT_READY", "YIR_FILE_EXPIRED", "YIR_MODEL_NOT_FOUND",
               "YIR_IDEMPOTENCY_CONFLICT", "YIR_JOB_NOT_CANCELLABLE", "YIR_NO_EXECUTABLE_ROUTE",
               "YIR_RATE_LIMITED", "YIR_TEMPORARILY_UNAVAILABLE", "YIR_EXECUTION_FAILED",
-              "YIR_CONTENT_REJECTED", "YIR_OUTCOME_TIMEOUT", "YIR_RESULT_DELIVERY_FAILED"
+              "YIR_CONTENT_REJECTED", "YIR_OUTCOME_TIMEOUT", "YIR_RESULT_DELIVERY_FAILED",
+              "YIR_JOB_TIMEOUT"
             ]
           },
           "message": { "type": "string", "minLength": 1 },
