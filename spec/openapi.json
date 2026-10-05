@@ -1046,10 +1046,9 @@
             "required": ["available", "issues"],
             "properties": {
               "available": { "type": "boolean" },
-              "requires_max_cost": { "type": "boolean", "deprecated": true, "description": "Deprecated, always false. Not part of the contract; still emitted for SDKs before TypeScript 0.9 and Go 0.10 and will be removed." },
               "issues": { "type": "array", "items": { "type": "string", "enum": ["no_matching_supply"] } }
             },
-            "description": "Whether any route can currently serve this request. Available supply has an empty issues array; requires_max_cost is always false. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
+            "description": "Whether any route can currently serve this request. Available supply has an empty issues array. No matching supply returns available=false and no_matching_supply, with primary unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
           },
           "object": {
             "type": "string",
@@ -1057,7 +1056,8 @@
           },
           "model": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Canonical model ID, also when the request used an alias."
           },
           "operation": {
             "type": "string",
@@ -1081,19 +1081,6 @@
             "type": "string",
             "const": "USD"
           },
-          "single_attempt_upper_bound": {
-            "deprecated": true,
-            "description": "Deprecated, always null. Not part of the contract; still emitted for SDKs before TypeScript 0.9 and Go 0.10 and will be removed. Use max_cost to cap a Job.",
-            "oneOf": [
-              { "$ref": "#/components/schemas/Decimal" },
-              { "type": "null" }
-            ]
-          },
-          "has_verifiable_upper_bound": {
-            "type": "boolean",
-            "deprecated": true,
-            "description": "Deprecated, always false. Not part of the contract; still emitted for older SDKs and will be removed."
-          },
           "expires_at": {
             "type": "integer",
             "format": "int64",
@@ -1101,50 +1088,6 @@
           },
           "primary": {
             "description": "Current preferred route's estimate: its catalog reference price for fixed-price routes, or an output-only estimate for usage-based routes; otherwise unavailable. The Job is charged the authoritative upstream amounts of its billed attempts after the managed discount, which can differ from this estimate. An output-only estimate excludes input charges; neither is a charge ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
-            "oneOf": [
-              { "$ref": "#/components/schemas/OutputQuoteEstimate" },
-              {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "kind",
-                  "amount"
-                ],
-                "properties": {
-                  "kind": {
-                    "const": "fixed"
-                  },
-                  "amount": {
-                    "$ref": "#/components/schemas/Decimal"
-                  }
-                }
-              },
-              {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "kind",
-                  "amount",
-                  "reason"
-                ],
-                "properties": {
-                  "kind": {
-                    "const": "unavailable"
-                  },
-                  "amount": {
-                    "type": "null"
-                  },
-                  "reason": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                }
-              }
-            ]
-          },
-          "max": {
-            "deprecated": true,
-            "description": "Deprecated, repeats primary. Not part of the contract; still emitted for SDKs before TypeScript 0.9 and Go 0.10 and will be removed. Not a charge ceiling; set max_cost to bound the charge.",
             "oneOf": [
               { "$ref": "#/components/schemas/OutputQuoteEstimate" },
               {
