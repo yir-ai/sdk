@@ -34,7 +34,7 @@ _ = client
 
 ## 升级到 0.11.0
 
-0.11.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备：
+0.11.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备。从 0.9 升级请先看 [0.10.0 说明](CHANGELOG.md#0100-变化)；0.10.0 未单独发布，随本版本一起发布。
 
 - 移除内置模型目录：包级 `ListModelContracts`、`GetModelContract`、`GetModelOperationContract`、`ValidateGeneration` 与 `ValidateModelParameters` 已删除。用 `client.GetModelContracts` 获取目录，再传给 `ValidateGenerationWithCatalog` 或 `ClientOptions.ModelContracts`。新增模型和参数调整都不需要发布 SDK。
 - Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受；按字符串保存，不要解析。

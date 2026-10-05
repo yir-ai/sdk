@@ -4,6 +4,8 @@ Release notes before 0.10.0, moved from the README. Notes describe each release 
 
 ## 0.9.0 changes
 
+0.9.0 was never published on its own; its changes ship with 0.10.0.
+
 0.9.0 is a minor release with incompatible changes. It removes surface that the Gateway no longer uses:
 
 - `Quote` drops `max`, `single_attempt_upper_bound`, `has_verifiable_upper_bound` and `supply.requires_max_cost`. The Gateway still returns them as constants for older SDKs (`max` repeats `primary`; the others are `null` or `false`), and this SDK ignores them. Read `primary` for the estimate and set your own `max_cost`.

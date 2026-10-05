@@ -98,7 +98,7 @@ const client = createNodeYirClient();
 
 ## 升级到 0.10.0
 
-0.10.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备：
+0.10.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备。从 0.8 升级请先看 [0.9.0 说明](CHANGELOG.md#090-变化)；0.9.0 未单独发布，随本版本一起发布。
 
 - 移除内置模型目录：`listModelContracts`、`getModelContract`、`getModelOperationContract`、`KnownModelID` 与 `@yir-ai/sdk/model-contracts` 入口已删除。用 `client.getModelContracts()` 获取目录（或据此生成 `models.ts`），再用 `findModelContract`、`findModelOperationContract` 与 `validateGeneration(operation, request, catalog)`。新增模型和参数调整都不需要发布 SDK。
 - Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受（`isValidJobID`）；按字符串保存，不要解析。

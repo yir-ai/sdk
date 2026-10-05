@@ -4,6 +4,8 @@
 
 ## 0.9.0 变化
 
+0.9.0 未单独发布，内容随 0.10.0 一起发布。
+
 0.9.0 为 minor 版本，含不兼容变更，移除 Gateway 已不再使用的接口：
 
 - `Quote` 删除 `max`、`single_attempt_upper_bound`、`has_verifiable_upper_bound` 与 `supply.requires_max_cost`。Gateway 仍为旧版 SDK 返回这些常量（`max` 重复 `primary`，其余为 `null` 或 `false`），本 SDK 忽略它们。估价读 `primary`，预算由应用自行设置 `max_cost`。

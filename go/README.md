@@ -34,7 +34,7 @@ Keep the key on your server. The default base URL is `https://gateway.yir.ai`; c
 
 ## Upgrading to 0.11.0
 
-0.11.0 is a minor release with incompatible changes. It prepares the 1.0 contract:
+0.11.0 is a minor release with incompatible changes. It prepares the 1.0 contract. Upgrading from 0.9, read the [0.10.0 notes](CHANGELOG.md#0100-changes) first; 0.10.0 was never published on its own and ships with this release.
 
 - The bundled model catalog is removed: package-level `ListModelContracts`, `GetModelContract`, `GetModelOperationContract`, `ValidateGeneration` and `ValidateModelParameters` are gone. Fetch the catalog with `client.GetModelContracts` and pass it to `ValidateGenerationWithCatalog` or `ClientOptions.ModelContracts`. New models and parameter changes never need an SDK release.
 - Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted; store it as a string and do not parse it.

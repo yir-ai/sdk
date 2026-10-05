@@ -97,7 +97,7 @@ Image masks, pixel `size` and video pixel resolution are unsupported; use Yir pa
 
 ## Upgrading to 0.10.0
 
-0.10.0 is a minor release with incompatible changes. It prepares the 1.0 contract:
+0.10.0 is a minor release with incompatible changes. It prepares the 1.0 contract. Upgrading from 0.8, read the [0.9.0 notes](https://github.com/yir-ai/sdk/blob/main/typescript/CHANGELOG.md#090-changes) first; 0.9.0 was never published on its own and ships with this release.
 
 - The bundled model catalog is removed: `listModelContracts`, `getModelContract`, `getModelOperationContract`, `KnownModelID` and the `@yir-ai/sdk/model-contracts` entry point are gone. Fetch the catalog with `client.getModelContracts()` (or generate `models.ts` from it) and use `findModelContract`, `findModelOperationContract` and `validateGeneration(operation, request, catalog)`. New models and parameter changes never need an SDK release.
 - Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted (`isValidJobID`); store it as a string and do not parse it.

@@ -4,6 +4,8 @@
 
 ## 0.10.0 变化
 
+0.10.0 未单独发布，内容随 0.11.0 一起发布。
+
 0.10.0 为 minor 版本，含不兼容变更，移除 Gateway 已不再使用的接口：
 
 - `Quote` 删除 `Max`、`SingleAttemptUpperBound` 与 `HasVerifiableUpperBound`，`QuoteSupply` 删除 `RequiresMaxCost`。Gateway 仍为旧版 SDK 返回这些常量，本 SDK 忽略它们。估价读 `Primary`，预算由应用自行设置 `MaxCost`。
