@@ -99,6 +99,8 @@ export type Job = {
   readonly object: "job";
   readonly status: JobStatus;
   readonly model: string;
+  /** The normalized parameters the Job executes with, in the quote echo shape; absent only when the input summary is gone. */
+  readonly parameters?: QuoteParameters;
   readonly urls?: { readonly get: string; readonly cancel: string };
   readonly usage?: { readonly outputs: number };
   readonly cancellation?: JobCancellation;
@@ -126,6 +128,26 @@ export type QuotePrice =
   /** A price kind newer than this SDK; the amount is still a validated decimal or null. */
   | { readonly kind: string & {}; readonly amount: string | null; readonly reason?: string };
 
+/**
+ * The normalized parameters a request resolves to: every parameter the model
+ * contract declares for the operation, at its contract spelling, with omitted
+ * parameters at their published default. Parameters the model does not declare
+ * are absent: an image echo has no duration and a silent video model has no
+ * generate_audio. Model-specific parameters are echoed under their contract names.
+ */
+export type QuoteParameters = {
+  readonly resolution: string;
+  readonly aspect_ratio: string;
+  readonly n: number;
+  readonly duration?: number;
+  readonly generate_audio?: boolean;
+  readonly quality?: string;
+  readonly return_last_frame?: boolean;
+  readonly web_search?: boolean;
+  readonly image_search?: boolean;
+  readonly [name: string]: unknown;
+};
+
 export type Quote = {
 	readonly billing_mode?: "actual";
   readonly parameter_notices?: readonly ParameterNotice[];
@@ -142,19 +164,7 @@ export type Quote = {
   readonly model: string;
   readonly operation: "generate_image" | "generate_video";
   readonly input_mode: "text" | "image" | "reference";
-  readonly parameters: {
-    readonly duration: number;
-    readonly resolution: string;
-    readonly aspect_ratio: string;
-    readonly generate_audio: boolean;
-    readonly quality?: string;
-    readonly n: number;
-    readonly return_last_frame?: boolean;
-    readonly web_search?: boolean;
-    readonly image_search?: boolean;
-    /** Normalized parameters of newer models are echoed as returned. */
-    readonly [name: string]: unknown;
-  };
+  readonly parameters: QuoteParameters;
   readonly currency: "USD";
   readonly expires_at: number;
 };

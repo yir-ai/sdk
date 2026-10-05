@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.10.0
+pnpm add @yir-ai/sdk@0.10.1
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.1.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -95,6 +95,15 @@ const client = createNodeYirClient();
 `providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数；客户端目录描述了该模型但合同没有它们时丢弃并返回 `unsupported` 警告，未配置目录时由 Gateway 判断。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+
+## 0.10.1 变化
+
+0.10.1 为兼容版本，跟进网关的参数回显与目录缓存变化：
+
+- `Quote.parameters`（新增 `QuoteParameters` 类型）只回显模型合同声明的参数，按合同写法，省略的参数补默认值：`duration`、`generate_audio` 在类型中改为可选，图片报价和没有该参数的视频模型不再出现。模型专属参数按合同名回显。
+- `Job.parameters` 自创建起携带同样的回显，应用可据此核对交付结果与扣费参数。
+- 模型合同参数的 `required` 现在表示“没有默认值、请求必须传”；带 `default` 的参数一律 `required: false`，可以省略。`validateGeneration` 本来就先补默认值再检查 `required`，本地校验行为不变。
+- `GET /v1/models` 与 `view=contract` 响应带 `ETag`（即加引号的目录 `version`）和 `Cache-Control: private, max-age=300`，并对 `If-None-Match` 回 304。`getModelContracts` 暂不发条件请求，自定义 transport 可以。
 
 ## 升级到 0.10.0
 

@@ -83,7 +83,10 @@ type Job struct {
 	Object           string            `json:"object"`
 	FinalProvider    string            `json:"final_provider,omitempty"`
 	Model            string            `json:"model"`
-	Status           string            `json:"status"`
+	// Parameters echoes the normalized parameters the Job executes with, in the
+	// Quote.Parameters shape; nil only when the Gateway no longer holds them.
+	Parameters map[string]any `json:"parameters,omitempty"`
+	Status     string         `json:"status"`
 	URLs             *JobURLs          `json:"urls,omitempty"`
 	Usage            *JobUsage         `json:"usage,omitempty"`
 	Error            *APIError         `json:"error"`

@@ -3,6 +3,7 @@ import type {
   JobCancellation,
   JobStatusResponse,
   Quote,
+  QuoteParameters,
   StandardImageGenerationRequest,
   StandardMediaSource,
   StandardVideoGenerationRequest,
@@ -20,6 +21,13 @@ const video: StandardVideoGenerationRequest = {
   model: "bytedance/seedance-2.0", input: image.input,
   parameters: { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1 },
 };
+// An image echo carries no duration or generate_audio; a Job echoes the same shape.
+const imageEcho: QuoteParameters = { resolution: "1K", aspect_ratio: "1:1", n: 1 };
+const videoEcho: QuoteParameters = { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1, return_last_frame: false };
+const echoedDuration: number | undefined = videoEcho.duration;
+void echoedDuration;
+const jobParameters: Job["parameters"] = imageEcho;
+void jobParameters;
 // A source is a File ID or a public HTTPS URL, never both.
 const urlSource: StandardMediaSource = { url: "https://example.com/image.png" };
 // @ts-expect-error A source carries exactly one of file_id and url.

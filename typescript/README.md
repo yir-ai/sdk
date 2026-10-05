@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.10.0
+pnpm add @yir-ai/sdk@0.10.1
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.1.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -94,6 +94,15 @@ Install the adapter's tested AI SDK generation in your application with `pnpm ad
 `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters. When the client's catalog describes the model and its contract lacks them, they are dropped with an `unsupported` warning; without a catalog the Gateway decides. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+
+## 0.10.1 changes
+
+0.10.1 is a compatible release that follows the Gateway's parameter echo and catalog caching changes:
+
+- `Quote.parameters` (new `QuoteParameters` type) echoes exactly the parameters the model contract declares, at contract spelling and with omitted parameters at their defaults: `duration` and `generate_audio` are now optional in the type and absent for image quotes and for video models without that parameter. Model-specific parameters are echoed under their contract names.
+- `Job.parameters` carries the same echo from creation, so an application can check a delivered result against the parameters it was charged for.
+- A model contract parameter's `required` now means "no published default, the request must send it"; every parameter with a `default` is `required: false` and may be omitted. `validateGeneration` already applied defaults before checking `required`, so local validation is unchanged.
+- `GET /v1/models` and `view=contract` responses carry `ETag` (the quoted catalog `version`) and `Cache-Control: private, max-age=300`, and answer `If-None-Match` with 304. `getModelContracts` does not send conditional requests yet; a custom transport can.
 
 ## Upgrading to 0.10.0
 
