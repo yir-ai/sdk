@@ -123,7 +123,6 @@ const (
 	ErrCodeContentRejected           = "YIR_CONTENT_REJECTED"
 	ErrCodeOutcomeTimeout            = "YIR_OUTCOME_TIMEOUT"
 	ErrCodeResultDeliveryFailed      = "YIR_RESULT_DELIVERY_FAILED"
-	ErrCodeJobTimeout                = "YIR_JOB_TIMEOUT"
 )
 
 type APIError struct {

@@ -26,7 +26,6 @@ export const YIR_ERROR_CODES = Object.freeze([
   "YIR_CONTENT_REJECTED",
   "YIR_OUTCOME_TIMEOUT",
   "YIR_RESULT_DELIVERY_FAILED",
-  "YIR_JOB_TIMEOUT",
 ] as const);
 
 /** Stable public error codes. `YirPublicError.code` stays `string` so newer server codes still parse. */
