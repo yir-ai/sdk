@@ -309,12 +309,24 @@ test("AI SDK generateImage waits for a running Yir job before downloading", asyn
   assert.equal(result.providerMetadata.yir.images[0].jobId, "43");
 });
 
-test("AI SDK seed and fps map to same-named Yir parameters for the model contract to decide", async () => {
+test("AI SDK seed and fps reach Yir only where the catalog declares them", async () => {
   const calls = [];
-  const client = createYirClient(async request => { calls.push(request); return { object: "job", id: "43", model: request.body.model, status: "queued", created_at: 1786000000, error: null }; });
-  const model = createYirAIProvider({ client }).videoModel("future/video");
-  await model.doStart({ prompt: "fixture", n: 1, seed: 7, fps: 24, providerOptions: { yir: { idempotencyKey: "seed-test" } } });
-  assert.deepEqual(calls[0].body.parameters, { n: 1, fps: 24, seed: 7 });
-  const strict = fixture().provider.imageModel("openai/gpt-image-2");
-  await assert.rejects(strict.doGenerate({ prompt: "fixture", n: 1, seed: 7, providerOptions: {} }), error => error.code === "parameter_unknown");
+  const transport = async request => { calls.push(request); return { object: "job", id: "job_43", model: request.body.model, status: "queued", created_at: 1786000000, error: null }; };
+  const options = { prompt: "fixture", n: 1, seed: 7, fps: 24, providerOptions: { yir: { idempotencyKey: "seed-test" } } };
+  const bare = await createYirAIProvider({ client: createYirClient(transport) }).videoModel("future/video").doStart(options);
+  assert.deepEqual(calls[0].body.parameters, { n: 1 });
+  assert.deepEqual(bare.warnings.map(warning => [warning.type, warning.feature]), [["unsupported", "fps"], ["unsupported", "seed"]]);
+  assert.deepEqual(bare.operation, { jobId: "job_43", modelId: "future/video" });
+
+  const base = structuredClone(catalog.models.find(model => model.id === "bytedance/seedance-2.0"));
+  const seed = { name: "seed", type: "integer", required: false, minimum: 0, maximum: 2147483647, control: "number",
+    locales: { en: { label: "Seed", description: "Seed" }, "zh-CN": { label: "种子", description: "种子" } } };
+  base.id = "future/video";
+  base.aliases = [];
+  for (const operation of base.operations) operation.parameters = [...operation.parameters, seed];
+  const declared = { ...catalog, models: [...catalog.models, base] };
+  const result = await createYirAIProvider({ client: createYirClient(transport, declared) }).videoModel("future/video").doStart(options);
+  assert.equal(calls[1].body.parameters.seed, 7);
+  assert.equal("fps" in calls[1].body.parameters, false);
+  assert.deepEqual(result.warnings.map(warning => warning.feature), ["fps"]);
 });

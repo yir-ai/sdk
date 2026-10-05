@@ -1,6 +1,15 @@
 # Go SDK 变更记录
 
-0.10.0 之前的版本说明，从 README 移来。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
+0.11.0 之前的版本说明，从 README 移来。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
+
+## 0.10.0 变化
+
+0.10.0 为 minor 版本，含不兼容变更，移除 Gateway 已不再使用的接口：
+
+- `Quote` 删除 `Max`、`SingleAttemptUpperBound` 与 `HasVerifiableUpperBound`，`QuoteSupply` 删除 `RequiresMaxCost`。Gateway 仍为旧版 SDK 返回这些常量，本 SDK 忽略它们。估价读 `Primary`，预算由应用自行设置 `MaxCost`。
+- 删除 `JobBilling.Savings` 与 `Savings` 类型，Gateway 自 2026-10-02 起不再返回；改用 `OfficialComparison`。
+- 删除 `ModelParameterContract.Policy`、`ParameterPolicy` 类型以及报价/提交时的日志提醒。模型合同不再携带 policy；实际参数处理由报价和 Job 的 `ParameterNotices` 报告。
+- 删除 `RoutingPreferenceBalanced`。Gateway 仍把 `balanced` 当作 `cost` 的别名接受，请改用 `RoutingPreferenceCost`。
 
 ## 0.9.0 变化
 

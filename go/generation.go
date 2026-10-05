@@ -124,15 +124,6 @@ type Routing struct {
 	Fallback   *bool  `json:"fallback,omitempty"`
 }
 
-// ValidateGeneration checks against the historical catalog bundled with this
-// SDK version, so models published later fail with model_contract_unavailable.
-//
-// Deprecated: use ValidateGenerationWithCatalog with GetModelContracts data, or
-// ValidateGenerationProtocol, which runtime clients use when no catalog is set.
-func ValidateGeneration(operation string, request GenerationRequest) error {
-	return ValidateGenerationWithCatalog(operation, request, bundledModelContractCatalog)
-}
-
 // ValidateGenerationWithCatalog checks current caller-supplied model rules and
 // rejects models, operations and input modes the catalog does not describe.
 // Clients configured with ModelContracts instead leave those to the Gateway.

@@ -1,6 +1,17 @@
 # TypeScript SDK changelog
 
-Release notes before 0.9.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
+Release notes before 0.10.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
+
+## 0.9.0 changes
+
+0.9.0 is a minor release with incompatible changes. It removes surface that the Gateway no longer uses:
+
+- `Quote` drops `max`, `single_attempt_upper_bound`, `has_verifiable_upper_bound` and `supply.requires_max_cost`. The Gateway still returns them as constants for older SDKs (`max` repeats `primary`; the others are `null` or `false`), and this SDK ignores them. Read `primary` for the estimate and set your own `max_cost`.
+- `Job.billing.savings` is removed; the Gateway stopped returning it on 2026-10-02. Use `billing.official_comparison`.
+- `checkParameterPolicies`, `ModelParameterContract.policy` and the console warnings on quote/submit are removed. Model contracts no longer carry policies; quotes and Jobs report actual handling in `parameter_notices`.
+- `RoutingPreference` no longer lists `balanced`. The Gateway still accepts it as an alias of `cost`; send `cost`.
+- `DEFAULT_POLL_INTERVAL_MS` is removed; set `pollIntervalMs` for a fixed interval.
+- `examples/quickstart.mjs` takes the approved `max_cost` as a third argument instead of deriving it from the removed upper bound.
 
 ## 0.8.0 changes
 

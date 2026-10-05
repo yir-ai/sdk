@@ -2,11 +2,11 @@ import { createYirClient, validateModelParameters } from "./catalog-fixture.mjs"
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getModelOperationContract, listModelContracts } from "../dist/browser/index.js";
+import { getModelOperationContract, listModelContracts } from "./catalog-fixture.mjs";
 import { quoteFixture } from "./quote-fixture.mjs";
 
 test("Seedance 2 last-frame intent survives quote and submit for every input mode", async () => {
-  const model = "bytedance/seedance-2";
+  const model = "bytedance/seedance-2.0";
   const contract = getModelOperationContract(model, "generate_video", "text");
   const rule = contract.parameters.find(p => p.name === "return_last_frame");
   const ratio = contract.parameters.find(p => p.name === "aspect_ratio");

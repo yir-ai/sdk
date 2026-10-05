@@ -34,11 +34,22 @@ export type YirErrorCode = (typeof YIR_ERROR_CODES)[number];
 /** Suggested next step. Actions newer than this SDK still parse; compare known values and keep a default branch. */
 export type YirErrorAction = "fix_request" | "modify_input" | "add_funds" | "retry_later" | "contact_support" | (string & {});
 
+/** One invalid request field. `reason` is a stable code; newer reasons may appear. */
+export type YirErrorDetail = {
+  readonly field: string;
+  readonly reason: "invalid_body" | "unknown_field" | "wrong_type" | "required" | "unsupported" | "not_allowed" | "invalid" | "retired" | (string & {});
+  /** Contract values the field accepts; for a retired model, its replacement. */
+  readonly allowed?: readonly string[];
+  readonly expected?: string;
+};
+
 export type YirPublicError = {
   readonly code: string;
   readonly message: string;
   readonly retryable: boolean;
   readonly action?: YirErrorAction;
+  /** Field-level causes of YIR_INVALID_REQUEST, for correcting the request without parsing `message`. */
+  readonly details?: readonly YirErrorDetail[];
 };
 
 export type JobCancellation = {

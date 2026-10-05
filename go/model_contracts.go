@@ -1,10 +1,7 @@
 package yir
 
 import (
-	"encoding/json"
-	"fmt"
 	"maps"
-	"strings"
 )
 
 type ModelContractLocale struct {
@@ -65,59 +62,6 @@ type ModelContractCatalog struct {
 	SchemaRef     string                `json:"schema_ref"`
 	Version       string                `json:"version,omitempty"`
 	Models        []StaticModelContract `json:"models"`
-}
-
-var bundledModelContractCatalog = mustLoadGeneratedModelContractCatalog()
-
-// ListModelContracts returns an isolated copy of every static model contract
-// bundled with this SDK version.
-func ListModelContracts() []StaticModelContract {
-	return cloneStaticModelContracts(bundledModelContractCatalog.Models)
-}
-
-// GetModelContract resolves a canonical model ID or an explicitly published alias.
-func GetModelContract(model string) (StaticModelContract, bool) {
-	model = strings.TrimSpace(model)
-	if model == "" {
-		return StaticModelContract{}, false
-	}
-	for _, contract := range bundledModelContractCatalog.Models {
-		if contract.ID == model || containsString(contract.Aliases, model) {
-			return cloneStaticModelContract(contract), true
-		}
-	}
-	return StaticModelContract{}, false
-}
-
-// GetModelOperationContract returns one static parameter contract when both
-// the operation and input mode are published for the requested model.
-func GetModelOperationContract(
-	model string,
-	operation string,
-	inputMode string,
-) (ModelOperationContract, bool) {
-	contract, ok := GetModelContract(model)
-	if !ok {
-		return ModelOperationContract{}, false
-	}
-	for _, candidate := range contract.Operations {
-		if candidate.Operation == operation && containsString(candidate.InputModes, inputMode) {
-			return cloneModelOperationContract(candidate), true
-		}
-	}
-	return ModelOperationContract{}, false
-}
-
-func mustLoadGeneratedModelContractCatalog() ModelContractCatalog {
-	var catalog ModelContractCatalog
-	if err := json.Unmarshal([]byte(generatedModelContractCatalogJSON), &catalog); err != nil {
-		panic(fmt.Sprintf("decode generated Yir model contracts: %v", err))
-	}
-	if catalog.SchemaVersion != "v1" || len(catalog.Models) == 0 {
-		panic("generated Yir model contracts are invalid")
-	}
-	normalizeGeneratedIntegerValues(&catalog)
-	return catalog
 }
 
 func normalizeGeneratedIntegerValues(catalog *ModelContractCatalog) {

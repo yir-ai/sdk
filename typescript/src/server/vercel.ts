@@ -1,10 +1,11 @@
 import type { ImageModelV4, Experimental_VideoModelV4 as VideoModelV4, ImageModelV4File, SharedV4ProviderOptions } from "@ai-sdk/provider";
 import { UnsupportedFunctionalityError } from "@ai-sdk/provider";
-import { createNodeYirClient, waitForJob } from "./client.js";
+import { createNodeYirClient, isValidJobID, waitForJob } from "./client.js";
 import type { CreateNodeYirClientOptions, YirClient, Job } from "./client.js";
 import { YirSDKValidationError, validateGeneration } from "../shared/standard.js";
 import { uploadFile } from "./files.js";
 import { coveringCatalog } from "./catalog-coverage.js";
+import { findModelContract, type ModelContractCatalog } from "../shared/catalog.js";
 import type { RoutingOverride, StandardReference, StandardImageGenerationRequest, StandardVideoGenerationRequest } from "../shared/standard.js";
 
 type VideoModelV4File = NonNullable<Parameters<NonNullable<VideoModelV4["doGenerate"]>>[0]["image"]>;
@@ -38,7 +39,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "n", call.n);
           assign(parameters, "aspect_ratio", call.aspectRatio);
           // Standard settings map to same-named Yir parameters; the model contract decides support.
-          assign(parameters, "seed", call.seed);
+          const warnings = assignOptional(parameters, client.modelContracts, modelId, { seed: call.seed });
           const references = call.files?.map((file, index) => reference(file, "reference_image", index));
           let request: StandardImageGenerationRequest = {
             model: modelId,
@@ -61,7 +62,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             if (!response.ok) throw new Error("yir_result_download_failed");
             images.push(new Uint8Array(await response.arrayBuffer()));
           }
-          return { images, warnings: (job.parameter_notices ?? []).map(notice => ({type: "other" as const, message: notice.message})), response: { timestamp: new Date(job.created_at * 1000), modelId, headers: undefined },
+          return { images, warnings: [...warnings, ...noticeWarnings(job)], response: { timestamp: new Date(job.created_at * 1000), modelId, headers: undefined },
             providerMetadata: { yir: { images: images.map(() => ({ jobId: job.id, totalChargedByYir: job.billing?.total_charged_by_yir ?? null })) } } };
         },
       };
@@ -82,8 +83,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "aspect_ratio", call.aspectRatio);
           assign(parameters, "duration", call.duration);
           assign(parameters, "generate_audio", call.generateAudio);
-          assign(parameters, "fps", call.fps);
-          assign(parameters, "seed", call.seed);
+          const warnings = assignOptional(parameters, client.modelContracts, modelId, { fps: call.fps, seed: call.seed });
           const inputKinds = [call.image, call.frameImages?.length, call.inputReferences?.length].filter(Boolean).length;
           if (inputKinds > 1) throw new YirSDKValidationError("input_sources_ambiguous", "input");
           const references = call.image ? [reference(call.image, "first_frame", 0)]
@@ -107,8 +107,8 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, files, extension.idempotencyKey, fetchResult, call.abortSignal) } };
           }
           const initial = await client.submitVideo(request, extension.idempotencyKey, { signal: call.abortSignal });
-          if (!/^[1-9][0-9]*$/.test(initial.id)) throw new Error("yir_job_invalid");
-          return { operation: { jobId: initial.id, modelId }, warnings: [],
+          if (!isValidJobID(initial.id)) throw new Error("yir_job_invalid");
+          return { operation: { jobId: initial.id, modelId }, warnings,
             response: { timestamp: new Date(initial.created_at * 1000), modelId, headers: undefined },
             providerMetadata: { yir: { jobId: initial.id } } };
         },
@@ -117,11 +117,12 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           rejectHeaders(call.headers);
           const operation = call.operation;
           if (operation === null || typeof operation !== "object" || Array.isArray(operation) ||
-            typeof operation.jobId !== "string" || !/^[1-9][0-9]*$/.test(operation.jobId) || operation.modelId !== modelId) {
+            !isValidJobID(operation.jobId) || operation.modelId !== modelId) {
             throw new YirSDKValidationError("operation_invalid", "operation");
           }
           const job = await client.getJob(operation.jobId, { signal: call.abortSignal });
-          if (job.id !== operation.jobId || job.model !== modelId) throw new Error("yir_job_invalid");
+          // job.model is the canonical ID even when modelId is an alias.
+          if (job.id !== operation.jobId) throw new Error("yir_job_invalid");
           const response = { timestamp: new Date(job.created_at * 1000), modelId, headers: undefined };
           const providerMetadata = { yir: { jobId: job.id, totalChargedByYir: job.billing?.total_charged_by_yir ?? null } };
           switch (job.status) {
@@ -129,7 +130,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
               return { status: "error", error: job.error?.code ?? (job.status === "cancelled" ? "YIR_JOB_CANCELLED" : "YIR_EXECUTION_FAILED"), response, providerMetadata };
             case "succeeded":
               if (job.result?.availability !== "available" || !job.result.files.length) throw new Error("yir_result_unavailable");
-              return { status: "completed", videos: job.result.files.map(file => ({ type: "url" as const, url: file.url, mediaType: file.media_type })), warnings: (job.parameter_notices ?? []).map(notice => ({type: "other" as const, message: notice.message})), response, providerMetadata };
+              return { status: "completed", videos: job.result.files.map(file => ({ type: "url" as const, url: file.url, mediaType: file.media_type })), warnings: noticeWarnings(job), response, providerMetadata };
             // queued, running, delivering and statuses newer than this SDK are in progress.
             default: return { status: "pending", response, providerMetadata };
           }
@@ -193,4 +194,28 @@ function readOptions(options: SharedV4ProviderOptions) {
   if (parameters === null || typeof parameters !== "object" || Array.isArray(parameters)) throw new YirSDKValidationError("object_required", "providerOptions.yir.parameters");
   if (extension.maxCost !== undefined && typeof extension.maxCost !== "string") throw new YirSDKValidationError("parameter_type", "providerOptions.yir.maxCost");
   return { parameters: parameters as Record<string, unknown>, routing: extension.routing as RoutingOverride | undefined, maxCost: extension.maxCost, idempotencyKey: extension.idempotencyKey?.trim() ?? crypto.randomUUID() };
+}
+
+type AdapterWarning = { readonly type: "unsupported"; readonly feature: string; readonly details?: string } | { readonly type: "other"; readonly message: string };
+
+/**
+ * AI SDK settings without a Yir equivalent on this model are dropped with an
+ * unsupported warning, as AI SDK providers do, instead of failing the request.
+ * Without a catalog no model is known to accept them.
+ */
+function assignOptional(parameters: Record<string, unknown>, catalog: ModelContractCatalog | undefined, modelId: string,
+  settings: Readonly<Record<string, unknown>>): AdapterWarning[] {
+  const declared = new Set((catalog ? findModelContract(catalog, modelId)?.operations ?? [] : [])
+    .flatMap(operation => operation.parameters.map(parameter => parameter.name)));
+  const warnings: AdapterWarning[] = [];
+  for (const [name, value] of Object.entries(settings)) {
+    if (value === undefined) continue;
+    if (declared.has(name)) assign(parameters, name, value);
+    else warnings.push({ type: "unsupported", feature: name, details: `${modelId} does not accept ${name}` });
+  }
+  return warnings;
+}
+
+function noticeWarnings(job: Job): AdapterWarning[] {
+  return (job.parameter_notices ?? []).map(notice => ({ type: "other" as const, message: notice.message }));
 }

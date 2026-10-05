@@ -21,10 +21,10 @@ export function validateQuoteResponse(
   // Amounts in another currency must not be compared with USD budgets; fail
   // closed with a distinct error so callers can tell it from a malformed quote.
   if (value.currency !== "USD") throw new Error("quote_currency_unsupported");
-  const expectedModel = catalog ? findModelContract(catalog, request.model)?.id ?? request.model : request.model;
-  const returnedModel = catalog && typeof value.model === "string"
-    ? findModelContract(catalog, value.model)?.id ?? value.model : value.model;
-  if (typeof value.model !== "string" || !expectedModel || returnedModel !== expectedModel
+  // An alias may be echoed as its canonical ID; compare through the catalog when it knows the request.
+  const requested = catalog ? findModelContract(catalog, request.model) : undefined;
+  const returned = requested && typeof value.model === "string" ? findModelContract(catalog!, value.model) : undefined;
+  if (typeof value.model !== "string" || !value.model.trim() || (requested && returned?.id !== requested.id)
     || value.operation !== operation || value.input_mode !== request.input.type
     || !record(value.parameters) || !Number.isSafeInteger(value.expires_at)
     || (value.expires_at as number) <= 0) return invalid();

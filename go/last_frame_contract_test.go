@@ -35,7 +35,7 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, mode := range []string{"text", "image", "reference"} {
-		contract, _ := GetModelOperationContract("bytedance/seedance-2", "generate_video", mode)
+		contract, _ := GetModelOperationContract("bytedance/seedance-2.0", "generate_video", mode)
 		found := false
 		for _, rule := range contract.Parameters {
 			if rule.Name == "image_search" {
@@ -57,7 +57,7 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 			{map[string]any{"image_search": false}, "unknown_parameter"}, {map[string]any{"return_last_frame": true, "image_search": true}, "unknown_parameter"},
 			{map[string]any{"return_last_frame": "true"}, "invalid_type"}, {map[string]any{"return_last_frame": nil}, "invalid_type"},
 		} {
-			request := GenerationRequest{Model: "bytedance/seedance-2", Input: GenerationInput{Type: mode, Prompt: "fixture"}, Parameters: tc.parameters}
+			request := GenerationRequest{Model: "bytedance/seedance-2.0", Input: GenerationInput{Type: mode, Prompt: "fixture"}, Parameters: tc.parameters}
 			if mode != "text" {
 				role := "reference_image"
 				if mode == "image" {

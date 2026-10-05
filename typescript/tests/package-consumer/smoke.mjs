@@ -2,11 +2,15 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { createYirClient } from "@yir-ai/sdk";
-import { getModelContract, listModelContracts } from "@yir-ai/sdk/model-contracts";
+import { readFileSync } from "node:fs";
 import { createYirAIProvider } from "@yir-ai/sdk/vercel";
-import { validateGeneration, validateModelParameters as validateParameters, getModelOperationContract } from "@yir-ai/sdk/browser";
+import { validateGeneration, validateModelParameters as validateParameters, findModelOperationContract } from "@yir-ai/sdk/browser";
 import { parseModelContractCatalog, findModelContract } from '@yir-ai/sdk/frontend';
-const catalog = parseModelContractCatalog({schema_version:'v1', schema_ref:'fixture', models:listModelContracts()});
+// The package ships no catalog; the reviewed snapshot stands in for GET /v1/models.
+const snapshot = JSON.parse(readFileSync(new URL("./models.json", import.meta.url), "utf8"));
+const catalog = parseModelContractCatalog({schema_version:'v1', schema_ref:'fixture', models:snapshot.models});
+const getModelContract = model => findModelContract(catalog, model);
+const getModelOperationContract = (model, operation, mode) => findModelOperationContract(catalog, model, operation, mode);
 const validateModelParameters = (...args) => validateParameters(...args, catalog);
 assert.equal(findModelContract(catalog, 'openai/gpt-image-2').id, 'openai/gpt-image-2');
 validateGeneration("generate_video", { model: "minimax/minimax-h3", input: { type: "reference", prompt: "fixture", references: [{ role: "reference_audio", file_id: "file_11111111-1111-4111-8111-111111111111" }] }, parameters: {} });
@@ -32,10 +36,10 @@ assert.throws(() => validateModelParameters("google/nano-banana-2", "generate_im
 for (const mode of ["text", "image"]) {
   assert.throws(() => validateModelParameters("google/nano-banana-pro", "generate_image", mode, { web_search: true }), { code: "parameter_unknown" });
 }
-assert.equal(getModelOperationContract("bytedance/seedance-2", "generate_video", "reference").input_constraints.reference.reference_counts_by_role.reference_image.maximum, 9);
+assert.equal(getModelOperationContract("bytedance/seedance-2.0", "generate_video", "reference").input_constraints.reference.reference_counts_by_role.reference_image.maximum, 9);
 
 const consumer = path.dirname(fileURLToPath(import.meta.url));
-for (const name of ["@yir-ai/sdk", "@yir-ai/sdk/model-contracts", "@yir-ai/sdk/vercel", "@yir-ai/sdk/frontend", "@yir-ai/sdk/server", "@yir-ai/sdk/browser", "@yir-ai/sdk/shared"]) {
+for (const name of ["@yir-ai/sdk", "@yir-ai/sdk/vercel", "@yir-ai/sdk/frontend", "@yir-ai/sdk/server", "@yir-ai/sdk/browser", "@yir-ai/sdk/shared"]) {
   const resolved = fileURLToPath(import.meta.resolve(name));
   assert.ok(resolved.startsWith(path.join(consumer, "node_modules") + path.sep), "Entry must resolve from the installed archive");
   assert.ok(resolved.endsWith(".js"));
@@ -52,7 +56,7 @@ const submittingClient = createNodeYirClient({ apiKey: "fixture", baseURL: "http
 await submittingClient.submitImage(request);
 await submittingClient.submitImage(request);
 assert.notEqual(submissions[0].key, submissions[1].key, "Separate calls must use separate generated identities");
-const videoRequest = { model: "google/veo-3.1-fast", input: { type: "text", prompt: "test" }, parameters: {} };
+const videoRequest = { model: "google/veo-3.1-fast-generate-001", input: { type: "text", prompt: "test" }, parameters: {} };
 await submittingClient.submitVideo(videoRequest);
 assert.ok(submissions[2].url.endsWith("/v1/videos/generations"));
 await submittingClient.submitImage(request, "saved-key");
@@ -85,6 +89,6 @@ assert.equal('getModelPrices' in client, false);
 const browser = await import('@yir-ai/sdk/browser');
 const shared = await import('@yir-ai/sdk/shared');
 const server = await import('@yir-ai/sdk/server');
-assert.equal(shared.getModelContract, getModelContract);
+assert.equal(shared.getModelContract, undefined);
 assert.equal(server.createYirClient, createYirClient);
 assert.equal('createNodeYirClient' in browser, false);

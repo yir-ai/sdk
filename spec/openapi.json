@@ -3,7 +3,7 @@
   "info": {
     "title": "Yir Standard Async AIGC API",
     "version": "1.0.0-preview",
-    "description": "Public REST API of the Yir Unified Async AI Gateway: quote and submit image and video generation jobs, upload input files, read model contracts, and track jobs."
+    "description": "Public REST API of the Yir Unified Async AI Gateway: quote and submit image and video generation jobs, upload input files, read model contracts, and track jobs.\n\nCompatibility: this API only grows. New fields are optional, enums may gain values, and clients must ignore unknown fields and tolerate unknown enum values. Models, their parameters, allowed values and defaults come from the model contract (GET /v1/models?include=parameters) and change without an SDK release. A published model keeps its defaults, value meanings and billing semantics; a change to any of them ships as a new model ID. IDs are opaque strings; do not parse them. Deprecated fields stay for at least one minor SDK release and are announced in the SDK changelog."
   },
   "servers": [
     {
@@ -409,7 +409,7 @@
         "name": "id",
         "in": "path",
         "required": true,
-        "schema": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+        "schema": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Opaque Job ID." }
       },
       "FileID": {
         "name": "id",
@@ -479,7 +479,7 @@
             "propertyNames": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" },
             "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" }
           },
-          "preference": { "type": "string", "enum": ["cost", "speed", "balanced"], "description": "Overrides the routing profile default for route ordering. cost (the default for new profiles) orders routes by estimated price, lowest first. speed orders routes by observed upstream median latency for the same model and specification, fastest first; routes with fewer than 10 recent samples follow, ordered by estimated price. balanced is a deprecated alias of cost kept for existing integrations. max_cost, only and fallback apply unchanged." },
+          "preference": { "type": "string", "enum": ["cost", "speed"], "description": "Overrides the routing profile default for route ordering. cost (the default) orders routes by estimated price, lowest first. speed orders routes by observed upstream median latency for the same model and specification, fastest first; routes with fewer than 10 recent samples follow, ordered by estimated price. max_cost, only and fallback apply unchanged." },
           "only": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$" } },
           "fallback": { "type": "boolean" }
         }
@@ -596,11 +596,10 @@
           },
           "parameters": {
             "type": "object",
-            "additionalProperties": false,
+            "additionalProperties": true,
+            "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
-              "quality": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"], "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
-              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
-              "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
+              "quality": { "type": "string", "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
               "resolution": {
                 "type": "string",
                 "minLength": 1
@@ -650,11 +649,10 @@
           },
           "parameters": {
             "type": "object",
-            "additionalProperties": false,
+            "additionalProperties": true,
+            "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
-              "quality": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"], "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
-              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
-              "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
+              "quality": { "type": "string", "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
               "resolution": {
                 "type": "string",
                 "minLength": 1
@@ -662,167 +660,6 @@
               "aspect_ratio": {
                 "type": "string",
                 "minLength": 1
-              },
-              "n": {
-                "type": "integer",
-                "enum": [
-                  1
-                ]
-              }
-            }
-          }
-        },
-        "description": "The image generation request contract without webhook_url or max_cost. A quote creates no job and charges nothing."
-      },
-      "GPTImage2GenerationRequest": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "model",
-          "input",
-          "parameters"
-        ],
-        "properties": {
-          "max_cost": {
-            "$ref": "#/components/schemas/MaxCost"
-          },
-          "model": {
-            "type": "string",
-            "enum": [
-              "openai/gpt-image-2",
-              "gpt-image-2"
-            ]
-          },
-          "input": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/StandardImageTextInput"
-              },
-              {
-                "$ref": "#/components/schemas/StandardImageReferenceInput"
-              }
-            ]
-          },
-          "routing": {
-            "$ref": "#/components/schemas/RoutingOverride"
-          },
-          "webhook_url": {
-            "type": "string",
-            "format": "uri",
-            "maxLength": 1000,
-            "pattern": "^https://"
-          },
-          "parameters": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "resolution": {
-                "type": "string",
-                "enum": [
-                  "1K",
-                  "2K",
-                  "4K",
-                  "1k",
-                  "2k",
-                  "4k"
-                ]
-              },
-              "aspect_ratio": {
-                "type": "string",
-                "enum": [
-                  "auto",
-                  "1:1",
-                  "3:2",
-                  "2:3",
-                  "4:3",
-                  "3:4",
-                  "5:4",
-                  "4:5",
-                  "16:9",
-                  "9:16",
-                  "2:1",
-                  "1:2",
-                  "3:1",
-                  "1:3",
-                  "21:9",
-                  "9:21"
-                ]
-              },
-              "n": {
-                "type": "integer",
-                "enum": [
-                  1
-                ]
-              }
-            }
-          }
-        },
-        "description": "The public GPT Image 2 parameter space. Ordered image references each select one HTTPS URL or one ready File ID. Route availability is checked at submission. Unknown fields are rejected."
-      },
-      "GPTImage2QuoteRequest": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "model",
-          "input",
-          "parameters"
-        ],
-        "properties": {
-          "model": {
-            "type": "string",
-            "enum": [
-              "openai/gpt-image-2",
-              "gpt-image-2"
-            ]
-          },
-          "input": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/StandardImageTextInput"
-              },
-              {
-                "$ref": "#/components/schemas/StandardImageReferenceInput"
-              }
-            ]
-          },
-          "routing": {
-            "$ref": "#/components/schemas/RoutingOverride"
-          },
-          "parameters": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "resolution": {
-                "type": "string",
-                "enum": [
-                  "1K",
-                  "2K",
-                  "4K",
-                  "1k",
-                  "2k",
-                  "4k"
-                ]
-              },
-              "aspect_ratio": {
-                "type": "string",
-                "enum": [
-                  "auto",
-                  "1:1",
-                  "3:2",
-                  "2:3",
-                  "4:3",
-                  "3:4",
-                  "5:4",
-                  "4:5",
-                  "16:9",
-                  "9:16",
-                  "2:1",
-                  "1:2",
-                  "3:1",
-                  "1:3",
-                  "21:9",
-                  "9:21"
-                ]
               },
               "n": {
                 "type": "integer",
@@ -1007,12 +844,13 @@
           },
           "parameters": {
             "type": "object",
-            "additionalProperties": false,
+            "additionalProperties": true,
+            "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
               "duration": {
                 "type": "integer",
-                "minimum": 0,
-                "maximum": 30
+                "minimum": 1,
+                "description": "Output length in seconds; allowed values come from the model contract."
               },
               "resolution": {
                 "type": "string",
@@ -1024,11 +862,6 @@
               },
               "generate_audio": {
                 "type": "boolean"
-              },
-              "return_last_frame": {
-                "type": "boolean",
-                "default": false,
-                "description": "Seedance 2.0 only. Return the last frame with the video; requires a route supporting this option."
               },
               "n": {
                 "type": "integer",
@@ -1074,12 +907,13 @@
           },
           "parameters": {
             "type": "object",
-            "additionalProperties": false,
+            "additionalProperties": true,
+            "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
               "duration": {
                 "type": "integer",
-                "minimum": 0,
-                "maximum": 30
+                "minimum": 1,
+                "description": "Output length in seconds; allowed values come from the model contract."
               },
               "resolution": {
                 "type": "string",
@@ -1091,11 +925,6 @@
               },
               "generate_audio": {
                 "type": "boolean"
-              },
-              "return_last_frame": {
-                "type": "boolean",
-                "default": false,
-                "description": "Seedance 2.0 only. Return the last frame with the video; requires a route supporting this option."
               },
               "n": {
                 "type": "integer",
@@ -1174,11 +1003,8 @@
           "input_mode",
           "parameters",
           "currency",
-          "single_attempt_upper_bound",
-          "has_verifiable_upper_bound",
           "expires_at",
           "primary",
-          "max",
           "official"
         ],
         "properties": {
@@ -1188,10 +1014,10 @@
           "supply": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["available", "requires_max_cost", "issues"],
+            "required": ["available", "issues"],
             "properties": {
               "available": { "type": "boolean" },
-              "requires_max_cost": { "type": "boolean", "deprecated": true, "description": "Deprecated compatibility field, always false: no route requires max_cost. Routes without an estimate are not selectable." },
+              "requires_max_cost": { "type": "boolean", "deprecated": true, "description": "Deprecated, always false. Not part of the contract; still emitted for SDKs before TypeScript 0.9 and Go 0.10 and will be removed." },
               "issues": { "type": "array", "items": { "type": "string", "enum": ["no_matching_supply"] } }
             },
             "description": "Whether any route can currently serve this request. Available supply has an empty issues array; requires_max_cost is always false. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
@@ -1228,7 +1054,7 @@
           },
           "single_attempt_upper_bound": {
             "deprecated": true,
-            "description": "Deprecated compatibility field, always null: every route settles at the authoritative upstream amount, so no verified ceiling exists. Use max_cost to cap a Job.",
+            "description": "Deprecated, always null. Not part of the contract; still emitted for SDKs before TypeScript 0.9 and Go 0.10 and will be removed. Use max_cost to cap a Job.",
             "oneOf": [
               { "$ref": "#/components/schemas/Decimal" },
               { "type": "null" }
@@ -1237,7 +1063,7 @@
           "has_verifiable_upper_bound": {
             "type": "boolean",
             "deprecated": true,
-            "description": "Deprecated compatibility field, always false; see single_attempt_upper_bound."
+            "description": "Deprecated, always false. Not part of the contract; still emitted for older SDKs and will be removed."
           },
           "expires_at": {
             "type": "integer",
@@ -1288,7 +1114,8 @@
             ]
           },
           "max": {
-            "description": "Deprecated compatibility field; repeats primary. Not a charge ceiling. Set max_cost to bound the charge and the routes used, including fallback.",
+            "deprecated": true,
+            "description": "Deprecated, repeats primary. Not part of the contract; still emitted for SDKs before TypeScript 0.9 and Go 0.10 and will be removed. Not a charge ceiling; set max_cost to bound the charge.",
             "oneOf": [
               { "$ref": "#/components/schemas/OutputQuoteEstimate" },
               {
@@ -1440,7 +1267,23 @@
           },
           "message": { "type": "string", "minLength": 1 },
           "retryable": { "type": "boolean" },
-          "action": { "type": "string", "enum": ["fix_request", "modify_input", "add_funds", "retry_later", "contact_support"] }
+          "action": { "type": "string", "enum": ["fix_request", "modify_input", "add_funds", "retry_later", "contact_support"] },
+          "details": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Field-level causes of a YIR_INVALID_REQUEST error, for correcting the request without parsing message.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["field", "reason"],
+              "properties": {
+                "field": { "type": "string", "minLength": 1, "description": "Request path, for example parameters.resolution or input.references.0.role." },
+                "reason": { "type": "string", "enum": ["invalid_body", "unknown_field", "wrong_type", "required", "unsupported", "not_allowed", "invalid", "retired"] },
+                "allowed": { "type": "array", "items": { "type": "string" }, "description": "Contract values the field accepts; for a retired model, its replacement." },
+                "expected": { "type": "string", "description": "Expected type or condition." }
+              }
+            }
+          }
         }
       },
       "ErrorResponse": {
@@ -1458,7 +1301,7 @@
         "required": ["id", "object", "status", "model", "error", "created_at"],
         "properties": {
           "parameter_notices": { "type": "array", "items": { "$ref": "#/components/schemas/ParameterNotice" }, "description": "Actual handling from the successful attempt snapshot; omitted before success." },
-          "id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+          "id": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Opaque Job ID; do not parse it." },
           "object": { "type": "string", "const": "job" },
           "final_provider": { "type": "string", "minLength": 1, "description": "Provider of the adopted result, present only for successful jobs. Does not expose candidate routes." },
           "status": { "type": "string", "enum": ["queued", "running", "delivering", "succeeded", "failed", "cancelled"] },
@@ -1478,7 +1321,7 @@
         "additionalProperties": false,
         "required": ["id", "status", "error"],
         "properties": {
-          "id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+          "id": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Opaque Job ID; do not parse it." },
           "status": { "type": "string", "enum": ["queued", "running", "delivering", "succeeded", "failed", "cancelled"] },
           "error": { "oneOf": [{ "$ref": "#/components/schemas/Error" }, { "type": "null" }] },
           "cancellation": { "$ref": "#/components/schemas/Cancellation" }
@@ -1489,8 +1332,8 @@
         "additionalProperties": false,
         "required": ["get", "cancel"],
         "properties": {
-          "get": { "type": "string", "pattern": "^/v1/jobs/[1-9][0-9]*$" },
-          "cancel": { "type": "string", "pattern": "^/v1/jobs/[1-9][0-9]*/cancel$" }
+          "get": { "type": "string", "pattern": "^/v1/jobs/[^/]+$" },
+          "cancel": { "type": "string", "pattern": "^/v1/jobs/[^/]+/cancel$" }
         }
       },
       "ResultContentSafety": {
@@ -1557,7 +1400,6 @@
           "gateway_fee": { "$ref": "#/components/schemas/GatewayFee" },
           "total_charged_by_yir": { "$ref": "#/components/schemas/Decimal" },
           "max_cost": { "$ref": "#/components/schemas/MaxCost" },
-          "savings": { "$ref": "#/components/schemas/Savings", "deprecated": true, "description": "Deprecated: no longer returned since 2026-10-02. Post-pay charges the actual upstream amount, so an estimate-based saving would mislead. Kept for SDK compatibility; use official_comparison." },
           "official_comparison": { "$ref": "#/components/schemas/OfficialComparison" }
         }
       },
@@ -1603,18 +1445,6 @@
           "baseline_amount": { "$ref": "#/components/schemas/Decimal" },
           "savings_amount": { "type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$" },
           "source_url": { "type": "string", "format": "uri" }
-        }
-      },
-      "Savings": {
-        "deprecated": true,
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["amount", "kind", "baseline_amount", "actual_user_charge"],
-        "properties": {
-          "amount": { "type": "string", "pattern": "^-?(0|[0-9]+)(\\.[0-9]+)?$" },
-          "kind": { "type": "string", "enum": ["actual", "estimated"] },
-          "baseline_amount": { "$ref": "#/components/schemas/Decimal" },
-          "actual_user_charge": { "$ref": "#/components/schemas/Decimal" }
         }
       },
       "Decimal": { "type": "string", "pattern": "^(0|[0-9]+)(\\.[0-9]+)?$" },
@@ -1690,7 +1520,7 @@
         "type": "object", "additionalProperties": false,
         "required": ["name", "disposition", "reason", "message"],
         "properties": {
-          "name": { "type": "string", "const": "quality" },
+          "name": { "type": "string", "minLength": 1 },
           "disposition": { "type": "string", "const": "ignored" },
           "reason": { "type": "string", "enum": ["channel_parameter_unsupported", "quality_requires_official_channel"] },
           "message": { "type": "string" }
@@ -1817,7 +1647,7 @@
         "additionalProperties": false,
         "required": ["operation", "input_modes", "input_constraints", "request_schema", "parameters"],
         "properties": {
-          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "upscale_image"] },
+          "operation": { "type": "string", "enum": ["generate_image", "generate_video"] },
           "input_modes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["text", "image", "reference"] } },
           "input_constraints": {
             "type": "object",
@@ -1871,11 +1701,6 @@
         "additionalProperties": false,
         "required": ["name", "type", "required", "control", "locales"],
         "properties": {
-          "policy": { "type": "object", "additionalProperties": false, "required": ["only_provider", "reason", "message"], "properties": {
-            "only_provider": { "type": "string", "minLength": 1, "description": "The parameter is ignored unless routing.only contains exactly this provider." },
-            "reason": { "type": "string", "minLength": 1 },
-            "message": { "type": "string", "minLength": 1, "description": "Static warning text for SDKs; contains no request values." }
-          } },
           "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
           "type": { "type": "string", "enum": ["string", "integer", "number", "boolean"] },
           "required": { "type": "boolean" },

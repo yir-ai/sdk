@@ -25,7 +25,10 @@ export type StandardTextInput = {
   readonly prompt: string;
 };
 
-export type StandardMediaSource = { readonly file_id: string };
+/** Exactly one source: a ready File ID or a public HTTPS URL that Yir imports at submission. */
+export type StandardMediaSource =
+  | { readonly file_id: string; readonly url?: never }
+  | { readonly url: string; readonly file_id?: never };
 
 export type StandardImageInput = {
   readonly type: "image";
@@ -333,11 +336,11 @@ export function buildImageGenerationRequest(
   const webhookUrl = normalizeWebhookURL(input.webhookUrl);
   const image = input.image;
   if (image !== undefined) {
-    if (!image || typeof image !== "object" || Array.isArray(image) ||
-      Object.keys(image).some(key => key !== "file_id") || !("file_id" in image)) {
+    const keys = image && typeof image === "object" && !Array.isArray(image) ? Object.keys(image) : [];
+    if (keys.length !== 1 || (keys[0] !== "file_id" && keys[0] !== "url")) {
       throw new YirSDKValidationError("image_source_invalid", "input.image");
     }
-    const value = image.file_id;
+    const value = (image as Record<string, unknown>)[keys[0]!];
     if (typeof value !== "string" || !value.trim()) {
       throw new YirSDKValidationError("image_source_invalid", "input.image");
     }

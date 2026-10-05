@@ -13,7 +13,7 @@ func TestReferenceRoleContract(t *testing.T) {
 	}{
 		{9, 3, 3, true}, {10, 0, 0, false}, {1, 4, 0, false}, {1, 0, 4, false}, {0, 0, 1, false},
 	} {
-		r := GenerationRequest{Model: "bytedance/seedance-2", Input: GenerationInput{Type: "reference", Prompt: "fixture"}}
+		r := GenerationRequest{Model: "bytedance/seedance-2.0", Input: GenerationInput{Type: "reference", Prompt: "fixture"}}
 		counter := 0
 		for _, group := range []struct {
 			role  string
@@ -46,7 +46,7 @@ func TestReferenceOutputDurationContract(t *testing.T) {
 
 func TestReferenceDuplicatesAndContractIsolation(t *testing.T) {
 	reference := Reference{Role: "reference_image", URL: "https://example.com/fixture"}
-	request := GenerationRequest{Model: "bytedance/seedance-2", Input: GenerationInput{Type: "reference", Prompt: "fixture", References: []Reference{reference, reference}}}
+	request := GenerationRequest{Model: "bytedance/seedance-2.0", Input: GenerationInput{Type: "reference", Prompt: "fixture", References: []Reference{reference, reference}}}
 	if err := ValidateGeneration("generate_video", request); err == nil {
 		t.Fatal("duplicate references accepted")
 	}

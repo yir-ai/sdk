@@ -1,4 +1,5 @@
 import type { Job } from "../shared/types.js";
+import { isValidJobID } from "./client.js";
 
 const DEFAULT_WEBHOOK_TOLERANCE_SECONDS = 300;
 const WEBHOOK_SECRET_PATTERN = /^yir_whsec_[A-Za-z0-9_-]{43}$/;
@@ -161,7 +162,7 @@ export async function constructWebhookEvent(
   if (typeof job !== "object" || job === null || Array.isArray(job)) {
     throw new YirWebhookVerificationError("invalid_payload");
   }
-  if (typeof job.id !== "string" || !/^[1-9][0-9]*$/.test(job.id) ||
+  if (!isValidJobID(job.id) ||
       (job.status !== "succeeded" && job.status !== "failed" && job.status !== "cancelled")) {
     throw new YirWebhookVerificationError("unsupported_event", { id: request.id, timestamp: result.timestamp });
   }

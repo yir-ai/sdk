@@ -123,7 +123,7 @@ func ConstructWebhookEvent(request VerifyWebhookSignatureRequest) (WebhookEvent,
 		return WebhookEvent{}, &WebhookVerificationError{Reason: "invalid_payload"}
 	}
 	var job Job
-	if err := json.Unmarshal(request.RawBody, &job); err != nil || !jobIDPattern.MatchString(job.ID) || !job.IsTerminal() {
+	if err := json.Unmarshal(request.RawBody, &job); err != nil || !validJobID(job.ID) || !job.IsTerminal() {
 		return WebhookEvent{}, &WebhookVerificationError{Reason: "unsupported_event", ID: request.ID, Timestamp: result.Timestamp}
 	}
 	return WebhookEvent{ID: request.ID, Timestamp: result.Timestamp, Job: job}, nil

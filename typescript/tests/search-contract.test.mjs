@@ -2,7 +2,7 @@ import { buildImageQuoteRequest, createYirClient, validateModelParameters } from
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getModelOperationContract, listModelContracts } from "../dist/browser/index.js";
+import { getModelOperationContract, listModelContracts } from "./catalog-fixture.mjs";
 import { quoteFixture } from "./quote-fixture.mjs";
 
 const model = "google/nano-banana-2";

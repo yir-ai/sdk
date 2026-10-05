@@ -11,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.10.0
+go get github.com/yir-ai/sdk/go@v0.11.0
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.10.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.11.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -32,14 +32,15 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
 
-## Upgrading to 0.10.0
+## Upgrading to 0.11.0
 
-0.10.0 is a minor release with incompatible changes. It removes surface that the Gateway no longer uses:
+0.11.0 is a minor release with incompatible changes. It prepares the 1.0 contract:
 
-- `Quote` drops `Max`, `SingleAttemptUpperBound` and `HasVerifiableUpperBound`, and `QuoteSupply` drops `RequiresMaxCost`. The Gateway still returns them as constants for older SDKs, and this SDK ignores them. Read `Primary` for the estimate and set your own `MaxCost`.
-- `JobBilling.Savings` and the `Savings` type are removed; the Gateway stopped returning them on 2026-10-02. Use `OfficialComparison`.
-- `ModelParameterContract.Policy`, the `ParameterPolicy` type and the logged warnings on quote/submit are removed. Model contracts no longer carry policies; quotes and Jobs report actual handling in `ParameterNotices`.
-- `RoutingPreferenceBalanced` is removed. The Gateway still accepts `balanced` as an alias of `cost`; use `RoutingPreferenceCost`.
+- The bundled model catalog is removed: package-level `ListModelContracts`, `GetModelContract`, `GetModelOperationContract`, `ValidateGeneration` and `ValidateModelParameters` are gone. Fetch the catalog with `client.GetModelContracts` and pass it to `ValidateGenerationWithCatalog` or `ClientOptions.ModelContracts`. New models and parameter changes never need an SDK release.
+- Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted; store it as a string and do not parse it.
+- Without a catalog, a quote may echo the canonical model ID for an alias you sent; the SDK only checks that a model is present. With a catalog it still compares the resolved IDs.
+- `APIError.Details` (`[]ErrorDetail`) locates invalid fields of `YIR_INVALID_REQUEST`: `Field`, a stable `Reason` such as `unsupported` or `required`, and `Allowed` contract values.
+- Gateway changes released together with this SDK: `parameters` is required; top-level `resolution`, `aspect_ratio`, `n`, `duration` and `generate_audio`, `input.image`, and case-variant `input.type` or reference roles are rejected; `resolution` and `aspect_ratio` must use a model contract value (case-insensitive), so `1024`, `2048x2048` or `16x9` are rejected. Model aliases are reduced to the short name, the vendor model ID and, where one exists, the Vercel AI Gateway ID; prefer canonical IDs such as `bytedance/seedance-2.0`.
 
 Earlier release notes are in the [changelog](CHANGELOG.md).
 

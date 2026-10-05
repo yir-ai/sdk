@@ -265,8 +265,7 @@
     {
       "id": "alibaba/qwen-image-2.1",
       "aliases": [
-        "qwen-image-2.1",
-        "qwen-2.1-image"
+        "qwen-image-2.1"
       ],
       "locales": {
         "en": {
@@ -475,10 +474,7 @@
       "id": "alibaba/wan-2.6",
       "aliases": [
         "wan-2.6",
-        "wan2.6",
-        "alibaba/wan-v2.6-t2v",
-        "alibaba/wan-v2.6-i2v",
-        "alibaba/wan-v2.6-r2v"
+        "wan2.6"
       ],
       "locales": {
         "en": {
@@ -759,8 +755,8 @@
     {
       "id": "alibaba/wan-2.7",
       "aliases": [
-        "wan2.7",
-        "wan2.7-r2v"
+        "wan-2.7",
+        "wan2.7"
       ],
       "locales": {
         "en": {
@@ -1125,14 +1121,9 @@
     {
       "id": "alibaba/wan-3.0",
       "aliases": [
-        "alibaba/wan-v3.0-video",
-        "alibaba/wan-v3.0-video-prime",
         "wan-3.0",
-        "wan-v3.0",
-        "wan3",
-        "wan3.0",
         "wan3.0-video",
-        "wan-3"
+        "alibaba/wan-v3.0-video"
       ],
       "locales": {
         "en": {
@@ -1707,8 +1698,7 @@
     {
       "id": "bfl/flux-kontext-pro",
       "aliases": [
-        "flux-kontext-pro",
-        "flux-1-kontext-pro"
+        "flux-kontext-pro"
       ],
       "locales": {
         "en": {
@@ -1818,8 +1808,7 @@
     {
       "id": "bfl/flux-pro-1.1",
       "aliases": [
-        "flux-pro-1.1",
-        "flux-1.1-pro"
+        "flux-pro-1.1"
       ],
       "locales": {
         "en": {
@@ -1917,8 +1906,7 @@
     {
       "id": "bfl/flux-pro-1.1-ultra",
       "aliases": [
-        "flux-pro-1.1-ultra",
-        "flux-1.1-pro-ultra"
+        "flux-pro-1.1-ultra"
       ],
       "locales": {
         "en": {
@@ -2017,9 +2005,7 @@
       "id": "bytedance/seedance-1.5-pro",
       "aliases": [
         "seedance-1.5-pro",
-        "seedance-1.5",
-        "bytedance/seedance-v1.5-pro",
-        "seedance-v1.5-pro"
+        "bytedance/seedance-v1.5-pro"
       ],
       "locales": {
         "en": {
@@ -2179,9 +2165,7 @@
     {
       "id": "bytedance/seedance-2.0",
       "aliases": [
-        "seedance-2.0",
-        "seedance-2",
-        "bytedance/seedance-2"
+        "seedance-2.0"
       ],
       "locales": {
         "en": {
@@ -2391,8 +2375,7 @@
     {
       "id": "bytedance/seedance-2.0-fast",
       "aliases": [
-        "seedance-2.0-fast",
-        "bytedance/seedance-2-fast"
+        "seedance-2.0-fast"
       ],
       "locales": {
         "en": {
@@ -2570,9 +2553,7 @@
     {
       "id": "bytedance/seedance-2.0-mini",
       "aliases": [
-        "seedance-2.0-mini",
-        "seedance-mini",
-        "bytedance/seedance-2-mini"
+        "seedance-2.0-mini"
       ],
       "locales": {
         "en": {
@@ -2749,8 +2730,7 @@
     {
       "id": "bytedance/seedance-2.5",
       "aliases": [
-        "seedance-2.5",
-        "bytedance/seedance-2-5"
+        "seedance-2.5"
       ],
       "locales": {
         "en": {
@@ -3045,8 +3025,7 @@
     {
       "id": "bytedance/seedream-4.5",
       "aliases": [
-        "seedream-4.5",
-        "seedream-4-5"
+        "seedream-4.5"
       ],
       "locales": {
         "en": {
@@ -3235,11 +3214,8 @@
     {
       "id": "bytedance/seedream-5.0",
       "aliases": [
-        "seedream-5",
         "seedream-5.0",
-        "seedream-5-0",
-        "seedream-5.0-lite",
-        "seedream-5-0-lite"
+        "seedream-5.0-lite"
       ],
       "locales": {
         "en": {
@@ -3350,9 +3326,7 @@
     {
       "id": "bytedance/seedream-5.0-pro",
       "aliases": [
-        "seedream-5.0-pro",
-        "seedream-5-pro",
-        "seedream-5-0-pro"
+        "seedream-5.0-pro"
       ],
       "locales": {
         "en": {
@@ -3462,13 +3436,8 @@
     {
       "id": "google/gemini-2.5-flash-image",
       "aliases": [
-        "nano-banana",
-        "nanobanana",
         "gemini-2.5-flash-image",
-        "gemini-2.5-flash-image-preview",
-        "google/nano-banana",
-        "google/nanobanana",
-        "google/gemini-2.5-flash-image-preview"
+        "nano-banana"
       ],
       "locales": {
         "en": {
@@ -3579,11 +3548,8 @@
     {
       "id": "google/gemini-3.1-flash-lite-image",
       "aliases": [
-        "nano-banana-2-lite",
-        "nanobanana-2-lite",
-        "nanobanana2lite",
         "gemini-3.1-flash-lite-image",
-        "google/nano-banana-2-lite"
+        "nano-banana-2-lite"
       ],
       "locales": {
         "en": {
@@ -3694,8 +3660,7 @@
     {
       "id": "google/gemini-omni-1.1-flash",
       "aliases": [
-        "gemini-omni-1.1-flash",
-        "gemini-omni-1-1-flash"
+        "gemini-omni-1.1-flash"
       ],
       "locales": {
         "en": {
@@ -3834,13 +3799,8 @@
       "id": "google/nano-banana-2",
       "aliases": [
         "nano-banana-2",
-        "nanobanana2",
-        "nanobanana-2",
-        "google/nanobanana2",
-        "gemini-3.1-flash-image-preview",
-        "google/gemini-3.1-flash-image-preview",
-        "google/gemini-3.1-flash-image",
-        "gemini-3.1-flash-image"
+        "gemini-3.1-flash-image",
+        "google/gemini-3.1-flash-image"
       ],
       "locales": {
         "en": {
@@ -4002,11 +3962,8 @@
       "id": "google/nano-banana-pro",
       "aliases": [
         "nano-banana-pro",
-        "nanobanana-pro",
-        "nanobananapro",
-        "gemini-3-pro-image-preview",
-        "google/gemini-3-pro-image",
-        "gemini-3-pro-image"
+        "gemini-3-pro-image",
+        "google/gemini-3-pro-image"
       ],
       "locales": {
         "en": {
@@ -4120,10 +4077,8 @@
     {
       "id": "google/veo-3.1-fast-generate-001",
       "aliases": [
-        "google/veo-3.1-fast",
-        "veo-3.1-fast",
-        "veo3.1fast",
-        "veo3.1-fast"
+        "veo-3.1-fast-generate-001",
+        "veo-3.1-fast"
       ],
       "locales": {
         "en": {
@@ -4273,10 +4228,8 @@
     {
       "id": "google/veo-3.1-generate-001",
       "aliases": [
-        "google/veo-3.1",
-        "veo-3.1",
-        "veo3.1",
-        "veo31"
+        "veo-3.1-generate-001",
+        "veo-3.1"
       ],
       "locales": {
         "en": {
@@ -4426,11 +4379,8 @@
     {
       "id": "klingai/kling-2.6",
       "aliases": [
-        "kuaishou/kling-2.6",
         "kling-2.6",
-        "kling-v2-6",
-        "klingai/kling-v2.6-t2v",
-        "klingai/kling-v2.6-i2v"
+        "kling-v2-6"
       ],
       "locales": {
         "en": {
@@ -4693,12 +4643,8 @@
     {
       "id": "klingai/kling-3.0",
       "aliases": [
-        "kuaishou/kling-3.0",
         "kling-3.0",
-        "kling-3",
-        "kling-3.0/video",
-        "klingai/kling-v3.0-t2v",
-        "klingai/kling-v3.0-i2v"
+        "kling-v3"
       ],
       "locales": {
         "en": {
@@ -4986,8 +4932,7 @@
     {
       "id": "meta/muse-image-1.0",
       "aliases": [
-        "muse-image-1.0",
-        "muse-image-1"
+        "muse-image-1.0"
       ],
       "locales": {
         "en": {
@@ -5082,8 +5027,7 @@
       "id": "minimax/hailuo-2.3",
       "aliases": [
         "hailuo-2.3",
-        "minimax-hailuo-2.3",
-        "minimax-hailuo-2-3"
+        "minimax-hailuo-2.3"
       ],
       "locales": {
         "en": {
@@ -5230,8 +5174,7 @@
       "id": "minimax/hailuo-2.3-fast",
       "aliases": [
         "hailuo-2.3-fast",
-        "minimax-hailuo-2.3-fast",
-        "minimax-hailuo-2-3-fast"
+        "minimax-hailuo-2.3-fast"
       ],
       "locales": {
         "en": {
@@ -5371,15 +5314,7 @@
     {
       "id": "minimax/minimax-h3",
       "aliases": [
-        "minimax-h3",
-        "minimax-h3/text-to-video",
-        "minimax-h3/image-to-video",
-        "h3",
-        "hailuo-3",
-        "hailuo3",
-        "minimaxh3",
-        "minimax/hailuo-3",
-        "minimax-hailuo-3"
+        "minimax-h3"
       ],
       "locales": {
         "en": {
@@ -5787,14 +5722,7 @@
     {
       "id": "minimax/minimax-h3-max",
       "aliases": [
-        "minimax-h3-max",
-        "h3-max",
-        "h3max",
-        "hailuo-3-max",
-        "hailuo3max",
-        "minimaxh3max",
-        "minimax/hailuo-3-max",
-        "minimax-hailuo-3-max"
+        "minimax-h3-max"
       ],
       "locales": {
         "en": {
@@ -6736,8 +6664,7 @@
     {
       "id": "prodia/flux-fast-schnell",
       "aliases": [
-        "flux-fast-schnell",
-        "flux-schnell"
+        "flux-fast-schnell"
       ],
       "locales": {
         "en": {
@@ -6831,8 +6758,7 @@
     {
       "id": "recraft/recraft-v3",
       "aliases": [
-        "recraft-v3",
-        "recraft-3"
+        "recraft-v3"
       ],
       "locales": {
         "en": {
@@ -7038,7 +6964,6 @@
     {
       "id": "spacexai/grok-imagine-image",
       "aliases": [
-        "xai/grok-imagine-image",
         "grok-imagine-image"
       ],
       "locales": {
@@ -7353,7 +7278,6 @@
     {
       "id": "spacexai/grok-imagine-video",
       "aliases": [
-        "xai/grok-imagine-video",
         "grok-imagine-video"
       ],
       "locales": {

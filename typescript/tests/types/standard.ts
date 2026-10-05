@@ -20,8 +20,10 @@ const video: StandardVideoGenerationRequest = {
   model: "bytedance/seedance-2.0", input: image.input,
   parameters: { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1 },
 };
-// @ts-expect-error External URLs are not accepted as input sources.
+// A source is a File ID or a public HTTPS URL, never both.
 const urlSource: StandardMediaSource = { url: "https://example.com/image.png" };
+// @ts-expect-error A source carries exactly one of file_id and url.
+const bothSources: StandardMediaSource = { url: "https://example.com/image.png", file_id: "file_1" };
 
 function submitWithOptionalKeys(client: YirClient) {
   void client.submitImage(image);

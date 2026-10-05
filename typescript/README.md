@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.9.0
+pnpm add @yir-ai/sdk@0.10.0
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.9.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.0.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -37,7 +37,7 @@ Do not install the repository root as a Node package. The package is ESM.
 | --- | --- |
 | `@yir-ai/sdk/server` | `createNodeYirClient`, custom transport client, jobs, files, Webhook verification |
 | `@yir-ai/sdk/frontend` | External model contracts and parameter validation; no bundled registry, network or pricing engine |
-| `@yir-ai/sdk/browser` | Model contracts, parameter validation, request builders; no network or secrets |
+| `@yir-ai/sdk/browser` | Catalog lookup, parameter validation, request builders; no network or secrets |
 | `@yir-ai/sdk/shared` | Shared types and pure logic |
 | `@yir-ai/sdk/vercel` | Server-side Vercel AI SDK 7 / Provider V4 adapter |
 
@@ -93,18 +93,19 @@ Install the adapter's tested AI SDK generation in your application with `pnpm ad
 
 `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
-Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters, accepted only where the model contract declares them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters when the client's catalog declares them for the model; otherwise they are dropped with an `unsupported` warning. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
-## Upgrading to 0.9.0
+## Upgrading to 0.10.0
 
-0.9.0 is a minor release with incompatible changes. It removes surface that the Gateway no longer uses:
+0.10.0 is a minor release with incompatible changes. It prepares the 1.0 contract:
 
-- `Quote` drops `max`, `single_attempt_upper_bound`, `has_verifiable_upper_bound` and `supply.requires_max_cost`. The Gateway still returns them as constants for older SDKs (`max` repeats `primary`; the others are `null` or `false`), and this SDK ignores them. Read `primary` for the estimate and set your own `max_cost`.
-- `Job.billing.savings` is removed; the Gateway stopped returning it on 2026-10-02. Use `billing.official_comparison`.
-- `checkParameterPolicies`, `ModelParameterContract.policy` and the console warnings on quote/submit are removed. Model contracts no longer carry policies; quotes and Jobs report actual handling in `parameter_notices`.
-- `RoutingPreference` no longer lists `balanced`. The Gateway still accepts it as an alias of `cost`; send `cost`.
-- `DEFAULT_POLL_INTERVAL_MS` is removed; set `pollIntervalMs` for a fixed interval.
-- `examples/quickstart.mjs` takes the approved `max_cost` as a third argument instead of deriving it from the removed upper bound.
+- The bundled model catalog is removed: `listModelContracts`, `getModelContract`, `getModelOperationContract`, `KnownModelID` and the `@yir-ai/sdk/model-contracts` entry point are gone. Fetch the catalog with `client.getModelContracts()` (or generate `models.ts` from it) and use `findModelContract`, `findModelOperationContract` and `validateGeneration(operation, request, catalog)`. New models and parameter changes never need an SDK release.
+- Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted (`isValidJobID`); store it as a string and do not parse it.
+- Without a catalog, a quote may echo the canonical model ID for an alias you sent; the SDK only checks that a model is present. With a catalog it still compares the resolved IDs. The Vercel video adapter no longer requires `job.model` to equal the alias it was created with.
+- `YirPublicError.details` (`YirErrorDetail[]`) locates invalid fields of `YIR_INVALID_REQUEST`: `field`, a stable `reason` such as `unsupported` or `required`, and `allowed` contract values.
+- `StandardMediaSource` and `StandardReference` accept `url` as well as `file_id`, as the API always did; `buildImageGenerationRequest` accepts `image: { url }`.
+- The Vercel adapter maps `seed` and video `fps` only when the client's catalog declares them for the model; otherwise it drops them with an `unsupported` warning, as AI SDK providers do, instead of failing at the Gateway.
+- Gateway changes released together with this SDK: `parameters` is required; top-level `resolution`, `aspect_ratio`, `n`, `duration` and `generate_audio`, `input.image`, and case-variant `input.type` or reference roles are rejected; `resolution` and `aspect_ratio` must use a model contract value (case-insensitive), so `1024`, `2048x2048` or `16x9` are rejected. Model aliases are reduced to the short name, the vendor model ID and, where one exists, the Vercel AI Gateway ID; prefer canonical IDs such as `bytedance/seedance-2.0`.
 
 Earlier release notes are in the [changelog](https://github.com/yir-ai/sdk/blob/main/typescript/CHANGELOG.md).
 

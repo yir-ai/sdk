@@ -1,6 +1,17 @@
 # TypeScript SDK 变更记录
 
-0.9.0 之前的版本说明，从 README 移来。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
+0.10.0 之前的版本说明，从 README 移来。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
+
+## 0.9.0 变化
+
+0.9.0 为 minor 版本，含不兼容变更，移除 Gateway 已不再使用的接口：
+
+- `Quote` 删除 `max`、`single_attempt_upper_bound`、`has_verifiable_upper_bound` 与 `supply.requires_max_cost`。Gateway 仍为旧版 SDK 返回这些常量（`max` 重复 `primary`，其余为 `null` 或 `false`），本 SDK 忽略它们。估价读 `primary`，预算由应用自行设置 `max_cost`。
+- 删除 `Job.billing.savings`，Gateway 自 2026-10-02 起不再返回；改用 `billing.official_comparison`。
+- 删除 `checkParameterPolicies`、`ModelParameterContract.policy` 以及报价/提交时的控制台提醒。模型合同不再携带 policy；实际参数处理由报价和 Job 的 `parameter_notices` 报告。
+- `RoutingPreference` 不再列出 `balanced`。Gateway 仍把它当作 `cost` 的别名接受，请改传 `cost`。
+- 删除 `DEFAULT_POLL_INTERVAL_MS`；需要固定间隔时设置 `pollIntervalMs`。
+- `examples/quickstart.mjs` 改为由第三个参数传入已批准的 `max_cost`，不再从已删除的上限字段推导。
 
 ## 0.8.0 变化
 

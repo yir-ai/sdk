@@ -97,7 +97,7 @@ func (r SubmitRequest) MarshalJSON() ([]byte, error) {
 }
 
 // Version is the SDK release reported in the User-Agent header. Bump it with each Go tag.
-const Version = "0.10.0"
+const Version = "0.11.0"
 
 // Stable public error codes carried in APIError.Code. The server may add codes,
 // so compare against these constants instead of switching exhaustively.
@@ -131,9 +131,22 @@ type APIError struct {
 	Message   string `json:"message"`
 	Retryable bool   `json:"retryable"`
 	Action    string `json:"action,omitempty"`
+	// Details locate invalid request fields for YIR_INVALID_REQUEST so callers
+	// can correct the request without parsing Message.
+	Details []ErrorDetail `json:"details,omitempty"`
 	// RequestID identifies a failed HTTP request for Yir support. It comes from
 	// the error response envelope and is empty for Job and quote batch item errors.
 	RequestID string `json:"-"`
+}
+
+// ErrorDetail names one invalid request field. Reason is a stable code such as
+// unsupported, required or wrong_type; Allowed lists the contract values the
+// field accepts. Unknown reasons may appear and should be handled generically.
+type ErrorDetail struct {
+	Field    string   `json:"field"`
+	Reason   string   `json:"reason"`
+	Allowed  []string `json:"allowed,omitempty"`
+	Expected string   `json:"expected,omitempty"`
 }
 
 func (e *APIError) Error() string {
@@ -235,18 +248,18 @@ func (c *Client) quote(ctx context.Context, resource, operation string, request 
 	return quote, err
 }
 
+// quoteMatchesRequest compares models through the catalog when it knows the
+// requested model. Otherwise an alias may be echoed as its canonical ID, so
+// only a present model is required.
 func (c *Client) quoteMatchesRequest(quote Quote, request GenerationRequest, operation string) bool {
-	expectedModel := request.Model
-	returnedModel := quote.Model
+	modelMatches := strings.TrimSpace(quote.Model) != ""
 	if c != nil && c.modelContracts != nil {
 		if requested, found := findContractInCatalog(*c.modelContracts, request.Model); found {
-			expectedModel = requested.ID
-		}
-		if returned, found := findContractInCatalog(*c.modelContracts, quote.Model); found {
-			returnedModel = returned.ID
+			returned, returnedFound := findContractInCatalog(*c.modelContracts, quote.Model)
+			modelMatches = returnedFound && requested.ID == returned.ID
 		}
 	}
-	return returnedModel == expectedModel && quote.Operation == operation && quote.InputMode == request.Input.Type
+	return modelMatches && quote.Operation == operation && quote.InputMode == request.Input.Type
 }
 
 func (c *Client) SubmitImage(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
@@ -258,7 +271,13 @@ func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempot
 }
 
 var decimalCostPattern = regexp.MustCompile(`^[0-9]{1,13}(\.[0-9]{1,6})?$`)
-var jobIDPattern = regexp.MustCompile(`^[1-9][0-9]*$`)
+
+// validJobID accepts any opaque ID that is safe as one path segment; the
+// Gateway owns the ID format.
+func validJobID(id string) bool {
+	return id != "" && len(id) <= 64 && strings.TrimSpace(id) == id && !strings.ContainsAny(id, "/?#%\\") &&
+		strings.IndexFunc(id, func(r rune) bool { return r < 0x21 || r == 0x7f }) < 0
+}
 
 func (c *Client) submit(ctx context.Context, resource, operation string, request SubmitRequest, keys ...string) (Job, error) {
 	var job Job
@@ -298,7 +317,7 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 	}
 	// Submit is issued once. An unknown transport outcome must reuse the caller's key.
 	err := c.do(ctx, http.MethodPost, "/v1/"+resource+"/generations", key, request, &job)
-	if err == nil && (!jobIDPattern.MatchString(job.ID) || !validJobStatus(job.Status)) {
+	if err == nil && (!validJobID(job.ID) || !validJobStatus(job.Status)) {
 		err = errors.New("response_invalid")
 	}
 	return job, err
@@ -306,7 +325,7 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 
 func (c *Client) GetJob(ctx context.Context, id string) (Job, error) {
 	var job Job
-	if !jobIDPattern.MatchString(id) {
+	if !validJobID(id) {
 		return job, errors.New("job_id_invalid")
 	}
 	err := c.do(ctx, http.MethodGet, "/v1/jobs/"+id, "", nil, &job)
@@ -325,7 +344,7 @@ func (c *Client) GetJobStatus(ctx context.Context, id string) (JobStatusResponse
 // terminal Job at once. Keep the HTTP client timeout longer than wait.
 func (c *Client) GetJobStatusWithWait(ctx context.Context, id string, wait time.Duration) (JobStatusResponse, error) {
 	var status JobStatusResponse
-	if !jobIDPattern.MatchString(id) {
+	if !validJobID(id) {
 		return status, errors.New("job_id_invalid")
 	}
 	if wait < 0 {
@@ -344,7 +363,7 @@ func (c *Client) GetJobStatusWithWait(ctx context.Context, id string, wait time.
 
 func (c *Client) CancelJob(ctx context.Context, id string) (Job, error) {
 	var job Job
-	if !jobIDPattern.MatchString(id) {
+	if !validJobID(id) {
 		return job, errors.New("job_id_invalid")
 	}
 	err := c.do(ctx, http.MethodPost, "/v1/jobs/"+id+"/cancel", "", nil, &job)

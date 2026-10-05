@@ -1,6 +1,15 @@
 # Go SDK changelog
 
-Release notes before 0.10.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
+Release notes before 0.11.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
+
+## 0.10.0 changes
+
+0.10.0 is a minor release with incompatible changes. It removes surface that the Gateway no longer uses:
+
+- `Quote` drops `Max`, `SingleAttemptUpperBound` and `HasVerifiableUpperBound`, and `QuoteSupply` drops `RequiresMaxCost`. The Gateway still returns them as constants for older SDKs, and this SDK ignores them. Read `Primary` for the estimate and set your own `MaxCost`.
+- `JobBilling.Savings` and the `Savings` type are removed; the Gateway stopped returning them on 2026-10-02. Use `OfficialComparison`.
+- `ModelParameterContract.Policy`, the `ParameterPolicy` type and the logged warnings on quote/submit are removed. Model contracts no longer carry policies; quotes and Jobs report actual handling in `ParameterNotices`.
+- `RoutingPreferenceBalanced` is removed. The Gateway still accepts `balanced` as an alias of `cost`; use `RoutingPreferenceCost`.
 
 ## 0.9.0 changes
 

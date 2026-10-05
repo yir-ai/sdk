@@ -26,6 +26,8 @@ try {
   for (const name of ["package.json", "smoke.mjs", "smoke.ts", "tsconfig.json"]) {
     await copyFile(path.join(packageRoot, "tests/package-consumer", name), path.join(consumer, name));
   }
+  // The package ships no catalog; the smoke test reads the reviewed snapshot.
+  await copyFile(path.join(packageRoot, "../spec/models.json"), path.join(consumer, "models.json"));
   // Install the actual archive and its runtime dependencies. A fresh CI runner
   // may need registry metadata even after a frozen-lockfile install. Prefer the
   // cache without requiring it; no lifecycle hooks, workspace links or publish.

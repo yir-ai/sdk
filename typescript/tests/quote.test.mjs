@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createYirClient } from "../dist/index.js";
 import { quoteFixture } from "./quote-fixture.mjs";
+import { catalog } from "./catalog-fixture.mjs";
 
 const request = { model: "openai/gpt-image-2", input: { type: "text", prompt: "test" }, parameters: {} };
 const read = value => createYirClient(async () => value).quoteImage(request);
@@ -43,7 +44,7 @@ test("Quote accepts newer price kinds and supply issues while keeping amounts st
 });
 
 test("Quote rejects malformed or mismatched responses without exposing response contents", async () => {
-  for (const patch of [null, {}, { model: "future/model" }, { operation: "generate_video" },
+  for (const patch of [null, {}, { model: " " }, { operation: "generate_video" },
     { input_mode: "image" }, { parameters: null }, { expires_at: 0 },
     { primary: { kind: "fixed", amount: 0.02 } },
     { primary: { kind: "fixed", amount: "1e-2" } },
@@ -76,4 +77,15 @@ test("Quote reports an unsupported currency separately", async () => {
   const batch = createYirClient(async () => ({ object: "quote_batch", request_id: "test",
     data: [{ index: 0, quote: { ...quoteFixture(request), currency: "EUR" } }] }));
   await assert.rejects(batch.quoteBatch([{ operation: "generate_image", request }]), { message: "quote_currency_unsupported" });
+});
+
+test("Quote compares models through the catalog and accepts a canonical echo for an alias", async () => {
+  const aliasRequest = { ...request, model: "gpt-image-2" };
+  const echoed = { ...quoteFixture(aliasRequest), model: "openai/gpt-image-2" };
+  assert.equal((await createYirClient(async () => echoed).quoteImage(aliasRequest)).model, "openai/gpt-image-2");
+  assert.equal((await createYirClient(async () => echoed, catalog).quoteImage(aliasRequest)).model, "openai/gpt-image-2");
+  const other = { ...quoteFixture(request), model: "openai/gpt-image-1" };
+  await assert.rejects(createYirClient(async () => other, catalog).quoteImage(request), { message: "quote_response_invalid" });
+  const unknown = { ...quoteFixture(request), model: "future/model" };
+  await assert.rejects(createYirClient(async () => unknown, catalog).quoteImage(request), { message: "quote_response_invalid" });
 });

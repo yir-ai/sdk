@@ -44,7 +44,7 @@ test("error bodies without a code fall back to http_error and keep the request I
 
 test("submit rejects a response that is not a created Job", async () => {
   const request = { model: "future/image", input: { type: "text", prompt: "x" }, parameters: {} };
-  for (const response of [null, {}, { id: "abc", status: "queued" }, { id: "1", status: "" }]) {
+  for (const response of [null, {}, { id: "a/b", status: "queued" }, { id: 7, status: "queued" }, { id: "1", status: "" }]) {
     const client = createYirClient(async () => response);
     await assert.rejects(client.submitImage(request, "key"), /response_invalid/);
     await assert.rejects(client.submitVideo(request, "key"), /response_invalid/);

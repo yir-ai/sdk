@@ -6,7 +6,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { createYirClient, getModelContract, validateGeneration } from "../dist/index.js";
+import { createYirClient, validateGeneration } from "../dist/index.js";
+import { getModelContract } from "./catalog-fixture.mjs";
 import { findModelContract, parseModelContractCatalog, parseModelContractDetail, modelContractPath, modelDetailPath, parseModelDetail, validateModelParameters } from "../dist/frontend.js";
 import { quoteFixture } from "./quote-fixture.mjs";
 

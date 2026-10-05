@@ -1,5 +1,3 @@
-import { generatedModelContractCatalog } from "./generated/model-contracts.generated.ts";
-
 export type ModelContractLocale = {
   readonly label: string;
   readonly description: string;
@@ -34,7 +32,7 @@ export type ModelInputConstraint = {
 };
 
 export type ModelOperationContract = {
-  readonly operation: "generate_image" | "generate_video" | "upscale_image" | (string & {});
+  readonly operation: "generate_image" | "generate_video" | (string & {});
   readonly input_modes: readonly ("text" | "image" | "reference" | (string & {}))[];
   readonly input_constraints: Readonly<Record<string, ModelInputConstraint>>;
   readonly request_schema: string;
@@ -54,40 +52,3 @@ export type ModelContractCatalog = {
   readonly version?: string;
   readonly models: readonly StaticModelContract[];
 };
-
-export type KnownModelID = (typeof generatedModelContractCatalog.models)[number]["id"];
-
-function deepFreeze<T>(value: T): T {
-  if (value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
-  for (const nested of Object.values(value)) deepFreeze(nested);
-  return Object.freeze(value);
-}
-
-const modelContracts: readonly StaticModelContract[] = deepFreeze(
-  generatedModelContractCatalog.models,
-);
-
-/** Returns the immutable model contracts bundled with this SDK version. */
-export function listModelContracts(): readonly StaticModelContract[] {
-  return modelContracts;
-}
-
-/** Resolves a canonical model ID or an explicitly published alias. */
-export function getModelContract(model: string): StaticModelContract | undefined {
-  const normalized = model.trim();
-  if (!normalized) return undefined;
-  return modelContracts.find(
-    (contract) => contract.id === normalized || contract.aliases.includes(normalized),
-  );
-}
-
-/** Returns the static parameter contract for one operation and input mode. */
-export function getModelOperationContract(
-  model: string,
-  operation: ModelOperationContract["operation"],
-  inputMode: ModelOperationContract["input_modes"][number],
-): ModelOperationContract | undefined {
-  return getModelContract(model)?.operations.find(
-    (contract) => contract.operation === operation && contract.input_modes.includes(inputMode),
-  );
-}

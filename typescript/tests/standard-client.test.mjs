@@ -7,11 +7,12 @@ import * as YirSDK from "../dist/index.js";
 
 import { normalizeRoutingOverride, waitForJob, YirJobError, YirSDKValidationError, YirTimeoutError } from "../dist/index.js";
 
-test("public SDK surface exposes generated static contracts without the removed runtime registry", () => {
-  assert.equal(typeof YirSDK.listModelContracts, "function");
-  assert.equal(typeof YirSDK.getModelContract, "function");
-  assert.equal(typeof YirSDK.getModelOperationContract, "function");
+test("public SDK surface ships no bundled model catalog or runtime registry", () => {
+  assert.equal(typeof YirSDK.findModelContract, "function");
   for (const removedExport of [
+    "listModelContracts",
+    "getModelContract",
+    "getModelOperationContract",
     "Models",
     "Operations",
     "InputModes",
@@ -31,8 +32,8 @@ test("public SDK surface exposes generated static contracts without the removed 
 });
 
 test("SDK build removes stale model-contract artifacts", async () => {
-  await access(new URL("../dist/shared/generated/model-contracts.generated.js", import.meta.url));
   for (const removedArtifact of [
+    "../dist/shared/generated/model-contracts.generated.js",
     "../dist/runtime.js",
     "../dist/generated/contracts.js",
   ]) {
@@ -92,7 +93,7 @@ test("Standard image request requires exactly one output", () => {
   }
 });
 
-test("image Quote and Submit accept File ID and reject URL", () => {
+test("image Quote and Submit accept a File ID or a URL", () => {
   const image = { file_id: "file_11111111-1111-4111-8111-111111111111" };
   const input = {
     model: "openai/gpt-image-2", prompt: "Edit this image", image,
@@ -103,10 +104,8 @@ test("image Quote and Submit accept File ID and reject URL", () => {
   assert.deepEqual(quote.input, { type: "image", prompt: input.prompt, references: [{ role: "reference_image", ...image }] });
   assert.deepEqual(submit, { ...quote, max_cost: "0.25" });
 
-  assert.throws(() => buildImageQuoteRequest({
-    ...input,
-    image: { url: "https://example.com/reference.png" },
-  }), error => error instanceof YirSDKValidationError && error.code === "image_source_invalid");
+  const byURL = buildImageQuoteRequest({ ...input, image: { url: "https://example.com/reference.png" } });
+  assert.deepEqual(byURL.input.references, [{ role: "reference_image", url: "https://example.com/reference.png" }]);
 });
 
 test("image builders reject ambiguous or empty source representations", () => {

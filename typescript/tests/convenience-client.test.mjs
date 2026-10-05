@@ -181,7 +181,7 @@ test("waitForJob validates inputs", async () => {
   const dummyClient = { getJob: async () => ({}), getJobStatus: async () => ({}) };
 
   await assert.rejects(
-    () => waitForJob(dummyClient, "invalid-job-id"),
+    () => waitForJob(dummyClient, "invalid/job-id"),
     /job_id_invalid/,
   );
   await assert.rejects(

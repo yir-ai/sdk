@@ -17,10 +17,19 @@ Official Go and TypeScript SDKs for the Yir image and video API. Public source: 
 Go 1.25 or later, from your application's module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.10.0
+go get github.com/yir-ai/sdk/go@v0.11.0
 ```
 
-Install TypeScript with `pnpm add @yir-ai/sdk@0.9.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
+Install TypeScript with `pnpm add @yir-ai/sdk@0.10.0`. See the [TypeScript guide](typescript/README.md#install) for entry points and local archive installation.
+
+## Compatibility
+
+The SDKs fix the protocol; the API supplies the models. Models, their parameters, allowed values and defaults come from `GET /v1/models?include=parameters`, so a new model, a new option or a corrected limit never needs an SDK release. Fetch the catalog at runtime or generate `models.ts` from it at build time; neither SDK bundles one.
+
+- The API only grows: new fields are optional, enums may gain values, and the SDKs read unknown fields and values as data.
+- A published model keeps its defaults, value meanings and billing semantics. A change to any of them ships as a new model ID, so a request that omits a parameter keeps its meaning and price.
+- IDs are opaque strings. Do not parse them.
+- An SDK release is needed only for a new operation or request shape. Incompatible SDK changes ship in minor `0.x` releases with migration notes.
 
 ## Safe generation lifecycle
 

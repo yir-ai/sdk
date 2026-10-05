@@ -1,5 +1,4 @@
 import { createYirClient, type QuotePrice, type StandardImageGenerationRequest } from "@yir-ai/sdk";
-import { getModelContract } from "@yir-ai/sdk/model-contracts";
 import { createYirAIProvider } from "@yir-ai/sdk/vercel";
 import { parseModelContractCatalog, findModelContract } from '@yir-ai/sdk/frontend';
 
@@ -11,10 +10,9 @@ const client = createYirClient(async <T>(): Promise<T> => { throw new Error("No 
 client.quoteImage(request);
 client.submitImage(request);
 client.submitImage(request, "saved-image-key");
-const videoRequest = { model: "google/veo-3.1-fast", input: { type: "text" as const, prompt: "test" }, parameters: {} };
+const videoRequest = { model: "google/veo-3.1-fast-generate-001", input: { type: "text" as const, prompt: "test" }, parameters: {} };
 client.submitVideo(videoRequest);
 client.submitVideo(videoRequest, "saved-video-key");
-getModelContract(request.model);
 createYirAIProvider({ client }).imageModel(request.model);
 if (price.estimate.output_tokens !== undefined) price.estimate.output_tokens satisfies number;
 client.getModelContracts().then(catalog => findModelContract(parseModelContractCatalog(catalog), request.model));

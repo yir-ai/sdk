@@ -5,9 +5,9 @@ import {
   getModelContract,
   getModelOperationContract,
   listModelContracts,
-} from "../dist/index.js";
+} from "./catalog-fixture.mjs";
 
-test("SDK bundles multilingual static contracts for published image and video models", () => {
+test("the reviewed catalog snapshot carries multilingual contracts for image and video models", () => {
 	const contracts = listModelContracts();
 	const ids = contracts.map(({ id }) => id);
 	assert.ok(contracts.length > 0);
@@ -133,7 +133,7 @@ test("SDK bundles multilingual static contracts for published image and video mo
     ),
   );
 
-  const wan = getModelOperationContract("wan2.7-r2v", "generate_video", "reference");
+  const wan = getModelOperationContract("wan-2.7", "generate_video", "reference");
   assert.equal(
     wan?.input_constraints.reference.max_duration_by_reference_role?.reference_video,
     10,
@@ -143,16 +143,4 @@ test("SDK bundles multilingual static contracts for published image and video mo
 test("unknown models remain available to the generic request surface without a false contract", () => {
   assert.equal(getModelContract("future/model"), undefined);
   assert.equal(getModelOperationContract("future/model", "generate_image", "text"), undefined);
-});
-
-test("bundled model contracts are deeply immutable at runtime", () => {
-  const contract = getModelContract("openai/gpt-image-2");
-  assert.ok(contract);
-  assert.throws(() => {
-    contract.aliases[0] = "mutated";
-  }, TypeError);
-  assert.throws(() => {
-    contract.operations[0].parameters[0].locales.en.label = "mutated";
-  }, TypeError);
-  assert.equal(getModelContract("gpt-image-2")?.id, "openai/gpt-image-2");
 });

@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.9.0
+pnpm add @yir-ai/sdk@0.10.0
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.9.0.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.0.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -37,11 +37,11 @@ pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.9.0.tgz
 | --- | --- |
 | `@yir-ai/sdk/server` | `createNodeYirClient`、自定义传输客户端、任务、文件和 Webhook 验签 |
 | `@yir-ai/sdk/frontend` | 外部模型合同查询和参数校验，无网络、密钥或计价逻辑 |
-| `@yir-ai/sdk/browser` | 既有合同与请求构造兼容入口，无网络与密钥 |
+| `@yir-ai/sdk/browser` | 目录查询、参数校验与请求构造，无网络与密钥 |
 | `@yir-ai/sdk/shared` | 共享类型和纯逻辑 |
 | `@yir-ai/sdk/vercel` | 服务端 Vercel AI SDK 7 / Provider V4 适配 |
 
-server 与 browser 依赖 shared，shared 不反向依赖。根入口保留服务端兼容性；`model-contracts` 为历史静态合同入口，`pricing` 已移除。新代码优先使用 server/frontend，参数快照由客户生成。不得将 Yir Key 传给浏览器；密钥客户端拒绝浏览器运行且不提供绕过开关。浏览器应调用应用自己的已认证后端。
+server 与 browser 依赖 shared，shared 不反向依赖。根入口保留服务端兼容性；包内不带模型目录，`model-contracts` 与 `pricing` 入口已移除。新代码优先使用 server/frontend，参数快照由客户生成。不得将 Yir Key 传给浏览器；密钥客户端拒绝浏览器运行且不提供绕过开关。浏览器应调用应用自己的已认证后端。
 
 ```ts
 import { createNodeYirClient } from '@yir-ai/sdk/server';
@@ -94,18 +94,19 @@ const client = createNodeYirClient();
 
 `providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
-不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数，仅在模型合同声明时被接受。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 仅在客户端目录为该模型声明时映射为同名 Yir 参数，否则丢弃并返回 `unsupported` 警告。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
-## 升级到 0.9.0
+## 升级到 0.10.0
 
-0.9.0 为 minor 版本，含不兼容变更，移除 Gateway 已不再使用的接口：
+0.10.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备：
 
-- `Quote` 删除 `max`、`single_attempt_upper_bound`、`has_verifiable_upper_bound` 与 `supply.requires_max_cost`。Gateway 仍为旧版 SDK 返回这些常量（`max` 重复 `primary`，其余为 `null` 或 `false`），本 SDK 忽略它们。估价读 `primary`，预算由应用自行设置 `max_cost`。
-- 删除 `Job.billing.savings`，Gateway 自 2026-10-02 起不再返回；改用 `billing.official_comparison`。
-- 删除 `checkParameterPolicies`、`ModelParameterContract.policy` 以及报价/提交时的控制台提醒。模型合同不再携带 policy；实际参数处理由报价和 Job 的 `parameter_notices` 报告。
-- `RoutingPreference` 不再列出 `balanced`。Gateway 仍把它当作 `cost` 的别名接受，请改传 `cost`。
-- 删除 `DEFAULT_POLL_INTERVAL_MS`；需要固定间隔时设置 `pollIntervalMs`。
-- `examples/quickstart.mjs` 改为由第三个参数传入已批准的 `max_cost`，不再从已删除的上限字段推导。
+- 移除内置模型目录：`listModelContracts`、`getModelContract`、`getModelOperationContract`、`KnownModelID` 与 `@yir-ai/sdk/model-contracts` 入口已删除。用 `client.getModelContracts()` 获取目录（或据此生成 `models.ts`），再用 `findModelContract`、`findModelOperationContract` 与 `validateGeneration(operation, request, catalog)`。新增模型和参数调整都不需要发布 SDK。
+- Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受（`isValidJobID`）；按字符串保存，不要解析。
+- 未配置目录时，报价可能把你传入的别名回显为规范模型 ID，SDK 只检查模型字段存在；配置目录时仍按解析后的 ID 比对。Vercel 视频适配器不再要求 `job.model` 等于创建时使用的别名。
+- `YirPublicError.details`（`YirErrorDetail[]`）定位 `YIR_INVALID_REQUEST` 的无效字段：`field`、稳定的 `reason`（如 `unsupported`、`required`）以及合同允许值 `allowed`。
+- `StandardMediaSource` 与 `StandardReference` 除 `file_id` 外也接受 `url`，与 API 一致；`buildImageGenerationRequest` 接受 `image: { url }`。
+- Vercel 适配器仅在客户端目录为该模型声明了 `seed`、视频 `fps` 时才映射它们；否则按 AI SDK 惯例丢弃并返回 `unsupported` 警告，不再让请求在 Gateway 失败。
+- 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
 
 更早的版本说明见[变更记录](CHANGELOG.md)。
 

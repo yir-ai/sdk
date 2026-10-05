@@ -1,7 +1,7 @@
 import { validateGeneration } from "./catalog-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getModelOperationContract } from "../dist/index.js";
+import { getModelOperationContract } from "./catalog-fixture.mjs";
 
 const fileID = (role, i) => `file_12345678-1234-4123-8123-${String(i).padStart(12, "0")}`;
 const ref = (role, i = 0) => ({ role, file_id: fileID(role, i) });
@@ -18,7 +18,7 @@ test("H3 accepts official reference combinations without changing file_id or ord
 });
 
 test("reference role counts and alternatives are exported and enforced", () => {
-  const contract = getModelOperationContract("bytedance/seedance-2", "generate_video", "reference");
+  const contract = getModelOperationContract("bytedance/seedance-2.0", "generate_video", "reference");
   assert.equal(contract.input_constraints.reference.reference_counts_by_role.reference_image.maximum, 9);
   for (const [images, videos, audios, valid] of [[9, 3, 3, true], [10, 0, 0, false], [1, 4, 0, false], [1, 0, 4, false], [0, 0, 1, false]]) {
     const references = [
@@ -26,7 +26,7 @@ test("reference role counts and alternatives are exported and enforced", () => {
       ...Array.from({ length: videos }, (_, i) => ({ ...ref("reference_video", 100 + i) })),
       ...Array.from({ length: audios }, (_, i) => ({ ...ref("reference_audio", 200 + i) })),
     ];
-    const check = () => validateGeneration("generate_video", { model: "bytedance/seedance-2", input: { type: "reference", prompt: "fixture", references }, parameters: {} });
+    const check = () => validateGeneration("generate_video", { model: "bytedance/seedance-2.0", input: { type: "reference", prompt: "fixture", references }, parameters: {} });
     if (valid) assert.doesNotThrow(check); else assert.throws(check);
   }
 });
@@ -39,6 +39,6 @@ test("reference role duration is output duration and applies only to the matchin
 });
 
 test("duplicate references fail before transport", () => {
-  assert.throws(() => validateGeneration("generate_video", { model: "bytedance/seedance-2", input: { type: "reference", prompt: "fixture", references: [ref("reference_image"), ref("reference_image")] }, parameters: {} }), error => error.code === "duplicate_reference");
+  assert.throws(() => validateGeneration("generate_video", { model: "bytedance/seedance-2.0", input: { type: "reference", prompt: "fixture", references: [ref("reference_image"), ref("reference_image")] }, parameters: {} }), error => error.code === "duplicate_reference");
 });
 

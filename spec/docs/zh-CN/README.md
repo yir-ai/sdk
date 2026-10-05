@@ -17,10 +17,19 @@ Yir 图像与视频 API 的官方 Go 和 TypeScript SDK。公开源码：[yir-ai
 Go 1.25 及以上，在应用的模块目录执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.10.0
+go get github.com/yir-ai/sdk/go@v0.11.0
 ```
 
-TypeScript 使用 `pnpm add @yir-ai/sdk@0.9.0` 安装。入口和本地归档安装方式见 [TypeScript 指南](../../../typescript/docs/zh-CN/README.md#安装)。
+TypeScript 使用 `pnpm add @yir-ai/sdk@0.10.0` 安装。入口和本地归档安装方式见 [TypeScript 指南](../../../typescript/docs/zh-CN/README.md#安装)。
+
+## 兼容性
+
+SDK 固定协议，API 提供模型。模型、参数、允许值和默认值都来自 `GET /v1/models?include=parameters`，新增模型、新选项或修正限制都不需要发布 SDK。可在运行时获取目录，或在构建时据此生成 `models.ts`；两个 SDK 都不内置目录。
+
+- API 只做加法：新字段都是可选的，枚举可能新增取值，SDK 把未知字段和取值当作数据读取。
+- 已发布模型的默认值、取值含义和计费语义不变；任何一项变化都以新模型 ID 发布，因此省略参数的请求含义和价格不会变。
+- ID 是不透明字符串，不要解析。
+- 只有新增操作或新请求结构才需要发布 SDK。不兼容的 SDK 变更只在 `0.x` 的 minor 版本发布，并附迁移说明。
 
 ## 安全的生成流程
 

@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.10.0
+go get github.com/yir-ai/sdk/go@v0.11.0
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.10.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.11.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -32,14 +32,15 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
 
-## 升级到 0.10.0
+## 升级到 0.11.0
 
-0.10.0 为 minor 版本，含不兼容变更，移除 Gateway 已不再使用的接口：
+0.11.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备：
 
-- `Quote` 删除 `Max`、`SingleAttemptUpperBound` 与 `HasVerifiableUpperBound`，`QuoteSupply` 删除 `RequiresMaxCost`。Gateway 仍为旧版 SDK 返回这些常量，本 SDK 忽略它们。估价读 `Primary`，预算由应用自行设置 `MaxCost`。
-- 删除 `JobBilling.Savings` 与 `Savings` 类型，Gateway 自 2026-10-02 起不再返回；改用 `OfficialComparison`。
-- 删除 `ModelParameterContract.Policy`、`ParameterPolicy` 类型以及报价/提交时的日志提醒。模型合同不再携带 policy；实际参数处理由报价和 Job 的 `ParameterNotices` 报告。
-- 删除 `RoutingPreferenceBalanced`。Gateway 仍把 `balanced` 当作 `cost` 的别名接受，请改用 `RoutingPreferenceCost`。
+- 移除内置模型目录：包级 `ListModelContracts`、`GetModelContract`、`GetModelOperationContract`、`ValidateGeneration` 与 `ValidateModelParameters` 已删除。用 `client.GetModelContracts` 获取目录，再传给 `ValidateGenerationWithCatalog` 或 `ClientOptions.ModelContracts`。新增模型和参数调整都不需要发布 SDK。
+- Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受；按字符串保存，不要解析。
+- 未配置目录时，报价可能把你传入的别名回显为规范模型 ID，SDK 只检查模型字段存在；配置目录时仍按解析后的 ID 比对。
+- `APIError.Details`（`[]ErrorDetail`）定位 `YIR_INVALID_REQUEST` 的无效字段：`Field`、稳定的 `Reason`（如 `unsupported`、`required`）以及合同允许值 `Allowed`。
+- 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
 
 更早的版本说明见[变更记录](CHANGELOG.md)。
 

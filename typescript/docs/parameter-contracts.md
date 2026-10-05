@@ -51,8 +51,8 @@ storage belong to the customer application.
   `validateGeneration` and the image builders accept it as their final argument.
 - Remove `getModelPrices`, `/pricing`, `calculatePrice`, `buildPriceInput` and
   price-table imports. No exhaustive specification-price table is exposed.
-- Legacy `/model-contracts` getters remain explicit historical snapshots; they
-  do not gate runtime clients and are not the recommended UI data source.
+- The package bundles no model catalog (0.10.0 removed the `/model-contracts`
+  getters); fetch it from the API or generate `models.ts`.
 - Polling now uses lightweight status summaries and reads the complete Job at
   terminal status. TypeScript `onPoll` and Go `OnPoll` receive a status summary;
   TypeScript `lastJob` becomes `lastStatus`. Go wait errors return a zero Job,

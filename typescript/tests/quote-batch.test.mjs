@@ -32,7 +32,7 @@ test("batch quote rejects mismatched or malformed result positions", async () =>
   for (const bad of [
     { ...valid, data: [valid.data[1], valid.data[0]] },
     { ...valid, data: [valid.data[0]] },
-    { ...valid, data: [{ index: 0, quote: { ...valid.data[0].quote, model: video.model } }, valid.data[1]] },
+    { ...valid, data: [{ index: 0, quote: { ...valid.data[0].quote, operation: "generate_video" } }, valid.data[1]] },
     { ...valid, data: [{ index: 0, error: { code: "YIR_INVALID_REQUEST", message: "bad", retryable: false, action: "fix_request" }, quote: valid.data[0].quote }, valid.data[1]] },
     { ...valid, data: [valid.data[0], { index: 1, error: { code: "", message: "bad", retryable: true } }] },
     { ...valid, data: [valid.data[0], { index: 1, error: { code: "YIR_X", message: "bad", retryable: "yes" } }] },

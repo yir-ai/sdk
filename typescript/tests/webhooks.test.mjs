@@ -108,7 +108,7 @@ test("constructWebhookEvent rejects bad signatures and non-object payloads", asy
 // An authentic body that is not a terminal Job, such as a newer event type, is
 // reported separately so receivers can acknowledge it instead of failing retries.
 test("constructWebhookEvent reports authentic unsupported events", async () => {
-  for (const body of ['{"id":"","status":"succeeded"}', '{"id":" 7001","status":"succeeded"}', '{"id":"abc","status":"failed"}',
+  for (const body of ['{"id":"","status":"succeeded"}', '{"id":" 7001","status":"succeeded"}', '{"id":"a/b","status":"failed"}',
     '{"id":"7001","status":"running"}', '{"id":"7001","status":"pending_review"}', '{"type":"file.ready","data":{"id":"file_x"}}']) {
     await assert.rejects(
       constructWebhookEvent(signedBody(body)),

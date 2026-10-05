@@ -156,7 +156,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     getJob(id, options) {
       options?.signal?.throwIfAborted();
       const normalizedID = id.trim();
-      if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
+      if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
       const request: { method: "GET"; path: string; signal?: AbortSignal } = {
         method: "GET",
         path: `/v1/jobs/${normalizedID}`,
@@ -174,7 +174,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     getJobStatus(id, options) {
       options?.signal?.throwIfAborted();
       const normalizedID = id.trim();
-      if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
+      if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
       const waitSeconds = options?.waitSeconds ?? 0;
       if (!Number.isInteger(waitSeconds) || waitSeconds < 0 || waitSeconds > MAX_STATUS_WAIT_SECONDS) {
         throw new Error("wait_invalid");
@@ -199,7 +199,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     cancelJob(id, options) {
       options?.signal?.throwIfAborted();
       const normalizedID = id.trim();
-      if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
+      if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
       return transport<Job>({
         method: "POST",
         path: `/v1/jobs/${normalizedID}/cancel`,
@@ -217,7 +217,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
 export const DEFAULT_GATEWAY_BASE_URL = "https://gateway.yir.ai";
 
 // Keep in sync with package.json "version"; tests enforce it.
-export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.9.0";
+export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.10.0";
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 /** Default long-poll hold of `waitForJob` status queries. */
 export const DEFAULT_STATUS_WAIT_SECONDS = 20;
@@ -236,10 +236,18 @@ function requestSignal(signal: AbortSignal | undefined, timeoutMs: number, holdM
 // Same check as the Go SDK. An invalid body after a submit is an unknown
 // outcome: recover with the same request and idempotency key.
 function validateSubmittedJob(job: Job): Job {
-  if (typeof job !== "object" || job === null || typeof job.id !== "string" || !/^[1-9][0-9]*$/.test(job.id) || !validJobStatus(job.status)) {
+  if (typeof job !== "object" || job === null || !isValidJobID(job.id) || !validJobStatus(job.status)) {
     throw new Error("response_invalid");
   }
   return job;
+}
+
+/**
+ * Job IDs are opaque; any non-empty ID that is safe as one URL path segment is
+ * accepted, so a new server ID format needs no SDK release.
+ */
+export function isValidJobID(id: unknown): id is string {
+  return typeof id === "string" && id.length > 0 && id.length <= 64 && !/[\s/?#%\\\u0000-\u001f\u007f]/.test(id);
 }
 
 export const TERMINAL_JOB_STATUSES = Object.freeze(["succeeded", "failed", "cancelled"] as const);
@@ -363,7 +371,7 @@ export async function waitForJob(
   options: WaitForJobOptions = {},
 ): Promise<Job> {
   const normalizedID = jobId.trim();
-  if (!/^[1-9][0-9]*$/.test(normalizedID)) throw new Error("job_id_invalid");
+  if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
 
   const fixedInterval = options.pollIntervalMs;
   if (fixedInterval !== undefined && !(fixedInterval > 0)) throw new Error("poll_interval_invalid");

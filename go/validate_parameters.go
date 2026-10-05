@@ -17,20 +17,6 @@ type ParameterError struct {
 
 func (e *ParameterError) Error() string { return fmt.Sprintf("%s: %s", e.Path, e.Code) }
 
-// ValidateModelParameters validates only the parameters against bundled rules.
-//
-// Deprecated: the bundled catalog is a historical snapshot; validate with
-// ValidateGenerationWithCatalog and current GetModelContracts data instead.
-// Model-specific semantic dependencies remain Gateway-owned.
-// Defaults satisfy omitted parameters but this function never mutates the input.
-func ValidateModelParameters(model, operation, inputMode string, parameters map[string]any) error {
-	contract, ok := GetModelOperationContract(model, operation, inputMode)
-	if !ok {
-		return &ParameterError{Path: "model", Code: "model_contract_unavailable"}
-	}
-	return validateParameters(contract.Parameters, parameters)
-}
-
 func validateParameters(rules []ModelParameterContract, parameters map[string]any) error {
 	known := make(map[string]bool, len(rules))
 	for _, rule := range rules {
