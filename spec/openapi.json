@@ -552,7 +552,7 @@
       "ActualBillingMode": {
         "type": "string",
         "const": "actual",
-        "description": "Explicit consent to the authoritative final cost of the successful delivered Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Failed, cancelled and non-winning attempts are not charged to the user. Omit for the default contract: balance is not frozen, each attempt checks the live balance against its route estimate, the successful result is charged at the authoritative upstream amount after the managed discount, and an explicit max_cost caps the charge."
+        "description": "Explicit consent to the authoritative final cost of the successful delivered Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Every attempt the upstream actually billed is charged to the user, including failed and non-winning ones; attempts the upstream did not bill, and Yir's own delivery failures or outcome timeouts, are not charged. Omit for the default contract: balance is not frozen, each attempt checks the live balance against its route estimate, each upstream-billed attempt is charged at the authoritative upstream amount after the managed discount, and an explicit max_cost caps the Job's total charge."
       },
       "StandardImageGenerationRequest": {
         "type": "object",
@@ -1105,7 +1105,7 @@
         "type": "string",
         "pattern": "^[0-9]{1,13}(\\.[0-9]{1,6})?$",
         "maxLength": 20,
-        "description": "Optional whole-job settlement cap in USD, up to 9223372036854.775807. Balance is not frozen: admission and every attempt submission check the live available balance against that route's estimate (catalog price for fixed routes, output estimate for usage-based routes). Only the successfully delivered result is charged, at the authoritative upstream amount after the managed discount; failed and non-winning upstream costs are absorbed by Yir. The one exception is a result the upstream already generated and billed that Yir then rejects as `YIR_CONTENT_REJECTED`: it is charged the same way but not delivered. Any part the balance cannot cover becomes a negative balance that blocks new jobs until a top-up. With max_cost, routes whose estimate exceeds it are skipped (no remaining route rejects the request), and the charge never exceeds it; Yir absorbs any excess. Historical jobs retain their recorded billing terms."
+        "description": "Optional whole-job settlement cap in USD, up to 9223372036854.775807. Balance is not frozen: admission and every attempt submission check the live available balance against that route's estimate (catalog price for fixed routes, output estimate for usage-based routes). Every attempt the upstream actually billed is charged at the authoritative upstream amount after the managed discount, whether it succeeded, failed, or was followed by a fallback; attempts the upstream never billed cost nothing, and Yir absorbs its own delivery failures and outcome timeouts. A result the upstream billed that Yir rejects as `YIR_CONTENT_REJECTED` is charged the same way but not delivered. Any part the balance cannot cover becomes a negative balance that blocks new jobs until a top-up. With max_cost, routes whose estimate exceeds it are skipped (no remaining route rejects the request), and the Job's total charge across all attempts never exceeds it; Yir absorbs any excess. Historical jobs retain their recorded billing terms."
       },
       "QuoteBatchRequest": {
         "type": "object",
@@ -1238,7 +1238,7 @@
             "minimum": 1
           },
           "primary": {
-            "description": "Current preferred route's estimate: its catalog reference price for fixed-price routes, or an output-only estimate for usage-based routes; otherwise unavailable. The successful Job is charged at the authoritative upstream amount after the managed discount, which can differ from this estimate. An output-only estimate excludes input charges; neither is a charge ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
+            "description": "Current preferred route's estimate: its catalog reference price for fixed-price routes, or an output-only estimate for usage-based routes; otherwise unavailable. The Job is charged the authoritative upstream amounts of its billed attempts after the managed discount, which can differ from this estimate. An output-only estimate excludes input charges; neither is a charge ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
             "oneOf": [
               { "$ref": "#/components/schemas/OutputQuoteEstimate" },
               {
