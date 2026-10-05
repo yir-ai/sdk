@@ -3665,11 +3665,11 @@
       "locales": {
         "en": {
           "label": "Gemini Omni 1.1 Flash",
-          "description": "Gemini Omni 1.1 Flash video generation; supports 4/6/8/10s durations with a 4s default; automatic duration is not supported. Native audio without a mute control."
+          "description": "Google Gemini video generation with native audio by default and 4/6/8/10s durations"
         },
         "zh-CN": {
           "label": "Gemini Omni 1.1 Flash",
-          "description": "Gemini Omni 1.1 Flash 视频生成模型；支持 4/6/8/10 秒指定时长，默认 4 秒，暂不支持自动时长；默认尝试生成音轨，不提供静音控制。"
+          "description": "Google Gemini 系列视频生成模型，默认生成原生音轨，支持 4/6/8/10 秒时长"
         }
       },
       "operations": [
@@ -5731,7 +5731,7 @@
         },
         "zh-CN": {
           "label": "MiniMax H3 Max",
-          "description": "fal 基于 MiniMax H3 后训练的高速视频生成模型"
+          "description": "由 fal 基于 MiniMax H3 后训练的高速视频生成模型"
         }
       },
       "operations": [
