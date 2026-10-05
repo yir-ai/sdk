@@ -7238,11 +7238,11 @@
       "locales": {
         "en": {
           "label": "Reve 2.1",
-          "description": "Text-to-image and single-image editing using FAL's current schema; native output dimensions are determined by the model"
+          "description": "Text-to-image and single-image editing; native output dimensions are determined by the model"
         },
         "zh-CN": {
           "label": "Reve 2.1",
-          "description": "支持文生图与单图编辑；按 FAL 现行参数提供原生输出，分辨率由模型决定"
+          "description": "支持文生图与单图编辑，输出分辨率由模型决定"
         }
       },
       "operations": [
@@ -7453,11 +7453,11 @@
       "locales": {
         "en": {
           "label": "Grok Imagine Image 2.0",
-          "description": "Grok's second-generation image model with low and medium text-to-image quality; APIMart editing is pending certification"
+          "description": "Grok's second-generation image model with low and medium text-to-image quality"
         },
         "zh-CN": {
           "label": "Grok Imagine Image 2.0",
-          "description": "Grok 第二代图像模型，支持 low 和 medium 画质文生图；APIMart 编辑待认证"
+          "description": "Grok 第二代图像模型，支持 low 和 medium 画质文生图"
         }
       },
       "operations": [

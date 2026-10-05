@@ -1564,10 +1564,10 @@
         "additionalProperties": false,
         "required": ["supply_type", "billed_by", "amount", "amount_basis", "status"],
         "properties": {
-          "supply_type": { "type": "string", "enum": ["managed"] },
-          "billed_by": { "type": "string", "enum": ["yir"] },
+          "supply_type": { "type": "string", "enum": ["managed"], "description": "Always managed: Yir buys and runs the supply for you." },
+          "billed_by": { "type": "string", "enum": ["yir"], "description": "Always yir: the charge is deducted from your Yir wallet." },
           "amount": { "$ref": "#/components/schemas/Decimal" },
-          "amount_basis": { "type": "string", "enum": ["yir_price_rule"] },
+          "amount_basis": { "type": "string", "enum": ["yir_price_rule"], "description": "Always yir_price_rule: the channel's actual upstream cost for this attempt times your discount, as described in Quotes and billing." },
           "usage": { "type": "array", "items": { "$ref": "#/components/schemas/Usage" } },
           "status": { "type": "string", "enum": ["settled", "waived"] }
         }
