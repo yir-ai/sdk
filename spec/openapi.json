@@ -572,7 +572,8 @@
           },
           "model": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Model ID or alias listed by GET /v1/models. An unknown or retired model returns 400 YIR_INVALID_REQUEST with retryable false; for a retired model the message names its replacement."
           },
           "input": {
             "oneOf": [
@@ -631,7 +632,8 @@
           "billing_mode": { "$ref": "#/components/schemas/ActualBillingMode" },
           "model": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Model ID or alias listed by GET /v1/models. An unknown or retired model returns 400 YIR_INVALID_REQUEST with retryable false; for a retired model the message names its replacement."
           },
           "input": {
             "oneOf": [
@@ -978,7 +980,8 @@
           },
           "model": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Model ID or alias listed by GET /v1/models. An unknown or retired model returns 400 YIR_INVALID_REQUEST with retryable false; for a retired model the message names its replacement."
           },
           "input": {
             "oneOf": [
@@ -1050,7 +1053,8 @@
           "billing_mode": { "$ref": "#/components/schemas/ActualBillingMode" },
           "model": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Model ID or alias listed by GET /v1/models. An unknown or retired model returns 400 YIR_INVALID_REQUEST with retryable false; for a retired model the message names its replacement."
           },
           "input": {
             "oneOf": [
