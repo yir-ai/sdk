@@ -1191,7 +1191,7 @@
               ],
               "default": 5,
               "minimum": 2,
-              "maximum": 30,
+              "maximum": 15,
               "control": "number",
               "locales": {
                 "en": {
@@ -2623,7 +2623,7 @@
               ],
               "default": 5,
               "minimum": 5,
-              "maximum": 15,
+              "maximum": 10,
               "control": "number",
               "locales": {
                 "en": {
