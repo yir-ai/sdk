@@ -3,12 +3,12 @@
   "info": {
     "title": "Yir Standard Async AIGC API",
     "version": "1.0.0-preview",
-    "description": "Yir-owned asynchronous image and video Quote, generation, file, model and Job contracts. Only operations currently registered in the v1 Router and reviewed for public documentation are included."
+    "description": "Public REST API of the Yir Unified Async AI Gateway: quote and submit image and video generation jobs, upload input files, read model contracts, and track jobs."
   },
   "servers": [
     {
       "url": "https://gateway.yir.ai",
-      "description": "Yir Bearer-only asynchronous compute gateway"
+      "description": "Yir Unified Async AI Gateway (Bearer API Key authentication)"
     }
   ],
   "security": [{ "BearerAuth": [] }],
@@ -23,7 +23,8 @@
     "/v1/images/quotes": {
       "post": {
         "operationId": "quoteImageGeneration",
-        "summary": "Quote an image generation request without creating a job or reserving funds",
+        "summary": "Quote an image job",
+        "description": "Estimates the price and checks available supply for an image generation request. Creates no job and charges nothing.",
         "tags": ["Images"],
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
@@ -55,7 +56,7 @@
     "/v1/images/generations": {
       "post": {
         "operationId": "submitImageGeneration",
-        "summary": "Submit an asynchronous image generation job",
+        "summary": "Submit an image job",
         "tags": ["Images"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
@@ -90,8 +91,8 @@
     "/v1/quotes": {
       "post": {
         "operationId": "quoteBatch",
-        "summary": "Quote up to 20 explicit image or video requests in one current-facts snapshot",
-        "description": "Each request is evaluated with the same rules as the corresponding single-request Quote. Invalid model requests return an error in their own result entry; source fact and infrastructure failures fail the entire call. This endpoint does not enumerate model specifications or infer equivalent quality across models.",
+        "summary": "Quote up to 20 requests",
+        "description": "Quotes up to 20 image or video requests against the same pricing snapshot. Each request is evaluated with the same rules as the corresponding single-request quote. An invalid request returns an error in its own result entry; pricing-data and infrastructure failures fail the entire call. This endpoint does not enumerate model specifications or infer equivalent quality across models.",
         "tags": ["Images", "Videos"],
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
@@ -110,7 +111,8 @@
     "/v1/videos/quotes": {
       "post": {
         "operationId": "quoteVideoGeneration",
-        "summary": "Quote a video generation request without creating a job or reserving funds",
+        "summary": "Quote a video job",
+        "description": "Estimates the price and checks available supply for a video generation request. Creates no job and charges nothing.",
         "tags": ["Videos"],
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
@@ -142,7 +144,7 @@
     "/v1/videos/generations": {
       "post": {
         "operationId": "submitVideoGeneration",
-        "summary": "Submit an asynchronous video generation job",
+        "summary": "Submit a video job",
         "tags": ["Videos"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
@@ -181,7 +183,7 @@
     "/v1/files": {
       "post": {
         "operationId": "createFiles",
-        "summary": "Create one or more input-file upload plans",
+        "summary": "Create upload plans",
         "tags": ["Files"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/FileIdempotencyKey" }],
@@ -212,7 +214,7 @@
     "/v1/files/{id}/complete": {
       "post": {
         "operationId": "completeFile",
-        "summary": "Confirm completion of an input-file upload",
+        "summary": "Complete a file upload",
         "tags": ["Files"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/FileID" }],
@@ -242,7 +244,7 @@
     "/v1/files/{id}": {
       "get": {
         "operationId": "getFile",
-        "summary": "Get an input-file snapshot",
+        "summary": "Get a file",
         "tags": ["Files"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/FileID" }],
@@ -260,7 +262,7 @@
     "/v1/files/{id}/content": {
       "get": {
         "operationId": "getFileContent",
-        "summary": "Redirect to short-lived input-file content",
+        "summary": "Download file content",
         "tags": ["Files"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/FileID" }],
@@ -282,8 +284,8 @@
     "/v1/models": {
       "get": {
         "operationId": "listModelContracts",
-        "summary": "List supported model contracts",
-        "description": "Lists the public parameter contract derived from current Go model definitions. By default returns model identities and localized labels. include=parameters expands operations, input constraints and parameter rules. The version identifies the complete contract and is the same for compact and expanded responses. Support does not imply current supply availability or an executable quote. No prices or channel details are returned.",
+        "summary": "List models",
+        "description": "Lists the public parameter contracts of supported models. By default returns model identities and localized labels. include=parameters expands operations, input constraints and parameter rules. The version identifies the complete contract and is the same for compact and expanded responses. Support does not imply current supply availability or an executable quote. No prices or channel details are returned.",
         "tags": ["Models"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [
@@ -300,8 +302,8 @@
     "/v1/models/{creator}/{model}": {
       "get": {
         "operationId": "getModel",
-        "summary": "Get model detail or its versioned parameter contract",
-        "description": "Without query parameters returns the existing Market detail. view=contract requires the canonical creator/model ID and returns its public parameter contract with the same content version as the model list, without querying price or current supply. Aliases may be used in generation requests but are not resource paths.",
+        "summary": "Get a model",
+        "description": "Without query parameters returns the model detail. view=contract requires the canonical creator/model ID and returns its public parameter contract with the same content version as the model list, without querying price or current supply. Aliases may be used in generation requests but are not resource paths.",
         "tags": ["Models"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [
@@ -324,8 +326,8 @@
     "/v1/jobs/{id}": {
       "get": {
         "operationId": "getJob",
-        "summary": "Get the current safe snapshot of a job",
-        "description": "A job snapshot stays readable for 90 days from creation, the same window as summary log retention. After that window the endpoint answers 404 exactly as it does for an unknown job id, and the response never discloses which of the two cases applies.",
+        "summary": "Get a job",
+        "description": "A job snapshot stays readable for 90 days from creation, the same window as request log retention. After that window the endpoint answers 404 exactly as it does for an unknown job id, and the response never discloses which of the two cases applies.",
         "tags": ["Jobs"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/JobID" }],
@@ -343,7 +345,7 @@
     "/v1/jobs/{id}/status": {
       "get": {
         "operationId": "getJobStatus",
-        "summary": "Get a lightweight status summary of a job",
+        "summary": "Get job status",
         "description": "Returns a minimal status projection without loading attempts, billing ledgers, or result assets. Follows the same 90-day retention window as job snapshots. With wait, the request long-polls: a terminal job returns immediately; otherwise the response is held until the status or cancellation state changes or the wait elapses, then returns the current summary.",
         "tags": ["Jobs"],
         "security": [{ "BearerAuth": [] }],
@@ -366,7 +368,8 @@
     "/v1/jobs/{id}/cancel": {
       "post": {
         "operationId": "cancelJob",
-        "summary": "Cancel before submit or stop future attempts after submit",
+        "summary": "Cancel a job",
+        "description": "Before any provider submission, the job becomes cancelled and nothing is charged. After a submission, Yir starts no further fallback attempts while the current attempt keeps running; every attempt the upstream billed is still charged.",
         "tags": ["Jobs"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/JobID" }],
@@ -399,7 +402,7 @@
         "name": "Idempotency-Key",
         "in": "header",
         "required": true,
-        "description": "Required. Missing or blank keys are rejected with a non-retryable 400 before creating a resource or reserving funds. Replaying the same key with an identical standardized request returns the original result; reusing a key with a changed request is rejected. Generation SDK methods accept an omitted key and generate a random key per call; they do not automatically retry Submit. Persist one key per logical request before submitting and reuse it with the original request when the outcome is unknown. Separate SDK calls without an explicit key can create separate billable Jobs. Server-side fallback within an accepted Job is independent of this header.",
+        "description": "Required. Missing or blank keys are rejected with a non-retryable 400 before any resource is created or anything is charged. Replaying the same key with an identical standardized request returns the original result; reusing a key with a changed request is rejected. Generation SDK methods accept an omitted key and generate a random key per call; they do not automatically retry Submit. Persist one key per logical request before submitting and reuse it with the original request when the outcome is unknown. Separate SDK calls without an explicit key can create separate billable Jobs. Server-side fallback within an accepted Job is independent of this header.",
         "schema": { "type": "string", "minLength": 1, "maxLength": 200 }
       },
       "JobID": {
@@ -468,7 +471,7 @@
       "RoutingOverride": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Request-scoped routing intent. only is an unordered Provider allowlist; selection and recovery stay within this set and any retained account restrictions. 'official' is accepted as an alias for the model's official provider channel in both only and variants (normalized before execution). A single item supports targeted testing. Custom order is not supported. preference and fallback remain optional.",
+        "description": "Request-scoped routing intent. only is an unordered Provider allowlist; selection and fallback stay within this set and within any channel restrictions on the API Key's routing profile. 'official' is accepted as an alias for the model's official provider channel in both only and variants (normalized before execution). A single item supports targeted testing. Custom order is not supported. preference and fallback remain optional.",
         "properties": {
           "variants": {
             "type": "object", "minProperties": 1, "maxProperties": 16,
@@ -595,7 +598,7 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"], "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
-              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
               "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",
@@ -614,7 +617,7 @@
             }
           }
         },
-        "description": "Portable image request shape. The current Go model contract validates each model, input mode and parameter combination, and Admission fails closed when no executable route is available."
+        "description": "Portable image request shape. Each model, input mode and parameter combination is validated against the model contract, and the request is rejected when no route can run it."
       },
       "StandardImageQuoteRequest": {
         "type": "object",
@@ -648,7 +651,7 @@
             "additionalProperties": false,
             "properties": {
               "quality": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"], "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
-              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 and Nano Banana Pro web search. Requires a supply with explicit search support and a valid quote." },
+              "web_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 web search. Requires a supply with explicit search support and a valid quote." },
               "image_search": { "type": "boolean", "default": false, "description": "Nano Banana 2 image search. Requires web_search=true and an explicitly supported supply." },
               "resolution": {
                 "type": "string",
@@ -667,7 +670,7 @@
             }
           }
         },
-        "description": "The image Generation request contract without webhook_url or max_cost. Quote creates no execution or financial facts."
+        "description": "The image generation request contract without webhook_url or max_cost. A quote creates no job and charges nothing."
       },
       "GPTImage2GenerationRequest": {
         "type": "object",
@@ -752,7 +755,7 @@
             }
           }
         },
-        "description": "The public GPT Image 2 parameter space. Ordered image references each select one HTTPS URL or one ready File ID. Current route availability is validated by Admission. Unknown fields are rejected."
+        "description": "The public GPT Image 2 parameter space. Ordered image references each select one HTTPS URL or one ready File ID. Route availability is checked at submission. Unknown fields are rejected."
       },
       "GPTImage2QuoteRequest": {
         "type": "object",
@@ -828,7 +831,7 @@
             }
           }
         },
-        "description": "The image Generation request contract without webhook_url or max_cost. Quote creates no execution or financial facts."
+        "description": "The image generation request contract without webhook_url or max_cost. A quote creates no job and charges nothing."
       },
       "StandardVideoTextInput": {
         "type": "object",
@@ -1033,7 +1036,7 @@
             }
           }
         },
-        "description": "Portable video request shape. The current Go model contract validates each model, input mode and parameter combination, and Admission fails closed when no executable route is available."
+        "description": "Portable video request shape. Each model, input mode and parameter combination is validated against the model contract, and the request is rejected when no route can run it."
       },
       "StandardVideoQuoteRequest": {
         "type": "object",
@@ -1099,13 +1102,13 @@
             }
           }
         },
-        "description": "The video Generation request contract without webhook_url or max_cost. Quote creates no execution or financial facts."
+        "description": "The video generation request contract without webhook_url or max_cost. A quote creates no job and charges nothing."
       },
       "MaxCost": {
         "type": "string",
         "pattern": "^[0-9]{1,13}(\\.[0-9]{1,6})?$",
         "maxLength": 20,
-        "description": "Optional whole-job settlement cap in USD, up to 9223372036854.775807. Balance is not frozen: admission and every attempt submission check the live available balance against that route's estimate (catalog price for fixed routes, output estimate for usage-based routes). Every attempt the upstream actually billed is charged at the authoritative upstream amount after the managed discount, whether it succeeded, failed, or was followed by a fallback; attempts the upstream never billed cost nothing, and Yir absorbs its own delivery failures and outcome timeouts. A result the upstream billed that Yir rejects as `YIR_CONTENT_REJECTED` is charged the same way but not delivered. Any part the balance cannot cover becomes a negative balance that blocks new jobs until a top-up. With max_cost, routes whose estimate exceeds it are skipped (no remaining route rejects the request), and the Job's total charge across all attempts never exceeds it; Yir absorbs any excess. Historical jobs retain their recorded billing terms."
+        "description": "Optional cap on the Job's total charge in USD, with up to 6 decimal places. Balance is not frozen: admission and every attempt submission check the live available balance against that route's estimate (catalog price for fixed routes, output estimate for usage-based routes). Every attempt the upstream actually billed is charged at the authoritative upstream amount after the managed discount, whether it succeeded, failed, or was followed by a fallback; attempts the upstream never billed cost nothing, and Yir absorbs its own delivery failures and outcome timeouts. A result the upstream billed that Yir rejects as `YIR_CONTENT_REJECTED` is charged the same way but not delivered. Any part the balance cannot cover becomes a negative balance that blocks new jobs until a top-up. With max_cost, routes whose estimate exceeds it are skipped (no remaining route rejects the request), and the Job's total charge across all attempts never exceeds it; Yir absorbs any excess. Historical jobs retain their recorded billing terms."
       },
       "QuoteBatchRequest": {
         "type": "object",
@@ -1187,7 +1190,7 @@
               "requires_max_cost": { "type": "boolean", "deprecated": true, "description": "Deprecated compatibility field, always false: no route requires max_cost. Routes without an estimate are not selectable." },
               "issues": { "type": "array", "items": { "type": "string", "enum": ["no_matching_supply"] } }
             },
-            "description": "Request-specific supply suitability without internal supply details. Available supply has an empty issues array; requires_max_cost is always false. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
+            "description": "Whether any route can currently serve this request. Available supply has an empty issues array; requires_max_cost is always false. No matching supply returns available=false and no_matching_supply, with primary/max unavailable. Authentication, invalid requests, and infrastructure failures remain errors."
           },
           "object": {
             "type": "string",
@@ -1503,7 +1506,7 @@
         "properties": {
           "availability": { "type": "string", "enum": ["available", "expired"] },
           "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ResultFile" } },
-          "warnings": { "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["additional_results_unavailable"] }, "description": "The primary result was delivered, but an optional additional result could not be delivered. Derived from frozen delivery facts; does not change Job success or authorize regeneration. Omitted when no delivery warning exists, including historical results." },
+          "warnings": { "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["additional_results_unavailable"] }, "description": "The primary result was delivered, but an optional additional result could not be delivered. Does not change Job success or authorize regeneration. Omitted when no delivery warning exists, including historical results." },
           "content_safety": { "$ref": "#/components/schemas/ResultContentSafety" }
         },
         "oneOf": [
@@ -1757,7 +1760,7 @@
         "properties": {
           "schema_version": { "type": "string", "const": "v1" },
           "schema_ref": { "type": "string", "const": "./standard-openapi.json#/components/schemas/ModelContractCatalog" },
-          "version": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "Present on API responses; omitted from generated static artifacts." },
+          "version": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "Present in API responses; omitted from the static contract file bundled with the SDKs." },
           "models": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/StaticModelContract" } }
         },
         "description": "Language-neutral static model contracts generated with this Standard OpenAPI release. Runtime price, health, authorization and route facts are excluded."
@@ -1867,7 +1870,7 @@
           "policy": { "type": "object", "additionalProperties": false, "required": ["only_provider", "reason", "message"], "properties": {
             "only_provider": { "type": "string", "minLength": 1, "description": "The parameter is ignored unless routing.only contains exactly this provider." },
             "reason": { "type": "string", "minLength": 1 },
-            "message": { "type": "string", "minLength": 1, "description": "Safe static SDK warning; contains no request values." }
+            "message": { "type": "string", "minLength": 1, "description": "Static warning text for SDKs; contains no request values." }
           } },
           "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
           "type": { "type": "string", "enum": ["string", "integer", "number", "boolean"] },
