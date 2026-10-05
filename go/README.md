@@ -40,6 +40,7 @@ Keep the key on your server. The default base URL is `https://gateway.yir.ai`; c
 - Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted; store it as a string and do not parse it.
 - Without a catalog, a quote may echo the canonical `creator/model` ID for an alias you sent; any other different model fails validation. With a catalog the SDK compares the resolved IDs.
 - `APIError.Details` (`[]ErrorDetail`) locates invalid fields of `YIR_INVALID_REQUEST`: `Field`, a stable `Reason` such as `unsupported` or `required`, and `Allowed` contract values.
+- Veo 3.0 (`google/veo-3.0-generate-001`) and the Gemini Omni preview (`google/gemini-omni-video`) are retired: they are gone from the API catalog and from the reviewed snapshot that earlier versions bundled. Requests for them return `YIR_INVALID_REQUEST` with `details[0].reason` `retired` and the replacement model in `allowed`.
 - Gateway changes released together with this SDK: `parameters` is required; top-level `resolution`, `aspect_ratio`, `n`, `duration` and `generate_audio`, `input.image`, and case-variant `input.type` or reference roles are rejected; `resolution` and `aspect_ratio` must use a model contract value (case-insensitive), so `1024`, `2048x2048` or `16x9` are rejected. Model aliases are reduced to the short name, the vendor model ID and, where one exists, the Vercel AI Gateway ID; prefer canonical IDs such as `bytedance/seedance-2.0`.
 
 Earlier release notes are in the [changelog](CHANGELOG.md).

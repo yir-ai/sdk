@@ -40,6 +40,7 @@ _ = client
 - Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受；按字符串保存，不要解析。
 - 未配置目录时，报价可能把你传入的别名回显为 `creator/model` 形式的规范 ID，其他不同的模型会校验失败；配置目录时按解析后的 ID 比对。
 - `APIError.Details`（`[]ErrorDetail`）定位 `YIR_INVALID_REQUEST` 的无效字段：`Field`、稳定的 `Reason`（如 `unsupported`、`required`）以及合同允许值 `Allowed`。
+- Veo 3.0（`google/veo-3.0-generate-001`）与 Gemini Omni 预览版（`google/gemini-omni-video`）已下架：API 目录和早期版本内置的审阅快照中都已移除。请求它们会返回 `YIR_INVALID_REQUEST`，`details[0].reason` 为 `retired`，`allowed` 给出替代模型。
 - 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
 
 更早的版本说明见[变更记录](CHANGELOG.md)。

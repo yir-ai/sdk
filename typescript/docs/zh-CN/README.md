@@ -106,6 +106,7 @@ const client = createNodeYirClient();
 - `YirPublicError.details`（`YirErrorDetail[]`）定位 `YIR_INVALID_REQUEST` 的无效字段：`field`、稳定的 `reason`（如 `unsupported`、`required`）以及合同允许值 `allowed`。
 - `StandardMediaSource` 与 `StandardReference` 除 `file_id` 外也接受 `url`，与 API 一致；`buildImageGenerationRequest` 接受 `image: { url }`。
 - 客户端目录描述了该模型时，Vercel 适配器会丢弃其合同没有的 `seed`、视频 `fps`，按 AI SDK 惯例返回 `unsupported` 警告，不再让请求在 Gateway 失败；未配置目录时照常发送，由 Gateway 判断。
+- Veo 3.0（`google/veo-3.0-generate-001`）与 Gemini Omni 预览版（`google/gemini-omni-video`）已下架：API 目录和早期版本内置的审阅快照中都已移除。请求它们会返回 `YIR_INVALID_REQUEST`，`details[0].reason` 为 `retired`，`allowed` 给出替代模型。
 - 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
 
 更早的版本说明见[变更记录](CHANGELOG.md)。
