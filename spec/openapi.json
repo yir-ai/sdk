@@ -3,12 +3,12 @@
   "info": {
     "title": "Yir Standard Async AIGC API",
     "version": "1.0.0-preview",
-    "description": "Public REST API of the Yir Unified Async AI Gateway: quote and submit image and video generation jobs, upload input files, read model contracts, and track jobs.\n\nCompatibility: this API only grows. New fields are optional, enums may gain values, and clients must ignore unknown fields and tolerate unknown enum values. Models, their parameters, allowed values and defaults come from the model contract (GET /v1/models?include=parameters) and change without an SDK release. A published model keeps its defaults, value meanings and billing semantics; a change to any of them ships as a new model ID. IDs are opaque strings; do not parse them. Deprecated fields stay for at least one minor SDK release and are announced in the SDK changelog."
+    "description": "Public REST API of the Yir Image & Video API Router: quote and submit image and video generation jobs, upload input files, read model contracts, and track jobs.\n\nCompatibility: this API only grows. New fields are optional, enums may gain values, and clients must ignore unknown fields and tolerate unknown enum values. Models, their parameters, allowed values and defaults come from the model contract (GET /v1/models?include=parameters) and change without an SDK release. A published model keeps its defaults, value meanings and billing semantics; a change to any of them ships as a new model ID. IDs are opaque strings; do not parse them. Deprecated fields stay for at least one minor SDK release and are announced in the SDK changelog."
   },
   "servers": [
     {
       "url": "https://gateway.yir.ai",
-      "description": "Yir Unified Async AI Gateway (Bearer API Key authentication)"
+      "description": "Yir Image & Video API Router (Bearer API Key authentication)"
     }
   ],
   "security": [{ "BearerAuth": [] }],
