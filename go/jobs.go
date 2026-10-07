@@ -144,7 +144,7 @@ type ResultFile struct {
 // "app" (untouched output of the vendor's consumer app, such as ChatGPT), "relayed"
 // (re-signed by a third party or the vendor credential removed), "altered" (changed after
 // signing, for example upscaled) or "unverified" (no verifiable credential). Reason is a
-// stable code such as "vendor_credential" or "hash_mismatch".
+// stable code such as "vendor_signed" or "hash_mismatch".
 type ResultFileFidelity struct {
 	Grade  string `json:"grade"`
 	Reason string `json:"reason"`
