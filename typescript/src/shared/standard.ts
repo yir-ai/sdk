@@ -9,6 +9,15 @@ import type { ModelParameterContract, ReferenceRole } from "./model-contracts.js
 export type RoutingPreference = "cost" | "speed" | (string & {});
 
 /**
+ * Lowest acceptable fidelity of the delivered file; the Gateway validates the value.
+ * - "original": only routes verified as untouched vendor API output, plus the official channel.
+ * - "genuine" (default): excludes routes known to upscale or otherwise alter the output.
+ * - "any": no restriction; cheapest.
+ * When every route is excluded the request fails with YIR_FIDELITY_EXCLUDED.
+ */
+export type RoutingFidelity = "original" | "genuine" | "any" | (string & {});
+
+/**
  * Request-scoped routing intent.
  * "official" is supported as an alias for the model's official provider in both only and variants.
  */
@@ -18,6 +27,7 @@ export type RoutingOverride = {
   readonly preference?: RoutingPreference;
   readonly only?: readonly string[];
   readonly fallback?: boolean;
+  readonly fidelity?: RoutingFidelity;
 };
 
 export type StandardTextInput = {

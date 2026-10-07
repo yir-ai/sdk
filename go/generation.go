@@ -115,6 +115,20 @@ const (
 	RoutingPreferenceSpeed = "speed"
 )
 
+// Routing fidelity floors known to this SDK release. Routing.Fidelity is a
+// plain string and the Gateway validates it.
+const (
+	// RoutingFidelityOriginal uses only routes verified as untouched vendor API
+	// output, plus the model's official channel.
+	RoutingFidelityOriginal = "original"
+	// RoutingFidelityGenuine excludes routes known to upscale or otherwise alter
+	// the output. It is the Gateway default when Fidelity and the routing
+	// profile leave it unset.
+	RoutingFidelityGenuine = "genuine"
+	// RoutingFidelityAny does not restrict routes; cheapest.
+	RoutingFidelityAny = "any"
+)
+
 type Routing struct {
 	Only     []string          `json:"only,omitempty"`
 	Variants map[string]string `json:"variants,omitempty"`
@@ -122,6 +136,10 @@ type Routing struct {
 	// Gateway default (cost).
 	Preference string `json:"preference,omitempty"`
 	Fallback   *bool  `json:"fallback,omitempty"`
+	// Fidelity is one of the RoutingFidelity constants; empty uses the routing
+	// profile default (genuine). When every route is excluded the request fails
+	// with ErrCodeFidelityExcluded.
+	Fidelity string `json:"fidelity,omitempty"`
 }
 
 // ValidateGenerationWithCatalog checks current caller-supplied model rules and

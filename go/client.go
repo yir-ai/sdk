@@ -124,6 +124,7 @@ const (
 	ErrCodeOutcomeTimeout            = "YIR_OUTCOME_TIMEOUT"
 	ErrCodeResultDeliveryFailed      = "YIR_RESULT_DELIVERY_FAILED"
 	ErrCodeJobTimeout                = "YIR_JOB_TIMEOUT"
+	ErrCodeFidelityExcluded          = "YIR_FIDELITY_EXCLUDED"
 )
 
 type APIError struct {
