@@ -11,7 +11,7 @@ import type {
   StandardVideoQuoteRequest,
 } from "../shared/standard.js";
 
-export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirErrorAction, YirPublicError, JobResultFile, JobResultContentSafety, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
+export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirErrorAction, YirPublicError, JobResultFile, JobResultFileFidelity, JobResultContentSafety, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
 import type { JobStatus, JobStatusResponse, Job, Quote, YirErrorAction, YirPublicError, QuoteBatchRequestItem, QuoteBatch } from "../shared/types.js";
 
 export type YirTransportRequest = {

@@ -72,6 +72,18 @@ export type JobResultFile = {
   readonly width?: number;
   readonly height?: number;
   readonly expires_at: number;
+  /** Where the file came from, judged at delivery from its C2PA content credentials; absent on historical results. */
+  readonly fidelity?: JobResultFileFidelity;
+};
+
+/**
+ * `original`: untouched vendor API output. `app`: untouched output of the vendor's consumer app (such as ChatGPT),
+ * whose size and quality the app decides. `relayed`: re-signed by a third party or the vendor credential removed.
+ * `altered`: changed after signing, for example upscaled. `unverified`: no verifiable credential.
+ */
+export type JobResultFileFidelity = {
+  readonly grade: "original" | "app" | "relayed" | "altered" | "unverified";
+  readonly reason: string;
 };
 
 /** NSFW check outcome for a delivered result; absent on historical results. */

@@ -135,6 +135,19 @@ type ResultFile struct {
 	Width     int    `json:"width,omitempty"`
 	Height    int    `json:"height,omitempty"`
 	ExpiresAt int64  `json:"expires_at"`
+	// Fidelity reports where the file came from, judged at delivery from its C2PA
+	// content credentials; nil on results delivered before the field existed.
+	Fidelity *ResultFileFidelity `json:"fidelity,omitempty"`
+}
+
+// ResultFileFidelity grades a delivered file: "original" (untouched vendor API output),
+// "app" (untouched output of the vendor's consumer app, such as ChatGPT), "relayed"
+// (re-signed by a third party or the vendor credential removed), "altered" (changed after
+// signing, for example upscaled) or "unverified" (no verifiable credential). Reason is a
+// stable code such as "vendor_credential" or "hash_mismatch".
+type ResultFileFidelity struct {
+	Grade  string `json:"grade"`
+	Reason string `json:"reason"`
 }
 
 type JobBilling struct {

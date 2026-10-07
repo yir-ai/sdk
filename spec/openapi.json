@@ -1342,7 +1342,18 @@
           "media_type": { "type": "string", "minLength": 3 },
           "width": { "type": "integer", "minimum": 0 },
           "height": { "type": "integer", "minimum": 0 },
-          "expires_at": { "type": "integer", "format": "int64", "minimum": 1 }
+          "expires_at": { "type": "integer", "format": "int64", "minimum": 1 },
+          "fidelity": { "$ref": "#/components/schemas/ResultFileFidelity" }
+        }
+      },
+      "ResultFileFidelity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["grade", "reason"],
+        "description": "Where this file came from and whether it was changed after the model vendor signed it, judged at delivery from the file's C2PA content credentials. `original`: untouched output of the vendor API. `app`: untouched output of the vendor's consumer app (for example ChatGPT), whose size and quality the app decides. `relayed`: re-signed by a third party, or the vendor credential was removed. `altered`: changed after signing, for example upscaled. `unverified`: the model output carries no verifiable credential. Omitted for historical results.",
+        "properties": {
+          "grade": { "type": "string", "enum": ["original", "app", "relayed", "altered", "unverified"] },
+          "reason": { "type": "string", "description": "Stable reason code, for example vendor_credential, hash_mismatch, credential_missing, third_party_credential, no_credential." }
         }
       },
       "JobUsage": {
