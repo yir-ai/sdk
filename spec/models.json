@@ -3809,7 +3809,7 @@
         },
         "zh-CN": {
           "label": "Nano Banana 2",
-          "description": "谷歌最新前沿生图模型，支持高质量多画幅与参考生图"
+          "description": "谷歌前沿生图模型，支持高质量多画幅与参考生图"
         }
       },
       "operations": [
