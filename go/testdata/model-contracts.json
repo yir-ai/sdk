@@ -3959,6 +3959,126 @@
       ]
     },
     {
+      "id": "google/nano-banana-2.1",
+      "aliases": [
+        "nano-banana-2.1",
+        "gemini-nano-banana-2.1",
+        "google/gemini-nano-banana-2.1"
+      ],
+      "locales": {
+        "en": {
+          "label": "Nano Banana 2.1",
+          "description": "Google next-generation image model with wide aspect ratios, up to 14 references and 4K output"
+        },
+        "zh-CN": {
+          "label": "Nano Banana 2.1",
+          "description": "谷歌新一代生图模型，支持多画幅、最多 14 张参考图与 4K 输出"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "text",
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 14,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K",
+                "4K"
+              ],
+              "default": "1K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto",
+                "21:9",
+                "16:9",
+                "3:2",
+                "4:3",
+                "5:4",
+                "1:1",
+                "4:5",
+                "3:4",
+                "2:3",
+                "9:16",
+                "4:1",
+                "1:4",
+                "8:1",
+                "1:8"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs",
+                  "description": "Number of generated outputs."
+                },
+                "zh-CN": {
+                  "label": "输出数量",
+                  "description": "本次生成的内容数量。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "google/nano-banana-pro",
       "aliases": [
         "nano-banana-pro",
