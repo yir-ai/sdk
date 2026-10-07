@@ -1351,10 +1351,10 @@
         "type": "object",
         "additionalProperties": false,
         "required": ["grade", "reason"],
-        "description": "Where this file came from and whether it was changed after the model vendor signed it, judged at delivery from the file's C2PA content signature. `original`: untouched output of the vendor API. `app`: untouched output of the vendor's consumer app (for example ChatGPT), whose size and quality the app decides. `relayed`: re-signed by a third party, or the vendor signature was removed. `altered`: changed after signing, for example upscaled. `unverified`: the model output carries no verifiable signature. Omitted for historical results.",
+        "description": "Where this file came from and whether its specification is genuine, judged at delivery from the file's C2PA content signature and Yir's channel audits. `original`: untouched output of the vendor API. `app`: untouched output of the vendor's consumer app (for example ChatGPT), whose size and quality the app decides. `equivalent`: no valid vendor signature, but evidence shows the file is native model output with no post-processing (the signature was removed without re-encoding, or the channel passed Yir's quality audit). `altered`: changed after generation, for example upscaled. `unverified`: no evidence either way. Omitted for historical results.",
         "properties": {
-          "grade": { "type": "string", "enum": ["original", "app", "relayed", "altered", "unverified"] },
-          "reason": { "type": "string", "description": "Stable reason code, for example vendor_signed, hash_mismatch, signature_missing, third_party_signed, unsigned." }
+          "grade": { "type": "string", "enum": ["original", "app", "equivalent", "altered", "unverified"] },
+          "reason": { "type": "string", "description": "Stable reason code, for example vendor_signed, signature_scrubbed, route_audited, hash_mismatch, signature_missing, third_party_signed, unsigned." }
         }
       },
       "JobUsage": {

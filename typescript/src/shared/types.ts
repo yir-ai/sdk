@@ -73,17 +73,17 @@ export type JobResultFile = {
   readonly width?: number;
   readonly height?: number;
   readonly expires_at: number;
-  /** Where the file came from, judged at delivery from its C2PA content credentials; absent on historical results. */
+  /** Where the file came from and whether its specification is genuine, judged at delivery from its C2PA content signature and Yir's channel audits; absent on historical results. */
   readonly fidelity?: JobResultFileFidelity;
 };
 
 /**
  * `original`: untouched vendor API output. `app`: untouched output of the vendor's consumer app (such as ChatGPT),
- * whose size and quality the app decides. `relayed`: re-signed by a third party or the vendor credential removed.
- * `altered`: changed after signing, for example upscaled. `unverified`: no verifiable credential.
+ * whose size and quality the app decides. `equivalent`: no valid vendor signature, but native output with no post-processing.
+ * `altered`: changed after generation, for example upscaled. `unverified`: no evidence either way.
  */
 export type JobResultFileFidelity = {
-  readonly grade: "original" | "app" | "relayed" | "altered" | "unverified";
+  readonly grade: "original" | "app" | "equivalent" | "altered" | "unverified";
   readonly reason: string;
 };
 
