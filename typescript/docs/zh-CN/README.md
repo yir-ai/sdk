@@ -59,7 +59,7 @@ const client = createNodeYirClient();
 
 [quickstart.mjs](../../examples/quickstart.mjs) 的 `prepareImage(client, input, maxCost)` 构造请求并报价。它要求供给可用且主价格有估价，返回该估价和带上已批准 `max_cost` 的请求。
 
-计费：不冻结余额。上游实际计费的每个 Attempt 都按上游权威金额乘托管折扣收取，包括失败的 Attempt 和其后发生回退的 Attempt；上游未计费的 Attempt，以及 Yir 自身的交付失败和结果超时，不收费。`max_cost` 封顶整个 Job 的总费用，并跳过估价超过它的路线。报价的主价格是估价，不是上限。显式 `billing_mode: "actual"`（仅支持 KIE/APIMart Kling 2.6/3.0 Motion Control 与 FAL FLUX 2 Pro 图片编辑）要求 `routing.only`，不能同时设置 `max_cost`，且没有上限；余额不足的部分形成欠款，由后续手动充值偿还，欠款未清阻止新 Job。应用须将客户授权与完整请求、幂等键一起持久化。
+计费：不冻结余额。上游实际计费的每个 Attempt 都按上游权威金额乘托管折扣收取，包括失败的 Attempt 和其后发生回退的 Attempt；上游未计费的 Attempt，以及 Yir 自身的交付失败和结果超时，不收费。`max_cost` 封顶整个 Job 的总费用，并跳过估价超过它的路线。报价的主价格是估价，不是上限。报价后价格可能变化：较便宜的渠道可能下线或冷却，路由默认值可能改变可用渠道，目录价格也可能调整。把 `max_cost` 当作在报价之上留有余量的失控兜底，而不是锁价；上限设得等于报价时，可能开始以 `YIR_BUDGET_EXCEEDED` 失败（提交时返回 422 并给出当前最低估价，或出现在 Job 上）。收到该错误时先重新报价，由应用决定是否在新请求中调高上限，不要自动调高。显式 `billing_mode: "actual"`（仅支持 KIE/APIMart Kling 2.6/3.0 Motion Control 与 FAL FLUX 2 Pro 图片编辑）要求 `routing.only`，不能同时设置 `max_cost`，且没有上限；余额不足的部分形成欠款，由后续手动充值偿还，欠款未清阻止新 Job。应用须将客户授权与完整请求、幂等键一起持久化。
 
 应用必须先审批预算并持久化 `{ request, idempotencyKey }`，再调用 `submitSavedImage(client, saved)`。保存所有字段，包括参数、引用、路由、预算及 Webhook URL。每个预期操作只生成一次键，重试时不能生成新键。辅助函数不实现数据库、客户余额检查或审批。
 
