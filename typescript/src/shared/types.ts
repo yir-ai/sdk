@@ -167,6 +167,8 @@ export type Quote = {
   readonly parameter_handling_may_vary?: boolean;
   readonly supply: { readonly available: boolean; readonly issues: readonly string[] };
   readonly primary: QuotePrice;
+  /** Admission estimate for the first channel, compared with balance, Key limit and max_cost. Unlike an output-only `estimate` price it includes known input charges. Optional. */
+  readonly expected_amount?: string;
   readonly official: QuotePrice;
   readonly price_difference_percent?: {
     readonly min: number;

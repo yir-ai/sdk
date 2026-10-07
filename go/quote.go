@@ -41,7 +41,10 @@ func (q Quote) Validate() error {
 		}
 	}
 	// Without supply there is nothing to authorize, so no amount may be offered.
-	if !q.Supply.Available && (len(q.Supply.Issues) == 0 || q.Primary.Amount != nil) {
+	if !q.Supply.Available && (len(q.Supply.Issues) == 0 || q.Primary.Amount != nil || q.ExpectedAmount != nil) {
+		return invalid
+	}
+	if q.ExpectedAmount != nil && !quoteAmountPattern.MatchString(*q.ExpectedAmount) {
 		return invalid
 	}
 	if q.Operation == "" || q.InputMode == "" {

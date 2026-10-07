@@ -58,6 +58,17 @@ test("Quote rejects malformed or mismatched responses without exposing response 
   }
 });
 
+test("Quote exposes the admission estimate as expected_amount and keeps it strict", async () => {
+  const value = { ...quoteFixture(request), expected_amount: "0.022498" };
+  assert.deepEqual(await read(value), value);
+  for (const expected_amount of [0.02, "1e-2", "-0.01", ""]) {
+    await assert.rejects(read({ ...value, expected_amount }), /quote_response_invalid/);
+  }
+  const unavailable = { ...value, supply: { available: false, issues: ["no_matching_supply"] },
+    primary: { kind: "unavailable", amount: null, reason: "no_matching_supply" } };
+  await assert.rejects(read(unavailable), /quote_response_invalid/);
+});
+
 test("Quote keeps amounts strict and does not cap official reference prices", async () => {
   const value = quoteFixture(request);
   value.primary.amount = "000.0200";

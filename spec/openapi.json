@@ -1087,6 +1087,11 @@
             "format": "int64",
             "minimum": 1
           },
+          "expected_amount": {
+            "type": "string",
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "description": "Estimated USD charge on the current preferred route, as used by admission: the live-balance check, the API Key monthly limit and max_cost compare against it. Unlike primary it includes known input charges (such as reference image tokens) and, for usage-billed routes with enough recent volume, recent actual charges. Omitted when no supply matches or the route has no pre-generation estimate (billing_mode actual). It is a reference, not a charge ceiling; fallback routes may cost more."
+          },
           "primary": {
             "description": "Current preferred route's estimate: its catalog reference price for fixed-price routes, or an output-only estimate for usage-based routes; otherwise unavailable. The Job is charged the authoritative upstream amounts of its billed attempts after the managed discount, which can differ from this estimate. An output-only estimate excludes input charges; neither is a charge ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
             "oneOf": [

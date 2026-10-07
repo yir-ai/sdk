@@ -64,9 +64,10 @@ export function validateQuoteResponse(
     if (diff.reference_amount_micros !== undefined
       && (!Number.isSafeInteger(diff.reference_amount_micros) || (diff.reference_amount_micros as number) < 0)) return invalid();
   }
+  if (value.expected_amount !== undefined && (typeof value.expected_amount !== "string" || !decimal.test(value.expected_amount))) return invalid();
   const quote = value as unknown as Quote;
   // Without supply there is nothing to authorize, so no amount may be offered.
-  if (!quote.supply.available && (quote.supply.issues.length === 0 || quote.primary.amount !== null)) return invalid();
+  if (!quote.supply.available && (quote.supply.issues.length === 0 || quote.primary.amount !== null || quote.expected_amount !== undefined)) return invalid();
   return quote;
 }
 

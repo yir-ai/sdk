@@ -77,12 +77,19 @@ func TestQuoteValidatesUnavailableAndExactAmounts(t *testing.T) {
 		func(q *Quote) { q.Official.Amount = fixedQuotePrice("0").Amount },
 		func(q *Quote) { q.Official.Reason = "" },
 		func(q *Quote) { q.Currency = "CNY" },
+		func(q *Quote) { q.ExpectedAmount = fixedQuotePrice("-0.01").Amount },
+		func(q *Quote) { q.ExpectedAmount = fixedQuotePrice("").Amount },
 	} {
 		q := base
 		change(&q)
 		if err := q.Validate(); err == nil {
 			t.Fatal("invalid quote accepted")
 		}
+	}
+	expected := base
+	expected.ExpectedAmount = fixedQuotePrice("0.035").Amount
+	if err := expected.Validate(); err != nil {
+		t.Fatal(err)
 	}
 	unknown := base
 	unknown.Primary = QuotePrice{Kind: "unavailable", Reason: "missing"}

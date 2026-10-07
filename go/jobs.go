@@ -60,9 +60,13 @@ type Quote struct {
 	Parameters               map[string]any        `json:"parameters"`
 	Currency                 string                `json:"currency"`
 	Primary                  QuotePrice            `json:"primary"`
-	Official                 QuotePrice            `json:"official"`
-	ExpiresAt                int64                 `json:"expires_at"`
-	raw                      string
+	// ExpectedAmount is the first route's admission estimate: the amount Yir
+	// checks the balance, Key monthly limit and max_cost against. Unlike an
+	// output-only Primary estimate it includes known input charges. Optional.
+	ExpectedAmount *string    `json:"expected_amount,omitempty"`
+	Official       QuotePrice `json:"official"`
+	ExpiresAt      int64      `json:"expires_at"`
+	raw            string
 }
 
 // QuotePriceDifference is comparison metadata, never a charge or authorization.
@@ -85,17 +89,17 @@ type Job struct {
 	Model            string            `json:"model"`
 	// Parameters echoes the normalized parameters the Job executes with, in the
 	// Quote.Parameters shape; nil only when the Gateway no longer holds them.
-	Parameters map[string]any `json:"parameters,omitempty"`
-	Status     string         `json:"status"`
-	URLs             *JobURLs          `json:"urls,omitempty"`
-	Usage            *JobUsage         `json:"usage,omitempty"`
-	Error            *APIError         `json:"error"`
-	CreatedAt        int64             `json:"created_at"`
-	CompletedAt      *int64            `json:"completed_at,omitempty"`
-	Cancellation     *JobCancellation  `json:"cancellation,omitempty"`
-	Result           *JobResult        `json:"result,omitempty"`
-	Billing          *JobBilling       `json:"billing,omitempty"`
-	raw              string
+	Parameters   map[string]any   `json:"parameters,omitempty"`
+	Status       string           `json:"status"`
+	URLs         *JobURLs         `json:"urls,omitempty"`
+	Usage        *JobUsage        `json:"usage,omitempty"`
+	Error        *APIError        `json:"error"`
+	CreatedAt    int64            `json:"created_at"`
+	CompletedAt  *int64           `json:"completed_at,omitempty"`
+	Cancellation *JobCancellation `json:"cancellation,omitempty"`
+	Result       *JobResult       `json:"result,omitempty"`
+	Billing      *JobBilling      `json:"billing,omitempty"`
+	raw          string
 }
 
 type JobURLs struct {
