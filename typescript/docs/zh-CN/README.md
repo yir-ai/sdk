@@ -11,7 +11,7 @@
 从 npm 安装：
 
 ```sh
-pnpm add @yir-ai/sdk@0.10.1
+pnpm add @yir-ai/sdk@0.10.2
 ```
 
 本地开发时，可在本仓库检出目录构建归档：
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 随后在应用目录安装归档（替换绝对路径）：
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.1.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.2.tgz
 ```
 
 不要将仓库根目录作为 Node 包安装。此包使用 ESM。
@@ -95,6 +95,12 @@ const client = createNodeYirClient();
 `providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数；客户端目录描述了该模型但合同没有它们时丢弃并返回 `unsupported` 警告，未配置目录时由 Gateway 判断。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+
+## 0.10.2 变化
+
+0.10.2 为兼容版本：
+
+- 新增可选的 `Quote.expected_amount`（十进制字符串）：首选渠道的准入估价，Yir 核对余额、API Key 月度上限和 `max_cost` 都用它。与只估输出的 `estimate` 类价格不同，它包含参考图等已知输入费用，按用量计费的渠道还参考近期实收。没有匹配渠道或 `billing_mode` 为 actual 时不返回。报价校验要求它是十进制数，且没有供应时不得出现。作为成本参考时优先用它而不是 `primary.amount`；它不是上限。
 
 ## 0.10.1 变化
 

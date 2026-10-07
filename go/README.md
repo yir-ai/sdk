@@ -11,10 +11,10 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.11.1
+go get github.com/yir-ai/sdk/go@v0.11.2
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.11.1`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.11.2`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -31,6 +31,12 @@ _ = client
 ```
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
+
+## 0.11.2 changes
+
+0.11.2 is a compatible release:
+
+- `Quote.ExpectedAmount` (`*string`, optional) is the first channel's admission estimate: the amount Yir checks your balance, API Key monthly limit and `max_cost` against. Unlike an output-only `estimate` price it includes known input charges such as reference images and, for usage-billed channels, recent actual charges. It is absent when no channel matches or with `billing_mode` actual. `Validate` requires a decimal and rejects it without supply. Prefer it over `Primary.Amount` as a cost reference; it is not a ceiling.
 
 ## 0.11.1 changes
 

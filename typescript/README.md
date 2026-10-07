@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.10.1
+pnpm add @yir-ai/sdk@0.10.2
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.1.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.2.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
@@ -94,6 +94,12 @@ Install the adapter's tested AI SDK generation in your application with `pnpm ad
 `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters. When the client's catalog describes the model and its contract lacks them, they are dropped with an `unsupported` warning; without a catalog the Gateway decides. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+
+## 0.10.2 changes
+
+0.10.2 is a compatible release:
+
+- `Quote.expected_amount` (optional decimal string) is the first channel's admission estimate: the amount Yir checks your balance, API Key monthly limit and `max_cost` against. Unlike an output-only `estimate` price it includes known input charges such as reference images and, for usage-billed channels, recent actual charges. It is absent when no channel matches or with `billing_mode` actual. Quote validation requires a decimal and rejects it without supply. Prefer it over `primary.amount` as a cost reference; it is not a ceiling.
 
 ## 0.10.1 changes
 

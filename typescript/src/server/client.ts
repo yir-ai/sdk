@@ -217,7 +217,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
 export const DEFAULT_GATEWAY_BASE_URL = "https://gateway.yir.ai";
 
 // Keep in sync with package.json "version"; tests enforce it.
-export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.10.1";
+export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.10.2";
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 /** Default long-poll hold of `waitForJob` status queries. */
 export const DEFAULT_STATUS_WAIT_SECONDS = 20;

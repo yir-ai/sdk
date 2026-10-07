@@ -97,7 +97,7 @@ func (r SubmitRequest) MarshalJSON() ([]byte, error) {
 }
 
 // Version is the SDK release reported in the User-Agent header. Bump it with each Go tag.
-const Version = "0.11.1"
+const Version = "0.11.2"
 
 // Stable public error codes carried in APIError.Code. The server may add codes,
 // so compare against these constants instead of switching exhaustively.

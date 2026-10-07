@@ -11,10 +11,10 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.11.1
+go get github.com/yir-ai/sdk/go@v0.11.2
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.11.1`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.11.2`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -31,6 +31,12 @@ _ = client
 ```
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
+
+## 0.11.2 变化
+
+0.11.2 为兼容版本：
+
+- 新增可选的 `Quote.ExpectedAmount`（`*string`）：首选渠道的准入估价，Yir 核对余额、API Key 月度上限和 `max_cost` 都用它。与只估输出的 `estimate` 类价格不同，它包含参考图等已知输入费用，按用量计费的渠道还参考近期实收。没有匹配渠道或 `billing_mode` 为 actual 时不返回。`Validate` 要求它是十进制数，且没有供应时不得出现。作为成本参考时优先用它而不是 `Primary.Amount`；它不是上限。
 
 ## 0.11.1 变化
 
