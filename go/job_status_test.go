@@ -322,3 +322,51 @@ func TestGetJobStatusWithWaitQuery(t *testing.T) {
 		t.Fatalf("negative wait: %v", err)
 	}
 }
+
+func TestWaitJobWaitsOutRateLimitThenGivesUp(t *testing.T) {
+	var pauses []time.Duration
+	original := rateLimitSleep
+	rateLimitSleep = func(_ context.Context, d time.Duration) error { pauses = append(pauses, d); return nil }
+	defer func() { rateLimitSleep = original }()
+
+	var statusCalls atomic.Int32
+	limitedCalls := int32(2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/jobs/101/status":
+			if statusCalls.Add(1) <= atomic.LoadInt32(&limitedCalls) {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Retry-After", "7")
+				w.WriteHeader(http.StatusTooManyRequests)
+				io.WriteString(w, `{"error":{"code":"YIR_RATE_LIMITED","message":"slow down","retryable":true}}`)
+				return
+			}
+			io.WriteString(w, `{"id":"101","status":"succeeded","error":null}`)
+		case "/v1/jobs/101":
+			io.WriteString(w, `{"id":"101","status":"succeeded","model":"openai/gpt-image-2"}`)
+		}
+	}))
+	defer server.Close()
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	job, err := client.WaitJob(context.Background(), "101", WaitOptions{PollInterval: time.Millisecond})
+	if err != nil || job.Status != "succeeded" {
+		t.Fatalf("job=%+v err=%v", job, err)
+	}
+	if len(pauses) != 2 || pauses[0] != 7*time.Second {
+		t.Fatalf("pauses = %v", pauses)
+	}
+
+	statusCalls.Store(0)
+	atomic.StoreInt32(&limitedCalls, 100)
+	_, err = client.WaitJob(context.Background(), "101", WaitOptions{PollInterval: time.Millisecond})
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.Code != ErrCodeRateLimited || apiErr.RetryAfter != 7*time.Second {
+		t.Fatalf("err = %v", err)
+	}
+	if got := statusCalls.Load(); got != maxRateLimitRetries+1 {
+		t.Fatalf("status calls = %d", got)
+	}
+}

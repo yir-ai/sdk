@@ -139,6 +139,9 @@ type APIError struct {
 	// RequestID identifies a failed HTTP request for Yir support. It comes from
 	// the error response envelope and is empty for Job and quote batch item errors.
 	RequestID string `json:"-"`
+	// RetryAfter is the Retry-After delay of a 429 YIR_RATE_LIMITED response,
+	// or zero when the response carried none.
+	RetryAfter time.Duration `json:"-"`
 }
 
 // ErrorDetail names one invalid request field. Reason is a stable code such as
@@ -383,7 +386,14 @@ func (c *Client) do(ctx context.Context, method, path, key string, body, respons
 		return err
 	}
 	if result.StatusCode < 200 || result.StatusCode >= 300 {
-		return responseAPIError(result.StatusCode, raw)
+		err := responseAPIError(result.StatusCode, raw)
+		var apiErr *APIError
+		if errors.As(err, &apiErr) {
+			if seconds, parseErr := strconv.Atoi(strings.TrimSpace(result.Header.Get("Retry-After"))); parseErr == nil && seconds > 0 {
+				apiErr.RetryAfter = time.Duration(seconds) * time.Second
+			}
+		}
+		return err
 	}
 	if json.Unmarshal(raw, response) != nil {
 		return errors.New("response_invalid")

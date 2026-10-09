@@ -219,6 +219,8 @@ export const DEFAULT_GATEWAY_BASE_URL = "https://gateway.yir.ai";
 // Keep in sync with package.json "version"; tests enforce it.
 export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.10.2";
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
+/** Consecutive 429 responses `waitForJob` waits out before throwing. */
+const MAX_RATE_LIMIT_RETRIES = 5;
 /** Default long-poll hold of `waitForJob` status queries. */
 export const DEFAULT_STATUS_WAIT_SECONDS = 20;
 /** The Gateway's cap for the status `wait` query parameter. */
@@ -281,6 +283,8 @@ export class YirAPIError extends Error {
   readonly action?: YirErrorAction;
   readonly requestId?: string;
   readonly details?: unknown;
+  /** Retry-After delay of a 429 `YIR_RATE_LIMITED` response, when present. */
+  readonly retryAfterMs?: number;
 
   constructor(params: {
     message: string;
@@ -290,6 +294,7 @@ export class YirAPIError extends Error {
     action?: YirErrorAction;
     requestId?: string;
     details?: unknown;
+    retryAfterMs?: number;
   }) {
     super(params.message);
     this.name = "YirAPIError";
@@ -300,6 +305,7 @@ export class YirAPIError extends Error {
     this.action = params.action;
     this.requestId = params.requestId;
     this.details = params.details;
+    this.retryAfterMs = params.retryAfterMs;
   }
 }
 
@@ -384,6 +390,7 @@ export async function waitForJob(
   const startTime = Date.now();
 
   let lastStatus: JobStatusResponse | undefined;
+  let limited = 0;
 
   for (let poll = 0; ; poll += 1) {
     const interval = fixedInterval ?? pollDelayMs(poll);
@@ -403,7 +410,20 @@ export async function waitForJob(
     ));
     const previous = lastStatus;
     const requestedAt = Date.now();
-    const status = await getJobStatusWithDeadline(client, normalizedID, options.signal, remaining, timeout, lastStatus, waitSeconds);
+    let status: JobStatusResponse;
+    try {
+      status = await getJobStatusWithDeadline(client, normalizedID, options.signal, remaining, timeout, lastStatus, waitSeconds);
+    } catch (error) {
+      // Wait out a 429 per Retry-After (default 1s, capped at 60s), at most
+      // MAX_RATE_LIMIT_RETRIES times in a row; the timeout check above still applies.
+      if (!(error instanceof YirAPIError) || error.status !== 429 || limited >= MAX_RATE_LIMIT_RETRIES) throw error;
+      limited += 1;
+      poll -= 1;
+      const pause = Math.min(error.retryAfterMs ?? 1000, 60000);
+      await sleep(remaining === undefined ? pause : Math.max(0, Math.min(pause, remaining)), options.signal);
+      continue;
+    }
+    limited = 0;
     lastStatus = status;
 
     if (options.onPoll) {
@@ -649,6 +669,8 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     }
 
     if (!response.ok) {
+      const retryAfterSeconds = Number.parseInt(response.headers.get("retry-after") ?? "", 10);
+      const retryAfterMs = retryAfterSeconds > 0 ? retryAfterSeconds * 1000 : undefined;
       if (typeof data === "object" && data !== null && "error" in data) {
         const errorContainer = data as { error?: YirPublicError; request_id?: string };
         const errObj = errorContainer.error;
@@ -661,6 +683,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
             action: errObj.action,
             requestId: errorContainer.request_id,
             details: data,
+            retryAfterMs,
           });
         }
       }
@@ -673,6 +696,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
         requestId: typeof data === "object" && data !== null && typeof (data as { request_id?: unknown }).request_id === "string"
           ? (data as { request_id: string }).request_id : undefined,
         details: data,
+        retryAfterMs,
       });
     }
 

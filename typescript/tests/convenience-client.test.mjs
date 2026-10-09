@@ -522,3 +522,36 @@ test("waitForJob keeps polling through a status newer than this SDK", async () =
   assert.equal(job.status, "succeeded");
   assert.deepEqual(seen, ["pending_review", "pending_review", "succeeded"]);
 });
+
+test("waitForJob waits out 429 responses per Retry-After, then gives up", async () => {
+  const limitedError = () => new YirAPIError({ message: "slow down", status: 429, code: "YIR_RATE_LIMITED", retryable: true, retryAfterMs: 1 });
+  let limited = 2;
+  let calls = 0;
+  const client = {
+    getJobStatus: async () => {
+      calls += 1;
+      if (calls <= limited) throw limitedError();
+      return { id: "1001", status: "succeeded", error: null };
+    },
+    getJob: async () => ({ id: "1001", status: "succeeded" }),
+  };
+  const job = await waitForJob(client, "1001", { pollIntervalMs: 1, statusWaitSeconds: 0 });
+  assert.equal(job.status, "succeeded");
+  assert.equal(calls, 3);
+
+  calls = 0;
+  limited = 100;
+  await assert.rejects(() => waitForJob(client, "1001", { pollIntervalMs: 1, statusWaitSeconds: 0 }), (error) => error instanceof YirAPIError && error.status === 429);
+  assert.equal(calls, 6);
+});
+
+test("node transport exposes Retry-After on 429 errors", async () => {
+  const transport = createNodeHttpTransport({
+    apiKey: "test-key",
+    fetch: async () => new Response(JSON.stringify({ error: { code: "YIR_RATE_LIMITED", message: "slow down", retryable: true } }), {
+      status: 429,
+      headers: { "content-type": "application/json", "retry-after": "3" },
+    }),
+  });
+  await assert.rejects(() => transport({ method: "GET", path: "/v1/jobs/1001/status" }), (error) => error instanceof YirAPIError && error.code === "YIR_RATE_LIMITED" && error.retryAfterMs === 3000);
+});

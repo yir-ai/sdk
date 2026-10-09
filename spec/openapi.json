@@ -49,6 +49,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -104,6 +105,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -137,6 +139,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -207,6 +210,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "409": { "$ref": "#/components/responses/Conflict" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -237,6 +241,7 @@
           "404": { "$ref": "#/components/responses/NotFound" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "410": { "$ref": "#/components/responses/Gone" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -255,6 +260,7 @@
           },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -277,6 +283,7 @@
           "404": { "$ref": "#/components/responses/NotFound" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "410": { "$ref": "#/components/responses/Gone" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -304,6 +311,7 @@
           "304": { "$ref": "#/components/responses/CatalogNotModified" },
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -330,6 +338,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -349,6 +358,7 @@
           },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -372,6 +382,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -392,6 +403,7 @@
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
           "409": { "$ref": "#/components/responses/Conflict" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
         }
       }
@@ -470,7 +482,13 @@
       "SpendLimitExceeded": { "$ref": "#/components/responses/StandardError" },
       "Conflict": { "$ref": "#/components/responses/StandardError" },
       "NoExecutableRoute": { "$ref": "#/components/responses/StandardError" },
-      "RateLimited": { "$ref": "#/components/responses/StandardError" },
+      "RateLimited": {
+        "description": "Too many Jobs in progress, or the API key exceeded its per-minute request rate for this endpoint (YIR_RATE_LIMITED).",
+        "headers": {
+          "Retry-After": { "schema": { "type": "integer", "minimum": 1 }, "description": "Seconds to wait before retrying. Present when the per-minute request rate was exceeded." }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
       "NotFound": { "$ref": "#/components/responses/StandardError" },
       "Gone": { "$ref": "#/components/responses/StandardError" },
       "TemporarilyUnavailable": { "$ref": "#/components/responses/StandardError" },

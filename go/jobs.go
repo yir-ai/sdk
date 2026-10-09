@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -267,13 +268,23 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 		return Job{}, errors.New("poll_interval_invalid")
 	}
 	var previous string
+	limited := 0
 	for poll := 0; ; poll++ {
 		wait := c.statusWait(ctx, options.StatusWait)
 		started := time.Now()
 		status, err := c.GetJobStatusWithWait(ctx, id, wait)
 		if err != nil {
+			if pause := rateLimitPause(err, limited); pause >= 0 {
+				limited++
+				poll--
+				if err := rateLimitSleep(ctx, pause); err != nil {
+					return Job{}, err
+				}
+				continue
+			}
 			return Job{}, err
 		}
+		limited = 0
 		if options.OnPoll != nil {
 			options.OnPoll(status)
 		}
@@ -308,6 +319,37 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 			return Job{}, ctx.Err()
 		case <-timer.C:
 		}
+	}
+}
+
+// maxRateLimitRetries bounds consecutive 429 responses WaitJob waits out.
+const maxRateLimitRetries = 5
+
+// rateLimitPause returns how long WaitJob waits after a 429 before polling
+// again: Retry-After, defaulting to one second and capped at one minute. It
+// returns -1 for other errors or once retries are exhausted.
+func rateLimitPause(err error, retries int) time.Duration {
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.Status != http.StatusTooManyRequests || retries >= maxRateLimitRetries {
+		return -1
+	}
+	if apiErr.RetryAfter <= 0 {
+		return time.Second
+	}
+	return min(apiErr.RetryAfter, time.Minute)
+}
+
+// rateLimitSleep lets tests skip WaitJob's 429 pauses.
+var rateLimitSleep = sleepContext
+
+func sleepContext(ctx context.Context, delay time.Duration) error {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
 	}
 }
 
