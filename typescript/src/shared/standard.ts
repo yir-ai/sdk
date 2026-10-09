@@ -28,6 +28,13 @@ export type RoutingOverride = {
   readonly only?: readonly string[];
   readonly fallback?: boolean;
   readonly fidelity?: RoutingFidelity;
+  /**
+   * Route acceleration; omitted uses the routing profile default (on). When an image attempt
+   * stays unresolved upstream well past the channel's usual completion time and another
+   * eligible route remains, the Gateway cuts it off and retries on the next route.
+   * Requires fallback. Set false to always wait for the first channel.
+   */
+  readonly accelerate?: boolean;
 };
 
 export type StandardTextInput = {

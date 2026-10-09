@@ -140,6 +140,12 @@ type Routing struct {
 	// profile default (genuine). When every route is excluded the request fails
 	// with ErrCodeFidelityExcluded.
 	Fidelity string `json:"fidelity,omitempty"`
+	// Accelerate controls route acceleration; nil uses the routing profile
+	// default (on). When an image attempt stays unresolved upstream well past
+	// the channel's usual completion time and another eligible route remains,
+	// the Gateway cuts it off and retries on the next route. Requires fallback.
+	// Set false to always wait for the first channel.
+	Accelerate *bool `json:"accelerate,omitempty"`
 }
 
 // ValidateGenerationWithCatalog checks current caller-supplied model rules and
