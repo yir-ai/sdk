@@ -11,7 +11,7 @@ Server-side image and video API client. Requires Go 1.25+. Module: `github.com/y
 Run in your application's Go module:
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.11.2
+go get github.com/yir-ai/sdk/go@latest
 ```
 
 Module release tags use `go/vX.Y.Z`; this version uses `go/v0.11.2`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.

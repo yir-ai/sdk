@@ -11,7 +11,7 @@
 在应用的 Go 模块中执行：
 
 ```sh
-go get github.com/yir-ai/sdk/go@v0.11.2
+go get github.com/yir-ai/sdk/go@latest
 ```
 
 模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.11.2`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。

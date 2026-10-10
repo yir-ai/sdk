@@ -1,3 +1,4 @@
+import { PACKAGE_VERSION } from "./package-version.js";
 import { validateGeneration } from "../shared/standard.js";
 import { modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
 import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
@@ -216,8 +217,8 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
 
 export const DEFAULT_GATEWAY_BASE_URL = "https://gateway.yir.ai";
 
-// Keep in sync with package.json "version"; tests enforce it.
-export const DEFAULT_USER_AGENT = "@yir-ai/sdk/0.10.2";
+// The build derives PACKAGE_VERSION from package.json; tests enforce parity.
+export const DEFAULT_USER_AGENT = `@yir-ai/sdk/${PACKAGE_VERSION}`;
 export const DEFAULT_POLL_TIMEOUT_MS = 300000;
 /** Consecutive 429 responses `waitForJob` waits out before throwing. */
 const MAX_RATE_LIMIT_RETRIES = 5;

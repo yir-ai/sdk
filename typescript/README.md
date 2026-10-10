@@ -11,7 +11,7 @@ One `@yir-ai/sdk` package for image and video generation. Use a Node runtime wit
 Install from npm:
 
 ```sh
-pnpm add @yir-ai/sdk@0.10.2
+pnpm add @yir-ai/sdk
 ```
 
 For local development, build an archive from a checkout of this repository:
@@ -26,7 +26,7 @@ pnpm pack --pack-destination ./.tmp/scratch
 Then, in your application's directory, install the archive (adjust the absolute path):
 
 ```sh
-pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-0.10.2.tgz
+pnpm add /absolute/path/to/sdk/typescript/.tmp/scratch/yir-ai-sdk-VERSION.tgz
 ```
 
 Do not install the repository root as a Node package. The package is ESM.
