@@ -74,3 +74,19 @@ test("manual redirects return the signed location without contacting it", async 
   await assert.rejects(transport({ method: "GET", path: "/content" }));
   assert.deepEqual(hits, []);
 });
+
+test("unexpected redirects hide signed locations and bodies and cancel the response", async () => {
+  for (const status of [301, 302, 303, 307, 308]) {
+    let cancelled = false, requests = 0;
+    const transport = createNodeHttpTransport({ apiKey: "fixture", fetch: async (_url, init) => {
+      requests++;
+      assert.equal(init.redirect, "manual");
+      return new Response(new ReadableStream({ cancel() { cancelled = true; } }), {
+        status, headers: { Location: "https://assets.example/?secret=fixture" },
+      });
+    }});
+    await assert.rejects(transport({ method: "POST", path: "/generate", body: {} }), { message: "unexpected_redirect" });
+    assert.equal(requests, 1);
+    assert.equal(cancelled, true);
+  }
+});

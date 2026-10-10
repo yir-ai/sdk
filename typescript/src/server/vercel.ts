@@ -58,8 +58,11 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           for (const file of job.result.files) {
             const url = new URL(file.url);
             if (url.protocol !== "https:" || url.username || url.password) throw new Error("yir_result_url_invalid");
-            const response = await fetchResult(url, { signal: call.abortSignal, redirect: "error" });
-            if (!response.ok) throw new Error("yir_result_download_failed");
+            const response = await fetchResult(url, { signal: call.abortSignal, redirect: "manual" });
+            if (!response.ok) {
+              await response.body?.cancel();
+              throw new Error("yir_result_download_failed");
+            }
             images.push(new Uint8Array(await response.arrayBuffer()));
           }
           return { images, warnings: [...warnings, ...noticeWarnings(job)], response: { timestamp: new Date(job.created_at * 1000), modelId, headers: undefined },

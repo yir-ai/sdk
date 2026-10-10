@@ -4,7 +4,7 @@
 
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
-One `@yir-ai/sdk` package for image and video generation. Use a Node runtime with native `fetch`, Web Crypto and `Blob` (Node 22+ is a practical baseline); development uses pnpm 10.30.1.
+One `@yir-ai/sdk` package for image and video generation. Use a Node runtime with native `fetch`, Web Crypto and `Blob` (Node 22+ is a practical baseline); development uses pnpm 10.30.1. Cloudflare Workers can import the same client from `/server` with an explicit `apiKey`; the `createNodeYirClient` name is retained for compatibility and does not require Node compatibility mode.
 
 ## Install
 
@@ -102,6 +102,8 @@ Image masks, pixel `size` and video pixel resolution are unsupported; use Yir pa
 ## 0.10.2 changes
 
 0.10.2 is a compatible release:
+
+- Cloudflare Workers/workerd can use the server transport, file uploads and AI SDK image downloads. Unexpected redirects are rejected without replaying requests or forwarding credentials; only the explicit file-content operation returns a signed redirect URL.
 
 - `Quote.expected_amount` (optional decimal string) is the first channel's admission estimate: the amount Yir checks your balance, API Key monthly limit and `max_cost` against. Unlike an output-only `estimate` price it includes known input charges such as reference images and, for usage-billed channels, recent actual charges. It is absent when no channel matches or with `billing_mode` actual. Quote validation requires a decimal and rejects it without supply. Prefer it over `primary.amount` as a cost reference; it is not a ceiling.
 

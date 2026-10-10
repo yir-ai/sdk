@@ -4,7 +4,7 @@
 
 [English](../../README.md) | 简体中文 · [仓库总览](https://github.com/yir-ai/sdk/blob/main/spec/docs/zh-CN/README.md) · [示例](examples.md)
 
-单个 `@yir-ai/sdk` 包支持图像和视频生成。使用具备原生 `fetch`、Web Crypto 和 `Blob` 的 Node 环境（可从 Node 22+ 起步）；开发使用 pnpm 10.30.1。
+单个 `@yir-ai/sdk` 包支持图像和视频生成。使用具备原生 `fetch`、Web Crypto 和 `Blob` 的 Node 环境（可从 Node 22+ 起步）；开发使用 pnpm 10.30.1。Cloudflare Workers 可从 `/server` 导入同一客户端，显式传入 `apiKey`；`createNodeYirClient` 名称保留兼容，无需开启 Node 兼容模式。
 
 ## 安装
 
@@ -99,6 +99,8 @@ const client = createNodeYirClient();
 ## 0.10.2 变化
 
 0.10.2 为兼容版本：
+
+- Cloudflare Workers/workerd 可使用服务端传输、文件上传与 AI SDK 图片下载。意外重定向会被拒绝，不重放请求、不转发凭据；只有显式的文件内容操作返回签名跳转 URL。
 
 - 新增可选的 `Quote.expected_amount`（十进制字符串）：首选渠道的准入估价，Yir 核对余额、API Key 月度上限和 `max_cost` 都用它。与只估输出的 `estimate` 类价格不同，它包含参考图等已知输入费用，按用量计费的渠道还参考近期实收。没有匹配渠道或 `billing_mode` 为 actual 时不返回。报价校验要求它是十进制数，且没有供应时不得出现。作为成本参考时优先用它而不是 `primary.amount`；它不是上限。
 

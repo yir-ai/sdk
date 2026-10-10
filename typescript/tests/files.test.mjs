@@ -79,7 +79,7 @@ test("file creation, ordered upload and completion use separate authorization bo
     assert.equal(request.method, "PUT");
     assert.equal(request.headers, undefined);
     assert.equal(request.credentials, "omit");
-    assert.equal(request.redirect, "error");
+    assert.equal(request.redirect, "manual");
     pieces.push(await request.body.text());
     return new Response(null, { status: 200 });
   }});
@@ -224,4 +224,21 @@ test("uploadFile waits through a file status newer than this SDK", async () => {
   assert.equal(getCalls, 2);
   await assert.rejects(() => uploadFile({ completeFile: async () => ({ ...plan(), status: " " }) }, plan(), new Blob(["abcdef"]),
     { fetch: async () => new Response() }), /file_response_invalid/);
+});
+
+test("upload redirects stop before the next part or completion without exposing the signed URL", async () => {
+  for (const status of [301, 302, 303, 307, 308]) {
+    let completed = 0, uploaded = 0, cancelled = false;
+    const client = { completeFile: async () => { completed++; return {}; } };
+    await assert.rejects(uploadFile(client, plan(), new Blob(["abcdef"]), { fetch: async (_url, init) => {
+      uploaded++;
+      assert.equal(init.redirect, "manual");
+      return new Response(new ReadableStream({ cancel() { cancelled = true; } }), {
+        status, headers: { Location: "https://uploads.example/?secret=fixture" },
+      });
+    }}), { message: `upload_failed:${status}` });
+    assert.equal(uploaded, 1);
+    assert.equal(completed, 0);
+    assert.equal(cancelled, true);
+  }
 });

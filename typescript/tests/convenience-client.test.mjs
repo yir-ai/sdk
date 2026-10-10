@@ -72,7 +72,7 @@ test("createNodeHttpTransport injects Authorization, User-Agent, and standard he
   const req = recorded[0];
   assert.equal(req.url, `${DEFAULT_GATEWAY_BASE_URL}/v1/images/generations`);
   assert.equal(req.init.method, "POST");
-  assert.equal(req.init.redirect, "error");
+  assert.equal(req.init.redirect, "manual");
   assert.equal(req.init.headers["Authorization"], "Bearer yir_test_secret_key");
   assert.equal(req.init.headers["User-Agent"], DEFAULT_USER_AGENT);
   assert.equal(req.init.headers["Content-Type"], "application/json");

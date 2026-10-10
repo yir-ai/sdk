@@ -21,7 +21,7 @@ function fixture(mediaType = "image/png", notices = []) {
   const provider = createYirAIProvider({ client, modelContracts: catalog, fetch: async (url, init) => {
     assert.equal(String(url), "https://assets.example/result");
     assert.equal(init.headers, undefined);
-    assert.equal(init.redirect, "error");
+    assert.equal(init.redirect, "manual");
     return new Response(Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]), { status: 200 });
   }});
   return { provider, calls };

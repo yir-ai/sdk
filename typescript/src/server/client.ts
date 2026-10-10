@@ -648,11 +648,16 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       headers,
       body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
       signal: requestSignal(request.signal, timeoutMs, request.holdMs),
-      redirect: request.redirect === "manual" ? "manual" : "error",
+      // workerd supports manual/follow; never replay a request or forward its credentials.
+      redirect: "manual",
     });
-    if (request.redirect === "manual" && response.status >= 300 && response.status < 400) {
+    if (response.status >= 300 && response.status < 400) {
       await response.body?.cancel();
-      return { status: response.status, location: response.headers.get("location") } as Response;
+      if (request.redirect === "manual") {
+        return { status: response.status, location: response.headers.get("location") } as Response;
+      }
+      // Redirect bodies and Location may contain signed URLs; do not expose them in errors.
+      throw new Error("unexpected_redirect");
     }
 
     const contentType = response.headers.get("content-type") ?? "";

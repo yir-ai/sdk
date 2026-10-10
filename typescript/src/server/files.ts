@@ -147,7 +147,7 @@ export async function uploadFile(client: Pick<YirFileClient, "completeFile"> | P
     let response: Response;
     try {
       response = await fetchPart(part.url, { method: "PUT", body: data.slice(offset, offset + part.size), signal: options.signal,
-        redirect: "error", credentials: "omit" });
+        redirect: "manual", credentials: "omit" });
     } catch {
       options.signal?.throwIfAborted();
       // Network errors can contain the signed upload URL; never echo them.
