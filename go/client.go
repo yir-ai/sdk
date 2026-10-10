@@ -66,6 +66,9 @@ func NewClient(apiKey string, options ClientOptions) (*Client, error) {
 
 type SubmitRequest struct {
 	GenerationRequest
+	// MaxCost is an optional total Job budget. A more expensive fallback can exceed
+	// the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for
+	// delivery continuity without a per-Job cap, or allow room for fallback and prior charges.
 	MaxCost    *string `json:"max_cost,omitempty"`
 	WebhookURL string  `json:"webhook_url,omitempty"`
 }

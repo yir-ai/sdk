@@ -125,6 +125,7 @@ export type Job = {
     readonly currency: "USD";
     readonly total_charged_by_yir: string;
 	readonly billing_mode?: "actual";
+    /** The submitted total Job cap, if any. A tight cap can prevent a more expensive fallback. */
     readonly max_cost?: string;
     readonly compute_charges: readonly ComputeCharge[];
     readonly gateway_fee: { readonly amount: string; readonly status: "settled" | "waived" };

@@ -59,6 +59,7 @@ export type StandardReference = {
 
 export type StandardImageGenerationRequest = {
 	readonly billing_mode?: "actual";
+  /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly max_cost?: string;
   readonly model: string;
   readonly input: StandardTextInput | StandardImageInput;
@@ -84,6 +85,7 @@ export type StandardVideoReferenceInput = {
 
 export type StandardVideoGenerationRequest = {
 	readonly billing_mode?: "actual";
+  /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly max_cost?: string;
 	readonly model: string;
 	readonly input:
@@ -101,6 +103,7 @@ export type StandardVideoQuoteRequest = Omit<
 >;
 
 export type BuildImageGenerationRequest = {
+  /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly maxCost?: string;
   readonly model: string;
   readonly prompt: string;
