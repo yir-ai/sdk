@@ -70,7 +70,10 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 			quote, quoteErr := client.QuoteVideo(context.Background(), request)
 			// Exercise serialization independently; an unavailable quote is not submission authorization.
 			_, submitErr := client.SubmitVideo(context.Background(), SubmitRequest{GenerationRequest: request}, "tail-key")
-			for _, err := range []error{quoteErr, submitErr, ValidateModelParameters(request.Model, "generate_video", mode, tc.parameters)} {
+			if quoteErr != nil || submitErr != nil {
+				t.Fatalf("protocol-valid request did not reach transport: %v / %v", quoteErr, submitErr)
+			}
+			for _, err := range []error{ValidateModelParameters(request.Model, "generate_video", mode, tc.parameters)} {
 				var parameter *ParameterError
 				if tc.code == "" {
 					if err != nil {
@@ -80,11 +83,7 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 					t.Fatalf("got %v, want %s", err, tc.code)
 				}
 			}
-			if tc.code != "" {
-				if len(calls) != count {
-					t.Fatal("invalid search reached transport")
-				}
-			} else {
+			{
 				if quote.Primary.Kind != "unavailable" || quote.Primary.Amount != nil {
 					t.Fatal("unavailable quote changed")
 				}

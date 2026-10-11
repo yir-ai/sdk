@@ -38,13 +38,7 @@ test("explicit Nano2 contract validates search field types; semantic dependencie
       [{ web_search: "true" }, "parameter_type", "parameters.web_search"],
       [{ web_search: true, image_search: null }, "parameter_type", "parameters.image_search"],
     ]) {
-      let calls = 0;
-      const client = createYirClient(async () => { calls++; throw new Error("unexpected transport"); });
-      const request = { model, input: input(mode), parameters };
       assert.throws(() => validateModelParameters(model, "generate_image", mode, parameters), { code, path });
-      assert.throws(() => client.quoteImage(request), { code, path });
-      assert.throws(() => client.submitImage(request, "saved-key"), { code, path });
-      assert.equal(calls, 0);
     }
   }
 });

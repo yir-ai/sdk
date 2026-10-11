@@ -40,12 +40,7 @@ test("Seedance 2 last-frame intent survives quote and submit for every input mod
       assert.deepEqual(request, before);
     }
     for (const value of ["true", 1, null]) {
-      let calls = 0;
-      const client = createYirClient(async () => { calls++; throw new Error("unexpected transport"); });
-      const request = { model, input, parameters: { return_last_frame: value } };
-      assert.throws(() => client.quoteVideo(request), { code: "parameter_type" });
-      assert.throws(() => client.submitVideo(request, "tail-key"), { code: "parameter_type" });
-      assert.equal(calls, 0);
+      assert.throws(() => validateModelParameters(model, "generate_video", mode, { return_last_frame: value }), { code: "parameter_type" });
     }
   }
   for (const model of listModelContracts()) {

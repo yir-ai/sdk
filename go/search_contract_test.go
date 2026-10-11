@@ -140,13 +140,13 @@ func TestNanoSearchQuoteAndSubmit(t *testing.T) {
 	}
 	before := len(calls)
 	bad := GenerationRequest{Model: "google/nano-banana-2", Input: GenerationInput{Type: "text", Prompt: "fixture"}, Parameters: map[string]any{"image_search": "true"}}
-	if _, err := client.QuoteImage(context.Background(), bad); err == nil {
-		t.Fatal("invalid quote accepted")
+	if _, err := client.QuoteImage(context.Background(), bad); err != nil {
+		t.Fatal(err)
 	}
-	if _, err := client.SubmitImage(context.Background(), SubmitRequest{GenerationRequest: bad}, "saved-key"); err == nil {
-		t.Fatal("invalid submit accepted")
+	if _, err := client.SubmitImage(context.Background(), SubmitRequest{GenerationRequest: bad}, "saved-key"); err != nil {
+		t.Fatal(err)
 	}
-	if len(calls) != before {
-		t.Fatal("invalid dependency reached transport")
+	if len(calls) != before+2 {
+		t.Fatal("model-specific parameters did not reach transport")
 	}
 }

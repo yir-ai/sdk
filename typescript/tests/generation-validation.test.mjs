@@ -10,15 +10,17 @@ const image = () => ({
   parameters: { resolution: "1K", aspect_ratio: "1:1", n: 1 },
 });
 
-test("dynamic parameters fail locally before either Quote or Submit transport", () => {
+test("explicit dynamic validation stays strict while clients reject malformed protocol objects", () => {
   let calls = 0;
   const client = createYirClient(async () => { calls++; return {}; });
   for (const parameters of [null, [], { n: "1" }, { n: 1.5 }, { n: NaN },
     { n: Infinity }, { n: Number.MAX_SAFE_INTEGER + 1 }, { n: 2 },
     { resolution: null }, { resolution: "unknown" }, { invented: true }]) {
     const request = { ...image(), parameters };
-    for (const submit of [() => client.quoteImage(request), () => client.submitImage(request, "request-1")]) {
-      assert.throws(submit, YirSDKValidationError);
+    assert.throws(() => validateGeneration("generate_image", request), YirSDKValidationError);
+    if (parameters === null || Array.isArray(parameters)) {
+      assert.throws(() => client.quoteImage(request), YirSDKValidationError);
+      assert.throws(() => client.submitImage(request, "request-1"), YirSDKValidationError);
     }
   }
   // Explicit catalog validation stays strict; the client leaves uncovered models to the Gateway.
