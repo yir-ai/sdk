@@ -158,10 +158,12 @@ type ResultFileFidelity struct {
 
 type JobBilling struct {
 	// Status distinguishes a pending bill from the settled amount, including zero.
-	Status             string              `json:"status,omitempty"`
-	BillingMode        string              `json:"billing_mode,omitempty"`
-	Currency           string              `json:"currency"`
-	ComputeCharges     []ComputeCharge     `json:"compute_charges"`
+	Status string `json:"status,omitempty"`
+	// Deprecated: legacy consent echo; new requests do not select a billing mode.
+	BillingMode    string          `json:"billing_mode,omitempty"`
+	Currency       string          `json:"currency"`
+	ComputeCharges []ComputeCharge `json:"compute_charges"`
+	// Deprecated: compatibility field, currently zero and waived. Read TotalChargedByYir.
 	GatewayFee         GatewayFee          `json:"gateway_fee"`
 	TotalChargedByYir  string              `json:"total_charged_by_yir"`
 	MaxCost            string              `json:"max_cost,omitempty"`
@@ -170,7 +172,9 @@ type JobBilling struct {
 
 // ComputeCharge is a read-only billing fact for managed supply billed by Yir.
 type ComputeCharge struct {
-	SupplyType  string       `json:"supply_type"`
+	// Deprecated: Yir Cloud always uses managed supply.
+	SupplyType string `json:"supply_type"`
+	// Deprecated: charges always use the Yir wallet.
 	BilledBy    string       `json:"billed_by"`
 	Amount      string       `json:"amount"`
 	AmountBasis string       `json:"amount_basis"`

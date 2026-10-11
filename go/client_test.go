@@ -139,7 +139,7 @@ func TestClientRejectsInvalidRequestsBeforeNetwork(t *testing.T) {
 		t.Fatal(err)
 	}
 	request := imageRequest()
-	request.Parameters = map[string]any{"n": "1"}
+	request.Input.Prompt = ""
 	if _, err := client.QuoteImage(context.Background(), request); err == nil {
 		t.Fatal("invalid quote accepted")
 	}

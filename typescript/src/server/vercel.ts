@@ -4,8 +4,6 @@ import { createNodeYirClient, isValidJobID, waitForJob } from "./client.js";
 import type { CreateNodeYirClientOptions, YirClient, Job } from "./client.js";
 import { YirSDKValidationError, validateGeneration } from "../shared/standard.js";
 import { uploadFile } from "./files.js";
-import { coveringCatalog } from "./catalog-coverage.js";
-import { findModelContract, type ModelContractCatalog } from "../shared/catalog.js";
 import type { RoutingOverride, StandardReference, StandardImageGenerationRequest, StandardVideoGenerationRequest } from "../shared/standard.js";
 
 type VideoModelV4File = NonNullable<Parameters<NonNullable<VideoModelV4["doGenerate"]>>[0]["image"]>;
@@ -39,7 +37,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "n", call.n);
           assign(parameters, "aspect_ratio", call.aspectRatio);
           // Standard settings map to same-named Yir parameters; the model contract decides support.
-          const warnings = assignOptional(parameters, client.modelContracts, modelId, { seed: call.seed });
+          const warnings = assignOptional(parameters, { seed: call.seed });
           const references = call.files?.map((file, index) => reference(file, "reference_image", index));
           let request: StandardImageGenerationRequest = {
             model: modelId,
@@ -47,7 +45,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             parameters, routing: extension.routing,
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
           };
-          validateGeneration("generate_image", request, coveringCatalog(options.modelContracts, "generate_image", request));
+          validateGeneration("generate_image", request);
           if (request.input.type === "image") {
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, call.files ?? [], extension.idempotencyKey, fetchResult, call.abortSignal) } };
           }
@@ -86,7 +84,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "aspect_ratio", call.aspectRatio);
           assign(parameters, "duration", call.duration);
           assign(parameters, "generate_audio", call.generateAudio);
-          const warnings = assignOptional(parameters, client.modelContracts, modelId, { fps: call.fps, seed: call.seed });
+          const warnings = assignOptional(parameters, { fps: call.fps, seed: call.seed });
           const inputKinds = [call.image, call.frameImages?.length, call.inputReferences?.length].filter(Boolean).length;
           if (inputKinds > 1) throw new YirSDKValidationError("input_sources_ambiguous", "input");
           const references = call.image ? [reference(call.image, "first_frame", 0)]
@@ -104,7 +102,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
             ...(call.webhookUrl === undefined ? {} : { webhook_url: call.webhookUrl }),
           };
-          validateGeneration("generate_video", request, coveringCatalog(options.modelContracts, "generate_video", request));
+          validateGeneration("generate_video", request);
           if (request.input.type !== "text") {
             const files = call.image ? [call.image] : call.frameImages?.length ? call.frameImages.map(frame => frame.image) : call.inputReferences ?? [];
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, files, extension.idempotencyKey, fetchResult, call.abortSignal) } };
@@ -202,19 +200,15 @@ function readOptions(options: SharedV4ProviderOptions) {
 type AdapterWarning = { readonly type: "unsupported"; readonly feature: string; readonly details?: string } | { readonly type: "other"; readonly message: string };
 
 /**
- * When the client's catalog describes the model, AI SDK settings the model
- * contract lacks are dropped with an unsupported warning, as AI SDK providers
- * do. Otherwise they are sent and the Gateway decides.
+ * Forward explicitly supplied settings. The Gateway owns current capabilities;
+ * a stale local catalog must not silently discard a caller's requested value.
  */
-function assignOptional(parameters: Record<string, unknown>, catalog: ModelContractCatalog | undefined, modelId: string,
+function assignOptional(parameters: Record<string, unknown>,
   settings: Readonly<Record<string, unknown>>): AdapterWarning[] {
-  const contract = catalog ? findModelContract(catalog, modelId) : undefined;
-  const declared = new Set((contract?.operations ?? []).flatMap(operation => operation.parameters.map(parameter => parameter.name)));
   const warnings: AdapterWarning[] = [];
   for (const [name, value] of Object.entries(settings)) {
     if (value === undefined) continue;
-    if (!contract || declared.has(name)) assign(parameters, name, value);
-    else warnings.push({ type: "unsupported", feature: name, details: `${modelId} does not accept ${name}` });
+    assign(parameters, name, value);
   }
   return warnings;
 }

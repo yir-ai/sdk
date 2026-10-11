@@ -101,9 +101,12 @@ export type JobResultContentSafety =
   | { readonly status: "unchecked" };
 
 export type ComputeCharge = {
+  /** @deprecated Compatibility field; Yir Cloud always uses managed supply. */
   readonly supply_type: "managed";
+  /** @deprecated Compatibility field; charges always use the Yir wallet. */
   readonly billed_by: "yir";
   readonly amount: string;
+  /** Legacy name for actual upstream cost with the applicable channel factor and user discount. */
   readonly amount_basis: "yir_price_rule";
   readonly status: "settled" | "waived";
   readonly usage?: readonly {
@@ -134,10 +137,12 @@ export type Job = {
     readonly total_charged_by_yir: string;
     /** Result completion does not imply billing completion. */
     readonly status?: "pending" | "settled" | (string & {});
+    /** @deprecated Legacy consent echo. New requests use actual settlement without selecting a mode. */
 	readonly billing_mode?: "actual";
     /** The submitted total Job cap, if any. A tight cap can prevent a more expensive fallback. */
     readonly max_cost?: string;
     readonly compute_charges: readonly ComputeCharge[];
+    /** @deprecated Compatibility field; currently zero and waived. Read total_charged_by_yir. */
     readonly gateway_fee: { readonly amount: string; readonly status: "settled" | "waived" };
   };
   readonly error: YirPublicError | null;
@@ -173,6 +178,7 @@ export type QuoteParameters = {
 };
 
 export type Quote = {
+  /** @deprecated Compatibility echo for legacy requests only. */
 	readonly billing_mode?: "actual";
   readonly parameter_notices?: readonly ParameterNotice[];
   readonly parameter_handling_may_vary?: boolean;

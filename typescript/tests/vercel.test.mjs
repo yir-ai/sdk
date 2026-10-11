@@ -257,25 +257,26 @@ test("AI SDK startVideo uploads mixed audio/image/video references", async () =>
   assert.equal(calls.length, 2);
 });
 
-test("invalid generation parameters do not upload inline media", async () => {
+test("invalid protocol budgets do not upload inline media", async () => {
   const { provider, calls } = fixture();
   await assert.rejects(() => generateImage({ model: provider.imageModel("openai/gpt-image-2"),
     prompt: { text: "Edit", images: [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])] }, maxRetries: 0,
-    providerOptions: { yir: { idempotencyKey: "inline-key", parameters: { unknown: true } } } }));
+    providerOptions: { yir: { idempotencyKey: "inline-key", maxCost: "invalid" } } }));
   assert.equal(calls.length, 0);
 });
 
-test("unsupported output counts do not fan out into separately charged jobs", async () => {
+test("output counts reach the Gateway as one job without client fan-out", async () => {
   const { provider, calls } = fixture();
-  await assert.rejects(() => generateImage({
+  await generateImage({
     model: provider.imageModel("openai/gpt-image-2"), prompt: "Two images", n: 2, maxRetries: 0,
     providerOptions: { yir: { idempotencyKey: "one-key" } },
-  }));
-  assert.equal(calls.length, 0);
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].body.parameters.n, 2);
 });
 
-test("unknown parameters and conflicting generic options fail before Submit", async () => {
-  for (const parameters of [{ private_provider_key: "not-a-real-key" }, { aspect_ratio: "16:9" }]) {
+test("conflicting generic options fail before Submit", async () => {
+  for (const parameters of [{ aspect_ratio: "16:9" }]) {
     const { provider, calls } = fixture();
     await assert.rejects(() => generateImage({
       model: provider.imageModel("openai/gpt-image-2"), prompt: "Image", aspectRatio: "1:1", maxRetries: 0,
@@ -309,7 +310,7 @@ test("AI SDK generateImage waits for a running Yir job before downloading", asyn
   assert.equal(result.providerMetadata.yir.images[0].jobId, "43");
 });
 
-test("AI SDK seed and fps reach Yir only where the catalog declares them", async () => {
+test("AI SDK seed and fps reach Yir even when a local catalog lacks them", async () => {
   const calls = [];
   const transport = async request => { calls.push(request); return { object: "job", id: "job_43", model: request.body.model, status: "queued", created_at: 1786000000, error: null }; };
   const options = { prompt: "fixture", n: 1, seed: 7, fps: 24, providerOptions: { yir: { idempotencyKey: "seed-test" } } };
@@ -326,10 +327,10 @@ test("AI SDK seed and fps reach Yir only where the catalog declares them", async
   for (const operation of base.operations) operation.parameters = [...operation.parameters, seed];
   const declared = { ...catalog, models: [...catalog.models, base] };
   const undeclared = await createYirAIProvider({ client: createYirClient(transport, catalog) }).videoModel("bytedance/seedance-2.0").doStart(options);
-  assert.equal("seed" in calls[1].body.parameters || "fps" in calls[1].body.parameters, false);
-  assert.deepEqual(undeclared.warnings.map(warning => [warning.type, warning.feature]), [["unsupported", "fps"], ["unsupported", "seed"]]);
+  assert.deepEqual(calls[1].body.parameters, { n: 1, fps: 24, seed: 7 });
+  assert.deepEqual(undeclared.warnings, []);
   const result = await createYirAIProvider({ client: createYirClient(transport, declared) }).videoModel("future/video").doStart(options);
   assert.equal(calls[2].body.parameters.seed, 7);
-  assert.equal("fps" in calls[2].body.parameters, false);
-  assert.deepEqual(result.warnings.map(warning => warning.feature), ["fps"]);
+  assert.equal(calls[2].body.parameters.fps, 24);
+  assert.deepEqual(result.warnings, []);
 });

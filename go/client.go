@@ -174,6 +174,16 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("yir HTTP %d: %s", e.Status, e.Code)
 }
 
+// SubmissionError preserves the key of a possibly accepted submit. Retry the
+// original request with this key. Unwrap retains errors.Is/errors.As behavior.
+type SubmissionError struct {
+	IdempotencyKey string `json:"-"`
+	Err            error  `json:"-"`
+}
+
+func (e *SubmissionError) Error() string { return e.Err.Error() }
+func (e *SubmissionError) Unwrap() error { return e.Err }
+
 func (c *Client) QuoteImage(ctx context.Context, request GenerationRequest) (Quote, error) {
 	return c.quote(ctx, "images", "generate_image", request)
 }
@@ -225,13 +235,9 @@ func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestIte
 	return batch, nil
 }
 
-// validateGeneration applies the configured catalog only to the model, operation
-// and input mode it describes. Anything newer than that snapshot is left to the
-// Gateway, so a stale catalog never blocks a model published after it was read.
+// Submission checks the stable protocol only. Call ValidateGenerationWithCatalog
+// explicitly for form/development checks; a snapshot cannot veto newer parameters.
 func (c *Client) validateGeneration(operation string, request GenerationRequest) error {
-	if c != nil && c.modelContracts != nil && catalogCovers(*c.modelContracts, request.Model, operation, request.Input.Type) {
-		return ValidateGenerationWithCatalog(operation, request, *c.modelContracts)
-	}
 	return ValidateGenerationProtocol(operation, request)
 }
 
@@ -339,6 +345,9 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 	err := c.do(ctx, http.MethodPost, "/v1/"+resource+"/generations", key, request, &job)
 	if err == nil && (!validJobID(job.ID) || !validJobStatus(job.Status)) {
 		err = errors.New("response_invalid")
+	}
+	if err != nil {
+		return job, &SubmissionError{IdempotencyKey: key, Err: err}
 	}
 	return job, err
 }

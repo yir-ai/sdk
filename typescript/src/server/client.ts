@@ -2,7 +2,6 @@ import { PACKAGE_VERSION } from "./package-version.js";
 import { validateGeneration } from "../shared/standard.js";
 import { modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
 import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
-import { coveringCatalog } from "./catalog-coverage.js";
 import { createFileClient } from "./files.js";
 import type { YirFileClient } from "./files.js";
 import type {
@@ -43,6 +42,38 @@ export type YirRequestOptions = {
   readonly signal?: AbortSignal;
 };
 
+/** Wallet snapshot; available/total can be negative after actual-cost settlement. */
+export type Balance = {
+  readonly object: "balance";
+  readonly currency: "USD";
+  readonly available_amount: string;
+  readonly held_amount: string;
+  readonly total_amount: string;
+};
+
+function parseBalance(value: unknown): Balance {
+  const balance = value as Balance | null;
+  const amount = (value: unknown, signed: boolean) => typeof value === "string" &&
+    (signed ? /^-?[0-9]+(?:\.[0-9]+)?$/ : /^[0-9]+(?:\.[0-9]+)?$/).test(value);
+  if (!balance || balance.object !== "balance" || balance.currency !== "USD" ||
+    !amount(balance.available_amount, true) || !amount(balance.held_amount, false) || !amount(balance.total_amount, true)) {
+    throw new Error("balance_response_invalid");
+  }
+  return balance;
+}
+
+/** A failed submit can already have been accepted. Retry the original body with this key. */
+export type YirSubmissionError = Error & { readonly idempotencyKey: string };
+
+function submissionError(cause: unknown, key: string): YirSubmissionError {
+  // Preserve APIError/AbortError identity for existing callers. A frozen custom
+  // transport error remains accessible through cause instead of losing the key.
+  const error = cause instanceof Error && Object.isExtensible(cause)
+    ? cause : new Error("job_submit_failed", { cause });
+  Object.defineProperty(error, "idempotencyKey", { value: key, configurable: true });
+  return error as YirSubmissionError;
+}
+
 export type YirJobStatusOptions = YirRequestOptions & {
   /**
    * Long polling: whole seconds (0-30) the Gateway may hold the query until the
@@ -52,6 +83,7 @@ export type YirJobStatusOptions = YirRequestOptions & {
 };
 
 export type YirClient = YirFileClient & {
+  getBalance(options?: YirRequestOptions): Promise<Balance>;
   readonly modelContracts?: ModelContractCatalog;
   getModelContracts(options?: YirRequestOptions): Promise<ModelContractCatalog>;
   getModelContract(model: string, options?: YirRequestOptions): Promise<ModelContractDetail>;
@@ -75,6 +107,12 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
   return {
     ...createFileClient(transport),
     modelContracts: localCatalog,
+    getBalance(options) {
+      options?.signal?.throwIfAborted();
+      return transport<unknown>({ method: "GET", path: "/v1/balance",
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(parseBalance);
+    },
     getModelContracts(options) {
       options?.signal?.throwIfAborted();
       return transport<unknown>({
@@ -100,7 +138,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     },
     quoteImage(request, options) {
       options?.signal?.throwIfAborted();
-      validateGeneration("generate_image", request, coveringCatalog(localCatalog, "generate_image", request));
+      validateGeneration("generate_image", request);
       return transport<Quote>({
         method: "POST",
         path: "/v1/images/quotes",
@@ -122,18 +160,18 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       options?.signal?.throwIfAborted();
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
-      validateGeneration("generate_image", request, coveringCatalog(localCatalog, "generate_image", request));
-      return transport<Job>({
+      validateGeneration("generate_image", request);
+      return Promise.resolve().then(() => transport<Job>({
         method: "POST",
         path: "/v1/images/generations",
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
-      }).then(validateSubmittedJob);
+      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
     },
     quoteVideo(request, options) {
       options?.signal?.throwIfAborted();
-      validateGeneration("generate_video", request, coveringCatalog(localCatalog, "generate_video", request));
+      validateGeneration("generate_video", request);
       return transport<Quote>({
         method: "POST",
         path: "/v1/videos/quotes",
@@ -145,14 +183,14 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       options?.signal?.throwIfAborted();
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
-      validateGeneration("generate_video", request, coveringCatalog(localCatalog, "generate_video", request));
-      return transport<Job>({
+      validateGeneration("generate_video", request);
+      return Promise.resolve().then(() => transport<Job>({
         method: "POST",
         path: "/v1/videos/generations",
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
-      }).then(validateSubmittedJob);
+      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
     },
     getJob(id, options) {
       options?.signal?.throwIfAborted();
@@ -278,6 +316,8 @@ export function isTerminalJobStatus(status: JobStatus): boolean {
 }
 
 export class YirAPIError extends Error {
+  /** Present when this error came from a submit. Not included in log/JSON serialization. */
+  declare readonly idempotencyKey?: string;
   readonly status: number;
   readonly code: string;
   readonly retryable: boolean;
