@@ -140,6 +140,9 @@ type APIError struct {
 	// Details locate invalid request fields for YIR_INVALID_REQUEST so callers
 	// can correct the request without parsing Message.
 	Details []ErrorDetail `json:"details,omitempty"`
+	// ProviderError is the upstream's own reason on a failed Job whose request
+	// or inputs were rejected. Sanitized diagnostic text; wording is not stable.
+	ProviderError *ProviderError `json:"provider_error,omitempty"`
 	// RequestID identifies a failed HTTP request for Yir support. It comes from
 	// the error response envelope and is empty for Job and quote batch item errors.
 	RequestID string `json:"-"`
@@ -151,6 +154,11 @@ type APIError struct {
 // ErrorDetail names one invalid request field. Reason is a stable code such as
 // unsupported, required or wrong_type; Allowed lists the contract values the
 // field accepts. Unknown reasons may appear and should be handled generically.
+type ProviderError struct {
+	Provider string `json:"provider"`
+	Message  string `json:"message"`
+}
+
 type ErrorDetail struct {
 	Field    string   `json:"field"`
 	Reason   string   `json:"reason"`

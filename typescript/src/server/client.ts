@@ -12,7 +12,7 @@ import type {
   StandardVideoQuoteRequest,
 } from "../shared/standard.js";
 
-export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirErrorAction, YirPublicError, JobResultFile, JobResultFileFidelity, JobResultContentSafety, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
+export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirErrorAction, YirPublicError, YirProviderError, JobResultFile, JobResultFileFidelity, JobResultContentSafety, ComputeCharge, Job, QuotePrice, Quote, QuoteBatchRequestItem, QuoteBatchItem, QuoteBatch } from "../shared/types.js";
 import type { JobStatus, JobStatusResponse, Job, Quote, YirErrorAction, YirPublicError, QuoteBatchRequestItem, QuoteBatch } from "../shared/types.js";
 
 export type YirTransportRequest = {
@@ -317,7 +317,9 @@ export class YirJobError extends Error {
   readonly retryable: boolean;
 
   constructor(job: Job) {
-    const detail = job.error?.message ?? (job.status === "cancelled" ? "Job was cancelled" : "Job execution failed");
+    const providerError = job.error?.provider_error;
+    const detail = (job.error?.message ?? (job.status === "cancelled" ? "Job was cancelled" : "Job execution failed"))
+      + (providerError ? ` (${providerError.provider}: ${providerError.message})` : "");
     super(`Job ${job.id} ended with status '${job.status}': ${detail}`);
     this.name = "YirJobError";
     this.job = job;

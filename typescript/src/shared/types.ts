@@ -52,6 +52,13 @@ export type YirPublicError = {
   readonly action?: YirErrorAction;
   /** Field-level causes of YIR_INVALID_REQUEST, for correcting the request without parsing `message`. */
   readonly details?: readonly YirErrorDetail[];
+  /** On a failed Job: the upstream's own reason when the request or its inputs were rejected. Sanitized; wording is not stable. */
+  readonly provider_error?: YirProviderError;
+};
+
+export type YirProviderError = {
+  readonly provider: string;
+  readonly message: string;
 };
 
 export type JobCancellation = {
