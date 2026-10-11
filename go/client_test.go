@@ -295,10 +295,13 @@ func TestWaitCancellationReturnsZeroJobAndSavesLastStatusViaOnPollWithoutCancell
 	}
 }
 
-func TestSubmitUnknownOutcomeIsNotRetried(t *testing.T) {
+func TestSubmitUnknownOutcomeRetriesAreBoundedAndKeepKey(t *testing.T) {
 	var calls atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
+		if r.Header.Get("Idempotency-Key") != "original-key" {
+			t.Error("retry changed the persisted generation identity")
+		}
 		io.Copy(io.Discard, r.Body)
 		conn, _, err := w.(http.Hijacker).Hijack()
 		if err != nil {
@@ -310,7 +313,7 @@ func TestSubmitUnknownOutcomeIsNotRetried(t *testing.T) {
 	defer server.Close()
 	client, _ := NewClient("test-key", ClientOptions{BaseURL: server.URL})
 	_, err := client.SubmitImage(context.Background(), SubmitRequest{GenerationRequest: imageRequest()}, "original-key")
-	if err == nil || calls.Load() != 1 {
+	if err == nil || calls.Load() != 4 {
 		t.Fatalf("calls=%d err=%v", calls.Load(), err)
 	}
 }
