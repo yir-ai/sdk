@@ -678,6 +678,7 @@
             "additionalProperties": true,
             "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
+              "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
               "quality": { "type": "string", "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
               "resolution": {
                 "type": "string",
@@ -731,6 +732,7 @@
             "additionalProperties": true,
             "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
+              "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
               "quality": { "type": "string", "description": "Minimum image quality tier; allowed values come from the model contract. For GPT Image the tier is a routing constraint: only channels that serve it run the request, and it is never ignored or lowered. When omitted, any channel may run and quality-capable channels use medium. auto is rejected." },
               "resolution": {
                 "type": "string",
@@ -926,6 +928,7 @@
             "additionalProperties": true,
             "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
+              "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
               "duration": {
                 "type": "integer",
                 "minimum": 1,
@@ -989,6 +992,7 @@
             "additionalProperties": true,
             "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
+              "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
               "duration": {
                 "type": "integer",
                 "minimum": 1,
@@ -1266,6 +1270,7 @@
         "required": ["resolution", "aspect_ratio", "n"],
         "description": "The normalized parameters a request resolves to: every parameter the model contract declares for the operation, at its contract spelling, with omitted parameters at their published default. Parameters the model does not declare are absent, so an image echo carries no duration and a silent video model carries no generate_audio. Only the common parameters are documented here; model-specific parameters are echoed under their contract names.",
         "properties": {
+          "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
           "quality": { "type": "string", "minLength": 1, "description": "Image quality tier when the request constrains one; absent when omitted, which lets any channel run." },
           "duration": { "type": "integer", "minimum": 1, "description": "Video output length in seconds; present when the model declares duration." },
           "resolution": { "type": "string", "minLength": 1 },

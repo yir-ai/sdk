@@ -3410,6 +3410,40 @@
               }
             },
             {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1024x1024",
+                "1152x864",
+                "864x1152",
+                "1424x800",
+                "800x1424",
+                "1248x832",
+                "832x1248",
+                "1568x672",
+                "2048x2048",
+                "2368x1776",
+                "1776x2368",
+                "2816x1584",
+                "1584x2816",
+                "2496x1664",
+                "1664x2496",
+                "3136x1344"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Exact size",
+                  "description": "Exact output pixels; only explicitly compatible supplies are eligible. Conflicting resolution/aspect ratio is rejected."
+                },
+                "zh-CN": {
+                  "label": "精确尺寸",
+                  "description": "精确输出像素，仅选择明确支持的渠道；与分辨率档位或画幅冲突时拒绝。"
+                }
+              }
+            },
+            {
               "name": "n",
               "type": "integer",
               "required": false,

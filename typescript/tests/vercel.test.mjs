@@ -423,10 +423,8 @@ test("a stale catalog does not discard explicit seed for a different input mode"
   assert.equal(calls[1].body.parameters.seed, 0);
 });
 
-test("pixel dimensions and masks fail explicitly before transport instead of changing specifications", async () => {
+test("masks fail explicitly before transport", async () => {
   const { provider, calls } = fixture();
-  await assert.rejects(() => generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: "Image", size: "1024x1024", maxRetries: 0 }), /pixel size/);
-  await assert.rejects(() => startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Video", resolution: "1280x720", maxRetries: 0 }), /pixel resolution/);
   const image = new Uint8Array([137, 80, 78, 71]);
   await assert.rejects(() => generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: { text: "Edit", images: [image], mask: image }, maxRetries: 0 }), /image mask/);
   assert.equal(calls.length, 0);
@@ -568,4 +566,19 @@ test("AI SDK generateVideo carries the standard key through status polling", asy
   assert.equal(calls[1].path, "/v1/jobs/42");
   assert.equal(calls.filter(call => call.method === "POST").length, 1);
   assert.equal(calls[1].headers?.["Idempotency-Key"], undefined);
+});
+
+
+test("AI SDK pixel dimensions reach Yir unchanged without approximate tiers", async () => {
+  const image = fixture();
+  await generateImage({ model: image.provider.image("bytedance/seedream-5.0-pro"), prompt: "Image", size: "3136x1344", maxRetries: 0 });
+  assert.deepEqual(image.calls[0].body.parameters, { n: 1, size: "3136x1344" });
+  const video = fixture("video/mp4");
+  await startVideo({ model: video.provider.video("bytedance/seedance-2.0"), prompt: "Video", resolution: "1280x720", maxRetries: 0 });
+  assert.equal(video.calls[0].body.parameters.size, "1280x720");
+  assert.equal(video.calls[0].body.parameters.resolution, undefined);
+  // Gateway owns current channel support, including models absent from a stale local catalog.
+  await assert.rejects(() => generateImage({ model: image.provider.image("bytedance/seedream-5.0-pro"), prompt: "Image", size: "1024x1024", maxRetries: 0,
+    providerOptions: { yir: { parameters: { size: "2048x2048" } } } }), /parameter_conflict/);
+  assert.equal(image.calls.length, 1);
 });

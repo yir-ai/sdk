@@ -98,7 +98,7 @@ const client = createNodeYirClient();
 
 `providerOptions.yir.idempotencyKey` 可选，优先于调用级 `Idempotency-Key` 请求头。省略时使用该请求头（包括 AI SDK 视频调用生成、在外层重试间保持不变的键），再缺省则随机生成。图片调用若允许 AI SDK 外层重试，应通过上述任一方式传入已保存的键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
-不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数并发送给 Gateway，不因本地目录缺少字段而丢弃。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+图像 mask 仍不支持；图片 `size` 和视频像素 `resolution` 原样映射到可选的 `parameters.size`，没有明确支持该尺寸的模型/渠道时由 Gateway 拒绝。`seed` 与视频 `fps` 映射为同名 Yir 参数并发送给 Gateway，不因本地目录缺少字段而丢弃。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
 图片模型通过 `supportsFileInputs` 表示调用方提供的目录是否声明参考图编辑能力，未知时为 `undefined`；`supportsMaskInputs` 固定为 `false`。这些是能力提示，不是准入校验：不会自动请求目录，也不会用旧快照阻止生成。需要时刷新目录，最终由 Gateway 校验。
 
@@ -109,7 +109,7 @@ const client = createNodeYirClient();
 | `prompt`、`aspectRatio`、`n` | `input.prompt`、`parameters.aspect_ratio`、`parameters.n`，仍受模型规格限制。 |
 | 视频 `duration`、`generateAudio` | `parameters.duration`（整数秒）、`parameters.generate_audio`；保留显式 `false`。 |
 | `seed`、视频 `fps` | 原值透传给 Gateway，不受本地旧目录影响。当前 Gateway 不支持自定义 `fps`，会明确拒绝，不能视为已应用请求帧率。 |
-| 图片 `size`、视频 `resolution` | 拒绝像素尺寸；通过 `providerOptions.yir.parameters.resolution` 传模型分辨率档位，配合 `aspectRatio`。档位不保证精确像素尺寸。 |
+| 图片 `size`、视频 `resolution` | 原样映射到 `parameters.size`，不近似换档。首批支持 Gateway 声明的 Seedream 5.0 Pro 官方图片尺寸；视频当前无声明渠道，由 Gateway 拒绝。省略尺寸保留旧默认值，显式档位/画幅冲突时拒绝。需要 Gateway 已部署精确尺寸支持。 |
 | 图片 `prompt.images`、视频 `prompt.image` | 接受字节、Base64 或公开 HTTPS URL 字符串；视频图片映射为 `first_frame`。 |
 | 视频 `frameImages` | 保留首尾帧角色；不会重复上传 AI SDK 同时传入的首帧镜像；`prompt.image` 加尾帧保留两端。 |
 | 视频 `inputReferences` | 支持图片、视频、音频引用；URL 引用须显式提供 `mediaType`，适配器据此确定角色。 |

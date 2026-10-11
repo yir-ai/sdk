@@ -69,3 +69,19 @@ func TestGenerationValidationPreservesReferencesAndDefaults(t *testing.T) {
 		t.Fatal("validation mutated request identity")
 	}
 }
+
+func TestExactSizeValidationPreservesPixelsWithoutTierDefaults(t *testing.T) {
+	r := GenerationRequest{Model: "bytedance/seedream-5.0-pro", Input: GenerationInput{Type: "text", Prompt: "scene"}, Parameters: map[string]any{"size": "3136x1344"}}
+	before, _ := json.Marshal(r)
+	if err := ValidateGeneration("generate_image", r); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := json.Marshal(r)
+	if string(before) != string(after) {
+		t.Fatal("size validation changed the request")
+	}
+	r.Parameters["size"] = "3137x1344"
+	if err := ValidateGeneration("generate_image", r); err == nil {
+		t.Fatal("unknown size accepted by catalog validation")
+	}
+}

@@ -45,11 +45,11 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
         async doGenerate(call) {
           call.abortSignal?.throwIfAborted();
           if (call.mask !== undefined) unsupported("image mask");
-          if (call.size !== undefined) unsupported("pixel size; use Yir parameters");
           rejectHeaders(call.headers, true);
           const extension = readOptions(call.providerOptions, call.headers);
           const parameters = { ...extension.parameters };
           assign(parameters, "n", call.n);
+          assign(parameters, "size", call.size);
           assign(parameters, "aspect_ratio", call.aspectRatio);
           // Standard settings map to same-named Yir parameters; the model contract decides support.
           const warnings = assignOptional(parameters, { seed: call.seed });
@@ -89,7 +89,6 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
         maxVideosPerCall: Number.MAX_SAFE_INTEGER,
         async doStart(call) {
           call.abortSignal?.throwIfAborted();
-          if (call.resolution !== undefined) unsupported("pixel resolution; use Yir parameters.resolution");
           // Preserve the explicit Yir key, or AI SDK's per-invocation key across
           // outer SDK retries. The selected key also identifies inline uploads.
           rejectHeaders(call.headers, true);
@@ -98,6 +97,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "n", call.n);
           assign(parameters, "aspect_ratio", call.aspectRatio);
           assign(parameters, "duration", call.duration);
+          assign(parameters, "size", call.resolution);
           assign(parameters, "generate_audio", call.generateAudio);
           const warnings = assignOptional(parameters, { fps: call.fps, seed: call.seed });
           // AI SDK mirrors frameImages' first frame in image. Prefer role-tagged
