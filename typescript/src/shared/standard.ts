@@ -58,7 +58,8 @@ export type StandardReference = {
 } & StandardMediaSource;
 
 export type StandardImageGenerationRequest = {
-	readonly billing_mode?: "actual";
+  /** @deprecated Omit for new requests; actual-cost settlement is the default. Retained for legacy callers with the existing validation rules. */
+  readonly billing_mode?: "actual";
   /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly max_cost?: string;
   readonly model: string;
@@ -84,7 +85,8 @@ export type StandardVideoReferenceInput = {
 };
 
 export type StandardVideoGenerationRequest = {
-	readonly billing_mode?: "actual";
+  /** @deprecated Omit for new requests; actual-cost settlement is the default. Retained for legacy callers with the existing validation rules. */
+  readonly billing_mode?: "actual";
   /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly max_cost?: string;
 	readonly model: string;

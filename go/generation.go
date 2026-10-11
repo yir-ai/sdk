@@ -11,6 +11,8 @@ import (
 // GenerationRequest is the common demand used for Quote and Submit.
 // The endpoint selects image or video generation; provider fields are not accepted.
 type GenerationRequest struct {
+	// Deprecated: Omit for new requests; actual-cost settlement is the default.
+	// Retained for legacy callers with the existing validation rules.
 	BillingMode string          `json:"billing_mode,omitempty"`
 	Model       string          `json:"model"`
 	Input       GenerationInput `json:"input"`
