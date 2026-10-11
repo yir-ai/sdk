@@ -15,7 +15,7 @@ export type { JobStatus, JobCancellation, JobStatusResponse, YirErrorCode, YirEr
 import type { JobStatus, JobStatusResponse, Job, Quote, YirErrorAction, YirPublicError, QuoteBatchRequestItem, QuoteBatch } from "../shared/types.js";
 
 export type YirTransportRequest = {
-  readonly method: "GET" | "POST";
+  readonly method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   readonly path: string;
   readonly headers?: Readonly<Record<string, string>>;
   readonly body?: unknown;

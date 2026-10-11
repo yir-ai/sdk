@@ -65,3 +65,11 @@ pnpm check
 From `go/`, run `go test -p 2 ./...` with `GOWORK=off` and `GOMAXPROCS=2` when testing this module in isolation. Go includes its required test fixtures and does not need Node or the root `spec/` directory. External price-fixture tests may skip when their optional input is absent.
 
 Keep the root limited to `go/`, `typescript/`, `spec/`, this README, LICENSE and necessary Git files. Node dependencies, configuration, locks and build artifacts belong under `typescript/`. See [contract maintenance](spec/README.md) for snapshot generation. Go releases use `go/vX.Y.Z` tags; TypeScript versions are managed in its own `package.json`. Publication and release tags are separate operations.
+
+## Account API
+
+Gateway Keys (`yir_sk_`) call the Gateway API. Account Keys (`yir_ak_`) read your account data and optionally change settings; they never authorize the internal Admin API. Create an Account Key in Console → API Keys. Read-only is the default. Key management, spending limits, payment and identity changes remain Console sign-in operations.
+
+TypeScript: `createAccountClient({ apiKey: process.env.YIR_ACCOUNT_API_KEY })` from `@yir-ai/sdk/server`; call `account.analytics.get({ group_by: 'model' })`, `account.logs.list()` or `account.routingProfiles.update(id, { default_preference: 'speed' })`.
+
+Go: `NewAccountClient(accountKey, ClientOptions{})`, then `Analytics(ctx, query)`, `ListLogs(ctx, query)` or `UpdateRoutingProfile(ctx, id, patch)`. Both clients default to `https://api.yir.ai/account/v1`, unwrap the Account API envelope, reject Gateway Keys and do not retry settings writes. Full schemas: [Account API contract](spec/account-openapi.json). Regenerate language types with `node spec/scripts/generate-account-types.mjs`, then `gofmt -w go/account_types.go`.

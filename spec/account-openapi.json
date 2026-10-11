@@ -1,0 +1,2936 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Yir Account API",
+    "version": "1.0.0",
+    "description": "Owner-scoped account analytics and settings. Account Keys do not authorize Gateway API or internal Admin API access. Successful responses use {code:200,message,data}; errors use HTTP status and {code,message}."
+  },
+  "servers": [
+    {
+      "url": "https://api.yir.ai/account/v1"
+    }
+  ],
+  "security": [
+    {
+      "AccountKey": []
+    }
+  ],
+  "paths": {
+    "/alerts/settings": {
+      "get": {
+        "operationId": "get__alerts_settings",
+        "summary": "查询告警邮件设置",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRUserAlertSetting"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "put__alerts_settings",
+        "summary": "更新告警邮件设置",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/types.UpdateYIRUserAlertSetting"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRUserAlertSetting"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics": {
+      "get": {
+        "operationId": "get__analytics",
+        "summary": "汇总当前用户的 YIR 任务分析",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "parameters": [
+          {
+            "name": "attempt_provider",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "collectionFormat": "csv"
+            }
+          },
+          {
+            "name": "core_model",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "collectionFormat": "csv"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "description": "GroupBy 按维度拆分请求数与实收：model、provider（最终渠道）、api_key、status；为空时不分组。",
+            "schema": {
+              "enum": [
+                "model",
+                "provider",
+                "api_key",
+                "status"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRAnalyticsResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logs": {
+      "get": {
+        "operationId": "get__logs",
+        "summary": "查询当前用户的 YIR 任务",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "parameters": [
+          {
+            "name": "api_key_id",
+            "in": "query",
+            "schema": {
+              "maxLength": 1024,
+              "type": "string"
+            }
+          },
+          {
+            "name": "attempt_provider",
+            "in": "query",
+            "schema": {
+              "maxLength": 1024,
+              "type": "string"
+            }
+          },
+          {
+            "name": "billing_status",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "client_task_id",
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "core_model",
+            "in": "query",
+            "schema": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          },
+          {
+            "name": "duration_max_ms",
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "duration_min_ms",
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "error_code",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "exclude_error_code",
+            "in": "query",
+            "description": "ExcludeErrorCode 排除指定公开错误码的失败任务，例如 status=failed&exclude_error_code=YIR_CONTENT_REJECTED 只看执行失败。",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "failure_recovered",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "final_provider",
+            "in": "query",
+            "schema": {
+              "maxLength": 1024,
+              "type": "string"
+            }
+          },
+          {
+            "name": "first_successful_standard",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include 是显式的初页统计请求开关，允许 comma 分隔的 options/summary/series。\n只有显式请求才聚合时间分布，避免后续翻页重复全量统计。",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_options",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "media_type",
+            "in": "query",
+            "schema": {
+              "maxLength": 50,
+              "type": "string"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "maxLength": 30,
+              "type": "string"
+            }
+          },
+          {
+            "name": "operation",
+            "in": "query",
+            "schema": {
+              "maxLength": 50,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page_limit",
+            "in": "query",
+            "description": "PageLimit 限制量, 注意不能修改字段名，避免copy参数时意外覆盖查询参数",
+            "schema": {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page_offset",
+            "in": "query",
+            "description": "PageOffset 偏移量, 注意不能修改字段名，避免copy参数时意外覆盖查询参数",
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "maxLength": 50,
+              "type": "string"
+            }
+          },
+          {
+            "name": "source_model",
+            "in": "query",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRTaskListResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logs/{id}": {
+      "get": {
+        "operationId": "get__logs_id_",
+        "summary": "获取当前用户的 YIR 任务详情",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "YIR Task ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRTaskDetail"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/routing-profiles": {
+      "get": {
+        "operationId": "get__routing_profiles",
+        "summary": "列出算力链路",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/types.RoutingProfileView"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post__routing_profiles",
+        "summary": "创建算力链路",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/types.CreateRoutingProfile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.RoutingProfileView"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/routing-profiles/{id}": {
+      "delete": {
+        "operationId": "delete__routing_profiles_id_",
+        "summary": "归档算力链路",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Routing Profile ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch__routing_profiles_id_",
+        "summary": "更新算力链路",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Routing Profile ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/types.UpdateRoutingProfile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.RoutingProfileView"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wallet/low-balance-alert": {
+      "get": {
+        "operationId": "get__wallet_low_balance_alert",
+        "summary": "查询低余额邮件提醒",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.LowBalanceAlertSetting"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "put__wallet_low_balance_alert",
+        "summary": "更新低余额邮件提醒",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/types.UpdateLowBalanceAlertSetting"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.LowBalanceAlertSetting"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhook-endpoints": {
+      "get": {
+        "operationId": "get__webhook_endpoints",
+        "summary": "ListEndpoints",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRWebhookEndpointListResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post__webhook_endpoints",
+        "summary": "CreateEndpoint",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/types.YIRWebhookEndpointCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRWebhookEndpointView"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhook-endpoints/{id}": {
+      "get": {
+        "operationId": "get__webhook_endpoints_id_",
+        "summary": "GetEndpoint",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Endpoint ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRWebhookEndpointView"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete__webhook_endpoints_id_",
+        "summary": "DeleteEndpoint",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Endpoint ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/handler.Response"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch__webhook_endpoints_id_",
+        "summary": "UpdateEndpoint",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key with settings permission. Changes only the key owner’s settings.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Endpoint ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/types.YIRWebhookEndpointUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRWebhookEndpointView"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhook-endpoints/{id}/deliveries": {
+      "get": {
+        "operationId": "get__webhook_endpoints_id_deliveries",
+        "summary": "ListEndpointDeliveries",
+        "tags": [
+          "Account API"
+        ],
+        "description": "Requires an Account Key. Returns only the key owner’s account data.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Endpoint ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page_limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page_offset",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/handler.Response"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/types.YIRWebhookDeliveryListResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AccountKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Account Key (yir_ak_). Create and revoke it in Console → API Keys."
+      }
+    },
+    "schemas": {
+      "handler.Response": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "description": "状态码，200表示成功，其他表示失败",
+            "type": "integer"
+          },
+          "data": {
+            "description": "响应数据"
+          },
+          "message": {
+            "description": "状态码文字描述",
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRUserAlertSetting": {
+        "type": "object",
+        "properties": {
+          "email_enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "types.UpdateYIRUserAlertSetting": {
+        "type": "object",
+        "required": [
+          "email_enabled"
+        ],
+        "properties": {
+          "email_enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "types.YIRAnalyticsResult": {
+        "type": "object",
+        "properties": {
+          "coverage": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsCoverage"
+          },
+          "generated_at": {
+            "type": "string"
+          },
+          "grouping": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsGrouping"
+          },
+          "options": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsOptions"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRAnalyticsBucket"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsSummary"
+          }
+        }
+      },
+      "types.YIRAnalyticsCoverage": {
+        "type": "object",
+        "properties": {
+          "effective_from": {
+            "type": "string"
+          },
+          "effective_to": {
+            "type": "string"
+          },
+          "granularity": {
+            "type": "string"
+          },
+          "requested_from": {
+            "type": "string"
+          },
+          "requested_to": {
+            "type": "string"
+          },
+          "retention_notice": {
+            "type": "string"
+          },
+          "retention_truncated": {
+            "type": "boolean"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRAnalyticsGrouping": {
+        "type": "object",
+        "properties": {
+          "dimension": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRAnalyticsGroup"
+            }
+          },
+          "other": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsGroup"
+          },
+          "other_groups": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRAnalyticsGroup": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRAnalyticsGroupPoint"
+            }
+          },
+          "succeeded_jobs": {
+            "type": "integer"
+          },
+          "total_charged_usd": {
+            "type": "string"
+          },
+          "total_jobs": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRAnalyticsGroupPoint": {
+        "type": "object",
+        "properties": {
+          "succeeded_jobs": {
+            "type": "integer"
+          },
+          "total_charged_usd": {
+            "type": "string"
+          },
+          "total_jobs": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRAnalyticsOptions": {
+        "type": "object",
+        "properties": {
+          "attempt_providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "types.YIRAnalyticsBucket": {
+        "type": "object",
+        "properties": {
+          "cancelled_jobs": {
+            "type": "integer"
+          },
+          "content_rejected_jobs": {
+            "type": "integer"
+          },
+          "duration_ms": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsDurationStats"
+          },
+          "end_time": {
+            "type": "string"
+          },
+          "failed_jobs": {
+            "type": "integer"
+          },
+          "official_savings": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsOfficialSavings"
+          },
+          "start_time": {
+            "type": "string"
+          },
+          "status_breakdown": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsStatusBreakdown"
+          },
+          "succeeded_jobs": {
+            "type": "integer"
+          },
+          "success_rate_denominator": {
+            "type": "integer"
+          },
+          "success_rate_percent": {
+            "type": "number"
+          },
+          "total_charged_usd": {
+            "type": "string"
+          },
+          "total_jobs": {
+            "type": "integer"
+          },
+          "unfinished_jobs": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRAnalyticsDurationStats": {
+        "type": "object",
+        "properties": {
+          "average_ms": {
+            "type": "integer"
+          },
+          "missing_samples": {
+            "type": "integer"
+          },
+          "p50_ms": {
+            "type": "integer"
+          },
+          "p95_ms": {
+            "type": "integer"
+          },
+          "valid_samples": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRAnalyticsOfficialSavings": {
+        "type": "object",
+        "properties": {
+          "comparable_jobs": {
+            "type": "integer"
+          },
+          "coverage_percent": {
+            "type": "number"
+          },
+          "savings_percent": {
+            "type": "number"
+          }
+        }
+      },
+      "types.YIRAnalyticsStatusBreakdown": {
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "integer"
+          },
+          "delivering": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "queued": {
+            "type": "integer"
+          },
+          "running": {
+            "type": "integer"
+          },
+          "succeeded": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRAnalyticsSummary": {
+        "type": "object",
+        "properties": {
+          "cancelled_jobs": {
+            "type": "integer"
+          },
+          "content_rejected_jobs": {
+            "type": "integer"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsCostStats"
+          },
+          "duration_ms": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsDurationStats"
+          },
+          "failed_jobs": {
+            "type": "integer"
+          },
+          "official_savings": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsOfficialSavings"
+          },
+          "status_breakdown": {
+            "$ref": "#/components/schemas/types.YIRAnalyticsStatusBreakdown"
+          },
+          "succeeded_jobs": {
+            "type": "integer"
+          },
+          "success_rate_denominator": {
+            "type": "integer"
+          },
+          "success_rate_percent": {
+            "type": "number"
+          },
+          "total_jobs": {
+            "type": "integer"
+          },
+          "unfinished_jobs": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRAnalyticsCostStats": {
+        "type": "object",
+        "properties": {
+          "average_succeeded_job_charge_usd": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "known_charge_succeeded_jobs": {
+            "type": "integer"
+          },
+          "total_charged_usd": {
+            "type": "string"
+          },
+          "unknown_charge_succeeded_jobs": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRTaskListResult": {
+        "type": "object",
+        "properties": {
+          "filter_options": {
+            "$ref": "#/components/schemas/types.YIRLogFilterOptions"
+          },
+          "from": {
+            "type": "string"
+          },
+          "generated_at": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRTaskListItem"
+            }
+          },
+          "retention_notice": {
+            "type": "string"
+          },
+          "retention_window_days": {
+            "type": "integer"
+          },
+          "series": {
+            "$ref": "#/components/schemas/types.YIRLogStatusSeries"
+          },
+          "stats_unavailable": {
+            "description": "StatsUnavailable 明确区分「无数据」与「统计查询失败」，图表失败不影响任务列表。",
+            "type": "boolean"
+          },
+          "summary": {
+            "description": "Summary 与 Series 只在显式 include 请求时返回，且与列表、总数来自同一匹配 Job 集合。",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/types.YIRLogStatusCounts"
+              }
+            ]
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "truncated_by_retention": {
+            "type": "boolean"
+          }
+        }
+      },
+      "types.YIRLogFilterOptions": {
+        "type": "object",
+        "properties": {
+          "api_keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRLogAPIKeyOption"
+            }
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "types.YIRLogAPIKeyOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRTaskListItem": {
+        "type": "object",
+        "properties": {
+          "api_key_id": {
+            "type": "string"
+          },
+          "api_key_label": {
+            "type": "string"
+          },
+          "attempt_count": {
+            "type": "integer"
+          },
+          "billing": {
+            "$ref": "#/components/schemas/types.YIRTaskBillingView"
+          },
+          "completed_at": {
+            "type": "string"
+          },
+          "core_model": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "elapsed_ms": {
+            "type": "integer"
+          },
+          "error_category": {
+            "type": "string"
+          },
+          "failure_recovered": {
+            "type": "boolean"
+          },
+          "final_channel_variant": {
+            "type": "string"
+          },
+          "final_channel_variant_label": {
+            "type": "string"
+          },
+          "final_provider": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "latency_hint": {
+            "$ref": "#/components/schemas/types.YIRLogLatencyHint"
+          },
+          "source": {
+            "type": "string"
+          },
+          "spec_summary": {
+            "type": "string"
+          },
+          "started_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total_charged_by_yir": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRTaskBillingView": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "display_status": {
+            "type": "string"
+          },
+          "total_charged_by_yir": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogLatencyHint": {
+        "type": "object",
+        "properties": {
+          "comparison": {
+            "$ref": "#/components/schemas/types.YIRLogLatencyComparison"
+          },
+          "delivery_ms": {
+            "type": "integer"
+          },
+          "fallback_count": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogLatencyComparison": {
+        "type": "object",
+        "properties": {
+          "baseline_p95_ms": {
+            "type": "integer"
+          },
+          "baseline_sample_count": {
+            "type": "integer"
+          },
+          "from": {
+            "type": "string"
+          },
+          "p95_ms": {
+            "type": "integer"
+          },
+          "sample_count": {
+            "type": "integer"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogStatusSeries": {
+        "type": "object",
+        "properties": {
+          "buckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRLogTimeBucket"
+            }
+          },
+          "granularity": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogTimeBucket": {
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "integer"
+          },
+          "content_rejected": {
+            "type": "integer"
+          },
+          "delivering": {
+            "type": "integer"
+          },
+          "end_time": {
+            "type": "string"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "queued": {
+            "type": "integer"
+          },
+          "running": {
+            "type": "integer"
+          },
+          "start_time": {
+            "type": "string"
+          },
+          "succeeded": {
+            "type": "integer"
+          },
+          "success_rate_percent": {
+            "type": "number"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "unfinished": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRLogStatusCounts": {
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "integer"
+          },
+          "content_rejected": {
+            "type": "integer"
+          },
+          "delivering": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "queued": {
+            "type": "integer"
+          },
+          "running": {
+            "type": "integer"
+          },
+          "succeeded": {
+            "type": "integer"
+          },
+          "success_rate_percent": {
+            "type": "number"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "unfinished": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRTaskDetail": {
+        "type": "object",
+        "properties": {
+          "api_key_id": {
+            "type": "string"
+          },
+          "api_key_label": {
+            "type": "string"
+          },
+          "attempt_count": {
+            "type": "integer"
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRLogAttemptView"
+            }
+          },
+          "billing": {
+            "$ref": "#/components/schemas/types.YIRTaskBillingView"
+          },
+          "callbacks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRCallbackView"
+            }
+          },
+          "cancellation": {
+            "$ref": "#/components/schemas/types.YIRLogCancellationView"
+          },
+          "cancellation_action": {
+            "type": "string"
+          },
+          "client_task_id": {
+            "type": "string"
+          },
+          "completed_at": {
+            "type": "string"
+          },
+          "core_model": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "elapsed_ms": {
+            "type": "integer"
+          },
+          "error": {
+            "$ref": "#/components/schemas/types.YIRStandardV1Error"
+          },
+          "error_category": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRTaskEventView"
+            }
+          },
+          "failure_recovered": {
+            "type": "boolean"
+          },
+          "final_channel_variant": {
+            "type": "string"
+          },
+          "final_channel_variant_label": {
+            "type": "string"
+          },
+          "final_provider": {
+            "type": "string"
+          },
+          "financial_confirmation": {
+            "$ref": "#/components/schemas/types.YIRFinancialConfirmationView"
+          },
+          "id": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/types.YIRLogInputView"
+          },
+          "input_transfers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRInputTransferView"
+            }
+          },
+          "latency_hint": {
+            "$ref": "#/components/schemas/types.YIRLogLatencyHint"
+          },
+          "lifecycle": {
+            "$ref": "#/components/schemas/types.YIRLogLifecycleView"
+          },
+          "result": {
+            "$ref": "#/components/schemas/types.YIRStandardV1Result"
+          },
+          "routing": {
+            "$ref": "#/components/schemas/types.YIRLogRoutingView"
+          },
+          "source": {
+            "type": "string"
+          },
+          "source_model": {
+            "type": "string"
+          },
+          "source_path": {
+            "type": "string"
+          },
+          "spec_summary": {
+            "type": "string"
+          },
+          "started_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total_charged_by_yir": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRUsageView"
+            }
+          },
+          "winning_attempt_id": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogAttemptView": {
+        "type": "object",
+        "properties": {
+          "accelerated": {
+            "description": "Accelerated 表示该尝试长尾未出结果，被路由加速截断并换渠道重试。",
+            "type": "boolean"
+          },
+          "channel_variant": {
+            "type": "string"
+          },
+          "channel_variant_label": {
+            "description": "ChannelVariantLabel is a presentation key; ChannelVariant retains the frozen routing identity.",
+            "type": "string"
+          },
+          "charge": {
+            "$ref": "#/components/schemas/types.YIRLogAttemptChargeView"
+          },
+          "completed_at": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "error_category": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "result_adopted": {
+            "type": "boolean"
+          },
+          "role": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "started_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRLogAttemptUsageView"
+            }
+          }
+        }
+      },
+      "types.YIRLogAttemptChargeView": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "x-nullable": true
+          },
+          "amount_basis": {
+            "$ref": "#/components/schemas/types.YIRStandardV1AmountBasis"
+          },
+          "billed_by": {
+            "$ref": "#/components/schemas/types.YIRStandardV1BilledBy"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/types.YIRStandardV1ChargeStatus"
+          },
+          "supply_type": {
+            "$ref": "#/components/schemas/types.YIRStandardV1SupplyType"
+          }
+        }
+      },
+      "types.YIRStandardV1AmountBasis": {
+        "type": "string",
+        "enum": [
+          "yir_price_rule"
+        ],
+        "x-enum-varnames": [
+          "YIRStandardV1AmountBasisYIRPriceRule"
+        ]
+      },
+      "types.YIRStandardV1BilledBy": {
+        "type": "string",
+        "enum": [
+          "yir"
+        ],
+        "x-enum-varnames": [
+          "YIRStandardV1BilledByYIR"
+        ]
+      },
+      "types.YIRStandardV1ChargeStatus": {
+        "type": "string",
+        "enum": [
+          "settled",
+          "waived"
+        ],
+        "x-enum-varnames": [
+          "YIRStandardV1ChargeStatusSettled",
+          "YIRStandardV1ChargeStatusWaived"
+        ]
+      },
+      "types.YIRStandardV1SupplyType": {
+        "type": "string",
+        "enum": [
+          "managed"
+        ],
+        "x-enum-varnames": [
+          "YIRStandardV1SupplyTypeManaged"
+        ]
+      },
+      "types.YIRLogAttemptUsageView": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value_decimal": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRCallbackView": {
+        "type": "object",
+        "properties": {
+          "attempt_count": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "delivered_at": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "last_status_code": {
+            "type": "integer"
+          },
+          "next_attempt_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogCancellationView": {
+        "type": "object",
+        "properties": {
+          "effect": {
+            "type": "string"
+          },
+          "requested_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRStandardV1Error": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/types.YIRStandardV1ErrorAction"
+          },
+          "code": {
+            "$ref": "#/components/schemas/types.YIRStandardV1ErrorCode"
+          },
+          "details": {
+            "description": "Details locate invalid request fields so callers can correct them without\nparsing message; present only for field-level YIR_INVALID_REQUEST errors.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRStandardV1ErrorDetail"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "provider_error": {
+            "description": "ProviderError carries the upstream's own reason when a failed Job's last\nrejection was caused by the request or its inputs; diagnostic text only.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/types.YIRStandardV1ProviderError"
+              }
+            ]
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "types.YIRStandardV1ErrorAction": {
+        "type": "string",
+        "enum": [
+          "fix_request",
+          "modify_input",
+          "add_funds",
+          "retry_later",
+          "contact_support"
+        ],
+        "x-enum-varnames": [
+          "YIRStandardV1ErrorActionFixRequest",
+          "YIRStandardV1ErrorActionModifyInput",
+          "YIRStandardV1ErrorActionAddFunds",
+          "YIRStandardV1ErrorActionRetryLater",
+          "YIRStandardV1ErrorActionContactSupport"
+        ]
+      },
+      "types.YIRStandardV1ErrorCode": {
+        "type": "string",
+        "enum": [
+          "YIR_INVALID_REQUEST",
+          "YIR_UNAUTHORIZED",
+          "YIR_INVALID_ROUTING_OVERRIDE",
+          "YIR_ROUTING_OVERRIDE_NOT_ALLOWED",
+          "YIR_INSUFFICIENT_BALANCE",
+          "YIR_BUDGET_EXCEEDED",
+          "YIR_SPEND_LIMIT_EXCEEDED",
+          "YIR_JOB_NOT_FOUND",
+          "YIR_FILE_NOT_FOUND",
+          "YIR_FILE_NOT_READY",
+          "YIR_FILE_EXPIRED",
+          "YIR_MODEL_NOT_FOUND",
+          "YIR_IDEMPOTENCY_CONFLICT",
+          "YIR_JOB_NOT_CANCELLABLE",
+          "YIR_NO_EXECUTABLE_ROUTE",
+          "YIR_RATE_LIMITED",
+          "YIR_TEMPORARILY_UNAVAILABLE",
+          "YIR_EXECUTION_FAILED",
+          "YIR_INPUT_REJECTED",
+          "YIR_CONTENT_REJECTED",
+          "YIR_OUTCOME_TIMEOUT",
+          "YIR_RESULT_DELIVERY_FAILED",
+          "YIR_JOB_TIMEOUT",
+          "YIR_FIDELITY_EXCLUDED"
+        ],
+        "x-enum-varnames": [
+          "YIRStandardV1ErrorCodeInvalidRequest",
+          "YIRStandardV1ErrorCodeUnauthorized",
+          "YIRStandardV1ErrorCodeInvalidRoutingOverride",
+          "YIRStandardV1ErrorCodeRoutingOverrideNotAllowed",
+          "YIRStandardV1ErrorCodeInsufficientBalance",
+          "YIRStandardV1ErrorCodeBudgetExceeded",
+          "YIRStandardV1ErrorCodeSpendLimitExceeded",
+          "YIRStandardV1ErrorCodeJobNotFound",
+          "YIRStandardV1ErrorCodeFileNotFound",
+          "YIRStandardV1ErrorCodeFileNotReady",
+          "YIRStandardV1ErrorCodeFileExpired",
+          "YIRStandardV1ErrorCodeModelNotFound",
+          "YIRStandardV1ErrorCodeIdempotencyConflict",
+          "YIRStandardV1ErrorCodeJobNotCancellable",
+          "YIRStandardV1ErrorCodeNoExecutableRoute",
+          "YIRStandardV1ErrorCodeRateLimited",
+          "YIRStandardV1ErrorCodeTemporarilyUnavailable",
+          "YIRStandardV1ErrorCodeExecutionFailed",
+          "YIRStandardV1ErrorCodeInputRejected",
+          "YIRStandardV1ErrorCodeContentRejected",
+          "YIRStandardV1ErrorCodeOutcomeTimeout",
+          "YIRStandardV1ErrorCodeResultDeliveryFailed",
+          "YIRStandardV1ErrorCodeJobTimeout",
+          "YIRStandardV1ErrorCodeFidelityExcluded"
+        ]
+      },
+      "types.YIRStandardV1ErrorDetail": {
+        "type": "object",
+        "properties": {
+          "allowed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRStandardV1ProviderError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRTaskEventView": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "occurred_at": {
+            "type": "string"
+          },
+          "reason_code": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRFinancialConfirmationView": {
+        "type": "object",
+        "properties": {
+          "authorized_amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "deadline_at": {
+            "type": "string"
+          },
+          "held_amount": {
+            "type": "string"
+          },
+          "settled_amount": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogInputView": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string"
+          },
+          "prompt_length": {
+            "type": "integer"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/model.YIRInputSummary"
+          }
+        }
+      },
+      "model.YIRInputSummary": {
+        "type": "object",
+        "properties": {
+          "reference_count": {
+            "type": "integer"
+          },
+          "specification": {
+            "$ref": "#/components/schemas/aigcprotocol.CanonicalTaskSpecificationV2"
+          }
+        }
+      },
+      "aigcprotocol.CanonicalTaskSpecificationV2": {
+        "type": "object",
+        "properties": {
+          "aspect_ratio": {
+            "type": "string"
+          },
+          "duration_seconds": {
+            "type": "integer"
+          },
+          "generate_audio": {
+            "type": "boolean"
+          },
+          "ignore_quality": {
+            "description": "IgnoreQuality 由准入层按显式路由意图冻结，不是公共生成参数。",
+            "type": "boolean"
+          },
+          "image_search": {
+            "type": "boolean"
+          },
+          "output_count": {
+            "type": "integer"
+          },
+          "quality_tier": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "return_last_frame": {
+            "type": "boolean"
+          },
+          "seed": {
+            "type": "integer"
+          },
+          "web_search": {
+            "type": "boolean"
+          }
+        }
+      },
+      "types.YIRInputTransferView": {
+        "type": "object",
+        "properties": {
+          "attempt_count": {
+            "type": "integer"
+          },
+          "completed_at": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "file_index": {
+            "type": "integer"
+          },
+          "media_kind": {
+            "type": "string"
+          },
+          "r2_stage_duration_ms": {
+            "type": "integer"
+          },
+          "size_bytes": {
+            "type": "integer"
+          },
+          "source_download_duration_ms": {
+            "type": "integer"
+          },
+          "started_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogLifecycleView": {
+        "type": "object",
+        "properties": {
+          "log_expires_at": {
+            "type": "string"
+          },
+          "raw_content_state": {
+            "$ref": "#/components/schemas/types.YIRLogRawContentState"
+          },
+          "raw_expires_at": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogRawContentState": {
+        "type": "string",
+        "enum": [
+          "retained",
+          "cleanup_pending",
+          "purged"
+        ],
+        "x-enum-varnames": [
+          "YIRLogRawContentStateRetained",
+          "YIRLogRawContentStateCleanupPending",
+          "YIRLogRawContentStatePurged"
+        ]
+      },
+      "types.YIRStandardV1Result": {
+        "type": "object",
+        "properties": {
+          "availability": {
+            "enum": [
+              "available",
+              "expired"
+            ],
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/types.YIRStandardV1ResultAvailability"
+              }
+            ]
+          },
+          "content_safety": {
+            "$ref": "#/components/schemas/types.YIRStandardV1ContentSafety"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRStandardV1ResultFile"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "types.YIRStandardV1ResultAvailability": {
+        "type": "string",
+        "enum": [
+          "available",
+          "expired"
+        ],
+        "x-enum-varnames": [
+          "YIRStandardV1ResultAvailabilityAvailable",
+          "YIRStandardV1ResultAvailabilityExpired"
+        ]
+      },
+      "types.YIRStandardV1ContentSafety": {
+        "type": "object",
+        "properties": {
+          "checked_by": {
+            "type": "string",
+            "enum": [
+              "provider",
+              "yir"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "unchecked"
+            ]
+          }
+        }
+      },
+      "types.YIRStandardV1ResultFile": {
+        "type": "object",
+        "properties": {
+          "expires_at": {
+            "type": "integer"
+          },
+          "fidelity": {
+            "description": "Fidelity 是交付时按 C2PA 内容凭证与渠道审计判定的规格真实性；旧结果没有记录时省略。",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/types.YIRStandardV1ResultFidelity"
+              }
+            ]
+          },
+          "height": {
+            "type": "integer"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRStandardV1ResultFidelity": {
+        "type": "object",
+        "properties": {
+          "grade": {
+            "type": "string",
+            "enum": [
+              "original",
+              "app",
+              "equivalent",
+              "altered",
+              "unverified"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogRoutingView": {
+        "type": "object",
+        "properties": {
+          "preference": {
+            "type": "string"
+          },
+          "profile_id": {
+            "type": "string"
+          },
+          "selection_reason": {
+            "$ref": "#/components/schemas/types.YIRLogRoutingSelectionReason"
+          }
+        }
+      },
+      "types.YIRLogRoutingSelectionReason": {
+        "type": "string",
+        "enum": [
+          "balanced",
+          "cost",
+          "speed",
+          "request_order",
+          "fallback"
+        ],
+        "x-enum-varnames": [
+          "YIRLogRoutingSelectionBalanced",
+          "YIRLogRoutingSelectionCost",
+          "YIRLogRoutingSelectionSpeed",
+          "YIRLogRoutingSelectionRequestOrder",
+          "YIRLogRoutingSelectionFallback"
+        ]
+      },
+      "types.YIRUsageView": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "evidence_status": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value_decimal": {
+            "type": "string"
+          }
+        }
+      },
+      "types.RoutingProfileView": {
+        "type": "object",
+        "properties": {
+          "active_key_count": {
+            "type": "integer"
+          },
+          "allowed_model_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "default_accelerate": {
+            "type": "boolean"
+          },
+          "default_fidelity": {
+            "type": "string",
+            "enum": [
+              "original",
+              "genuine",
+              "any"
+            ]
+          },
+          "default_preference": {
+            "type": "string"
+          },
+          "default_provider_order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "default_provider_order_strict": {
+            "type": "boolean"
+          },
+          "excluded_model_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excluded_providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fallback_enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "model_provider_orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.RoutingModelOrder"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.RoutingModelOrder": {
+        "type": "object",
+        "required": [
+          "canonical_model",
+          "provider_order"
+        ],
+        "properties": {
+          "canonical_model": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "provider_order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "strict": {
+            "type": "boolean"
+          }
+        }
+      },
+      "types.CreateRoutingProfile": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "default_accelerate": {
+            "type": "boolean"
+          },
+          "default_fidelity": {
+            "type": "string",
+            "enum": [
+              "original",
+              "genuine",
+              "any"
+            ]
+          },
+          "default_preference": {
+            "type": "string",
+            "enum": [
+              "balanced",
+              "cost",
+              "speed"
+            ]
+          },
+          "fallback_enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      },
+      "types.UpdateRoutingProfile": {
+        "type": "object",
+        "properties": {
+          "allowed_model_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "default_accelerate": {
+            "type": "boolean"
+          },
+          "default_fidelity": {
+            "type": "string",
+            "enum": [
+              "original",
+              "genuine",
+              "any"
+            ]
+          },
+          "default_preference": {
+            "type": "string",
+            "enum": [
+              "balanced",
+              "cost",
+              "speed"
+            ]
+          },
+          "excluded_model_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excluded_providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fallback_enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      },
+      "types.LowBalanceAlertSetting": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "example": "USD"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "is_default": {
+            "description": "IsDefault reports that the user has not customised the policy yet.",
+            "type": "boolean"
+          },
+          "threshold": {
+            "type": "string",
+            "example": "5.00"
+          },
+          "triggered_at": {
+            "description": "TriggeredAt is set while the current low-balance episode has already been emailed.",
+            "type": "string"
+          }
+        }
+      },
+      "types.UpdateLowBalanceAlertSetting": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "threshold"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "threshold": {
+            "type": "string",
+            "maxLength": 32,
+            "example": "5.00"
+          }
+        }
+      },
+      "types.YIRWebhookEndpointListResult": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRWebhookEndpointView"
+            }
+          }
+        }
+      },
+      "types.YIRWebhookEndpointView": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "events": {
+            "type": "string"
+          },
+          "failed_deliveries": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "last_delivery_at": {
+            "type": "string"
+          },
+          "last_delivery_status": {
+            "type": "string"
+          },
+          "successful_deliveries": {
+            "type": "integer"
+          },
+          "total_deliveries": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRWebhookEndpointCreate": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "types.YIRWebhookEndpointUpdate": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "types.YIRWebhookDeliveryListResult": {
+        "type": "object",
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRWebhookDeliveryView"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "types.YIRWebhookDeliveryView": {
+        "type": "object",
+        "properties": {
+          "attempt_count": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "delivered_at": {
+            "type": "string"
+          },
+          "event": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "last_error": {
+            "type": "string"
+          },
+          "last_status_code": {
+            "type": "integer"
+          },
+          "next_attempt_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "url_host": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
