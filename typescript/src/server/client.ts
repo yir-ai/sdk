@@ -644,14 +644,37 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       ...request.headers,
     };
 
-    const response = await fetchFn(url, {
-      method: request.method,
-      headers,
-      body: request.body !== undefined ? JSON.stringify(request.body) : undefined,
-      signal: requestSignal(request.signal, timeoutMs, request.holdMs),
-      // workerd supports manual/follow; never replay a request or forward its credentials.
-      redirect: "manual",
-    });
+    const body = request.body !== undefined ? JSON.stringify(request.body) : undefined;
+    const signal = requestSignal(request.signal, timeoutMs, request.holdMs);
+    const canRetry = request.method === "GET" || (request.method === "POST" &&
+      /^\/v1\/(images|videos)\/generations$/.test(path) &&
+      Boolean(new Headers(headers).get("Idempotency-Key")?.trim()));
+    let response: globalThis.Response;
+    let text = "";
+    for (let attempt = 0; ; attempt++) {
+      try {
+        response = await fetchFn(url, {
+          method: request.method,
+          headers,
+          body,
+          signal,
+          // workerd supports manual/follow; never forward credentials to redirects.
+          redirect: "manual",
+        });
+        if (response.status < 300 || response.status >= 400) text = await response.text();
+      } catch (error) {
+        if (!canRetry || attempt >= 3 || signal?.aborted || !(error instanceof TypeError)) throw error;
+        await sleep(500 * 2 ** attempt, signal);
+        continue;
+      }
+      if (!canRetry || attempt >= 3 || ![502, 503, 504].includes(response.status)) break;
+      const hint = response.headers.get("retry-after");
+      const seconds = hint === null ? NaN : Number(hint);
+      const retryAfter = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(hint ?? "") - Date.now();
+      // Do not retry earlier than a server's long Retry-After instruction.
+      if (retryAfter > 60000) break;
+      await sleep(Math.max(500 * 2 ** attempt, retryAfter || 0), signal);
+    }
     if (response.status >= 300 && response.status < 400) {
       await response.body?.cancel();
       if (request.redirect === "manual") {
@@ -662,7 +685,6 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     }
 
     const contentType = response.headers.get("content-type") ?? "";
-    const text = await response.text();
     let data: unknown = text;
     if (contentType.includes("application/json")) {
       try {

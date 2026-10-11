@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -325,7 +326,7 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 			return job, &ParameterError{"webhook_url", "invalid_url"}
 		}
 	}
-	// Submit is issued once. An unknown transport outcome must reuse the caller's key.
+	// Transport retries reuse this exact key and encoded body.
 	err := c.do(ctx, http.MethodPost, "/v1/"+resource+"/generations", key, request, &job)
 	if err == nil && (!validJobID(job.ID) || !validJobStatus(job.Status)) {
 		err = errors.New("response_invalid")
@@ -404,7 +405,8 @@ func (c *Client) do(ctx context.Context, method, path, key string, body, respons
 	return nil
 }
 
-// send issues one authenticated Gateway request. Redirects are returned, never followed.
+// send retries reads and keyed generation requests without changing their identity.
+// Redirects are returned, never followed.
 func (c *Client) send(ctx context.Context, method, path, key string, body any) (*http.Response, []byte, error) {
 	if c == nil || c.httpClient == nil {
 		return nil, nil, errors.New("client_uninitialized")
@@ -417,6 +419,46 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 			return nil, nil, errors.New("request_encoding_failed")
 		}
 	}
+	if c.httpClient.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, c.httpClient.Timeout)
+		defer cancel()
+	}
+	canRetry := method == http.MethodGet || (method == http.MethodPost && key != "" &&
+		(path == "/v1/images/generations" || path == "/v1/videos/generations"))
+	for attempt := 0; ; attempt++ {
+		result, raw, err := c.sendOnce(ctx, method, path, key, data, body != nil)
+		var networkError net.Error
+		transient := errors.As(err, &networkError) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF)
+		if !canRetry || attempt >= 3 || ctx.Err() != nil || (err != nil && !transient) || (err == nil && result.StatusCode != 502 && result.StatusCode != 503 && result.StatusCode != 504) {
+			return result, raw, err
+		}
+		delay := 500 * time.Millisecond * time.Duration(1<<attempt)
+		if result != nil {
+			hint := result.Header.Get("Retry-After")
+			if seconds, parseErr := strconv.Atoi(hint); parseErr == nil && seconds > 0 {
+				if seconds > 60 {
+					return result, raw, err
+				}
+				delay = max(delay, time.Duration(seconds)*time.Second)
+			} else if date, parseErr := http.ParseTime(hint); parseErr == nil {
+				if time.Until(date) > time.Minute {
+					return result, raw, err
+				}
+				delay = max(delay, time.Until(date))
+			}
+		}
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, nil, ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+func (c *Client) sendOnce(ctx context.Context, method, path, key string, data []byte, hasBody bool) (*http.Response, []byte, error) {
 	request, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, bytes.NewReader(data))
 	if err != nil {
 		return nil, nil, errors.New("request_creation_failed")
@@ -425,9 +467,9 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 	request.Header.Set("User-Agent", "yir-go/"+Version)
 	request.Header.Set("Accept", "application/json")
 	// net/http may otherwise replay a request carrying Idempotency-Key after a
-	// connection failure. Recovery belongs to the caller with the original key.
+	// connection failure. Only our bounded loop may replay the frozen request.
 	request.GetBody = nil
-	if body != nil {
+	if hasBody {
 		request.Header.Set("Content-Type", "application/json")
 	}
 	if key != "" {

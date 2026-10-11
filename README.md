@@ -33,7 +33,7 @@ The SDKs fix the protocol; the API supplies the models. Models, their parameters
 
 ## Safe generation lifecycle
 
-The generation idempotency key is optional: the SDKs create a new random key per call when it is omitted. Submit is issued once. Recovery across calls/processes requires the same caller-persisted key and exact request. Server fallback within an accepted Job is independent of this header.
+The generation idempotency key is optional: the SDKs create a new random key per call when it is omitted. The built-in transport may retry a keyed submission up to three times after a network failure or HTTP 502/503/504, always preserving its key and encoded body. Recovery across calls/processes requires the same caller-persisted key and exact request. Server fallback within an accepted Job is independent of this header.
 
 1. Build an explicit request and obtain a quote. Check supply; the primary price is an estimate, not a ceiling.
 2. Have your application approve the spend. Persist the exact submit request, including any optional `max_cost`, and a stable idempotency key before submitting.

@@ -54,7 +54,7 @@ You can also pass `{ apiKey, baseURL, fetch, headers, userAgent, timeoutMs }`. T
 
 ## Quote, authorize, persist, submit
 
-`client.submitImage(request)` and `client.submitVideo(request)` create a random idempotency key per call. Explicit keys are trimmed and must be non-empty with no CR/LF. Submit has no hidden retries. For recovery across calls or process restarts, pass a saved key as the second argument and reuse the exact request. Server fallback within an accepted Job is independent of the client key.
+`client.submitImage(request)` and `client.submitVideo(request)` create a random idempotency key per call. Explicit keys are trimmed and must be non-empty with no CR/LF. The built-in transport retries network failures and HTTP 502/503/504 up to three times (0.5s, 1s, 2s backoff), preserving the exact encoded body and idempotency key. Reads use the same policy. Retries share the request timeout and respect cancellation; Retry-After up to 60s is honored, and longer values are returned without retry. Other writes and terminal failed Jobs are never automatically resubmitted. For recovery across calls or process restarts, pass a saved key as the second argument and reuse the exact request. Server fallback within an accepted Job is independent of the client key.
 
 Use [quickstart.mjs](examples/quickstart.mjs)'s `prepareImage(client, input, maxCost)` to build a request and quote it. It requires available supply with a priced primary estimate and returns that estimate with a request carrying your approved `max_cost`.
 

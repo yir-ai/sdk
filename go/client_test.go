@@ -103,8 +103,8 @@ func TestClientSubmitOptionalIdempotencyKey(t *testing.T) {
 					Parameters: map[string]any{"duration": 5, "resolution": "720p", "aspect_ratio": "16:9", "generate_audio": false, "n": 1}}
 				submit = client.SubmitVideo
 			}
-			if _, err := submit(context.Background(), request); err == nil || calls != 1 {
-				t.Fatalf("failed submit must not retry: calls=%d err=%v", calls, err)
+			if _, err := submit(context.Background(), request); err != nil || calls != 2 {
+				t.Fatalf("temporary failure should safely retry: calls=%d err=%v", calls, err)
 			}
 			if _, err := submit(context.Background(), request); err != nil {
 				t.Fatal(err)
@@ -112,10 +112,10 @@ func TestClientSubmitOptionalIdempotencyKey(t *testing.T) {
 			if _, err := submit(context.Background(), request, " stable-key "); err != nil {
 				t.Fatal(err)
 			}
-			if len(receivedKeys[0]) < 26 || len(receivedKeys[1]) < 26 || receivedKeys[0] == receivedKeys[1] || receivedKeys[2] != "stable-key" {
+			if len(receivedKeys[0]) < 26 || receivedKeys[0] != receivedKeys[1] || receivedKeys[0] == receivedKeys[2] || receivedKeys[3] != "stable-key" {
 				t.Fatalf("unexpected keys: %v", receivedKeys)
 			}
-			if _, err := submit(context.Background(), request, " stable-key "); err != nil || receivedKeys[3] != "stable-key" {
+			if _, err := submit(context.Background(), request, " stable-key "); err != nil || receivedKeys[4] != "stable-key" {
 				t.Fatalf("key not preserved: %v err=%v", receivedKeys, err)
 			}
 			for _, keys := range [][]string{{""}, {" "}, {"key\ninjected"}, {"key\n"}, {"one", "two"}} {
@@ -123,7 +123,7 @@ func TestClientSubmitOptionalIdempotencyKey(t *testing.T) {
 					t.Fatalf("invalid keys accepted: %v", keys)
 				}
 			}
-			if calls != 4 {
+			if calls != 5 {
 				t.Fatalf("invalid keys reached network: %d", calls)
 			}
 		})

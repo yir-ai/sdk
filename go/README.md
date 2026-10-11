@@ -62,7 +62,7 @@ Earlier release notes are in the [changelog](CHANGELOG.md).
 
 ## Quote and submit
 
-`SubmitImage(ctx, request)` and `SubmitVideo(ctx, request)` generate a random idempotency key per call. You may pass one explicit, non-empty key with no CR/LF as the final argument. Submit has no hidden retries. Recovery across calls or process restarts requires a saved key and exact request. Server fallback within an accepted Job is independent of the client key.
+`SubmitImage(ctx, request)` and `SubmitVideo(ctx, request)` generate a random idempotency key per call. You may pass one explicit, non-empty key with no CR/LF as the final argument. The built-in transport retries network failures and HTTP 502/503/504 up to three times (0.5s, 1s, 2s backoff), preserving the exact encoded body and idempotency key. Reads use the same policy. Retries share the request timeout and respect cancellation; Retry-After up to 60s is honored, and longer values are returned without retry. Other writes and terminal failed Jobs are never automatically resubmitted. Recovery across calls or process restarts requires a saved key and exact request. Server fallback within an accepted Job is independent of the client key.
 
 Build a `GenerationRequest` with `Model`, `Input` and explicit `Parameters`; use `QuoteImage` or `QuoteVideo`. Require `Supply.Available` and a priced `Primary`; its amount is an estimate, not a ceiling. Check expiry before approving new work.
 
