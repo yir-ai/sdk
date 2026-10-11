@@ -133,3 +133,5 @@ const client = createNodeYirClient();
 ## 验证和维护
 
 在 `typescript/` 执行 `pnpm check`，验证生成合同、测试、类型、浏览器边界及实际归档安装。公开快照使用 `pnpm generate:model-contracts` 和 `pnpm check:model-contracts`。Node 产物保留在本子目录。[MIT 许可证](../../LICENSE)。
+
+结果完成与费用结清独立：`billing.status` 为 `pending` 时，当前金额仍可增加；为 `settled` 后才按 Job ID 完成一次费用对账。结果立即通知，延迟账单结清后另发 `job.billing_settled`；事件按事件 ID 去重，结果履约与费用入账分别按 Job ID 去重。也可继续查询 Job。旧服务缺少状态或未知状态时，不应依据 0 元推断结清。新请求省略 `billing_mode`；历史请求重试保留原始请求体与幂等键，包括原有字段。

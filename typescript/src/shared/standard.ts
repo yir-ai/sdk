@@ -214,7 +214,7 @@ export function validateModelParameters(
  */
 export function validateGeneration(operation: "generate_image" | "generate_video", request: unknown, catalog?: ModelContractCatalog): void {
   const body = requireObject(request, "request");
-  if (Object.hasOwn(body, "billing_mode")) {
+  if (Object.hasOwn(body, "billing_mode") && body.billing_mode !== undefined) {
     if (body.billing_mode !== "actual") throw new YirSDKValidationError("billing_mode_invalid", "billing_mode");
     if (Object.hasOwn(body, "max_cost")) throw new YirSDKValidationError("billing_mode_conflict", "max_cost");
     const routing = requireObject(body.routing, "routing");

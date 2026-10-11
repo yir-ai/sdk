@@ -38,7 +38,7 @@ The generation idempotency key is optional: the SDKs create a new random key per
 1. Build an explicit request and obtain a quote. Check supply; the primary price is an estimate, not a ceiling.
 2. Have your application approve the spend. Persist the exact submit request, including any optional `max_cost`, and a stable idempotency key before submitting.
 3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID.
-4. Reconcile terminal billing once and copy available result files before their URLs expire.
+4. Reconcile billing once `billing.status` is `settled` and copy available result files before their URLs expire.
 
 A quote or static price table does not authorize a purchase or guarantee current supply or final billing. Customer pricing, account authorization, balances and persistence belong to your application. Keep Yir API keys on the server; the browser entry exposes only pure helpers and types.
 

@@ -157,6 +157,8 @@ type ResultFileFidelity struct {
 }
 
 type JobBilling struct {
+	// Status distinguishes a pending bill from the settled amount, including zero.
+	Status             string              `json:"status,omitempty"`
 	BillingMode        string              `json:"billing_mode,omitempty"`
 	Currency           string              `json:"currency"`
 	ComputeCharges     []ComputeCharge     `json:"compute_charges"`

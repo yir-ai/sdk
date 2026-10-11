@@ -604,7 +604,8 @@
       "ActualBillingMode": {
         "type": "string",
         "const": "actual",
-        "description": "Explicit consent to the authoritative actual cost of every upstream-billed attempt of the Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Every attempt the upstream actually billed is charged to the user, including failed and non-winning ones; attempts the upstream did not bill, and Yir's own delivery failures or outcome timeouts, are not charged. Omit for the default contract: balance is not frozen, each attempt checks the live balance against its route estimate, each upstream-billed attempt is charged at the authoritative upstream amount after the managed discount, and an explicit max_cost caps the Job's total charge."
+        "deprecated": true,
+        "description": "Legacy compatibility field. Omit for new requests. When retrying an existing idempotency key, preserve its original request including this field. Explicit consent to the authoritative actual cost of every upstream-billed attempt of the Job, without a max_cost cap. Only KIE/APIMart Kling 2.6/3.0 Motion Control and FAL FLUX 2 Pro image editing are supported; routing.only must explicitly select these channels. Cannot be combined with max_cost. Insufficient wallet funds become Job debt repaid by future manual recharge; outstanding debt blocks new Jobs. Every attempt the upstream actually billed is charged to the user, including failed and non-winning ones; attempts the upstream did not bill, and Yir's own delivery failures or outcome timeouts, are not charged. Omit for the default contract: balance is not frozen, each attempt checks the live balance against its route estimate, each upstream-billed attempt is charged at the authoritative upstream amount after the managed discount, and an explicit max_cost caps the Job's total charge."
       },
       "StandardImageGenerationRequest": {
         "type": "object",
@@ -1109,7 +1110,7 @@
           "expected_amount": {
             "type": "string",
             "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
-            "description": "Estimated USD charge on the current preferred route, as used by admission: the live-balance check, the API Key monthly limit and max_cost compare against it. Unlike primary it includes known input charges (such as reference image tokens) and, for usage-billed routes with enough recent volume, recent actual charges. Omitted when no supply matches or the route has no pre-generation estimate (billing_mode actual). It is a reference, not a charge ceiling; fallback routes may cost more."
+            "description": "Estimated USD charge on the current preferred route, as used by admission: the live-balance check, the API Key monthly limit and max_cost compare against it. Unlike primary it includes known input charges (such as reference image tokens) and, for usage-billed routes with enough recent volume, recent actual charges. Omitted when no supply matches or the route has no reliable pre-generation estimate. It is a reference, not a charge ceiling; fallback routes may cost more."
           },
           "primary": {
             "description": "Current preferred route's estimate: its catalog reference price for fixed-price routes, or an output-only estimate for usage-based routes; otherwise unavailable. The Job is charged the authoritative upstream amounts of its billed attempts after the managed discount, which can differ from this estimate. An output-only estimate excludes input charges; neither is a charge ceiling, and Submit rechecks current facts. The independent official reference is reported in official.",
@@ -1406,7 +1407,8 @@
           "currency": { "type": "string", "const": "USD" },
           "compute_charges": { "type": "array", "items": { "$ref": "#/components/schemas/ComputeCharge" } },
           "gateway_fee": { "$ref": "#/components/schemas/GatewayFee" },
-          "total_charged_by_yir": { "$ref": "#/components/schemas/Decimal" },
+          "status": { "type": "string", "enum": ["pending", "settled"], "description": "Billing completion is independent of Job completion. pending means more charges may arrive; settled confirms the current total is final. Older servers may omit this field; zero or empty compute_charges does not prove settlement." },
+          "total_charged_by_yir": { "$ref": "#/components/schemas/Decimal", "description": "USD charged so far. Final only when billing.status is settled." },
           "max_cost": { "$ref": "#/components/schemas/MaxCost" },
           "official_comparison": { "$ref": "#/components/schemas/OfficialComparison" }
         }

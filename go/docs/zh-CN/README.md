@@ -99,3 +99,5 @@ _ = client
 ## 验证
 
 在 `go/` 运行 `go test -p 2 ./...`，隔离验证时设置 `GOWORK=off` 和 `GOMAXPROCS=2`。无 `Output` 指令的示例仅编译、不执行。可选外部价格夹具缺失时跳过相关测试，不需要安装 Node。
+
+结果完成与费用结清独立：`billing.status` 为 `pending` 时，当前金额仍可增加；为 `settled` 后才按 Job ID 完成一次费用对账。结果立即通知，延迟账单结清后另发 `job.billing_settled`；事件按事件 ID 去重，结果履约与费用入账分别按 Job ID 去重。也可继续查询 Job。旧服务缺少状态或未知状态时，不应依据 0 元推断结清。新请求省略 `billing_mode`；历史请求重试保留原始请求体与幂等键，包括原有字段。

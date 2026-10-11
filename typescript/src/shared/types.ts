@@ -124,6 +124,8 @@ export type Job = {
     readonly official_comparison?: { readonly baseline_amount: string; readonly savings_amount: string; readonly source_url?: string };
     readonly currency: "USD";
     readonly total_charged_by_yir: string;
+    /** Result completion does not imply billing completion. */
+    readonly status?: "pending" | "settled" | (string & {});
 	readonly billing_mode?: "actual";
     /** The submitted total Job cap, if any. A tight cap can prevent a more expensive fallback. */
     readonly max_cost?: string;

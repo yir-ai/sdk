@@ -16,4 +16,7 @@ test("actual billing preserves explicit consent and rejects conflicting caps", (
   const { billing_mode, ...capped } = request;
   assert.equal(billing_mode, "actual");
   assert.doesNotThrow(() => validateGeneration("generate_image", { ...capped, max_cost: "0.1" }));
+  assert.doesNotThrow(() => validateGeneration("generate_image", { ...capped, billing_mode: undefined, max_cost: "0.1" }));
+  assert.throws(() => validateGeneration("generate_image", { ...capped, billing_mode: null }), error => error.path === "billing_mode");
+  assert.equal(request.billing_mode, "actual", "validation preserves the original request for idempotent retries");
 });
