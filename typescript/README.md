@@ -95,11 +95,13 @@ Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ sec
 
 ## Vercel AI SDK
 
-Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces. It is also compile- and runtime-tested with `ai@7.0.137` / `@ai-sdk/provider@4.0.26`.
+Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`; `provider.image(modelId)` and `provider.video(modelId)` are equivalent aliases. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces. It is also compile- and runtime-tested with `ai@7.0.137` / `@ai-sdk/provider@4.0.26`.
 
-`providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
+`providerOptions.yir.idempotencyKey` is optional and keeps priority over a call-level `Idempotency-Key` header. Without it, the adapter uses that header (including AI SDK's video key, stable across its retries), then falls back to a random key. For image calls that may be retried by AI SDK, pass a saved key through either supported option. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters and reach the Gateway even when a local catalog lacks them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+
+Image models expose `supportsFileInputs` from the caller-provided model catalog (or `undefined` when unknown) and `supportsMaskInputs: false`. These are discovery hints, not admission checks: no catalog request is made, and a stale snapshot never blocks generation. Refresh the catalog when needed; the Gateway validates the request.
 
 ### Parameter compatibility
 
@@ -113,7 +115,7 @@ Image masks, pixel `size` and video pixel resolution are unsupported; use Yir pa
 | Video `frameImages` | Role-tagged first/last frames are preserved. AI SDK's mirrored first frame is not duplicated; `prompt.image` plus a last frame preserves both endpoints. |
 | Video `inputReferences` | Image/video/audio references; URL references need explicit `mediaType` so the adapter can assign their role without downloading them. |
 | Image `mask` | Unsupported; the Yir Standard API has no mask role. |
-| `headers`, `abortSignal` | Custom per-call headers are rejected; configure transport headers on the client. Abort stops local work, not the server Job. |
+| `headers`, `abortSignal` | A call-level `Idempotency-Key` is supported; other custom per-call headers remain rejected. Configure transport headers on the client. Abort stops local work, not the server Job. |
 
 The adapter does not automatically split `n` into separately billed Jobs. Video operation handles, Yir routing options, budgets and billing metadata are provider-specific. Basic generation calls are portable, but these fields need explicit migration when switching providers.
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { APICallError } from "@ai-sdk/provider";
 import { generateImage, experimental_generateVideo as generateVideo, experimental_startVideo as startVideo, experimental_getVideoStatus as getVideoStatus } from "ai";
 import { createYirAIProvider } from "../dist/server/vercel.js";
 import { createYirClient } from "../dist/server/client.js";
@@ -51,7 +52,7 @@ test("AI SDK image and video accept omitted keys and do not resubmit failures", 
       await startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "fixture" });
     }
     assert.equal(calls.length, 1);
-    assert.match(calls[0].headers["Idempotency-Key"], /^[0-9a-f-]{36}$/);
+    assert.match(calls[0].headers["Idempotency-Key"], kind === "image" ? /^[0-9a-f-]{36}$/ : /^aisdk_vid_/);
     let failures = 0;
     const failing = createYirAIProvider({ client: createYirClient(async () => { failures++; throw new TypeError("connection lost"); }) });
     await assert.rejects(kind === "image"
@@ -467,4 +468,104 @@ test("prompt image maps to a single first frame and mixed frame/reference source
     image: { type: "url", url: "https://example.com/first.png" },
     inputReferences: [{ type: "url", url: "https://example.com/reference.png", mediaType: "image/png" }] }), /input_sources_ambiguous/);
   assert.equal(calls.length, 1);
+});
+
+
+test("standard idempotency headers preserve image/video submission identity", async () => {
+  for (const kind of ["image", "video"]) {
+    const { provider, calls } = fixture(kind === "image" ? "image/png" : "video/mp4");
+    const options = { prompt: "Fixture", headers: { "iDeMpOtEnCy-KeY": "saved-business-key" }, maxRetries: 0 };
+    if (kind === "image") await generateImage({ ...options, model: provider.image("openai/gpt-image-2") });
+    else await startVideo({ ...options, model: provider.video("bytedance/seedance-2.0") });
+    assert.equal(calls[0].headers["Idempotency-Key"], "saved-business-key");
+  }
+});
+
+test("existing Yir key retains priority over an AI SDK header key", async () => {
+  for (const kind of ["image", "video"]) {
+    const { provider, calls } = fixture(kind === "image" ? "image/png" : "video/mp4");
+    const options = { prompt: "Fixture", headers: { "Idempotency-Key": "other-sdk-key" }, maxRetries: 0,
+      providerOptions: { yir: { idempotencyKey: "persisted-yir-key" } } };
+    if (kind === "image") await generateImage({ ...options, model: provider.imageModel("openai/gpt-image-2") });
+    else await startVideo({ ...options, model: provider.videoModel("bytedance/seedance-2.0") });
+    assert.equal(calls[0].headers["Idempotency-Key"], "persisted-yir-key");
+  }
+});
+
+test("AI SDK outer video retry reuses both submission and inline-upload keys", async () => {
+  const calls = [];
+  let submissions = 0;
+  const fileID = "file_11111111-1111-4111-8111-111111111111";
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path === "/v1/files") return { files: request.body.files.map(file => ({ ...file, id: fileID, object: "file", status: "ready" })) };
+    if (++submissions === 1) throw new APICallError({ message: "fixture temporary failure", url: "https://gateway.example/v1/videos/generations", requestBodyValues: {}, statusCode: 503 });
+    return { id: "42", status: "queued", created_at: 1 };
+  });
+  await startVideo({ model: createYirAIProvider({ client }).videoModel("bytedance/seedance-2.0"),
+    prompt: { text: "Animate", image: new Uint8Array([137, 80, 78, 71]) }, maxRetries: 1 });
+  const submits = calls.filter(call => call.path === "/v1/videos/generations");
+  const uploads = calls.filter(call => call.path === "/v1/files");
+  assert.equal(submits.length, 2);
+  assert.match(submits[0].headers["Idempotency-Key"], /^aisdk_vid_/);
+  assert.equal(submits[0].headers["Idempotency-Key"], submits[1].headers["Idempotency-Key"]);
+  assert.deepEqual(submits[0].body, submits[1].body);
+  assert.equal(uploads[0].headers["Idempotency-Key"], uploads[1].headers["Idempotency-Key"]);
+  assert.equal(uploads[0].headers["Idempotency-Key"], `${submits[0].headers["Idempotency-Key"]}:inputs`);
+});
+
+test("invalid or ambiguous standard keys fail without echoing secrets or sending requests", async () => {
+  for (const headers of [
+    { "Idempotency-Key": null }, { "Idempotency-Key": 12345 }, { "Idempotency-Key": " " }, { "Idempotency-Key": "secret-key\r\nextra" },
+    { "Idempotency-Key": "first-secret", "idempotency-key": "second-secret" },
+  ]) {
+    const { provider, calls } = fixture();
+    await assert.rejects(() => provider.imageModel("openai/gpt-image-2").doGenerate({ prompt: "Image", n: 1, headers, providerOptions: {} }), error => {
+      assert.equal(error.code, "idempotency_key_invalid");
+      assert.doesNotMatch(error.message, /secret/);
+      return true;
+    });
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("standard key support does not forward arbitrary headers or permit credential overrides", async () => {
+  for (const headers of [{ Authorization: "Bearer fixture-only" }, { "X-Custom": "value", "Idempotency-Key": "key" }]) {
+    const { provider, calls } = fixture();
+    await assert.rejects(() => generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: "Image", headers, maxRetries: 0 }), /per-call headers/);
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("Provider aliases and editing capabilities are additive and never fetch a catalog", () => {
+  const client = createYirClient(async () => { throw new Error("capability checks must not send requests"); });
+  const unknown = createYirAIProvider({ client });
+  assert.equal(unknown.image, unknown.imageModel);
+  assert.equal(unknown.video, unknown.videoModel);
+  assert.equal(unknown.image("openai/gpt-image-2").supportsFileInputs, undefined);
+  assert.equal(unknown.image("openai/gpt-image-2").supportsMaskInputs, false);
+  const provider = createYirAIProvider({ client, modelContracts: catalog });
+  assert.equal(provider.image("openai/gpt-image-2").supportsFileInputs, true);
+  assert.equal(provider.image("unlisted/model").supportsFileInputs, undefined);
+  const textOnly = structuredClone(catalog.models.find(model => model.id === "openai/gpt-image-2"));
+  textOnly.operations = textOnly.operations.filter(operation => operation.input_modes.includes("text"));
+  for (const operation of textOnly.operations) operation.input_modes = ["text"];
+  const noEdit = createYirAIProvider({ client, modelContracts: { ...catalog, models: [textOnly] } });
+  assert.equal(noEdit.image(textOnly.id).supportsFileInputs, false);
+  assert.equal(noEdit.image(textOnly.id).supportsMaskInputs, false);
+});
+
+
+test("AI SDK generateVideo carries the standard key through status polling", async () => {
+  const { provider, calls } = fixture("video/mp4");
+  const result = await generateVideo({
+    model: provider.video("bytedance/seedance-2.0"), prompt: "Paper boat", maxRetries: 0,
+    headers: { "Idempotency-Key": "video-poll-key" }, poll: { intervalMs: 1 },
+    download: async () => ({ data: new Uint8Array([0, 0, 0, 0]), mediaType: "video/mp4" }),
+  });
+  assert.equal(result.videos.length, 1);
+  assert.equal(calls[0].headers["Idempotency-Key"], "video-poll-key");
+  assert.equal(calls[1].path, "/v1/jobs/42");
+  assert.equal(calls.filter(call => call.method === "POST").length, 1);
+  assert.equal(calls[1].headers?.["Idempotency-Key"], undefined);
 });

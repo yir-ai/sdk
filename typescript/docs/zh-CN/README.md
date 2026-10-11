@@ -94,11 +94,13 @@ const client = createNodeYirClient();
 
 ## Vercel AI SDK
 
-在应用中运行 `pnpm add ai@7.0.97` 安装适配器已测试的 AI SDK 版本。由 `@yir-ai/sdk/vercel` 导入 `createYirAIProvider`，选择 `provider.imageModel(modelId)` 或 `provider.videoModel(modelId)`。适配目标是 AI SDK 7 / Provider V4，不是旧接口；另已通过 `ai@7.0.137` / `@ai-sdk/provider@4.0.26` 的编译与运行验证。
+在应用中运行 `pnpm add ai@7.0.97` 安装适配器已测试的 AI SDK 版本。由 `@yir-ai/sdk/vercel` 导入 `createYirAIProvider`，选择 `provider.imageModel(modelId)` 或 `provider.videoModel(modelId)`；也可使用等价别名 `provider.image(modelId)` 和 `provider.video(modelId)`。适配目标是 AI SDK 7 / Provider V4，不是旧接口；另已通过 `ai@7.0.137` / `@ai-sdk/provider@4.0.26` 的编译与运行验证。
 
-`providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
+`providerOptions.yir.idempotencyKey` 可选，优先于调用级 `Idempotency-Key` 请求头。省略时使用该请求头（包括 AI SDK 视频调用生成、在外层重试间保持不变的键），再缺省则随机生成。图片调用若允许 AI SDK 外层重试，应通过上述任一方式传入已保存的键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数并发送给 Gateway，不因本地目录缺少字段而丢弃。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+
+图片模型通过 `supportsFileInputs` 表示调用方提供的目录是否声明参考图编辑能力，未知时为 `undefined`；`supportsMaskInputs` 固定为 `false`。这些是能力提示，不是准入校验：不会自动请求目录，也不会用旧快照阻止生成。需要时刷新目录，最终由 Gateway 校验。
 
 ### 参数兼容边界
 
@@ -112,7 +114,7 @@ const client = createNodeYirClient();
 | 视频 `frameImages` | 保留首尾帧角色；不会重复上传 AI SDK 同时传入的首帧镜像；`prompt.image` 加尾帧保留两端。 |
 | 视频 `inputReferences` | 支持图片、视频、音频引用；URL 引用须显式提供 `mediaType`，适配器据此确定角色。 |
 | 图片 `mask` | 不支持，Yir Standard API 没有 mask 角色。 |
-| `headers`、`abortSignal` | 拒绝每次调用的自定义 headers；在客户端传输配置中设置。Abort 只停止本地等待，不取消服务端 Job。 |
+| `headers`、`abortSignal` | 支持调用级 `Idempotency-Key`，其他自定义 headers 仍被拒绝；在客户端传输配置中设置。Abort 只停止本地等待，不取消服务端 Job。 |
 
 适配器不会把 `n` 自动拆成多笔收费任务。视频 operation、Yir 路由、预算与账单元数据属于 Provider 专有能力；切换 Provider 时须显式迁移这些字段。
 

@@ -4,6 +4,7 @@ import { createNodeYirClient, isValidJobID, waitForJob } from "./client.js";
 import type { CreateNodeYirClientOptions, YirClient, Job } from "./client.js";
 import { YirSDKValidationError, validateGeneration } from "../shared/standard.js";
 import { uploadFile } from "./files.js";
+import { findModelContract } from "../shared/catalog.js";
 import type { RoutingOverride, StandardReference, StandardImageGenerationRequest, StandardVideoGenerationRequest } from "../shared/standard.js";
 
 type VideoModelV4File = NonNullable<Parameters<NonNullable<VideoModelV4["doGenerate"]>>[0]["image"]>;
@@ -13,6 +14,12 @@ export type YirAIProviderOptions = CreateNodeYirClientOptions & {
   pollIntervalMs?: number;
 };
 
+/** Additive capabilities also available when compiled with older Provider V4 versions. */
+export type YirAIImageModel = ImageModelV4 & {
+  readonly supportsFileInputs: boolean | undefined;
+  readonly supportsMaskInputs: false;
+};
+
 /** AI SDK 7 / Provider V4 adapter. Uses the same Yir request and Job lifecycle. */
 export function createYirAIProvider(options: YirAIProviderOptions = {}) {
   const client = options.client ?? createNodeYirClient(options);
@@ -20,19 +27,27 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
   const finish = async (job: Job, signal?: AbortSignal) => job.status === "succeeded" ? job : waitForJob(client, job.id, {
     signal, pollIntervalMs: options.pollIntervalMs, timeoutMs: 0,
   });
-  return {
-    imageModel(modelId: string): ImageModelV4 {
+  const provider = {
+    imageModel(modelId: string): YirAIImageModel {
+      const catalog = options.modelContracts ?? client.modelContracts;
+      const contract = catalog?.schema_version === "v1" ? findModelContract(catalog, modelId) : undefined;
+      const supportsFiles = contract?.operations.some(operation => {
+        const input = operation.input_constraints.image;
+        return operation.operation === "generate_image" && operation.input_modes.includes("image") &&
+          input !== undefined && input.max_references > 0 && input.allowed_reference_roles.includes("reference_image");
+      });
       return {
         specificationVersion: "v4", provider: "yir", modelId,
         // Keep one invocation intact so model validation rejects unsupported n;
         // automatic SDK fan-out must not multiply a single Yir budget/key.
         maxImagesPerCall: Number.MAX_SAFE_INTEGER,
+        supportsFileInputs: supportsFiles, supportsMaskInputs: false,
         async doGenerate(call) {
           call.abortSignal?.throwIfAborted();
           if (call.mask !== undefined) unsupported("image mask");
           if (call.size !== undefined) unsupported("pixel size; use Yir parameters");
-          rejectHeaders(call.headers);
-          const extension = readOptions(call.providerOptions);
+          rejectHeaders(call.headers, true);
+          const extension = readOptions(call.providerOptions, call.headers);
           const parameters = { ...extension.parameters };
           assign(parameters, "n", call.n);
           assign(parameters, "aspect_ratio", call.aspectRatio);
@@ -75,10 +90,10 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
         async doStart(call) {
           call.abortSignal?.throwIfAborted();
           if (call.resolution !== undefined) unsupported("pixel resolution; use Yir parameters.resolution");
-          // AI SDK adds its own transient key. Yir uses the explicitly persisted
-          // providerOptions key so process restarts preserve Submit identity.
+          // Preserve the explicit Yir key, or AI SDK's per-invocation key across
+          // outer SDK retries. The selected key also identifies inline uploads.
           rejectHeaders(call.headers, true);
-          const extension = readOptions(call.providerOptions);
+          const extension = readOptions(call.providerOptions, call.headers);
           const parameters = { ...extension.parameters };
           assign(parameters, "n", call.n);
           assign(parameters, "aspect_ratio", call.aspectRatio);
@@ -117,7 +132,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
         },
         async doStatus(call) {
           call.abortSignal?.throwIfAborted();
-          rejectHeaders(call.headers);
+          rejectHeaders(call.headers, true);
           const operation = call.operation;
           if (operation === null || typeof operation !== "object" || Array.isArray(operation) ||
             !("jobId" in operation) || !("modelId" in operation) ||
@@ -142,6 +157,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
       };
     },
   };
+  return { ...provider, image: provider.imageModel, video: provider.videoModel };
 }
 
 function unsupported(functionality: string): never { throw new UnsupportedFunctionalityError({ functionality }); }
@@ -197,7 +213,7 @@ function assign(parameters: Record<string, unknown>, key: string, value: unknown
   parameters[key] = value;
 }
 
-function readOptions(options: SharedV4ProviderOptions) {
+function readOptions(options: SharedV4ProviderOptions, headers?: Record<string, string | undefined>) {
   const extension = options.yir ?? {};
   for (const key of Object.keys(extension)) {
     if (!["parameters", "routing", "maxCost", "idempotencyKey"].includes(key)) throw new YirSDKValidationError("unknown_field", `providerOptions.yir.${key}`);
@@ -206,7 +222,18 @@ function readOptions(options: SharedV4ProviderOptions) {
   const parameters = extension.parameters === undefined ? {} : extension.parameters;
   if (parameters === null || typeof parameters !== "object" || Array.isArray(parameters)) throw new YirSDKValidationError("object_required", "providerOptions.yir.parameters");
   if (extension.maxCost !== undefined && typeof extension.maxCost !== "string") throw new YirSDKValidationError("parameter_type", "providerOptions.yir.maxCost");
-  return { parameters: parameters as Record<string, unknown>, routing: extension.routing as RoutingOverride | undefined, maxCost: extension.maxCost, idempotencyKey: extension.idempotencyKey?.trim() ?? crypto.randomUUID() };
+  return { parameters: parameters as Record<string, unknown>, routing: extension.routing as RoutingOverride | undefined, maxCost: extension.maxCost, idempotencyKey: extension.idempotencyKey?.trim() ?? headerIdempotencyKey(headers) ?? crypto.randomUUID() };
+}
+
+/** Never forward arbitrary call headers or include a supplied key in an error. */
+function headerIdempotencyKey(headers: Record<string, string | undefined> | undefined): string | undefined {
+  const keys = Object.entries(headers ?? {}).filter(([name, value]) => name.toLowerCase() === "idempotency-key" && value !== undefined)
+    .map(([, value]) => value!);
+  if (!keys.length) return undefined;
+  if (keys.some(key => typeof key !== "string" || !key.trim() || /[\r\n]/.test(key)) || keys.some(key => key.trim() !== keys[0]!.trim())) {
+    throw new YirSDKValidationError("idempotency_key_invalid", "headers.Idempotency-Key");
+  }
+  return keys[0]!.trim();
 }
 
 type AdapterWarning = { readonly type: "unsupported"; readonly feature: string; readonly details?: string } | { readonly type: "other"; readonly message: string };

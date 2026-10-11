@@ -87,3 +87,17 @@ async function readMarketDetailAndContent(client: YirClient) {
   void signedURL;
 }
 void readMarketDetailAndContent;
+
+
+import { createYirAIProvider, type YirAIImageModel } from "../../src/server/vercel.js";
+import { generateImage, experimental_startVideo as startVideo } from "ai";
+function checkAIProviderCompatibility(client: YirClient) {
+  const provider = createYirAIProvider({ client });
+  const image: YirAIImageModel = provider.image("openai/gpt-image-2");
+  const supportsFiles: boolean | undefined = image.supportsFileInputs;
+  const supportsMasks: false = image.supportsMaskInputs;
+  void generateImage({ model: image, prompt: "Fixture", headers: { "Idempotency-Key": "saved-key" } });
+  void startVideo({ model: provider.video("bytedance/seedance-2.0"), prompt: "Fixture" });
+  void [supportsFiles, supportsMasks];
+}
+void checkAIProviderCompatibility;
