@@ -80,8 +80,11 @@ const client = createYirClient(async () => {
     supply: { available: true, issues: [] }, expires_at: 1900000000 };
 }, catalog);
 assert.equal((await client.quoteImage(request)).official.estimate.scope, "output_only");
-assert.throws(() => client.quoteImage({ ...request, parameters: { unknown_parameter: true } }), { code: "parameter_unknown" });
-assert.equal(calls, 1, "Invalid parameters must fail inside the installed SDK before transport");
+const futureRequest = { ...request, parameters: { unknown_parameter: true } };
+assert.throws(() => validateGeneration("generate_image", futureRequest, catalog), { code: "parameter_unknown" });
+assert.equal(calls, 1, "Explicit validation must not send a request");
+await client.quoteImage(futureRequest);
+assert.equal(calls, 2, "The installed client must leave model rules to the Gateway");
 assert.equal(getModelContract(request.model).id, request.model);
 assert.equal(createYirAIProvider({ client }).imageModel(request.model).specificationVersion, "v4");
 
