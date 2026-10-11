@@ -1,8 +1,8 @@
-# Parameter contracts — 0.2.0
+# Parameter contracts
 
 The SDK implements the protocol; model facts come from the API. A new model does
-not require an SDK release. Without an explicit catalog, clients validate only
-the stable request structure and leave model validation to the Gateway.
+not require an SDK release. Clients validate the stable request structure and
+leave model validation to the Gateway, including when a catalog is supplied.
 
 ```ts
 import { createNodeYirClient } from '@yir-ai/sdk/server';
@@ -44,9 +44,9 @@ storage belong to the customer application.
 
 ## Migration from 0.1.0
 
-- Local parameter validation requires an explicit catalog. Pass it to
-  `createYirClient(transport, catalog)` or `createNodeYirClient({ modelContracts: catalog })`
-  when local model checks are wanted. The Gateway remains authoritative.
+- Local parameter validation requires calling a validation helper with a catalog.
+  Supplying a catalog to a client does not enable automatic model validation.
+  The Gateway remains authoritative.
 - `validateModelParameters` takes the catalog as its fifth argument;
   `validateGeneration` and the image builders accept it as their final argument.
 - Remove `getModelPrices`, `/pricing`, `calculatePrice`, `buildPriceInput` and
@@ -61,14 +61,15 @@ storage belong to the customer application.
   Preserve idempotency keys, cancellation semantics and optional result warnings.
 - Go parameter bounds are now `*float64`, supporting fractional number rules.
   Applications constructing contracts with `*int` bounds must update their types.
-- The AI SDK adapter accepts `modelContracts` for explicit local validation
-  before inline uploads. Without it, model-specific validation belongs to the API.
+- The AI SDK adapter performs protocol checks before inline uploads. Model rules
+  belong to the API; use the validation helpers explicitly for local restrictions.
 
 ## 中文摘要
 
 SDK 维护协议，API 提供模型参数合同。客户在开发阶段生成自己的 `models.ts`，
 前端用纯函数查询和校验，界面无需等待网络；更新模型目录无需更新 SDK。
 缓存仅是参数参考，当前可用性、报价、路由和计费由 Gateway 决定。
+传入目录不会让客户端自动拒绝模型参数；需要限定目录时显式调用校验函数。
 目录中比 SDK 更新的字段与规则会被保留并交由 Gateway 判断，已知规则照常校验，
 新模型和新选项无需升级 SDK。未知 `control` 按通用输入渲染。
 报价经客户后端调用，批量报价最多 20 个明确请求，不展开参数笛卡儿积。
