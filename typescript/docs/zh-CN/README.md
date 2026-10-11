@@ -84,7 +84,7 @@ const client = createNodeYirClient();
 
 ## 文件与 Webhook
 
-媒体引用二选一：`file_id`（ready 的文件）或 `url`（公开 HTTPS 地址，Yir 在提交时导入，最大 100 MiB，拒绝 data URL）。更大或不可公开访问的媒体使用文件上传。`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器支持上传内联字节；URL 输入需由应用先下载为字节。
+媒体引用二选一：`file_id`（ready 的文件）或 `url`（公开 HTTPS 地址，Yir 在提交时导入，最大 100 MiB，拒绝 data URL）。更大或不可公开访问的媒体使用文件上传。`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器上传内联字节，并将公开 HTTPS URL 交给 Gateway 导入；混合 URL 与字节输入时保留顺序和引用角色，适配器不自行下载 URL。
 
 `createFiles(request, key)` 创建上传计划；`uploadFile(client, plan, blob)` 上传并完成计划；`createAndUploadFile(client, metadata, blob, key)` 合并这些步骤。使用稳定上传键并保留文件 ID；`getFile(id)` 查询状态，`completeFile(id)` 完成手动上传。生成请求仅引用 ready 文件，使用 `file_id` 和相应 role。上传辅助函数支持服务端的单段及分段计划。
 
@@ -94,11 +94,27 @@ const client = createNodeYirClient();
 
 ## Vercel AI SDK
 
-在应用中运行 `pnpm add ai@7.0.97` 安装适配器已测试的 AI SDK 版本。由 `@yir-ai/sdk/vercel` 导入 `createYirAIProvider`，选择 `provider.imageModel(modelId)` 或 `provider.videoModel(modelId)`。适配目标是 AI SDK 7 / Provider V4，不是旧接口。
+在应用中运行 `pnpm add ai@7.0.97` 安装适配器已测试的 AI SDK 版本。由 `@yir-ai/sdk/vercel` 导入 `createYirAIProvider`，选择 `provider.imageModel(modelId)` 或 `provider.videoModel(modelId)`。适配目标是 AI SDK 7 / Provider V4，不是旧接口；另已通过 `ai@7.0.137` / `@ai-sdk/provider@4.0.26` 的编译与运行验证。
 
 `providerOptions.yir.idempotencyKey` 可选，省略时每次调用生成一个键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
 
 不支持图像 mask、像素 `size` 和视频像素 resolution，分辨率使用 Yir parameters。`seed` 与视频 `fps` 映射为同名 Yir 参数并发送给 Gateway，不因本地目录缺少字段而丢弃。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
+
+### 参数兼容边界
+
+| AI SDK 输入 | Yir Standard API 映射与限制 |
+| --- | --- |
+| `prompt`、`aspectRatio`、`n` | `input.prompt`、`parameters.aspect_ratio`、`parameters.n`，仍受模型规格限制。 |
+| 视频 `duration`、`generateAudio` | `parameters.duration`（整数秒）、`parameters.generate_audio`；保留显式 `false`。 |
+| `seed`、视频 `fps` | 原值透传给 Gateway，不受本地旧目录影响。当前 Gateway 不支持自定义 `fps`，会明确拒绝，不能视为已应用请求帧率。 |
+| 图片 `size`、视频 `resolution` | 拒绝像素尺寸；通过 `providerOptions.yir.parameters.resolution` 传模型分辨率档位，配合 `aspectRatio`。档位不保证精确像素尺寸。 |
+| 图片 `prompt.images`、视频 `prompt.image` | 接受字节、Base64 或公开 HTTPS URL 字符串；视频图片映射为 `first_frame`。 |
+| 视频 `frameImages` | 保留首尾帧角色；不会重复上传 AI SDK 同时传入的首帧镜像；`prompt.image` 加尾帧保留两端。 |
+| 视频 `inputReferences` | 支持图片、视频、音频引用；URL 引用须显式提供 `mediaType`，适配器据此确定角色。 |
+| 图片 `mask` | 不支持，Yir Standard API 没有 mask 角色。 |
+| `headers`、`abortSignal` | 拒绝每次调用的自定义 headers；在客户端传输配置中设置。Abort 只停止本地等待，不取消服务端 Job。 |
+
+适配器不会把 `n` 自动拆成多笔收费任务。视频 operation、Yir 路由、预算与账单元数据属于 Provider 专有能力；切换 Provider 时须显式迁移这些字段。
 
 ## 0.10.2 变化
 

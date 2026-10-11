@@ -85,10 +85,12 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           assign(parameters, "duration", call.duration);
           assign(parameters, "generate_audio", call.generateAudio);
           const warnings = assignOptional(parameters, { fps: call.fps, seed: call.seed });
-          const inputKinds = [call.image, call.frameImages?.length, call.inputReferences?.length].filter(Boolean).length;
-          if (inputKinds > 1) throw new YirSDKValidationError("input_sources_ambiguous", "input");
-          const references = call.image ? [reference(call.image, "first_frame", 0)]
-            : call.frameImages?.length ? call.frameImages.map((frame, index) => reference(frame.image, frame.frameType, index))
+          // AI SDK mirrors frameImages' first frame in image. Prefer role-tagged
+          // frames; when only a last frame is supplied, keep prompt.image as the first.
+          const frames = [...(call.frameImages ?? [])];
+          if (call.image && !frames.some(frame => frame.frameType === "first_frame")) frames.unshift({ image: call.image, frameType: "first_frame" });
+          if (frames.length && call.inputReferences?.length) throw new YirSDKValidationError("input_sources_ambiguous", "input");
+          const references = frames.length ? frames.map((frame, index) => reference(frame.image, frame.frameType, index))
             : call.inputReferences?.map((file, index) => {
               if (!file.mediaType) unsupported("reference without explicit media type");
               const role = file.mediaType!.startsWith("image/") ? "reference_image" : file.mediaType!.startsWith("video/") ? "reference_video" : file.mediaType!.startsWith("audio/") ? "reference_audio" : undefined;
@@ -104,7 +106,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           };
           validateGeneration("generate_video", request);
           if (request.input.type !== "text") {
-            const files = call.image ? [call.image] : call.frameImages?.length ? call.frameImages.map(frame => frame.image) : call.inputReferences ?? [];
+            const files = frames.length ? frames.map(frame => frame.image) : call.inputReferences ?? [];
             request = { ...request, input: { ...request.input, references: await materializeReferences(client, request.input.references, files, extension.idempotencyKey, fetchResult, call.abortSignal) } };
           }
           const initial = await client.submitVideo(request, extension.idempotencyKey, { signal: call.abortSignal });
@@ -118,6 +120,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           rejectHeaders(call.headers);
           const operation = call.operation;
           if (operation === null || typeof operation !== "object" || Array.isArray(operation) ||
+            !("jobId" in operation) || !("modelId" in operation) ||
             !isValidJobID(operation.jobId) || operation.modelId !== modelId) {
             throw new YirSDKValidationError("operation_invalid", "operation");
           }
@@ -144,7 +147,16 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
 function unsupported(functionality: string): never { throw new UnsupportedFunctionalityError({ functionality }); }
 
 function reference(file: ImageModelV4File | VideoModelV4File, role: StandardReference["role"], index: number): StandardReference {
-  if (file.type === "url") unsupported("URL media inputs; supply file bytes for upload");
+  if (file.type === "url") {
+    try {
+      const url = new URL(file.url);
+      if (url.protocol !== "https:" || url.username || url.password || url.hash) throw new Error();
+    } catch {
+      throw new YirSDKValidationError("url_invalid", `input.references.${index}.url`);
+    }
+    // The Gateway imports public URLs through its existing media safety boundary.
+    return { role, url: file.url };
+  }
   // This placeholder is local to preflight and is always replaced before Submit.
   return { role, file_id: `file_00000000-0000-4000-8000-${String(index).padStart(12, "0")}` };
 }
@@ -153,7 +165,7 @@ async function materializeReferences(client: YirClient, references: readonly Sta
   key: string, fetchPart: typeof globalThis.fetch, signal?: AbortSignal): Promise<readonly StandardReference[]> {
   const inline = [];
   for (const [index, file] of files.entries()) {
-    if (file.type === "url") unsupported("URL media inputs; supply file bytes for upload");
+    if (file.type === "url") continue;
     let bytes: Uint8Array<ArrayBuffer>;
     try {
       bytes = typeof file.data === "string" ? Uint8Array.from(atob(file.data), character => character.charCodeAt(0)) : Uint8Array.from(file.data);

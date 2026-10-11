@@ -171,13 +171,13 @@ test("operation for another model is rejected before querying", async () => {
   assert.equal(calls.length, 0);
 });
 
-test("explicit URL video references are rejected before transport", async () => {
+test("unsafe URL video references are rejected before transport", async () => {
   const { provider, calls } = fixture("video/mp4");
   await assert.rejects(() => provider.videoModel("bytedance/seedance-2.0").doStart({
     prompt: "Animate", n: 1, frameImages: [],
-    inputReferences: [{ type: "url", url: "https://example.com/ref.png", mediaType: "image/png" }],
+    inputReferences: [{ type: "url", url: "http://example.com/ref.png", mediaType: "image/png" }],
     providerOptions: { yir: { idempotencyKey: "reference-key" } },
-  }), /URL media inputs/);
+  }), /url_invalid/);
   assert.equal(calls.length, 0);
 });
 
@@ -333,4 +333,138 @@ test("AI SDK seed and fps reach Yir even when a local catalog lacks them", async
   assert.equal(calls[2].body.parameters.seed, 7);
   assert.equal(calls[2].body.parameters.fps, 24);
   assert.deepEqual(result.warnings, []);
+});
+
+
+test("AI SDK image URL inputs reach the Gateway without local downloads or uploads", async () => {
+  const { provider, calls } = fixture();
+  await generateImage({ model: provider.imageModel("openai/gpt-image-2"),
+    prompt: { text: "Edit", images: ["https://example.com/reference.png?signature=fixture"] }, maxRetries: 0 });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].body.input.references, [{ role: "reference_image", url: "https://example.com/reference.png?signature=fixture" }]);
+});
+
+test("AI SDK video maps URL first/last frames and standard generation parameters", async () => {
+  const { provider, calls } = fixture("video/mp4");
+  await startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Animate", maxRetries: 0,
+    frameImages: [{ frameType: "first_frame", image: "https://example.com/first.png" },
+      { frameType: "last_frame", image: "https://example.com/last.png" }],
+    aspectRatio: "adaptive", duration: 5, generateAudio: false });
+  assert.deepEqual(calls[0].body.input, { type: "image", prompt: "Animate", references: [
+    { role: "first_frame", url: "https://example.com/first.png" }, { role: "last_frame", url: "https://example.com/last.png" },
+  ] });
+  assert.deepEqual(calls[0].body.parameters, { n: 1, aspect_ratio: "adaptive", duration: 5, generate_audio: false });
+});
+
+test("mixed URL and inline video references preserve source, role and order", async () => {
+  const calls = [];
+  const fileID = "file_11111111-1111-4111-8111-111111111111";
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path === "/v1/files") return { files: request.body.files.map(file => ({ ...file, id: fileID, object: "file", status: "ready" })) };
+    return { id: "42", status: "queued", created_at: 1 };
+  });
+  const provider = createYirAIProvider({ client, fetch: async () => { throw new Error("must not download URL references"); } });
+  await startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Animate", maxRetries: 0,
+    inputReferences: [
+      { data: "https://example.com/image.png", mediaType: "image/png" },
+      { data: new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]), mediaType: "video/mp4" },
+      { data: "https://example.com/audio.wav", mediaType: "audio/wav" },
+    ], providerOptions: { yir: { idempotencyKey: "mixed-sources" } } });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].body.files.length, 1);
+  assert.equal(calls[0].body.files[0].media_type, "video/mp4");
+  assert.deepEqual(calls[1].body.input.references, [
+    { role: "reference_image", url: "https://example.com/image.png" },
+    { role: "reference_video", file_id: fileID },
+    { role: "reference_audio", url: "https://example.com/audio.wav" },
+  ]);
+});
+
+test("unsafe media URLs fail before uploading any inline input", async () => {
+  for (const url of ["http://example.com/a.png", "https://user:password@example.com/a.png", "https://example.com/a.png#fragment", "not-a-url"]) {
+    const { provider, calls } = fixture();
+    await assert.rejects(() => provider.imageModel("openai/gpt-image-2").doGenerate({ prompt: "Edit", n: 1,
+      files: [{ type: "file", mediaType: "image/png", data: new Uint8Array([137, 80, 78, 71]) }, { type: "url", url }],
+      providerOptions: {} }), error => error.code === "url_invalid" && error.path === "input.references.1.url");
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("optional parameter conflicts are rejected even when the catalog omits the parameter", async () => {
+  for (const [field, value] of [["seed", 7], ["fps", 24]]) {
+    const calls = [];
+    const client = createYirClient(async request => { calls.push(request); return { id: "42", status: "queued", created_at: 1 }; }, catalog);
+    const model = createYirAIProvider({ client }).videoModel("bytedance/seedance-2.0");
+    await assert.rejects(() => startVideo({ model, prompt: "Animate", [field]: value, maxRetries: 0,
+      providerOptions: { yir: { parameters: { [field]: value + 1 } } } }), error => error.code === "parameter_conflict");
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("a stale catalog does not discard explicit seed for a different input mode", async () => {
+  const custom = structuredClone(catalog);
+  const base = custom.models.find(model => model.id === "bytedance/seedance-2.0");
+  const text = structuredClone(base.operations.find(operation => operation.operation === "generate_video" && operation.input_modes.includes("text")));
+  text.input_modes = ["text"];
+  const image = structuredClone(text);
+  image.input_modes = ["image"];
+  image.parameters = image.parameters.filter(parameter => parameter.name !== "seed");
+  text.parameters = [...text.parameters.filter(parameter => parameter.name !== "seed"), { name: "seed", type: "integer", required: false, control: "number", locales: {} }];
+  base.operations = [text, image];
+  const calls = [];
+  const client = createYirClient(async request => { calls.push(request); return { id: "42", status: "queued", created_at: 1 }; });
+  const model = createYirAIProvider({ client, modelContracts: custom }).videoModel(base.id);
+  const result = await startVideo({ model, prompt: { text: "Animate", image: "https://example.com/input.png" }, seed: 7, maxRetries: 0 });
+  assert.equal(calls[0].body.parameters.seed, 7);
+  assert.deepEqual(result.warnings, []);
+  await startVideo({ model, prompt: "Animate", seed: 0, maxRetries: 0 });
+  assert.equal(calls[1].body.parameters.seed, 0);
+});
+
+test("pixel dimensions and masks fail explicitly before transport instead of changing specifications", async () => {
+  const { provider, calls } = fixture();
+  await assert.rejects(() => generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: "Image", size: "1024x1024", maxRetries: 0 }), /pixel size/);
+  await assert.rejects(() => startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Video", resolution: "1280x720", maxRetries: 0 }), /pixel resolution/);
+  const image = new Uint8Array([137, 80, 78, 71]);
+  await assert.rejects(() => generateImage({ model: provider.imageModel("openai/gpt-image-2"), prompt: { text: "Edit", images: [image], mask: image }, maxRetries: 0 }), /image mask/);
+  assert.equal(calls.length, 0);
+});
+
+
+test("prompt image with a last frame preserves both endpoints", async () => {
+  const { provider, calls } = fixture("video/mp4");
+  await startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), maxRetries: 0,
+    prompt: { text: "Animate", image: "https://example.com/first.png" },
+    frameImages: [{ frameType: "last_frame", image: "https://example.com/last.png" }] });
+  assert.deepEqual(calls[0].body.input.references, [
+    { role: "first_frame", url: "https://example.com/first.png" }, { role: "last_frame", url: "https://example.com/last.png" },
+  ]);
+});
+
+test("AI SDK inline first frame mirror uploads once and retains the last frame", async () => {
+  const calls = [];
+  const firstID = "file_11111111-1111-4111-8111-111111111111";
+  const lastID = "file_22222222-2222-4222-8222-222222222222";
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path === "/v1/files") return { files: request.body.files.map((file, index) => ({ ...file, id: [firstID, lastID][index], object: "file", status: "ready" })) };
+    return { id: "42", status: "queued", created_at: 1 };
+  });
+  await startVideo({ model: createYirAIProvider({ client }).videoModel("bytedance/seedance-2.0"), prompt: "Animate", maxRetries: 0,
+    frameImages: [{ frameType: "first_frame", image: new Uint8Array([137, 80, 78, 71]) },
+      { frameType: "last_frame", image: new Uint8Array([137, 80, 78, 71, 1]) }] });
+  assert.equal(calls[0].body.files.length, 2);
+  assert.deepEqual(calls[1].body.input.references, [{ role: "first_frame", file_id: firstID }, { role: "last_frame", file_id: lastID }]);
+});
+
+test("prompt image maps to a single first frame and mixed frame/reference sources remain explicit errors", async () => {
+  const { provider, calls } = fixture("video/mp4");
+  const model = provider.videoModel("bytedance/seedance-2.0");
+  await startVideo({ model, prompt: { text: "Animate", image: "https://example.com/first.png" }, maxRetries: 0 });
+  assert.deepEqual(calls[0].body.input.references, [{ role: "first_frame", url: "https://example.com/first.png" }]);
+  await assert.rejects(() => model.doStart({ prompt: "Animate", n: 1, providerOptions: {},
+    image: { type: "url", url: "https://example.com/first.png" },
+    inputReferences: [{ type: "url", url: "https://example.com/reference.png", mediaType: "image/png" }] }), /input_sources_ambiguous/);
+  assert.equal(calls.length, 1);
 });

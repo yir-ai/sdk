@@ -85,7 +85,7 @@ Failed submit calls expose `error.idempotencyKey`, including when the SDK genera
 
 ## Files and Webhooks
 
-A media reference carries exactly one of `file_id` (a ready File) or `url` (a public HTTPS URL that Yir imports at submission, up to 100 MiB; data URLs are refused). Use Files for larger media or media that is not publicly reachable. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter accepts inline bytes for upload; download URL inputs in your application before passing their bytes to the adapter.
+A media reference carries exactly one of `file_id` (a ready File) or `url` (a public HTTPS URL that Yir imports at submission, up to 100 MiB; data URLs are refused). Use Files for larger media or media that is not publicly reachable. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter uploads inline bytes and passes public HTTPS URL inputs to the Gateway for import. Mixed URL and inline inputs retain their order and reference roles; URLs are not fetched by the adapter.
 
 `createFiles(request, key)` creates upload plans; `uploadFile(client, plan, blob)` uploads and completes a plan. `createAndUploadFile(client, metadata, blob, key)` combines the steps. Use stable upload keys and retain returned file IDs; `getFile(id)` checks state and `completeFile(id)` completes a manually uploaded file. Only reference ready files in generation requests (`file_id` plus the appropriate role). Upload helpers support the server's single/multipart plans.
 
@@ -95,11 +95,27 @@ Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ sec
 
 ## Vercel AI SDK
 
-Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces.
+Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces. It is also compile- and runtime-tested with `ai@7.0.137` / `@ai-sdk/provider@4.0.26`.
 
 `providerOptions.yir.idempotencyKey` is optional, generating one key per invocation when omitted. Pass your saved key for recovery, along with `maxCost`, `parameters` and optional `routing`. Quote and approve before invoking generation: the adapter does not quote, authorize budgets or persist requests. Its image path submits, waits and downloads results. Its video path starts a job and returns a serializable operation with `jobId` and `modelId` for status recovery. Preserve the operation. Inline references use upload keys derived from the same generation key; preserve the same bytes on recovery.
 
 Image masks, pixel `size` and video pixel resolution are unsupported; use Yir parameters for resolution. `seed` and video `fps` map to same-named Yir parameters and reach the Gateway even when a local catalog lacks them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
+
+### Parameter compatibility
+
+| AI SDK input | Yir Standard API mapping / boundary |
+| --- | --- |
+| `prompt`, `aspectRatio`, `n` | `input.prompt`, `parameters.aspect_ratio`, `parameters.n`; model-specific limits still apply. |
+| Video `duration`, `generateAudio` | `parameters.duration` (integer seconds), `parameters.generate_audio`; explicit `false` is preserved. |
+| `seed`, video `fps` | Forwarded unchanged to the Gateway, even with a stale local catalog. The current Gateway has no configurable `fps` and rejects it instead of applying the requested frame rate. |
+| Image `size`, video `resolution` | Pixel dimensions are rejected. Use `providerOptions.yir.parameters.resolution` with the model's resolution tier and `aspectRatio`. A tier is not a guarantee of exact pixel dimensions. |
+| Image `prompt.images`, video `prompt.image` | Inline bytes/Base64 or public HTTPS URL strings. A video prompt image becomes a `first_frame` reference. |
+| Video `frameImages` | Role-tagged first/last frames are preserved. AI SDK's mirrored first frame is not duplicated; `prompt.image` plus a last frame preserves both endpoints. |
+| Video `inputReferences` | Image/video/audio references; URL references need explicit `mediaType` so the adapter can assign their role without downloading them. |
+| Image `mask` | Unsupported; the Yir Standard API has no mask role. |
+| `headers`, `abortSignal` | Custom per-call headers are rejected; configure transport headers on the client. Abort stops local work, not the server Job. |
+
+The adapter does not automatically split `n` into separately billed Jobs. Video operation handles, Yir routing options, budgets and billing metadata are provider-specific. Basic generation calls are portable, but these fields need explicit migration when switching providers.
 
 ## 0.10.2 changes
 
