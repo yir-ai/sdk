@@ -34,12 +34,14 @@ test("a model absent from the bundled SDK reaches Quote; current API data valida
   const transport = async call => { sent++; return quoteFixture(call.body); };
   await createYirClient(transport).quoteImage(request);
   assert.equal(sent, 1);
-  const strict = createYirClient(transport, catalog);
-  assert.throws(() => strict.quoteImage({ ...request, parameters: { resolution: "unknown" } }),
+  const client = createYirClient(transport, catalog);
+  const changed = { ...request, parameters: { resolution: "unknown" } };
+  assert.throws(() => validateGeneration("generate_image", changed, catalog),
     error => error.code === "parameter_value");
   assert.equal(sent, 1);
-  await strict.quoteImage(request);
-  assert.equal(sent, 2);
+  await client.quoteImage(changed);
+  await client.quoteImage(request);
+  assert.equal(sent, 3);
 });
 
 test("SDK reads the expanded API catalog, keeps known checks and leaves newer rules to the Gateway", async () => {
@@ -69,8 +71,9 @@ test("SDK reads the expanded API catalog, keeps known checks and leaves newer ru
   const image = changed.models[0].operations.find(item => item.input_modes.includes("image"));
   image.input_constraints.image.per_tier_limit = { pro: 4 };
   const imageRequest = { ...request, input: { type: "image", prompt: "x", references: [{ role: "first_frame", file_id: "f1" }] } };
-  assert.throws(() => createYirClient(async () => ({}), parseModelContractCatalog(changed)).quoteImage(imageRequest),
+  assert.throws(() => validateGeneration("generate_image", imageRequest, parseModelContractCatalog(changed)),
     error => error.code === "reference_role_invalid");
+  await createYirClient(async call => quoteFixture(call.body), parseModelContractCatalog(changed)).quoteImage(imageRequest);
   assert.throws(() => parseModelContractCatalog({ ...response, schema_version: "v2" }), /model_contract_schema_unsupported/);
 });
 
@@ -192,10 +195,13 @@ test("a client catalog leaves models it does not describe to the Gateway", async
   // An input mode the catalog does not describe for a known model is also left to the Gateway.
   await client.quoteImage({ ...request, model: "openai/gpt-image-2", input: { type: "future_mode", prompt: "x" }, parameters: {} });
   assert.equal(sent, 3);
-  // Protocol checks and covered models still fail locally.
+  // Protocol checks remain automatic; catalog rules are explicitly requested.
   assert.throws(() => client.quoteImage({ ...newer, input: { type: "text", prompt: " " } }), error => error.code === "prompt_required");
-  assert.throws(() => client.quoteImage({ ...request, model: "openai/gpt-image-2", parameters: { resolution: "unknown" } }),
+  const changed = { ...request, model: "openai/gpt-image-2", parameters: { resolution: "unknown" } };
+  assert.throws(() => validateGeneration("generate_image", changed, stale),
     error => error.code === "parameter_value");
   assert.equal(sent, 3);
+  await client.quoteImage(changed);
+  assert.equal(sent, 4);
   assert.throws(() => validateGeneration("generate_image", newer, stale), error => error.code === "model_contract_unavailable");
 });
