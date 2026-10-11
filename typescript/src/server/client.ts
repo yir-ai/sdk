@@ -68,7 +68,8 @@ export type YirSubmissionError = Error & { readonly idempotencyKey: string };
 function submissionError(cause: unknown, key: string): YirSubmissionError {
   // Preserve APIError/AbortError identity for existing callers. A frozen custom
   // transport error remains accessible through cause instead of losing the key.
-  const error = cause instanceof Error && Object.isExtensible(cause)
+  // Reused errors (for example an abort reason) must not overwrite an earlier key.
+  const error = cause instanceof Error && Object.isExtensible(cause) && !("idempotencyKey" in cause)
     ? cause : new Error("job_submit_failed", { cause });
   Object.defineProperty(error, "idempotencyKey", { value: key, configurable: true });
   return error as YirSubmissionError;

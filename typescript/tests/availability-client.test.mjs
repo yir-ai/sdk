@@ -37,6 +37,24 @@ test('frozen transport errors still expose recovery identity through the submit 
   });
 });
 
+test('reused transport errors keep each failed submission recovery key stable', async () => {
+  const failure = new Error('shared-abort-reason');
+  const client = createYirClient(async () => { throw failure; });
+  const results = await Promise.allSettled([
+    client.submitImage(request, 'first-key'), client.submitImage(request, 'second-key'),
+  ]);
+  assert.ok(results.every(result => result.status === 'rejected'));
+  assert.deepEqual(results.map(result => result.reason.idempotencyKey), ['first-key', 'second-key']);
+  assert.notEqual(results[0].reason, results[1].reason);
+  assert.equal(results[1].reason.cause, failure);
+  const locked = Object.defineProperty(new Error('custom'), 'idempotencyKey', { value: 'old-key' });
+  await assert.rejects(createYirClient(async () => { throw locked; }).submitImage(request, 'new-key'), error => {
+    assert.equal(error.idempotencyKey, 'new-key');
+    assert.equal(error.cause, locked);
+    return true;
+  });
+});
+
 test('balance supports debt, preserves added fields, and rejects malformed monetary data', async () => {
   const response = { object: 'balance', currency: 'USD', available_amount: '-0.10', held_amount: '0.00', total_amount: '-0.10', future: true };
   const client = createYirClient(async value => { assert.equal(value.path, '/v1/balance'); return response; });
