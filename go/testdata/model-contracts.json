@@ -2782,7 +2782,8 @@
               "required": false,
               "values": [
                 "480p",
-                "720p"
+                "720p",
+                "1080p"
               ],
               "default": "720p",
               "control": "select",
@@ -2820,6 +2821,25 @@
                 "zh-CN": {
                   "label": "画幅",
                   "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1920x1080"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Exact size",
+                  "description": "Exact output pixels; only explicitly compatible supplies are eligible. Conflicting resolution/aspect ratio is rejected."
+                },
+                "zh-CN": {
+                  "label": "精确尺寸",
+                  "description": "精确输出像素，仅选择明确支持的渠道；与分辨率档位或画幅冲突时拒绝。"
                 }
               }
             },

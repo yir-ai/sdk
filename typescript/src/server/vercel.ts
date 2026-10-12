@@ -113,8 +113,9 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           if (frames.length && call.inputReferences?.length) throw new YirSDKValidationError("input_sources_ambiguous", "input");
           const references = frames.length ? frames.map((frame, index) => reference(frame.image, frame.frameType, index))
             : call.inputReferences?.map((file, index) => {
-              if (!file.mediaType) unsupported("reference without explicit media type");
-              const role = file.mediaType!.startsWith("image/") ? "reference_image" : file.mediaType!.startsWith("video/") ? "reference_video" : file.mediaType!.startsWith("audio/") ? "reference_audio" : undefined;
+              // Gateway treats untyped URL references as images; videos/audio need an explicit media type.
+              const role = file.mediaType === undefined && file.type === "url" ? "reference_image"
+                : file.mediaType?.startsWith("image/") ? "reference_image" : file.mediaType?.startsWith("video/") ? "reference_video" : file.mediaType?.startsWith("audio/") ? "reference_audio" : undefined;
               if (!role) unsupported("reference media type");
               return reference(file, role!, index);
             });
