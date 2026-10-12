@@ -171,6 +171,9 @@ test("market model detail uses the plain path and tolerates additive fields", ()
   for (const mutate of [
     value => { value.object = "model_contract"; },
     value => { value.specifications = []; },
+    value => { delete value.specifications[0].channels; },
+    value => { value.specifications[0].channels = null; },
+    value => { value.specifications[0].channels = {}; },
     value => { value.specifications[0].channels[0].amount_micros = -1; },
     value => { value.specifications[0].channels[0].availability = ""; },
   ]) {
@@ -178,6 +181,14 @@ test("market model detail uses the plain path and tolerates additive fields", ()
     mutate(value);
     assert.throws(() => parseModelDetail(value, "openai/gpt-image-2"), /model_response_invalid/);
   }
+});
+
+test("market model detail preserves empty-channel specifications alongside available ones", () => {
+  const detail = marketDetail();
+  detail.specifications.push({ ...detail.specifications[0], specification_label: "unavailable size", channels: [] });
+  assert.deepEqual(parseModelDetail(detail, detail.id), detail);
+  detail.specifications[0].channels = [];
+  assert.deepEqual(parseModelDetail(detail, detail.id), detail);
 });
 
 // A catalog read before a model was published must not block that model: the

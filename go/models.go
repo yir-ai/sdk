@@ -18,12 +18,13 @@ type ModelDetail struct {
 }
 
 type ModelSpecification struct {
-	RequestModelID     string              `json:"request_model_id"`
-	Operation          string              `json:"operation"`
-	InputMode          string              `json:"input_mode"`
-	SpecificationLabel string              `json:"specification_label"`
-	Currency           string              `json:"currency"`
-	Channels           []ModelChannelPrice `json:"channels"`
+	RequestModelID     string `json:"request_model_id"`
+	Operation          string `json:"operation"`
+	InputMode          string `json:"input_mode"`
+	SpecificationLabel string `json:"specification_label"`
+	Currency           string `json:"currency"`
+	// Channels is empty when this specification currently has no listed channels.
+	Channels []ModelChannelPrice `json:"channels"`
 }
 
 // ModelChannelPrice is display pricing, not a quote. AmountMicros is nil when no price is published.
@@ -77,7 +78,7 @@ func validModelDetail(detail ModelDetail, model string) bool {
 	for _, specification := range detail.Specifications {
 		if !validModelContractPath(specification.RequestModelID) || specification.Operation == "" ||
 			specification.InputMode == "" || specification.SpecificationLabel == "" ||
-			specification.Currency == "" || len(specification.Channels) == 0 {
+			specification.Currency == "" || specification.Channels == nil {
 			return false
 		}
 		for _, channel := range specification.Channels {

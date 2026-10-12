@@ -2,6 +2,7 @@ package yir
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -104,5 +105,47 @@ func TestGetModelReturnsNotFoundAPIError(t *testing.T) {
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) || apiErr.Status != 404 || apiErr.Code != "YIR_MODEL_NOT_FOUND" {
 		t.Fatalf("unexpected error %v", err)
+	}
+}
+
+func TestGetModelPreservesEmptyChannelSpecifications(t *testing.T) {
+	var body map[string]any
+	if err := json.Unmarshal([]byte(testModelDetail), &body); err != nil {
+		t.Fatal(err)
+	}
+	specs := body["specifications"].([]any)
+	empty := map[string]any{}
+	for k, v := range specs[0].(map[string]any) {
+		empty[k] = v
+	}
+	empty["channels"] = []any{}
+	body["specifications"] = append(specs, empty)
+	for _, allEmpty := range []bool{false, true} {
+		if allEmpty {
+			specs[0].(map[string]any)["channels"] = []any{}
+		}
+		raw, _ := json.Marshal(body)
+		client, _ := modelDetailClient(t, string(raw), 200)
+		detail, err := client.GetModel(context.Background(), "openai/gpt-image-2")
+		if err != nil || len(detail.Specifications) != 2 {
+			t.Fatalf("detail=%+v err=%v", detail, err)
+		}
+		if detail.Specifications[1].Channels == nil || len(detail.Specifications[1].Channels) != 0 {
+			t.Fatal("empty specification was changed")
+		}
+	}
+	for _, malformed := range []any{nil, map[string]any{}, "invalid"} {
+		empty["channels"] = malformed
+		raw, _ := json.Marshal(body)
+		client, _ := modelDetailClient(t, string(raw), 200)
+		if _, err := client.GetModel(context.Background(), "openai/gpt-image-2"); err == nil {
+			t.Fatal("malformed channels accepted")
+		}
+	}
+	delete(empty, "channels")
+	raw, _ := json.Marshal(body)
+	client, _ := modelDetailClient(t, string(raw), 200)
+	if _, err := client.GetModel(context.Background(), "openai/gpt-image-2"); err == nil {
+		t.Fatal("missing channels accepted")
 	}
 }

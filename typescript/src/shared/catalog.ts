@@ -31,6 +31,7 @@ export type ModelSpecification = {
   readonly input_mode: "text" | "image" | "reference" | (string & {});
   readonly specification_label: string;
   readonly currency: "USD" | (string & {});
+  /** Empty when this specification currently has no listed channels. */
   readonly channels: readonly ModelChannelPrice[];
 };
 
@@ -57,7 +58,7 @@ export function parseModelDetail(value: unknown, requestedModel: string): ModelD
     const specification = record(item);
     if (!canonicalModelID(specification.request_model_id) || !text(specification.operation) || !text(specification.input_mode) ||
         !text(specification.specification_label) || !text(specification.currency) ||
-        !Array.isArray(specification.channels) || !specification.channels.length) fail();
+        !Array.isArray(specification.channels)) fail();
     for (const entry of specification.channels as unknown[]) {
       const channel = record(entry);
       if (!text(channel.provider_code) || !text(channel.provider_label) || !text(channel.specification_label) ||
