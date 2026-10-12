@@ -2095,7 +2095,7 @@
             "type": "string"
           },
           "provider_error": {
-            "description": "ProviderError carries the upstream's own reason when a failed Job's last\nrejection was caused by the request or its inputs; diagnostic text only.",
+            "description": "ProviderError carries the upstream's own reason for a failed Job's last\nfailed attempt, whenever the upstream gave one; diagnostic text only.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/types.YIRStandardV1ProviderError"
@@ -2287,10 +2287,17 @@
       "aigcprotocol.CanonicalTaskSpecificationV2": {
         "type": "object",
         "properties": {
+          "adaptive_duration": {
+            "description": "AdaptiveDuration 表示输出时长与比例跟随输入视频；DurationSeconds 为准入解析出的估价秒数。",
+            "type": "boolean"
+          },
           "aspect_ratio": {
             "type": "string"
           },
           "duration_seconds": {
+            "type": "integer"
+          },
+          "fps": {
             "type": "integer"
           },
           "generate_audio": {
@@ -2317,6 +2324,9 @@
           },
           "seed": {
             "type": "integer"
+          },
+          "size": {
+            "type": "string"
           },
           "web_search": {
             "type": "boolean"

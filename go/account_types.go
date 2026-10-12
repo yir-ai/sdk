@@ -393,17 +393,20 @@ type AccountInputSummary struct {
 }
 
 type AccountCanonicalTaskSpecificationV2 struct {
-	AspectRatio     *string `json:"aspect_ratio,omitempty"`
-	DurationSeconds *int64  `json:"duration_seconds,omitempty"`
-	GenerateAudio   *bool   `json:"generate_audio,omitempty"`
-	IgnoreQuality   *bool   `json:"ignore_quality,omitempty"`
-	ImageSearch     *bool   `json:"image_search,omitempty"`
-	OutputCount     *int64  `json:"output_count,omitempty"`
-	QualityTier     *string `json:"quality_tier,omitempty"`
-	Resolution      *string `json:"resolution,omitempty"`
-	ReturnLastFrame *bool   `json:"return_last_frame,omitempty"`
-	Seed            *int64  `json:"seed,omitempty"`
-	WebSearch       *bool   `json:"web_search,omitempty"`
+	AdaptiveDuration *bool   `json:"adaptive_duration,omitempty"`
+	AspectRatio      *string `json:"aspect_ratio,omitempty"`
+	DurationSeconds  *int64  `json:"duration_seconds,omitempty"`
+	Fps              *int64  `json:"fps,omitempty"`
+	GenerateAudio    *bool   `json:"generate_audio,omitempty"`
+	IgnoreQuality    *bool   `json:"ignore_quality,omitempty"`
+	ImageSearch      *bool   `json:"image_search,omitempty"`
+	OutputCount      *int64  `json:"output_count,omitempty"`
+	QualityTier      *string `json:"quality_tier,omitempty"`
+	Resolution       *string `json:"resolution,omitempty"`
+	ReturnLastFrame  *bool   `json:"return_last_frame,omitempty"`
+	Seed             *int64  `json:"seed,omitempty"`
+	Size             *string `json:"size,omitempty"`
+	WebSearch        *bool   `json:"web_search,omitempty"`
 }
 
 type AccountInputTransferView struct {

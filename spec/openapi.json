@@ -1302,7 +1302,7 @@
             "type": "object",
             "additionalProperties": false,
             "required": ["provider", "message"],
-            "description": "Present on a failed Job when the last upstream rejection was caused by the request or its inputs (for example an unsupported reference video). Sanitized diagnostic text: links and quoted text are removed, and wording is not stable.",
+            "description": "Present on a failed Job whenever the upstream gave a reason for the last failed attempt, except failures of Yir's own provider account. Sanitized diagnostic text: links and request echoes are removed, and wording is not stable; branch on code.",
             "properties": {
               "provider": { "type": "string", "minLength": 1, "description": "Public provider code of the rejecting route." },
               "message": { "type": "string", "minLength": 1, "maxLength": 500 }

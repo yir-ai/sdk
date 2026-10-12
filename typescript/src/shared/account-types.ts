@@ -391,8 +391,10 @@ export type AccountInputSummary = {
 };
 
 export type AccountCanonicalTaskSpecificationV2 = {
+  "adaptive_duration"?: boolean;
   "aspect_ratio"?: string;
   "duration_seconds"?: number;
+  "fps"?: number;
   "generate_audio"?: boolean;
   "ignore_quality"?: boolean;
   "image_search"?: boolean;
@@ -401,6 +403,7 @@ export type AccountCanonicalTaskSpecificationV2 = {
   "resolution"?: string;
   "return_last_frame"?: boolean;
   "seed"?: number;
+  "size"?: string;
   "web_search"?: boolean;
 };
 
