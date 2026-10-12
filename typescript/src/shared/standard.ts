@@ -74,7 +74,7 @@ export type StandardImageQuoteRequest = Omit<
   "webhook_url" | "max_cost"
 >;
 
-export type StandardVideoImageInput = StandardImageInput;
+export type StandardVideoImageInput = Omit<StandardImageInput, "prompt"> & { readonly prompt?: string };
 
 export type StandardVideoReference = StandardReference;
 
@@ -223,11 +223,18 @@ export function validateGeneration(operation: "generate_image" | "generate_video
   if (typeof body.model !== "string" || !body.model.trim()) throw new YirSDKValidationError("model_required", "model");
   const input = requireObject(body.input, "input");
   if (typeof input.type !== "string" || !input.type) throw new YirSDKValidationError("input_mode_invalid", "input.type");
-  if (typeof input.prompt !== "string" || !input.prompt.trim()) throw new YirSDKValidationError("prompt_required", "input.prompt");
+  const optionalVideoPrompt = operation === "generate_video" && input.type === "image";
+  if ((input.prompt !== undefined && typeof input.prompt !== "string") ||
+      (!optionalVideoPrompt && (typeof input.prompt !== "string" || !input.prompt.trim()))) {
+    throw new YirSDKValidationError("prompt_required", "input.prompt");
+  }
   requireObject(body.parameters, "parameters");
   if (catalog) validateModelParameters(body.model, operation, input.type, body.parameters, catalog);
   const contract = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
   const constraint = contract?.input_constraints[input.type];
+  if (catalog && optionalVideoPrompt && (input.prompt === undefined || !(input.prompt as string).trim()) && constraint?.prompt_optional !== true) {
+    throw new YirSDKValidationError("prompt_required", "input.prompt");
+  }
   if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
   const references = input.references === undefined ? [] : input.references;
   if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||

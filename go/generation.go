@@ -197,7 +197,7 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	if request.Input.Type == "" {
 		return &ParameterError{"input.type", "input_mode_invalid"}
 	}
-	if strings.TrimSpace(request.Input.Prompt) == "" {
+	if strings.TrimSpace(request.Input.Prompt) == "" && (operation != "generate_video" || request.Input.Type != "image") {
 		return &ParameterError{"input.prompt", "required_parameter"}
 	}
 	for key := range request.Extra {
@@ -212,6 +212,9 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 			return &ParameterError{"input.type", "input_contract_unavailable"}
 		}
 		constraint = &declared
+	}
+	if constraint != nil && strings.TrimSpace(request.Input.Prompt) == "" && !constraint.PromptOptional {
+		return &ParameterError{"input.prompt", "required_parameter"}
 	}
 	count := len(request.Input.References)
 	if request.Input.Type == "text" && count != 0 || (request.Input.Type == "image" || request.Input.Type == "reference") && count == 0 ||

@@ -22,6 +22,7 @@ export type ModelParameterContract = {
 export type ReferenceRole = "first_frame" | "last_frame" | "reference_image" | "reference_video" | "reference_audio" | (string & {});
 
 export type ModelInputConstraint = {
+  readonly prompt_optional?: boolean;
   readonly min_references: number;
   readonly max_references: number;
   readonly allowed_reference_roles: readonly ReferenceRole[];

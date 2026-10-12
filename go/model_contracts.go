@@ -22,6 +22,7 @@ type ModelParameterContract struct {
 }
 
 type ModelInputConstraint struct {
+	PromptOptional             bool                           `json:"prompt_optional,omitempty"`
 	MinReferences              int                            `json:"min_references"`
 	MaxReferences              int                            `json:"max_references"`
 	AllowedReferenceRoles      []string                       `json:"allowed_reference_roles"`

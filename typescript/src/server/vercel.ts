@@ -87,6 +87,12 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
       return {
         specificationVersion: "v4", provider: "yir", modelId,
         maxVideosPerCall: Number.MAX_SAFE_INTEGER,
+        async handleWebhookOption({ webhook }) {
+          const { url, received } = await webhook();
+          // The receiver verifies and correlates notifications. AI SDK uses them
+          // only to wake up doStatus, which reads the original Job from Yir.
+          return { webhookUrl: url, received };
+        },
         async doStart(call) {
           call.abortSignal?.throwIfAborted();
           // Preserve the explicit Yir key, or AI SDK's per-invocation key across

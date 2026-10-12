@@ -641,3 +641,79 @@ test("AI SDK pixel dimensions reach Yir unchanged without approximate tiers", as
     providerOptions: { yir: { parameters: { size: "2048x2048" } } } }), /parameter_conflict/);
   assert.equal(image.calls.length, 1);
 });
+
+
+test("AI SDK webhook factory wakes the original video job without polling or trusting its payload", async () => {
+  const calls = [];
+  let notify, submitted;
+  const received = new Promise(resolve => { notify = resolve; });
+  const started = new Promise(resolve => { submitted = resolve; });
+  let factories = 0;
+  const provider = createYirAIProvider({ client: createYirClient(async request => {
+    calls.push(request);
+    if (request.method === "POST") {
+      submitted();
+      return { id: "42", status: "queued", created_at: 1 };
+    }
+    assert.equal(request.path, "/v1/jobs/42");
+    return { id: "42", status: "succeeded", created_at: 1,
+      result: { availability: "available", files: [{ url: "https://assets.example/original.mp4", media_type: "video/mp4" }] } };
+  }) });
+  const pending = generateVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Animate", maxRetries: 0,
+    webhook: async () => { factories++; return { url: "https://example.com/yir-hook", received }; },
+    providerOptions: { yir: { idempotencyKey: "webhook-video" } },
+    download: async ({ url }) => {
+      assert.equal(String(url), "https://assets.example/original.mp4");
+      return { data: new Uint8Array([0]), mediaType: "video/mp4" };
+    },
+  });
+  await started;
+  assert.equal(factories, 1);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].body.webhook_url, "https://example.com/yir-hook");
+  assert.equal(calls[0].headers["Idempotency-Key"], "webhook-video");
+  // Even a payload naming another job cannot select the result or its URL.
+  notify({ headers: {}, body: { id: "99", url: "https://untrusted.example/video.mp4" } });
+  const result = await pending;
+  assert.equal(result.videos.length, 1);
+  assert.equal(calls.length, 2);
+  assert.equal(result.providerMetadata.yir.jobId, "42");
+  assert.equal(result.warnings.some(warning => warning.feature === "webhook"), false);
+});
+
+test("AI SDK webhook factory failures and invalid URLs never submit or upload", async () => {
+  for (const webhook of [
+    async () => { throw new Error("fixture factory failure"); },
+    async () => ({ url: "http://example.com/hook", received: new Promise(() => {}) }),
+  ]) {
+    const { provider, calls } = fixture("video/mp4");
+    await assert.rejects(() => generateVideo({ model: provider.videoModel("bytedance/seedance-2.0"),
+      prompt: { text: "Animate", image: new Uint8Array([137, 80, 78, 71]) }, webhook, maxRetries: 0 }),
+      error => error.message === "fixture factory failure" || (error.code === "url_invalid" && error.path === "webhook_url"));
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("AI SDK rejected webhook waiting does not resubmit or cancel the remote job", async () => {
+  const { provider, calls } = fixture("video/mp4");
+  await assert.rejects(() => generateVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Animate", maxRetries: 0,
+    webhook: async () => ({ url: "https://example.com/hook", received: Promise.reject(new Error("fixture receiver failure")) }),
+  }), /fixture receiver failure/);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].path, "/v1/videos/generations");
+});
+
+
+test("AI SDK first-frame video preserves absent text without inventing a prompt", async () => {
+ const { provider, calls } = fixture("video/mp4");
+ await startVideo({model:provider.videoModel("google/veo-3.1-generate-001"), prompt:{image:"https://example.com/first.png"}, maxRetries:0});
+ assert.equal(calls.length,1); assert.equal(calls[0].body.input.prompt, "");
+ assert.deepEqual(calls[0].body.input.references,[{role:"first_frame",url:"https://example.com/first.png"}]);
+ const { validateGeneration } = await import("../dist/shared/standard.js");
+ const request = {model:"google/veo-3.1-generate-001", input:{type:"image",references:[{role:"first_frame",url:"https://example.com/first.png"}]},parameters:{}};
+ validateGeneration("generate_video",request,catalog);
+ for (const invalid of [ {...request,input:{type:"text"}}, {...request,input:{...request.input,prompt:null}}, {...request,model:"google/veo-3.1-fast-generate-001"} ]) {
+  assert.throws(()=>validateGeneration("generate_video",invalid,catalog),error=>error.code==="prompt_required");
+ }
+ assert.equal(Object.hasOwn(request.input,"prompt"),false);
+});

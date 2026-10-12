@@ -90,3 +90,19 @@ func TestNativeFPSContractIsOptionalAndExact(t *testing.T) {
 		}
 	}
 }
+
+func TestOptionalPromptVideoContract(t *testing.T) {
+	request := GenerationRequest{Model: "google/veo-3.1-generate-001", Input: GenerationInput{Type: "image", References: []Reference{{Role: "first_frame", URL: "https://example.com/first.png"}}}, Parameters: map[string]any{}}
+	if err := ValidateGeneration("generate_video", request); err != nil {
+		t.Fatal(err)
+	}
+	request.Model = "google/veo-3.1-fast-generate-001"
+	if err := ValidateGeneration("generate_video", request); err == nil {
+		t.Fatal("undeclared optional prompt accepted")
+	}
+	request.Input.Type = "text"
+	request.Input.References = nil
+	if err := ValidateGenerationProtocol("generate_video", request); err == nil {
+		t.Fatal("text-only prompt was optional")
+	}
+}

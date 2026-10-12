@@ -4404,6 +4404,7 @@
           ],
           "input_constraints": {
             "image": {
+              "prompt_optional": true,
               "min_references": 1,
               "max_references": 1,
               "allowed_reference_roles": [

@@ -105,6 +105,8 @@ When `providerOptions.yir.parameters.return_last_frame` is enabled, `videos` con
 
 Image models expose `supportsFileInputs` from the caller-provided model catalog (or `undefined` when unknown) and `supportsMaskInputs: false`. These are discovery hints, not admission checks: no catalog request is made, and a stale snapshot never blocks generation. Refresh the catalog when needed; the Gateway validates the request.
 
+`generateVideo({ webhook })` invokes the standard webhook factory and submits its URL through `webhook_url`. Verify notifications with `constructWebhookEvent` and correlate them with the intended Job before resolving `received`. The notification only wakes a fresh read of the original Job; its body never supplies the result. Without `webhook`, polling is unchanged. First-frame video input may omit text when the Gateway model/channel declares `prompt_optional` (initially official Google Veo 3.1 only); text-only input still requires text. No prompt is synthesized. This requires the corresponding Gateway deployment.
+
 ### Parameter compatibility
 
 | AI SDK input | Yir Standard API mapping / boundary |

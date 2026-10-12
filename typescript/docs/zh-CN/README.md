@@ -104,6 +104,8 @@ const client = createNodeYirClient();
 
 图片模型通过 `supportsFileInputs` 表示调用方提供的目录是否声明参考图编辑能力，未知时为 `undefined`；`supportsMaskInputs` 固定为 `false`。这些是能力提示，不是准入校验：不会自动请求目录，也不会用旧快照阻止生成。需要时刷新目录，最终由 Gateway 校验。
 
+`generateVideo({ webhook })` 会调用标准回调工厂，并通过 `webhook_url` 提交其地址。接收端须用 `constructWebhookEvent` 验签并确认对应任务，再 resolve `received`。通知只唤醒对原 Job 的回读，不用回调正文作为结果；未传 `webhook` 时保持轮询。首帧视频输入仅在 Gateway 模型及渠道声明 `prompt_optional` 时允许省略文字（首批为 Google Veo 3.1 官方渠道）；纯文本仍必填，不自动编造提示词。需要部署对应 Gateway 支持。
+
 ### 参数兼容边界
 
 | AI SDK 输入 | Yir Standard API 映射与限制 |

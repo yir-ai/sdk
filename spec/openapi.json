@@ -767,7 +767,6 @@
         "additionalProperties": false,
         "required": [
           "type",
-          "prompt",
           "references"
         ],
         "properties": {
@@ -777,9 +776,8 @@
           },
           "prompt": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 20000,
-            "pattern": "\\S"
+            "description": "Text may be omitted or blank only when the model input contract declares prompt_optional and the selected channel supports it. Text-only generation still requires a prompt. No text is synthesized."
           },
           "references": {
             "type": "array",
@@ -1719,6 +1717,7 @@
         "additionalProperties": false,
         "required": ["min_references", "max_references", "allowed_reference_roles"],
         "properties": {
+          "prompt_optional": { "type": "boolean", "description": "When true, this input mode may omit text on channels that explicitly support it. Absent means a prompt is required." },
           "min_references": { "type": "integer", "minimum": 0 },
           "max_references": { "type": "integer", "minimum": 0 },
           "allowed_reference_roles": {
