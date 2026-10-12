@@ -139,6 +139,7 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
         operationModes.add(key);
         const constraint = object(constraints[mode as string]);
         integerRange(constraint.min_references, constraint.max_references);
+        if (constraint.prompt_optional !== undefined && typeof constraint.prompt_optional !== "boolean") invalid();
         const allowed = list(constraint.allowed_reference_roles);
         for (const role of allowed) nonemptyString(role);
         for (const key of ["required_reference_roles", "required_any_reference_roles"]) {
@@ -176,9 +177,13 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
         if (typeof parameter.minimum === "number" && typeof parameter.maximum === "number" && parameter.minimum > parameter.maximum) invalid();
         const values = parameter.values === undefined ? undefined : list(parameter.values);
         if (values && values.length === 0) invalid();
+        const stringValues = parameter.string_values === undefined ? [] : list(parameter.string_values);
+        for (const value of stringValues) nonemptyString(value);
+        const stringDefault = ["integer", "number"].includes(parameter.type as string) &&
+          typeof parameter.default === "string" && stringValues.includes(parameter.default);
         // Values of a newer parameter type are left to the Gateway.
         if (!knownParameterTypes.includes(parameter.type as string)) continue;
-        for (const item of [...(values ?? []), ...(Object.hasOwn(parameter, "default") ? [parameter.default] : [])]) {
+        for (const item of [...(values ?? []), ...(Object.hasOwn(parameter, "default") && !stringDefault ? [parameter.default] : [])]) {
           const valid = parameter.type === "integer" ? typeof item === "number" && Number.isSafeInteger(item)
             : parameter.type === "number" ? typeof item === "number" && Number.isFinite(item)
             : typeof item === parameter.type;
@@ -186,7 +191,7 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
             (typeof parameter.minimum === "number" && item < parameter.minimum ||
              typeof parameter.maximum === "number" && item > parameter.maximum)) invalid();
         }
-        if (values && Object.hasOwn(parameter, "default") && !values.includes(parameter.default)) invalid();
+        if (values && Object.hasOwn(parameter, "default") && !stringDefault && !values.includes(parameter.default)) invalid();
       }
     }
   }

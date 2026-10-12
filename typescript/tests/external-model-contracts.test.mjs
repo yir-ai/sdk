@@ -205,3 +205,17 @@ test("a client catalog leaves models it does not describe to the Gateway", async
   assert.equal(sent, 4);
   assert.throws(() => validateGeneration("generate_image", newer, stale), error => error.code === "model_contract_unavailable");
 });
+
+
+test("optional prompt metadata is boolean and preserved without relaxing other inputs", () => {
+  for (const value of [true, false]) {
+    const source = structuredClone(response);
+    source.models[0].operations[0].input_constraints.text.prompt_optional = value;
+    assert.equal(parseModelContractCatalog(source).models[0].operations[0].input_constraints.text.prompt_optional, value);
+  }
+  for (const value of ["true", "false", 1, null, {}]) {
+    const source = structuredClone(response);
+    source.models[0].operations[0].input_constraints.text.prompt_optional = value;
+    assert.throws(() => parseModelContractCatalog(source), /model_contract_invalid/);
+  }
+});
