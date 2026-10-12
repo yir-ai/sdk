@@ -717,3 +717,44 @@ test("AI SDK first-frame video preserves absent text without inventing a prompt"
  }
  assert.equal(Object.hasOwn(request.input,"prompt"),false);
 });
+
+
+test("adaptive video ratio follows the supplied input-mode contract and native override", async () => {
+  const { validateGeneration } = await import("../dist/shared/standard.js");
+  for (const source of ["provider", "client", "explicit", "unknown"]) {
+    const calls = [];
+    const client = createYirClient(async request => {
+      if (source !== "unknown") validateGeneration("generate_video", request.body, catalog);
+      calls.push(request);
+      return { id: "42", status: "queued", created_at: 1 };
+    }, source === "client" ? catalog : undefined);
+    const provider = createYirAIProvider({ client, ...(source === "provider" ? { modelContracts: catalog } : {}) });
+    const parameters = { duration: "auto", ...(source === "explicit" ? { aspect_ratio: "auto" } : {}) };
+    const original = structuredClone(parameters);
+    await startVideo({ model: provider.videoModel("bytedance/seedance-2.5"), prompt: "Edit the scene", maxRetries: 0,
+      aspectRatio: "adaptive", inputReferences: [{ data: "https://example.com/video.mp4", mediaType: "video/mp4" }],
+      providerOptions: { yir: { parameters } } });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].body.parameters.aspect_ratio, source === "unknown" ? "adaptive" : "auto");
+    assert.equal(calls[0].body.parameters.duration, "auto");
+    assert.deepEqual(parameters, original);
+  }
+});
+
+test("adaptive ratio mapping respects aliases, media modes and conflicts before uploading", async () => {
+  const modelContract = catalog.models.find(model => model.id === "bytedance/seedance-2.5");
+  const { provider, calls } = fixture("video/mp4");
+  const model = provider.videoModel(modelContract.aliases[0]);
+  await startVideo({ model, prompt: { text: "Animate", image: "https://example.com/first.png" }, aspectRatio: "adaptive", maxRetries: 0 });
+  assert.equal(calls[0].body.parameters.aspect_ratio, "auto");
+  await startVideo({ model, prompt: "Animate", aspectRatio: "adaptive", maxRetries: 0 });
+  assert.equal(calls[1].body.parameters.aspect_ratio, "adaptive");
+  await startVideo({ model, prompt: { text: "Animate", image: "https://example.com/first.png" }, maxRetries: 0 });
+  assert.equal(Object.hasOwn(calls[2].body.parameters, "aspect_ratio"), false);
+  for (const [aspectRatio, aspect_ratio] of [["adaptive", "16:9"], ["16:9", "auto"]]) {
+    await assert.rejects(() => model.doStart({ prompt: "Animate", n: 1, aspectRatio,
+      image: { type: "file", data: new Uint8Array([1]), mediaType: "image/png" },
+      providerOptions: { yir: { parameters: { aspect_ratio } } } }), error => error.code === "parameter_conflict");
+  }
+  assert.equal(calls.length, 3);
+});

@@ -4,7 +4,7 @@ import { createNodeYirClient, isValidJobID, waitForJob } from "./client.js";
 import type { CreateNodeYirClientOptions, YirClient, Job } from "./client.js";
 import { YirSDKValidationError, validateGeneration } from "../shared/standard.js";
 import { uploadFile } from "./files.js";
-import { findModelContract } from "../shared/catalog.js";
+import { findModelContract, findModelOperationContract } from "../shared/catalog.js";
 import type { RoutingOverride, StandardReference, StandardImageGenerationRequest, StandardVideoGenerationRequest } from "../shared/standard.js";
 
 type VideoModelV4File = NonNullable<Parameters<NonNullable<VideoModelV4["doGenerate"]>>[0]["image"]>;
@@ -84,6 +84,7 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
       };
     },
     videoModel(modelId: string): VideoModelV4 {
+      const catalog = options.modelContracts ?? client.modelContracts;
       return {
         specificationVersion: "v4", provider: "yir", modelId,
         maxVideosPerCall: Number.MAX_SAFE_INTEGER,
@@ -101,7 +102,6 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           const extension = readOptions(call.providerOptions, call.headers);
           const parameters = { ...extension.parameters };
           assign(parameters, "n", call.n);
-          assign(parameters, "aspect_ratio", call.aspectRatio);
           assign(parameters, "duration", call.duration);
           assign(parameters, "size", call.resolution);
           assign(parameters, "generate_audio", call.generateAudio);
@@ -125,6 +125,17 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
             ...(extension.maxCost === undefined ? {} : { max_cost: extension.maxCost }),
             ...(call.webhookUrl === undefined ? {} : { webhook_url: call.webhookUrl }),
           };
+          // AI SDK uses adaptive for inherited media proportions. Some native
+          // contracts call this auto; preserve adaptive wherever it is supported.
+          let aspectRatio: string | undefined = call.aspectRatio;
+          if (aspectRatio === "adaptive" && request.input.type !== "text") {
+            const values = catalog?.schema_version === "v1"
+              ? findModelOperationContract(catalog, modelId, "generate_video", request.input.type)
+                ?.parameters.find(parameter => parameter.name === "aspect_ratio")?.values
+              : undefined;
+            if (parameters.aspect_ratio === "auto" || values?.includes("auto") && !values.includes("adaptive")) aspectRatio = "auto";
+          }
+          assign(parameters, "aspect_ratio", aspectRatio);
           validateGeneration("generate_video", request);
           if (request.input.type !== "text") {
             const files = frames.length ? frames.map(frame => frame.image) : call.inputReferences ?? [];

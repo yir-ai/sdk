@@ -94,6 +94,8 @@ const client = createNodeYirClient();
 
 ## Vercel AI SDK
 
+视频带媒体输入时，若传入的 `modelContracts` 在对应模型与输入模式中只声明 `auto`、未声明 `adaptive`，AI SDK 的 `aspectRatio: "adaptive"` 会映射为原生 `"auto"`。未配置目录时，可同时显式传入 `providerOptions.yir.parameters.aspect_ratio: "auto"`；否则仍原样透传 `adaptive`。适配器不会额外获取目录，也不改变省略参数的默认行为。自动时长仍通过原生选项 `providerOptions.yir.parameters.duration: "auto"` 传入，仅适用于支持该值的视频参考模式。
+
 在应用中运行 `pnpm add ai@7.0.97` 安装适配器已测试的 AI SDK 版本。由 `@yir-ai/sdk/vercel` 导入 `createYirAIProvider`，选择 `provider.imageModel(modelId)` 或 `provider.videoModel(modelId)`；也可使用等价别名 `provider.image(modelId)` 和 `provider.video(modelId)`。适配目标是 AI SDK 7 / Provider V4，不是旧接口；另已通过 `ai@7.0.137` / `@ai-sdk/provider@4.0.26` 的编译与运行验证。
 
 `providerOptions.yir.idempotencyKey` 可选，优先于调用级 `Idempotency-Key` 请求头。省略时使用该请求头（包括 AI SDK 视频调用生成、在外层重试间保持不变的键），再缺省则随机生成。图片调用若允许 AI SDK 外层重试，应通过上述任一方式传入已保存的键。需要恢复时传入已保存的键，以及 `maxCost`、`parameters` 和可选 `routing`。调用前完成报价和审批；适配器不报价、不审批预算、不持久化请求。图像路径提交、等待并下载结果；视频路径启动任务，返回含 `jobId` 和 `modelId` 的可序列化 operation 用于状态恢复，应保存它。内联引用文件的上传键由同次生成键派生，恢复时须保留相同字节。
