@@ -52,6 +52,9 @@ func validateParameters(rules []ModelParameterContract, parameters map[string]an
 		if err != nil {
 			return &ParameterError{path, "invalid_type"}
 		}
+		if text, ok := normalized.(string); ok && rule.Type != "string" && containsString(rule.StringValues, text) {
+			continue
+		}
 		switch rule.Type {
 		case "string":
 			if _, ok := normalized.(string); !ok {

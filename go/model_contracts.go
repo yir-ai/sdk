@@ -10,15 +10,18 @@ type ModelContractLocale struct {
 }
 
 type ModelParameterContract struct {
-	Name     string                         `json:"name"`
-	Type     string                         `json:"type"`
-	Required bool                           `json:"required"`
-	Values   []any                          `json:"values,omitempty"`
-	Default  any                            `json:"default,omitempty"`
-	Minimum  *float64                       `json:"minimum,omitempty"`
-	Maximum  *float64                       `json:"maximum,omitempty"`
-	Control  string                         `json:"control"`
-	Locales  map[string]ModelContractLocale `json:"locales"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
+	Values   []any  `json:"values,omitempty"`
+	// StringValues lists extra string values a numeric parameter accepts, such as duration "auto";
+	// the Gateway enforces their conditions.
+	StringValues []string                       `json:"string_values,omitempty"`
+	Default      any                            `json:"default,omitempty"`
+	Minimum      *float64                       `json:"minimum,omitempty"`
+	Maximum      *float64                       `json:"maximum,omitempty"`
+	Control      string                         `json:"control"`
+	Locales      map[string]ModelContractLocale `json:"locales"`
 }
 
 type ModelInputConstraint struct {
@@ -129,6 +132,7 @@ func cloneModelOperationContract(source ModelOperationContract) ModelOperationCo
 	result.Parameters = make([]ModelParameterContract, len(source.Parameters))
 	for index, parameter := range source.Parameters {
 		parameter.Values = append([]any(nil), parameter.Values...)
+		parameter.StringValues = append([]string(nil), parameter.StringValues...)
 		parameter.Minimum = cloneFloatPointer(parameter.Minimum)
 		parameter.Maximum = cloneFloatPointer(parameter.Maximum)
 		parameter.Locales = cloneModelContractLocales(parameter.Locales)

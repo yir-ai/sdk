@@ -11,6 +11,8 @@ export type ModelParameterContract = {
   readonly type: "string" | "integer" | "number" | "boolean" | (string & {});
   readonly required: boolean;
   readonly values?: readonly ModelParameterValue[];
+  /** Extra string values a numeric parameter accepts, such as duration "auto"; the Gateway enforces their conditions. */
+  readonly string_values?: readonly string[];
   readonly default?: ModelParameterValue;
   readonly minimum?: number;
   readonly maximum?: number;

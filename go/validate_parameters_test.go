@@ -51,3 +51,22 @@ func TestValidateUnknownModelLocally(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestValidateParameterStringValues(t *testing.T) {
+	min, max := 4.0, 30.0
+	rules := []ModelParameterContract{{Name: "duration", Type: "integer", Default: 4, Minimum: &min, Maximum: &max, StringValues: []string{"auto"}}}
+	if err := validateParameters(rules, map[string]any{"duration": "auto"}); err != nil {
+		t.Fatal(err)
+	}
+	var field *ParameterError
+	if err := validateParameters(rules, map[string]any{"duration": "adaptive"}); !errors.As(err, &field) || field.Code != "invalid_type" {
+		t.Fatalf("got %v, want invalid_type", err)
+	}
+	// The published Seedance 2.5 reference contract accepts "auto"; its text contract does not.
+	if err := ValidateModelParameters("bytedance/seedance-2.5", "generate_video", "reference", map[string]any{"duration": "auto", "aspect_ratio": "auto"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateModelParameters("bytedance/seedance-2.5", "generate_video", "text", map[string]any{"duration": "auto"}); !errors.As(err, &field) || field.Code != "invalid_type" {
+		t.Fatalf("got %v, want invalid_type", err)
+	}
+}

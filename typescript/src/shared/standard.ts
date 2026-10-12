@@ -183,6 +183,7 @@ export function validateModelParameters(
       continue;
     }
     const value = values[rule.name];
+    if (typeof value === "string" && rule.type !== "string" && rule.string_values?.includes(value)) continue;
     const validType = rule.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value)
       : rule.type === "number" ? typeof value === "number" && Number.isFinite(value)
       : rule.type === "string" ? typeof value === "string"
