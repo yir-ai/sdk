@@ -929,6 +929,7 @@
             "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
               "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
+              "fps": { "type": "integer", "minimum": 1, "description": "Optional native output frame rate. Only models and channels explicitly declaring this frame rate are eligible; unsupported values are rejected without interpolation or transcoding. Omit to preserve existing behavior." },
               "duration": {
                 "type": "integer",
                 "minimum": 1,
@@ -993,6 +994,7 @@
             "description": "Generation parameters. The model contract (GET /v1/models?include=parameters) lists each model's parameters, allowed values and defaults; this schema documents only the common ones. Omitted parameters take the model's published default. Parameters the model contract does not list are rejected.",
             "properties": {
               "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
+              "fps": { "type": "integer", "minimum": 1, "description": "Optional native output frame rate. Only models and channels explicitly declaring this frame rate are eligible; unsupported values are rejected without interpolation or transcoding. Omit to preserve existing behavior." },
               "duration": {
                 "type": "integer",
                 "minimum": 1,
@@ -1272,6 +1274,7 @@
         "properties": {
           "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
           "quality": { "type": "string", "minLength": 1, "description": "Image quality tier when the request constrains one; absent when omitted, which lets any channel run." },
+          "fps": { "type": "integer", "minimum": 1, "description": "Optional native output frame rate. Only models and channels explicitly declaring this frame rate are eligible; unsupported values are rejected without interpolation or transcoding. Omit to preserve existing behavior." },
           "duration": { "type": "integer", "minimum": 1, "description": "Video output length in seconds; present when the model declares duration." },
           "resolution": { "type": "string", "minLength": 1 },
           "aspect_ratio": { "type": "string", "minLength": 1 },

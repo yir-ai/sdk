@@ -165,6 +165,7 @@ export type QuotePrice =
  * generate_audio. Model-specific parameters are echoed under their contract names.
  */
 export type QuoteParameters = {
+  readonly fps?: number;
   /** Exact output pixels, only present when explicitly requested. */
   readonly size?: string;
   readonly resolution: string;

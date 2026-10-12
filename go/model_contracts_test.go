@@ -77,3 +77,16 @@ func findParameter(parameters []ModelParameterContract, name string) *ModelParam
 	}
 	return nil
 }
+
+func TestNativeFPSContractIsOptionalAndExact(t *testing.T) {
+	for _, mode := range []string{"text", "image"} {
+		op, ok := GetModelOperationContract("google/veo-3.1-generate-001", "generate_video", mode)
+		if !ok {
+			t.Fatalf("missing %s contract", mode)
+		}
+		fps := findParameter(op.Parameters, "fps")
+		if fps == nil || fps.Required || fps.Default != nil || len(fps.Values) != 1 || fps.Values[0] != 24 {
+			t.Fatalf("unexpected FPS contract: %#v", fps)
+		}
+	}
+}

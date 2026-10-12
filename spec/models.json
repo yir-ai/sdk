@@ -4486,6 +4486,25 @@
               }
             },
             {
+              "name": "fps",
+              "type": "integer",
+              "required": false,
+              "values": [
+                24
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Frame rate",
+                  "description": "Optional native output frame rate. Only explicitly certified supplies are eligible; no frame interpolation or transcoding."
+                },
+                "zh-CN": {
+                  "label": "帧率",
+                  "description": "可选原生输出帧率；仅选择明确认证的渠道，不补帧或转码。"
+                }
+              }
+            },
+            {
               "name": "generate_audio",
               "type": "boolean",
               "required": false,

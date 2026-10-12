@@ -110,7 +110,7 @@ const client = createNodeYirClient();
 | --- | --- |
 | `prompt`、`aspectRatio`、`n` | `input.prompt`、`parameters.aspect_ratio`、`parameters.n`，仍受模型规格限制。 |
 | 视频 `duration`、`generateAudio` | `parameters.duration`（整数秒）、`parameters.generate_audio`；保留显式 `false`。 |
-| `seed`、视频 `fps` | 原值透传给 Gateway，不受本地旧目录影响。当前 Gateway 不支持自定义 `fps`，会明确拒绝，不能视为已应用请求帧率。 |
+| `seed`、视频 `fps` | 原值透传给 Gateway，不受本地旧目录影响。显式 `fps` 需要模型和渠道声明；首批仅 `google/veo-3.1-generate-001` 官方 Google 渠道接受原生 `24`。其他值或未声明渠道明确拒绝，不补帧或转码；省略时保持旧行为，需要 Gateway 已部署 FPS 支持。 |
 | 图片 `size`、视频 `resolution` | 原样映射到 `parameters.size`，不近似换档。首批支持 Gateway 声明的 Seedream 5.0 Pro 官方图片尺寸；视频当前无声明渠道，由 Gateway 拒绝。省略尺寸保留旧默认值，显式档位/画幅冲突时拒绝。需要 Gateway 已部署精确尺寸支持。 |
 | 图片 `prompt.images`、视频 `prompt.image` | 接受字节、Base64 或公开 HTTPS URL 字符串；视频图片映射为 `first_frame`。 |
 | 视频 `frameImages` | 保留首尾帧角色；不会重复上传 AI SDK 同时传入的首帧镜像；`prompt.image` 加尾帧保留两端。 |

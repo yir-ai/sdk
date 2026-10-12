@@ -111,7 +111,7 @@ Image models expose `supportsFileInputs` from the caller-provided model catalog 
 | --- | --- |
 | `prompt`, `aspectRatio`, `n` | `input.prompt`, `parameters.aspect_ratio`, `parameters.n`; model-specific limits still apply. |
 | Video `duration`, `generateAudio` | `parameters.duration` (integer seconds), `parameters.generate_audio`; explicit `false` is preserved. |
-| `seed`, video `fps` | Forwarded unchanged to the Gateway, even with a stale local catalog. The current Gateway has no configurable `fps` and rejects it instead of applying the requested frame rate. |
+| `seed`, video `fps` | Forwarded unchanged to the Gateway, even with a stale local catalog. Explicit `fps` requires a model/channel declaration. Initially only the official Google channel for `google/veo-3.1-generate-001` accepts native `24`; other values or undeclared channels are rejected, without interpolation or transcoding. Omitted `fps` preserves existing behavior. Requires the Gateway FPS update. |
 | Image `size`, video `resolution` | Map to `parameters.size` without approximation. First supported scope: Seedream 5.0 Pro official image sizes declared by the Gateway. Video sizes currently have no declared channel and are rejected by the Gateway. Omitted size preserves existing tier defaults; explicit tier/aspect conflicts are rejected. Requires a Gateway deployment with exact-size support. |
 | Image `prompt.images`, video `prompt.image` | Inline bytes/Base64 or public HTTPS URL strings. A video prompt image becomes a `first_frame` reference. |
 | Video `frameImages` | Role-tagged first/last frames are preserved. AI SDK's mirrored first frame is not duplicated; `prompt.image` plus a last frame preserves both endpoints. |
