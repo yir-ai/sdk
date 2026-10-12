@@ -95,6 +95,8 @@ Set `webhook_url` on a submit request. Verify with `verifyWebhookSignature({ sec
 
 ## Vercel AI SDK
 
+See the [core parameter compatibility matrix](docs/vercel-compatibility.md) for combinations, server-side limits and migration boundaries.
+
 For video media inputs, AI SDK `aspectRatio: "adaptive"` maps to native `"auto"` when the supplied `modelContracts` declares `auto` but not `adaptive` for that model and input mode. Without a catalog, explicitly set `providerOptions.yir.parameters.aspect_ratio: "auto"` alongside `adaptive` when the model requires it; otherwise `adaptive` is forwarded unchanged. This does not fetch a catalog or change omitted defaults. Automatic duration remains a native option: `providerOptions.yir.parameters.duration: "auto"`, only for supported video-reference modes.
 
 Install the adapter's tested AI SDK generation in your application with `pnpm add ai@7.0.97`. Import `createYirAIProvider` from `@yir-ai/sdk/vercel`, then select `provider.imageModel(modelId)` or `provider.videoModel(modelId)`; `provider.image(modelId)` and `provider.video(modelId)` are equivalent aliases. This adapter targets AI SDK 7 / Provider V4, not older provider interfaces. It is also compile- and runtime-tested with `ai@7.0.137` / `@ai-sdk/provider@4.0.26`.

@@ -758,3 +758,37 @@ test("adaptive ratio mapping respects aliases, media modes and conflicts before 
   }
   assert.equal(calls.length, 3);
 });
+
+
+test("combined video settings preserve media roles, omitted text, native tier and exact dimensions", async () => {
+  const cases = [
+    { model: "google/veo-3.1-generate-001", call: { prompt: { image: "https://example.com/first.png" }, fps: 24 },
+      native: { resolution: "720p" }, parameters: { resolution: "720p", n: 1, fps: 24 }, mode: "image", roles: ["first_frame"], prompt: "" },
+    { model: "bytedance/seedance-2.5", call: { prompt: "Edit", aspectRatio: "adaptive", generateAudio: false,
+        inputReferences: [{ data: "https://example.com/reference.mp4", mediaType: "video/mp4" }] },
+      native: { duration: "auto", resolution: "480p" }, parameters: { duration: "auto", resolution: "480p", n: 1, generate_audio: false, aspect_ratio: "auto" },
+      mode: "reference", roles: ["reference_video"], prompt: "Edit" },
+    { model: "bytedance/seedance-2.0", call: { prompt: "Animate", fps: 30, resolution: "1280x720", aspectRatio: "16:9", duration: 5, seed: 0,
+        frameImages: [{ frameType: "first_frame", image: "https://example.com/first.png" }, { frameType: "last_frame", image: "https://example.com/last.png" }] },
+      native: {}, parameters: { n: 1, fps: 30, size: "1280x720", aspect_ratio: "16:9", duration: 5, seed: 0 }, mode: "image", roles: ["first_frame", "last_frame"], prompt: "Animate" },
+  ];
+  for (const entry of cases) {
+    const { provider, calls } = fixture("video/mp4");
+    // Mapping coverage only: unsupported combinations must reach authoritative Gateway validation unchanged.
+    await startVideo({ model: provider.videoModel(entry.model), ...entry.call, maxRetries: 0,
+      providerOptions: { yir: { parameters: entry.native } } });
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].body.parameters, entry.parameters);
+    assert.equal(calls[0].body.input.type, entry.mode);
+    assert.equal(calls[0].body.input.prompt, entry.prompt);
+    assert.deepEqual(calls[0].body.input.references.map(reference => reference.role), entry.roles);
+  }
+});
+
+test("combined image dimensions and ratio reach the Gateway without rewriting conflicting intent", async () => {
+  for (const aspectRatio of ["1:1", "16:9"]) {
+    const { provider, calls } = fixture();
+    await generateImage({ model: provider.imageModel("bytedance/seedream-5.0-pro"), prompt: "Scene", size: "1024x1024", aspectRatio, maxRetries: 0 });
+    assert.deepEqual(calls[0].body.parameters, { n: 1, size: "1024x1024", aspect_ratio: aspectRatio });
+  }
+});

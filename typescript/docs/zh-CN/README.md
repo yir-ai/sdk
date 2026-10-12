@@ -94,6 +94,8 @@ const client = createNodeYirClient();
 
 ## Vercel AI SDK
 
+核心参数组合、服务端限制及迁移边界见[兼容矩阵](../vercel-compatibility.md)。
+
 视频带媒体输入时，若传入的 `modelContracts` 在对应模型与输入模式中只声明 `auto`、未声明 `adaptive`，AI SDK 的 `aspectRatio: "adaptive"` 会映射为原生 `"auto"`。未配置目录时，可同时显式传入 `providerOptions.yir.parameters.aspect_ratio: "auto"`；否则仍原样透传 `adaptive`。适配器不会额外获取目录，也不改变省略参数的默认行为。自动时长仍通过原生选项 `providerOptions.yir.parameters.duration: "auto"` 传入，仅适用于支持该值的视频参考模式。
 
 在应用中运行 `pnpm add ai@7.0.97` 安装适配器已测试的 AI SDK 版本。由 `@yir-ai/sdk/vercel` 导入 `createYirAIProvider`，选择 `provider.imageModel(modelId)` 或 `provider.videoModel(modelId)`；也可使用等价别名 `provider.image(modelId)` 和 `provider.video(modelId)`。适配目标是 AI SDK 7 / Provider V4，不是旧接口；另已通过 `ai@7.0.137` / `@ai-sdk/provider@4.0.26` 的编译与运行验证。
