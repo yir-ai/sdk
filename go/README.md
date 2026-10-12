@@ -6,6 +6,8 @@ English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.co
 
 Server-side image and video API client. Requires Go 1.25+. Module: `github.com/yir-ai/sdk/go`. [MIT](LICENSE).
 
+`parameters.n` is the output count for **one API request (one Job)**. Its allowed values describe that request, not your application’s batch size. For example, a model that only accepts `n=1` can still generate four images through four separate Jobs. Keep application batch controls separate from the model’s `n` parameter; each Job has its own quote, idempotency key, status, and billing.
+
 ## Install
 
 Run in your application's Go module:

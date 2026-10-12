@@ -12,6 +12,8 @@ Yir 图像与视频 API 的官方 Go 和 TypeScript SDK。公开源码：[yir-ai
 | TypeScript | [TypeScript 指南](../../../typescript/docs/zh-CN/README.md) | 单个 `@yir-ai/sdk` 包，提供 server、browser、shared 入口和 Vercel AI SDK 适配 |
 | 规范 | [公开合同](spec.md) | OpenAPI、模型合同、夹具与生成工具 |
 
+`parameters.n` 表示**单次 API 请求（一个 Job）的输出数量**，允许值不代表应用的批量张数。例如，模型只接受 `n=1` 时，应用仍可提交四个独立 Job 生成四张图片。批量数量控件应与模型的 `n` 参数分开维护；每个 Job 分别报价，并拥有独立的幂等键、状态和账单。
+
 ## 安装
 
 Go 1.25 及以上，在应用的模块目录执行：

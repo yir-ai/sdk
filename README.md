@@ -12,6 +12,8 @@ Official Go and TypeScript SDKs for the Yir image and video API. Public source: 
 | TypeScript | [TypeScript guide](typescript/README.md) | One `@yir-ai/sdk` package with server, browser and shared entry points; Vercel AI SDK adapter |
 | Specification | [Public contracts](spec/README.md) | OpenAPI, model contracts, fixtures and generation tools |
 
+`parameters.n` is the output count for **one API request (one Job)**. Its allowed values describe that request, not your application’s batch size. For example, a model that only accepts `n=1` can still generate four images through four separate Jobs. Keep application batch controls separate from the model’s `n` parameter; each Job has its own quote, idempotency key, status, and billing.
+
 ## Install
 
 Go 1.25 or later, from your application's module:

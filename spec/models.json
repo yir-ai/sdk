@@ -127,12 +127,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -249,12 +249,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -358,12 +358,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -457,12 +457,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -602,12 +602,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -739,12 +739,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -900,12 +900,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1002,12 +1002,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1105,12 +1105,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1283,12 +1283,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1384,12 +1384,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1482,12 +1482,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1576,12 +1576,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1682,12 +1682,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1792,12 +1792,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1890,12 +1890,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -1988,12 +1988,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -2149,12 +2149,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -2359,12 +2359,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -2537,12 +2537,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -2714,12 +2714,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -2875,12 +2875,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3005,12 +3005,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3149,12 +3149,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3251,12 +3251,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3338,12 +3338,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3450,12 +3450,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3594,12 +3594,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3706,12 +3706,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3818,12 +3818,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -3956,12 +3956,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -4119,12 +4119,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -4239,12 +4239,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -4355,12 +4355,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -4506,12 +4506,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -4677,12 +4677,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -4818,12 +4818,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -4941,12 +4941,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -5105,12 +5105,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -5228,12 +5228,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -5322,12 +5322,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -5469,12 +5469,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -5610,12 +5610,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -5749,12 +5749,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -5878,12 +5878,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6018,12 +6018,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6157,12 +6157,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6286,12 +6286,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6411,12 +6411,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6536,12 +6536,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6676,12 +6676,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6818,12 +6818,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -6960,12 +6960,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -7054,12 +7054,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -7152,12 +7152,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -7260,12 +7260,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -7366,12 +7366,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -7488,12 +7488,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -7574,12 +7574,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }
@@ -7726,12 +7726,12 @@
               "control": "number",
               "locales": {
                 "en": {
-                  "label": "Outputs",
-                  "description": "Number of generated outputs."
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
                 },
                 "zh-CN": {
-                  "label": "输出数量",
-                  "description": "本次生成的内容数量。"
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
                 }
               }
             }

@@ -6,6 +6,8 @@ English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.co
 
 One `@yir-ai/sdk` package for image and video generation. Use a Node runtime with native `fetch`, Web Crypto and `Blob` (Node 22+ is a practical baseline); development uses pnpm 10.30.1. Cloudflare Workers can import the same client from `/server` with an explicit `apiKey`; the `createNodeYirClient` name is retained for compatibility and does not require Node compatibility mode.
 
+`parameters.n` is the output count for **one API request (one Job)**. Its allowed values describe that request, not your application’s batch size. For example, a model that only accepts `n=1` can still generate four images through four separate Jobs. Keep application batch controls separate from the model’s `n` parameter; each Job has its own quote, idempotency key, status, and billing.
+
 ## Install
 
 Install from npm:

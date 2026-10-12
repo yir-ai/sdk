@@ -6,6 +6,8 @@
 
 单个 `@yir-ai/sdk` 包支持图像和视频生成。使用具备原生 `fetch`、Web Crypto 和 `Blob` 的 Node 环境（可从 Node 22+ 起步）；开发使用 pnpm 10.30.1。Cloudflare Workers 可从 `/server` 导入同一客户端，显式传入 `apiKey`；`createNodeYirClient` 名称保留兼容，无需开启 Node 兼容模式。
 
+`parameters.n` 表示**单次 API 请求（一个 Job）的输出数量**，允许值不代表应用的批量张数。例如，模型只接受 `n=1` 时，应用仍可提交四个独立 Job 生成四张图片。批量数量控件应与模型的 `n` 参数分开维护；每个 Job 分别报价，并拥有独立的幂等键、状态和账单。
+
 ## 安装
 
 从 npm 安装：
