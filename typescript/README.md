@@ -101,6 +101,8 @@ Install the adapter's tested AI SDK generation in your application with `pnpm ad
 
 Image masks remain unsupported. Image `size` and video pixel `resolution` map unchanged to optional `parameters.size`; the Gateway rejects sizes without an explicitly compatible model/channel. `seed` and video `fps` map to same-named Yir parameters and reach the Gateway even when a local catalog lacks them. Conflicting generic and Yir parameters are rejected. See [Vercel tests](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs) for executable adapter calls and supported mappings.
 
+When `providerOptions.yir.parameters.return_last_frame` is enabled, `videos` contains only video files. Additional outputs, such as the last-frame image, remain accessible as `providerMetadata.yir.additionalFiles` with their original Yir file fields (`url`, `media_type`, `expires_at`, and optional metadata). They are not downloaded as videos. Job result warnings, including `additional_results_unavailable`, appear in AI SDK `warnings` alongside parameter notices. Native Job `result.files` is unchanged.
+
 Image models expose `supportsFileInputs` from the caller-provided model catalog (or `undefined` when unknown) and `supportsMaskInputs: false`. These are discovery hints, not admission checks: no catalog request is made, and a stale snapshot never blocks generation. Refresh the catalog when needed; the Gateway validates the request.
 
 ### Parameter compatibility

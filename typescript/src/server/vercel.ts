@@ -147,9 +147,14 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
           switch (job.status) {
             case "failed": case "cancelled":
               return { status: "error", error: job.error?.code ?? (job.status === "cancelled" ? "YIR_JOB_CANCELLED" : "YIR_EXECUTION_FAILED"), response, providerMetadata };
-            case "succeeded":
+            case "succeeded": {
               if (job.result?.availability !== "available" || !job.result.files.length) throw new Error("yir_result_unavailable");
-              return { status: "completed", videos: job.result.files.map(file => ({ type: "url" as const, url: file.url, mediaType: file.media_type })), warnings: noticeWarnings(job), response, providerMetadata };
+              const videos = job.result.files.filter(file => file.media_type.startsWith("video/"));
+              if (!videos.length) throw new Error("yir_result_unavailable");
+              const additionalFiles = job.result.files.filter(file => !file.media_type.startsWith("video/"));
+              return { status: "completed", videos: videos.map(file => ({ type: "url" as const, url: file.url, mediaType: file.media_type })), warnings: noticeWarnings(job), response,
+                providerMetadata: { yir: { ...providerMetadata.yir, ...(additionalFiles.length ? { additionalFiles: additionalFiles.map(file => ({ ...file })) } : {}) } } };
+            }
             // queued, running, delivering and statuses newer than this SDK are in progress.
             default: return { status: "pending", response, providerMetadata };
           }
@@ -253,5 +258,8 @@ function assignOptional(parameters: Record<string, unknown>,
 }
 
 function noticeWarnings(job: Job): AdapterWarning[] {
-  return (job.parameter_notices ?? []).map(notice => ({ type: "other" as const, message: notice.message }));
+  return [
+    ...(job.parameter_notices ?? []).map(notice => ({ type: "other" as const, message: notice.message })),
+    ...(job.result?.availability === "available" ? job.result.warnings ?? [] : []).map(warning => ({ type: "other" as const, message: warning })),
+  ];
 }

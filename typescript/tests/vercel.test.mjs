@@ -28,6 +28,65 @@ function fixture(mediaType = "image/png", notices = []) {
   return { provider, calls };
 }
 
+test("AI SDK video keeps returned last frames out of videos and preserves additional results", async () => {
+  const video = { url: "https://assets.example/video.mp4", media_type: "video/mp4", expires_at: 1786100000 };
+  const tail = { url: "https://assets.example/tail.png", media_type: "image/png", expires_at: 1786100000,
+    fidelity: { grade: "original", reason: "verified" } };
+  for (const files of [[video, tail], [tail, video]]) {
+    const calls = [];
+    const downloads = [];
+    const provider = createYirAIProvider({ client: createYirClient(async request => {
+      calls.push(request);
+      return { id: "42", status: "succeeded", created_at: 1, result: { availability: "available", files } };
+    }) });
+    const result = await generateVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Animate", maxRetries: 0,
+      providerOptions: { yir: { parameters: { return_last_frame: true } } }, poll: { intervalMs: 1 },
+      download: async ({ url }) => { downloads.push(String(url)); return { data: new Uint8Array([0]), mediaType: "video/mp4" }; },
+    });
+    assert.equal(calls[0].body.parameters.return_last_frame, true);
+    assert.equal(result.videos.length, 1);
+    assert.deepEqual(downloads, [video.url]);
+    assert.deepEqual(result.providerMetadata.yir.additionalFiles, [tail]);
+    const status = await getVideoStatus(provider.videoModel("bytedance/seedance-2.0"), {
+      operation: { jobId: "42", modelId: "bytedance/seedance-2.0" }, maxRetries: 0,
+    });
+    assert.equal(status.videos.length, 1);
+    assert.deepEqual(status.providerMetadata.yir.additionalFiles, [tail]);
+  }
+});
+
+test("video status cannot report an image-only result as completed video output", async () => {
+  const { provider } = fixture("image/png");
+  await assert.rejects(() => getVideoStatus(provider.videoModel("bytedance/seedance-2.0"), {
+    operation: { jobId: "42", modelId: "bytedance/seedance-2.0" }, maxRetries: 0,
+  }), /yir_result_unavailable/);
+});
+
+test("video status preserves parameter notices and missing additional output warnings", async () => {
+  const provider = createYirAIProvider({ client: createYirClient(async () => ({ id: "42", status: "succeeded", created_at: 1,
+    parameter_notices: [{ message: "Parameter notice." }],
+    result: { availability: "available", files: [{ url: "https://assets.example/video.mp4", media_type: "video/mp4" }], warnings: ["additional_results_unavailable"] },
+  })) });
+  const result = await getVideoStatus(provider.videoModel("bytedance/seedance-2.0"), {
+    operation: { jobId: "42", modelId: "bytedance/seedance-2.0" }, maxRetries: 0,
+  });
+  assert.equal(result.status, "completed");
+  assert.deepEqual(result.warnings, [{ type: "other", message: "Parameter notice." }, { type: "other", message: "additional_results_unavailable" }]);
+  assert.equal(result.providerMetadata.yir.additionalFiles, undefined);
+});
+
+test("standard video parameters preserve zero, false, adaptive ratio and omitted defaults", async () => {
+  for (const settings of [{}, { seed: 0, generateAudio: false, duration: 5, aspectRatio: "adaptive" }]) {
+    const { provider, calls } = fixture("video/mp4");
+    const parameters = { resolution: "720p" };
+    await startVideo({ model: provider.videoModel("bytedance/seedance-2.0"), prompt: "Animate", ...settings,
+      providerOptions: { yir: { parameters } }, maxRetries: 0 });
+    assert.deepEqual(calls[0].body.parameters, { resolution: "720p", n: 1,
+      ...(Object.keys(settings).length ? { seed: 0, generate_audio: false, duration: 5, aspect_ratio: "adaptive" } : {}) });
+    assert.deepEqual(parameters, { resolution: "720p" });
+  }
+});
+
 test("AI SDK generateImage submits one validated Yir demand with original budget and key", async () => {
   const { provider, calls } = fixture();
   const result = await generateImage({

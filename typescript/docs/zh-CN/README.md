@@ -100,6 +100,8 @@ const client = createNodeYirClient();
 
 图像 mask 仍不支持；图片 `size` 和视频像素 `resolution` 原样映射到可选的 `parameters.size`，没有明确支持该尺寸的模型/渠道时由 Gateway 拒绝。`seed` 与视频 `fps` 映射为同名 Yir 参数并发送给 Gateway，不因本地目录缺少字段而丢弃。通用参数与 Yir 参数冲突会被拒绝。可执行调用和映射见 [Vercel 测试](https://github.com/yir-ai/sdk/blob/main/typescript/tests/vercel.test.mjs)。
 
+开启 `providerOptions.yir.parameters.return_last_frame` 时，`videos` 只包含视频。尾帧等附加文件保留在 `providerMetadata.yir.additionalFiles`，沿用 Yir 文件字段（`url`、`media_type`、`expires_at` 及可选元数据），不会被当作视频下载。Job 结果警告（包括 `additional_results_unavailable`）与参数提示一起出现在 AI SDK `warnings`。原生 Job 的 `result.files` 保持不变。
+
 图片模型通过 `supportsFileInputs` 表示调用方提供的目录是否声明参考图编辑能力，未知时为 `undefined`；`supportsMaskInputs` 固定为 `false`。这些是能力提示，不是准入校验：不会自动请求目录，也不会用旧快照阻止生成。需要时刷新目录，最终由 Gateway 校验。
 
 ### 参数兼容边界
