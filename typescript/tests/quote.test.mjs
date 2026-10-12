@@ -102,3 +102,13 @@ test("Quote compares models through the catalog and accepts a canonical echo for
   const unknown = { ...quoteFixture(request), model: "future/model" };
   await assert.rejects(createYirClient(async () => unknown, catalog).quoteImage(request), { message: "quote_response_invalid" });
 });
+
+ test("Quote keeps adaptive duration when supply is available without an estimate", async () => {
+ const video = {model:"bytedance/seedance-2.5",input:{type:"reference",prompt:"edit",references:[{role:"reference_video",file_id:"file_22222222-2222-4222-8222-222222222222"}]},parameters:{duration:"auto",resolution:"480p",generate_audio:false}};
+ const value = {...quoteFixture(video), operation:"generate_video",input_mode:"reference",parameters:{resolution:"480p",aspect_ratio:"auto",n:1,duration:"auto"},primary:{kind:"unavailable",amount:null,reason:"complete_price_unavailable"},official:{kind:"unavailable",amount:null,reason:"official_price_unavailable"},supply:{available:true,issues:[]}};
+ delete value.expected_amount;
+ const result = await createYirClient(async () => value).quoteVideo(video);
+ assert.equal(result.parameters.duration,"auto");
+ assert.equal(result.primary.amount,null);
+ assert.equal(result.expected_amount,undefined);
+ });

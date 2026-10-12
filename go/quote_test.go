@@ -179,3 +179,24 @@ func TestQuoteReportsUnsupportedCurrency(t *testing.T) {
 		t.Fatalf("QuoteBatch: %v", err)
 	}
 }
+
+func TestQuoteAdaptiveDurationEcho(t *testing.T) {
+	raw := []byte(`{"object":"quote","model":"bytedance/seedance-2.5","operation":"generate_video","input_mode":"reference","parameters":{"duration":"auto","resolution":"480p","aspect_ratio":"auto","n":1},"currency":"USD","expires_at":1,"supply":{"available":true,"issues":[]},"primary":{"amount":null,"kind":"unavailable","reason":"complete_price_unavailable"},"official":{"amount":null,"kind":"unavailable","reason":"official_price_unavailable"}}`)
+	var quote Quote
+	if err := json.Unmarshal(raw, &quote); err != nil {
+		t.Fatal(err)
+	}
+	if err := quote.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if quote.Parameters["duration"] != "auto" {
+		t.Fatalf("lost adaptive intent: %v", quote.Parameters)
+	}
+	var job Job
+	if err := json.Unmarshal([]byte(`{"parameters":{"duration":"auto"}}`), &job); err != nil {
+		t.Fatal(err)
+	}
+	if job.Parameters["duration"] != "auto" {
+		t.Fatalf("lost Job adaptive intent: %v", job.Parameters)
+	}
+}

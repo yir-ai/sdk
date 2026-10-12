@@ -24,7 +24,10 @@ const video: StandardVideoGenerationRequest = {
 // An image echo carries no duration or generate_audio; a Job echoes the same shape.
 const imageEcho: QuoteParameters = { resolution: "1K", aspect_ratio: "1:1", n: 1 };
 const videoEcho: QuoteParameters = { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1, return_last_frame: false };
-const echoedDuration: number | undefined = videoEcho.duration;
+const adaptiveEcho: QuoteParameters = { duration: "auto", resolution: "480p", aspect_ratio: "auto", n: 1 };
+const adaptiveJobParameters: Job["parameters"] = adaptiveEcho;
+void adaptiveJobParameters;
+const echoedDuration: number | "auto" | undefined = videoEcho.duration;
 void echoedDuration;
 const jobParameters: Job["parameters"] = imageEcho;
 void jobParameters;
