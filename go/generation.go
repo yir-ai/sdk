@@ -184,9 +184,6 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 		if request.BillingMode != "actual" {
 			return &ParameterError{"billing_mode", "invalid_value"}
 		}
-		if request.Routing == nil || len(request.Routing.Only) == 0 {
-			return &ParameterError{"routing.only", "required_parameter"}
-		}
 	}
 	if strings.TrimSpace(request.Model) == "" {
 		return &ParameterError{"model", "model_required"}
