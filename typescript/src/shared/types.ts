@@ -171,7 +171,8 @@ export type QuoteParameters = {
   readonly resolution: string;
   readonly aspect_ratio: string;
   readonly n: number;
-  readonly duration?: number;
+  /** Preserves auto intent; internal measured seconds are not substituted. */
+  readonly duration?: number | "auto";
   readonly generate_audio?: boolean;
   readonly quality?: string;
   readonly return_last_frame?: boolean;

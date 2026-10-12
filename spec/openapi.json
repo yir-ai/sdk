@@ -929,9 +929,8 @@
               "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
               "fps": { "type": "integer", "minimum": 1, "description": "Optional native output frame rate. Only models and channels explicitly declaring this frame rate are eligible; unsupported values are rejected without interpolation or transcoding. Omit to preserve existing behavior." },
               "duration": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Output length in seconds; allowed values come from the model contract."
+                "oneOf": [{ "type": "integer", "minimum": 1 }, { "type": "string", "enum": ["auto"] }],
+                "description": "Output length in seconds, or auto when the model contract supports reference-video edits. Quote does not download URLs: unknown duration leaves amounts unavailable. Submit imports and measures URLs before admission."
               },
               "resolution": {
                 "type": "string",
@@ -994,9 +993,8 @@
               "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
               "fps": { "type": "integer", "minimum": 1, "description": "Optional native output frame rate. Only models and channels explicitly declaring this frame rate are eligible; unsupported values are rejected without interpolation or transcoding. Omit to preserve existing behavior." },
               "duration": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Output length in seconds; allowed values come from the model contract."
+                "oneOf": [{ "type": "integer", "minimum": 1 }, { "type": "string", "enum": ["auto"] }],
+                "description": "Output length in seconds, or auto when the model contract supports reference-video edits. Quote does not download URLs: unknown duration leaves amounts unavailable. Submit imports and measures URLs before admission."
               },
               "resolution": {
                 "type": "string",
@@ -1273,7 +1271,7 @@
           "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
           "quality": { "type": "string", "minLength": 1, "description": "Image quality tier when the request constrains one; absent when omitted, which lets any channel run." },
           "fps": { "type": "integer", "minimum": 1, "description": "Optional native output frame rate. Only models and channels explicitly declaring this frame rate are eligible; unsupported values are rejected without interpolation or transcoding. Omit to preserve existing behavior." },
-          "duration": { "type": "integer", "minimum": 1, "description": "Video output length in seconds; present when the model declares duration." },
+          "duration": { "oneOf": [{ "type": "integer", "minimum": 1 }, { "type": "string", "enum": ["auto"] }], "description": "Video output length in seconds, or auto for supported reference-video edits. Quote and Job preserve auto; measured seconds are only used internally for estimation." },
           "resolution": { "type": "string", "minLength": 1 },
           "aspect_ratio": { "type": "string", "minLength": 1 },
           "generate_audio": { "type": "boolean", "description": "Present when the model declares generate_audio." },
