@@ -12,6 +12,7 @@ test("actual billing preserves explicit consent and rejects conflicting caps", (
   assert.doesNotThrow(() => validateGeneration("generate_image", request));
   assert.throws(() => validateGeneration("generate_image", { ...request, max_cost: "0.1" }), error => error.path === "max_cost");
   assert.throws(() => validateGeneration("generate_image", { ...request, billing_mode: "unknown" }), error => error.path === "billing_mode");
+  assert.doesNotThrow(() => validateGeneration("generate_image", { ...request, routing: undefined }));
   assert.throws(() => validateGeneration("generate_image", { ...request, routing: { only: [] } }), error => error.path === "routing.only");
   const { billing_mode, ...capped } = request;
   assert.equal(billing_mode, "actual");

@@ -218,8 +218,6 @@ export function validateGeneration(operation: "generate_image" | "generate_video
   if (Object.hasOwn(body, "billing_mode") && body.billing_mode !== undefined) {
     if (body.billing_mode !== "actual") throw new YirSDKValidationError("billing_mode_invalid", "billing_mode");
     if (Object.hasOwn(body, "max_cost")) throw new YirSDKValidationError("billing_mode_conflict", "max_cost");
-    const routing = requireObject(body.routing, "routing");
-    if (!Array.isArray(routing.only) || routing.only.length === 0) throw new YirSDKValidationError("billing_mode_routing_required", "routing.only");
   }
   if (typeof body.model !== "string" || !body.model.trim()) throw new YirSDKValidationError("model_required", "model");
   const input = requireObject(body.input, "input");

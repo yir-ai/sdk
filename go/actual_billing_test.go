@@ -18,8 +18,8 @@ func TestActualBillingConsentValidation(t *testing.T) {
 		t.Fatal("unknown billing mode accepted")
 	}
 	request.BillingMode, request.Routing = "actual", nil
-	if err := ValidateGeneration("generate_image", request); err == nil {
-		t.Fatal("missing explicit channels accepted")
+	if err := ValidateGeneration("generate_image", request); err != nil {
+		t.Fatalf("automatic routing rejected: %v", err)
 	}
 	request.Routing = &Routing{Only: []string{"fal"}}
 	cap := "0.1"
