@@ -792,3 +792,18 @@ test("combined image dimensions and ratio reach the Gateway without rewriting co
     assert.deepEqual(calls[0].body.parameters, { n: 1, size: "1024x1024", aspect_ratio: aspectRatio });
   }
 });
+
+
+test("a stale ratio catalog cannot create a conflict between matching explicit options", async () => {
+  for (const mode of ["image", "reference"]) {
+    const { provider, calls } = fixture("video/mp4");
+    const parameters = { aspect_ratio: "adaptive" };
+    await startVideo({ model: provider.videoModel("bytedance/seedance-2.5"), prompt: "Animate", aspectRatio: "adaptive", maxRetries: 0,
+      ...(mode === "image" ? { frameImages: [{ frameType: "first_frame", image: "https://example.com/first.png" }] }
+        : { inputReferences: [{ data: "https://example.com/ref.mp4", mediaType: "video/mp4" }] }),
+      providerOptions: { yir: { parameters } } });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].body.parameters.aspect_ratio, "adaptive");
+    assert.deepEqual(parameters, { aspect_ratio: "adaptive" });
+  }
+});

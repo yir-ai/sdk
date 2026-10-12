@@ -133,7 +133,8 @@ export function createYirAIProvider(options: YirAIProviderOptions = {}) {
               ? findModelOperationContract(catalog, modelId, "generate_video", request.input.type)
                 ?.parameters.find(parameter => parameter.name === "aspect_ratio")?.values
               : undefined;
-            if (parameters.aspect_ratio === "auto" || values?.includes("auto") && !values.includes("adaptive")) aspectRatio = "auto";
+            if (parameters.aspect_ratio === "auto" ||
+                !Object.hasOwn(parameters, "aspect_ratio") && values?.includes("auto") && !values.includes("adaptive")) aspectRatio = "auto";
           }
           assign(parameters, "aspect_ratio", aspectRatio);
           validateGeneration("generate_video", request);
