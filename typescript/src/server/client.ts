@@ -555,7 +555,7 @@ async function getJobStatusWithDeadline(
   });
   try {
     const statusOptions = waitSeconds > 0 ? { signal: controller.signal, waitSeconds } : { signal: controller.signal };
-    return await Promise.race([client.getJobStatus(jobId, statusOptions), aborted]);
+    return await Promise.race([retryJobRead(() => client.getJobStatus(jobId, statusOptions), controller.signal), aborted]);
   } catch (error) {
     if (timedOut) throw new YirTimeoutError(jobId, timeoutMs, lastStatus);
     if (signal?.aborted) throw signal.reason ?? new Error("aborted");
@@ -593,7 +593,7 @@ async function getJobWithDeadline(
     );
   });
   try {
-    return await Promise.race([client.getJob(jobId, { signal: controller.signal }), aborted]);
+    return await Promise.race([retryJobRead(() => client.getJob(jobId, { signal: controller.signal }), controller.signal), aborted]);
   } catch (error) {
     if (timedOut) throw new YirTimeoutError(jobId, timeoutMs, lastStatus);
     if (signal?.aborted) throw signal.reason ?? new Error("aborted");
@@ -601,6 +601,25 @@ async function getJobWithDeadline(
   } finally {
     if (timer !== undefined) clearTimeout(timer);
     signal?.removeEventListener("abort", abortFromCaller);
+  }
+}
+
+// A transport retry budget is per request; waiting for an accepted Job has its
+// own deadline. Recover reads only, including the final detail read.
+async function retryJobRead<T>(read: () => Promise<T>, signal: AbortSignal): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    signal.throwIfAborted();
+    try {
+      return await read();
+    } catch (error) {
+      signal.throwIfAborted();
+      const transient = error instanceof YirAPIError
+        ? [502, 503, 504].includes(error.status)
+        : error instanceof TypeError || (error instanceof Error && error.name === "TimeoutError");
+      if (!transient) throw error;
+      const hint = error instanceof YirAPIError ? error.retryAfterMs ?? 0 : 0;
+      await sleep(Math.max(Math.min(1000 * 2 ** Math.min(attempt, 3), 5000), hint), signal);
+    }
   }
 }
 
@@ -740,8 +759,11 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     }
 
     if (!response.ok) {
-      const retryAfterSeconds = Number.parseInt(response.headers.get("retry-after") ?? "", 10);
-      const retryAfterMs = retryAfterSeconds > 0 ? retryAfterSeconds * 1000 : undefined;
+      const retryAfterHeader = response.headers.get("retry-after");
+      const retryAfterSeconds = Number(retryAfterHeader);
+      const parsedRetryAfter = Number.isFinite(retryAfterSeconds)
+        ? retryAfterSeconds * 1000 : Date.parse(retryAfterHeader ?? "") - Date.now();
+      const retryAfterMs = parsedRetryAfter > 0 ? parsedRetryAfter : undefined;
       if (typeof data === "object" && data !== null && "error" in data) {
         const errorContainer = data as { error?: YirPublicError; request_id?: string };
         const errObj = errorContainer.error;

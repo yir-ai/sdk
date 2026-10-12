@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -278,7 +280,7 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 	for poll := 0; ; poll++ {
 		wait := c.statusWait(ctx, options.StatusWait)
 		started := time.Now()
-		status, err := c.GetJobStatusWithWait(ctx, id, wait)
+		status, err := retryJobRead(ctx, func() (JobStatusResponse, error) { return c.GetJobStatusWithWait(ctx, id, wait) })
 		if err != nil {
 			if pause := rateLimitPause(err, limited); pause >= 0 {
 				limited++
@@ -295,7 +297,7 @@ func (c *Client) WaitJob(ctx context.Context, id string, options WaitOptions) (J
 			options.OnPoll(status)
 		}
 		if status.IsTerminal() {
-			job, err := c.GetJob(ctx, id)
+			job, err := retryJobRead(ctx, func() (Job, error) { return c.GetJob(ctx, id) })
 			if err != nil {
 				return Job{}, err
 			}
@@ -377,4 +379,38 @@ func (c *Client) statusWait(ctx context.Context, requested time.Duration) time.D
 		wait = min(wait, time.Until(deadline)-time.Second)
 	}
 	return max(wait.Truncate(time.Second), 0)
+}
+
+// retryJobRead keeps an accepted Job alive across a temporary Gateway outage.
+// The caller's context remains the overall deadline; no submit is replayed.
+func retryJobRead[T any](ctx context.Context, read func() (T, error)) (T, error) {
+	var zero T
+	for attempt := 0; ; attempt++ {
+		if err := ctx.Err(); err != nil {
+			return zero, err
+		}
+		value, err := read()
+		if err == nil {
+			return value, nil
+		}
+		if ctx.Err() != nil {
+			return zero, ctx.Err()
+		}
+		var apiErr *APIError
+		var networkErr net.Error
+		transient := errors.As(err, &networkErr) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, context.DeadlineExceeded)
+		if errors.As(err, &apiErr) {
+			transient = apiErr.Status == 502 || apiErr.Status == 503 || apiErr.Status == 504
+		}
+		if !transient {
+			return zero, err
+		}
+		delay := min(time.Second*time.Duration(1<<min(attempt, 3)), 5*time.Second)
+		if apiErr != nil {
+			delay = max(delay, apiErr.RetryAfter)
+		}
+		if err := sleepContext(ctx, delay); err != nil {
+			return zero, err
+		}
+	}
 }

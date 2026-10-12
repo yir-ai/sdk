@@ -413,6 +413,8 @@ func (c *Client) do(ctx context.Context, method, path, key string, body, respons
 		if errors.As(err, &apiErr) {
 			if seconds, parseErr := strconv.Atoi(strings.TrimSpace(result.Header.Get("Retry-After"))); parseErr == nil && seconds > 0 {
 				apiErr.RetryAfter = time.Duration(seconds) * time.Second
+			} else if date, parseErr := http.ParseTime(result.Header.Get("Retry-After")); parseErr == nil {
+				apiErr.RetryAfter = max(0, time.Until(date))
 			}
 		}
 		return err
