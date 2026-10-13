@@ -70,6 +70,15 @@ _ = client
 
 应用审批预算后，持久化包含完整生成请求和 `MaxCost` 的 `SubmitRequest`，以及稳定幂等键；同时保存路由、引用和 `WebhookURL`。之后才调用 `SubmitImage(ctx, savedRequest, savedKey)` 或 `SubmitVideo`。报价不授权或触发生成。重试不得生成新键；传输结果未知时使用原请求与键恢复，不得悄悄用新报价或预算替换请求。
 
+音乐使用 `QuoteMusic` 和 `SubmitMusic`，流程相同；也可在 `QuoteBatch` 中传 `generate_music` 项。输入只有文本：设置 `Input.Prompt`，带人声的音乐还须设置 `Input.Lyrics`；`Parameters` 可省略（`instrumental`、`lyrics_optimizer`、`n`）。`instrumental: true` 时不能传歌词或 `lyrics_optimizer`；`lyrics_optimizer: true` 按提示词自动写词，此时 `Lyrics` 留空（报价会显示写词附加费用）。其他组合在本地以 `ParameterError` 拒绝。每个 Job 交付一个音频文件，实测时长见 `ResultFile.DurationMS`。音乐报价的参数回显包含 `instrumental` 与 `lyrics_optimizer`，不含 `resolution` 与 `aspect_ratio`。
+
+```go
+request := yir.GenerationRequest{Model: "minimax/music-2.6", Input: yir.GenerationInput{
+	Type: "text", Prompt: "A warm acoustic folk ballad", Lyrics: "[Verse]\nWalking down a dusty road"}}
+quote, err := client.QuoteMusic(ctx, request)
+job, err := client.SubmitMusic(ctx, yir.SubmitRequest{GenerationRequest: request, MaxCost: &maxCost}, savedKey)
+```
+
 见[编译检查示例](../../client_example_test.go)和[集成指南](examples.md)。示例将客户授权及持久化留给应用实现。
 
 计费：不冻结余额。上游实际计费的每个 Attempt 都按上游权威金额乘托管折扣收取，包括失败的 Attempt 和其后发生回退的 Attempt；上游未计费的 Attempt，以及 Yir 自身的交付失败和结果超时，不收费。`MaxCost` 封顶整个 Job 的总费用，并跳过估价超过它的路线。报价的主价格是估价，不是上限。报价后价格可能变化：较便宜的渠道可能下线或冷却，路由默认值可能改变可用渠道，目录价格也可能调整。把 `MaxCost` 当作在报价之上留有余量的失控兜底，而不是锁价；上限设得等于报价时，可能开始以 `YIR_BUDGET_EXCEEDED` 失败（提交时返回 422 并给出当前最低估价，或出现在 Job 上）。收到该错误时先重新报价，由应用决定是否在新请求中调高上限，不要自动调高。

@@ -7,6 +7,8 @@ import type { YirFileClient } from "./files.js";
 import type {
   StandardImageGenerationRequest,
   StandardImageQuoteRequest,
+  StandardMusicGenerationRequest,
+  StandardMusicQuoteRequest,
   StandardVideoGenerationRequest,
   StandardVideoQuoteRequest,
 } from "../shared/standard.js";
@@ -94,6 +96,8 @@ export type YirClient = YirFileClient & {
   submitImage(request: StandardImageGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   quoteVideo(request: StandardVideoQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
   submitVideo(request: StandardVideoGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
+  quoteMusic(request: StandardMusicQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
+  submitMusic(request: StandardMusicGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
   getJobStatus(id: string, options?: YirJobStatusOptions): Promise<JobStatusResponse>;
   cancelJob(id: string, options?: YirRequestOptions): Promise<Job>;
@@ -188,6 +192,29 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       return Promise.resolve().then(() => transport<Job>({
         method: "POST",
         path: "/v1/videos/generations",
+        ...(options?.signal ? { signal: options.signal } : {}),
+        headers: { "Idempotency-Key": key },
+        body: request,
+      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
+    },
+    quoteMusic(request, options) {
+      options?.signal?.throwIfAborted();
+      validateGeneration("generate_music", request);
+      return transport<Quote>({
+        method: "POST",
+        path: "/v1/music/quotes",
+        body: request,
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(value => validateQuoteResponse(value, request, "generate_music", localCatalog));
+    },
+    submitMusic(request, idempotencyKey, options) {
+      options?.signal?.throwIfAborted();
+      const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
+      if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
+      validateGeneration("generate_music", request);
+      return Promise.resolve().then(() => transport<Job>({
+        method: "POST",
+        path: "/v1/music/generations",
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
@@ -709,7 +736,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     const body = request.body !== undefined ? JSON.stringify(request.body) : undefined;
     const signal = requestSignal(request.signal, timeoutMs, request.holdMs);
     const canRetry = request.method === "GET" || (request.method === "POST" &&
-      /^\/v1\/(images|videos)\/generations$/.test(path) &&
+      /^\/v1\/(images|videos|music)\/generations$/.test(path) &&
       Boolean(new Headers(headers).get("Idempotency-Key")?.trim()));
     let response: globalThis.Response;
     let text = "";

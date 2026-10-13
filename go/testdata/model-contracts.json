@@ -6300,6 +6300,102 @@
       ]
     },
     {
+      "id": "minimax/music-2.6",
+      "aliases": [
+        "music-2.6"
+      ],
+      "locales": {
+        "en": {
+          "label": "MiniMax Music 2.6",
+          "description": "MiniMax music model for full songs with vocals or instrumentals from a prompt and lyrics"
+        },
+        "zh-CN": {
+          "label": "MiniMax Music 2.6",
+          "description": "MiniMax 音乐生成模型，按提示词与歌词生成带人声的完整歌曲或纯音乐"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "instrumental",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Instrumental",
+                  "description": "Generate music without vocals. input.lyrics and lyrics_optimizer must be omitted."
+                },
+                "zh-CN": {
+                  "label": "纯音乐",
+                  "description": "生成无人声的纯音乐；不能同时传 input.lyrics 或 lyrics_optimizer。"
+                }
+              }
+            },
+            {
+              "name": "lyrics_optimizer",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Auto lyrics",
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; adds a lyrics-writing charge."
+                },
+                "zh-CN": {
+                  "label": "自动写词",
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，另收写词费用。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "openai/gpt-image-1",
       "aliases": [
         "gpt-image-1"

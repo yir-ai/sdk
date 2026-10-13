@@ -70,6 +70,15 @@ Build a `GenerationRequest` with `Model`, `Input` and explicit `Parameters`; use
 
 After your application's budget approval, persist a `SubmitRequest` containing the exact generation request and `MaxCost`, plus a stable idempotency key. Include routing, references and any `WebhookURL`. Only then call `SubmitImage(ctx, savedRequest, savedKey)` or `SubmitVideo`. A quote does not authorize or trigger generation. Do not generate a new key on retry; an unknown transport outcome must recover with the original request and key. Never silently replace that request with a new quote or budget.
 
+For music, use `QuoteMusic` and `SubmitMusic` with the same lifecycle, or a `generate_music` item in `QuoteBatch`. The input is text only: set `Input.Prompt` and, for vocal music, `Input.Lyrics`; `Parameters` are optional (`instrumental`, `lyrics_optimizer`, `n`). `instrumental: true` excludes lyrics and `lyrics_optimizer`; `lyrics_optimizer: true` writes the lyrics from the prompt, so leave `Lyrics` empty (the quote shows its extra charge). Other combinations fail locally with a `ParameterError`. Each Job delivers one audio file; its measured length is `ResultFile.DurationMS`. A music quote echo has `instrumental` and `lyrics_optimizer` but no `resolution` or `aspect_ratio`.
+
+```go
+request := yir.GenerationRequest{Model: "minimax/music-2.6", Input: yir.GenerationInput{
+	Type: "text", Prompt: "A warm acoustic folk ballad", Lyrics: "[Verse]\nWalking down a dusty road"}}
+quote, err := client.QuoteMusic(ctx, request)
+job, err := client.SubmitMusic(ctx, yir.SubmitRequest{GenerationRequest: request, MaxCost: &maxCost}, savedKey)
+```
+
 See [the compile-checked example](client_example_test.go) and its [integration guide](examples/README.md). The example leaves customer authorization and durable storage to the application.
 
 **Warning: a tight `MaxCost` can interrupt delivery during failover.** Even after a Job is accepted, a failed channel may need to be replaced by a more expensive one. If its estimate exceeds the remaining budget after earlier billed attempts, Yir skips it; if no eligible fallback fits, the Job fails with `YIR_BUDGET_EXCEEDED` and may deliver no result. When delivery continuity is more important than a per-Job spending cap, omit this optional field; otherwise leave room for more expensive fallback channels and earlier attempts' charges. Omitting it removes the per-Job cap, so actual charges can exceed the quote; account balance and other limits still apply.

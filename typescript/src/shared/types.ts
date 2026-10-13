@@ -1,5 +1,5 @@
 import type { ParameterNotice } from "./parameter-rules.js";
-import type { StandardImageQuoteRequest, StandardVideoQuoteRequest } from "./standard.js";
+import type { StandardImageQuoteRequest, StandardMusicQuoteRequest, StandardVideoQuoteRequest } from "./standard.js";
 
 /** Statuses newer than this SDK are in progress; only succeeded, failed and cancelled are terminal. */
 export type JobStatus = "queued" | "running" | "delivering" | "succeeded" | "failed" | "cancelled" | (string & {});
@@ -80,6 +80,8 @@ export type JobResultFile = {
   readonly media_type: string;
   readonly width?: number;
   readonly height?: number;
+  /** Measured playback duration of an audio result in milliseconds; absent when not measured. */
+  readonly duration_ms?: number;
   readonly expires_at: number;
   /** Where the file came from and whether its specification is genuine, judged at delivery from its C2PA content signature and Yir's channel audits; absent on historical results. */
   readonly fidelity?: JobResultFileFidelity;
@@ -161,15 +163,19 @@ export type QuotePrice =
  * The normalized parameters a request resolves to: every parameter the model
  * contract declares for the operation, at its contract spelling, with omitted
  * parameters at their published default. Parameters the model does not declare
- * are absent: an image echo has no duration and a silent video model has no
- * generate_audio. Model-specific parameters are echoed under their contract names.
+ * are absent: an image echo has no duration, a silent video model has no
+ * generate_audio, and a music echo has instrumental and lyrics_optimizer but no
+ * resolution or aspect_ratio. Image and video echoes always include resolution
+ * and aspect_ratio. Model-specific parameters are echoed under their contract names.
  */
 export type QuoteParameters = {
   readonly fps?: number;
   /** Exact output pixels, only present when explicitly requested. */
   readonly size?: string;
-  readonly resolution: string;
-  readonly aspect_ratio: string;
+  /** Always present on image and video echoes; absent on music echoes. */
+  readonly resolution?: string;
+  /** Always present on image and video echoes; absent on music echoes. */
+  readonly aspect_ratio?: string;
   readonly n: number;
   /** Preserves auto intent; internal measured seconds are not substituted. */
   readonly duration?: number | "auto";
@@ -178,6 +184,10 @@ export type QuoteParameters = {
   readonly return_last_frame?: boolean;
   readonly web_search?: boolean;
   readonly image_search?: boolean;
+  /** Music only: no vocals. */
+  readonly instrumental?: boolean;
+  /** Music only: lyrics written from the prompt. */
+  readonly lyrics_optimizer?: boolean;
   readonly [name: string]: unknown;
 };
 
@@ -198,7 +208,7 @@ export type Quote = {
   };
   readonly object: "quote";
   readonly model: string;
-  readonly operation: "generate_image" | "generate_video";
+  readonly operation: "generate_image" | "generate_video" | "generate_music";
   readonly input_mode: "text" | "image" | "reference";
   readonly parameters: QuoteParameters;
   readonly currency: "USD";
@@ -207,7 +217,8 @@ export type Quote = {
 
 export type QuoteBatchRequestItem =
   | { readonly operation: "generate_image"; readonly request: StandardImageQuoteRequest }
-  | { readonly operation: "generate_video"; readonly request: StandardVideoQuoteRequest };
+  | { readonly operation: "generate_video"; readonly request: StandardVideoQuoteRequest }
+  | { readonly operation: "generate_music"; readonly request: StandardMusicQuoteRequest };
 
 export type QuoteBatchItem =
   | { readonly index: number; readonly quote: Quote; readonly error?: never }

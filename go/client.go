@@ -192,7 +192,13 @@ func (c *Client) QuoteVideo(ctx context.Context, request GenerationRequest) (Quo
 	return c.quote(ctx, "videos", "generate_video", request)
 }
 
-// QuoteBatch quotes explicit image and video requests together. Invalid items
+// QuoteMusic quotes a music request. Parameters are optional for music; the
+// echo carries instrumental and lyrics_optimizer but no resolution or aspect_ratio.
+func (c *Client) QuoteMusic(ctx context.Context, request GenerationRequest) (Quote, error) {
+	return c.quote(ctx, "music", "generate_music", request)
+}
+
+// QuoteBatch quotes explicit image, video and music requests together. Invalid items
 // are returned in their own positions so one model does not hide other quotes.
 func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestItem) (QuoteBatch, error) {
 	var batch QuoteBatch
@@ -292,6 +298,12 @@ func (c *Client) SubmitImage(ctx context.Context, request SubmitRequest, idempot
 
 func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
 	return c.submit(ctx, "videos", "generate_video", request, idempotencyKey...)
+}
+
+// SubmitMusic submits one music track per Job. The result is an audio file
+// whose measured length is reported as ResultFile.DurationMS.
+func (c *Client) SubmitMusic(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
+	return c.submit(ctx, "music", "generate_music", request, idempotencyKey...)
 }
 
 var decimalCostPattern = regexp.MustCompile(`^[0-9]{1,13}(\.[0-9]{1,6})?$`)
@@ -445,7 +457,7 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 		defer cancel()
 	}
 	canRetry := method == http.MethodGet || (method == http.MethodPost && key != "" &&
-		(path == "/v1/images/generations" || path == "/v1/videos/generations"))
+		(path == "/v1/images/generations" || path == "/v1/videos/generations" || path == "/v1/music/generations"))
 	for attempt := 0; ; attempt++ {
 		result, raw, err := c.sendOnce(ctx, method, path, key, data, body != nil)
 		var networkError net.Error

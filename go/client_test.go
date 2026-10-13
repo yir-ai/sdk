@@ -80,7 +80,7 @@ func TestClientQuoteAndSubmitShareDemand(t *testing.T) {
 }
 
 func TestClientSubmitOptionalIdempotencyKey(t *testing.T) {
-	for _, resource := range []string{"image", "video"} {
+	for _, resource := range []string{"image", "video", "music"} {
 		t.Run(resource, func(t *testing.T) {
 			var calls int
 			var receivedKeys []string
@@ -102,6 +102,10 @@ func TestClientSubmitOptionalIdempotencyKey(t *testing.T) {
 				request.GenerationRequest = GenerationRequest{Model: "bytedance/seedance-2.0", Input: GenerationInput{Type: "text", Prompt: "fixture"},
 					Parameters: map[string]any{"duration": 5, "resolution": "720p", "aspect_ratio": "16:9", "generate_audio": false, "n": 1}}
 				submit = client.SubmitVideo
+			}
+			if resource == "music" {
+				request.GenerationRequest = musicRequest()
+				submit = client.SubmitMusic
 			}
 			if _, err := submit(context.Background(), request); err != nil || calls != 2 {
 				t.Fatalf("temporary failure should safely retry: calls=%d err=%v", calls, err)

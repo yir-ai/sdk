@@ -70,6 +70,17 @@ Your application must approve the budget and durably save `{ request, idempotenc
 
 For video, use `quoteVideo(request)` and `submitVideo(savedRequest, savedKey)` with the same lifecycle. A quote alone does not submit a job. Check quote expiry before accepting new work. After an ambiguous submit outcome, do not replace the saved request with a fresh quote or modified budget: recover the original operation first.
 
+For music, use `quoteMusic(request)` and `submitMusic(savedRequest, savedKey)` with the same lifecycle, or a `generate_music` item in `quoteBatch`. The input is text only: a style `prompt` plus optional `lyrics`; `parameters` are optional (`instrumental`, `lyrics_optimizer`, `n`). Vocal music needs `lyrics`; `instrumental: true` excludes `lyrics` and `lyrics_optimizer`, and `lyrics_optimizer: true` writes the lyrics from the prompt, so omit `lyrics` (the quote shows its extra charge). The SDK rejects other combinations before sending. Each Job delivers one audio file; its measured length is `duration_ms`. A music quote echo carries `instrumental` and `lyrics_optimizer` but no `resolution` or `aspect_ratio`, so `QuoteParameters.resolution` and `aspect_ratio` are optional in the type; image and video echoes still always include them.
+
+```ts
+const request = {
+  model: "minimax/music-2.6",
+  input: { type: "text", prompt: "A warm acoustic folk ballad", lyrics: "[Verse]\nWalking down a dusty road" },
+} as const;
+const quote = await client.quoteMusic(request);
+const job = await client.submitMusic({ ...request, max_cost: "0.20" }, savedKey);
+```
+
 
 ## Jobs and recovery
 

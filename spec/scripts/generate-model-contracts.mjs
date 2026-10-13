@@ -96,7 +96,7 @@ function validateOperation(model, operation, specification) {
   }
   assert(Array.isArray(operation.parameters) && operation.parameters.length > 0, `${model.id} needs parameters`);
 
-  const parameterSchema = schema.properties?.parameters;
+  const parameterSchema = resolveLocalSchema(schema.properties?.parameters, specification);
   assert(parameterSchema?.type === "object", `${model.id} parameters must be a nested object`);
   const required = new Set(parameterSchema.required ?? []);
   const names = new Set();
@@ -127,6 +127,13 @@ function validateOperation(model, operation, specification) {
       assert(parameter.default <= parameter.maximum, `${model.id}.${parameter.name} default above maximum`);
     }
   }
+}
+
+function resolveLocalSchema(schema, specification) {
+  const prefix = "#/components/schemas/";
+  if (typeof schema?.$ref !== "string") return schema;
+  assert(schema.$ref.startsWith(prefix), `schema reference ${schema.$ref} must be local`);
+  return specification.components.schemas[schema.$ref.slice(prefix.length)];
 }
 
 function validateValue(modelID, name, value, schema) {

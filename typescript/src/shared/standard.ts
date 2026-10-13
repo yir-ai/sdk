@@ -104,6 +104,54 @@ export type StandardVideoQuoteRequest = Omit<
   "webhook_url" | "max_cost"
 >;
 
+/** Music input: a style prompt plus optional lyrics; music takes no references. */
+export type StandardMusicTextInput = {
+  readonly type: "text";
+  /** Style, mood and scenario of the music. */
+  readonly prompt: string;
+  /**
+   * Song lyrics, lines separated by \n; structure tags such as [Verse] and [Chorus] are allowed.
+   * Required for vocal music unless parameters.lyrics_optimizer is true; omit it when
+   * parameters.instrumental or parameters.lyrics_optimizer is true.
+   */
+  readonly lyrics?: string;
+};
+
+/**
+ * Optional music parameters; omitted fields take their defaults. There is no duration,
+ * tempo or key control: the delivered file reports its measured `duration_ms`.
+ */
+export type StandardMusicParameters = {
+  /** Generate music without vocals (default false). Omit input.lyrics and lyrics_optimizer. */
+  readonly instrumental?: boolean;
+  /** Write the lyrics from the prompt (default false). Omit input.lyrics; adds a lyrics-writing charge shown in the quote. */
+  readonly lyrics_optimizer?: boolean;
+  readonly n?: number;
+  readonly [name: string]: unknown;
+};
+
+/** Music request: one track per Job, delivered as an audio file behind a short-lived link. */
+export type StandardMusicGenerationRequest = {
+  /** @deprecated Omit for new requests; actual-cost settlement is the default. Retained for legacy callers with the existing validation rules. */
+  readonly billing_mode?: "actual";
+  /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
+  readonly max_cost?: string;
+  readonly model: string;
+  readonly input: StandardMusicTextInput;
+  /** Optional for music; omitted parameters take their published defaults. */
+  readonly parameters?: StandardMusicParameters;
+  readonly routing?: RoutingOverride;
+  readonly webhook_url?: string;
+};
+
+export type StandardMusicQuoteRequest = Omit<
+  StandardMusicGenerationRequest,
+  "webhook_url" | "max_cost"
+>;
+
+/** Generation operations known to this SDK release. */
+export type GenerationOperation = "generate_image" | "generate_video" | "generate_music";
+
 export type BuildImageGenerationRequest = {
   /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly maxCost?: string;
@@ -149,7 +197,7 @@ export class YirSDKValidationError extends Error {
 /** Validate caller-supplied parameter rules without fetching or mutating data. */
 export function validateModelParameters(
   model: string,
-  operation: "generate_image" | "generate_video",
+  operation: GenerationOperation,
   inputMode: string,
   parameters: unknown,
   catalog: ModelContractCatalog,
@@ -213,7 +261,7 @@ export function validateModelParameters(
  * skeleton; model limits, roles, lengths and routing codes are Gateway facts.
  * Fields newer than this SDK are passed through unchanged.
  */
-export function validateGeneration(operation: "generate_image" | "generate_video", request: unknown, catalog?: ModelContractCatalog): void {
+export function validateGeneration(operation: GenerationOperation, request: unknown, catalog?: ModelContractCatalog): void {
   const body = requireObject(request, "request");
   if (Object.hasOwn(body, "billing_mode") && body.billing_mode !== undefined) {
     if (body.billing_mode !== "actual") throw new YirSDKValidationError("billing_mode_invalid", "billing_mode");
@@ -227,8 +275,11 @@ export function validateGeneration(operation: "generate_image" | "generate_video
       (!optionalVideoPrompt && (typeof input.prompt !== "string" || !input.prompt.trim()))) {
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
-  requireObject(body.parameters, "parameters");
-  if (catalog) validateModelParameters(body.model, operation, input.type, body.parameters, catalog);
+  // Music parameters are optional; image and video requests send them explicitly.
+  const parameters = operation === "generate_music" && body.parameters === undefined
+    ? {} : requireObject(body.parameters, "parameters");
+  if (operation === "generate_music") validateMusicInput(input, parameters);
+  if (catalog) validateModelParameters(body.model, operation, input.type, parameters, catalog);
   const contract = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
   const constraint = contract?.input_constraints[input.type];
   if (catalog && optionalVideoPrompt && (input.prompt === undefined || !(input.prompt as string).trim()) && constraint?.prompt_optional !== true) {
@@ -268,7 +319,7 @@ export function validateGeneration(operation: "generate_image" | "generate_video
     throw new YirSDKValidationError("reference_role_required", "input.references");
   }
   const durationRule = contract?.parameters.find(parameter => parameter.name === "duration");
-  const duration = (body.parameters as Record<string, unknown> | undefined)?.duration ?? durationRule?.default;
+  const duration = parameters.duration ?? durationRule?.default;
   for (const [role, maximum] of Object.entries(constraint?.max_duration_by_reference_role ?? {})) {
     if (roles.has(role) && typeof duration === "number" && duration > maximum) {
       throw new YirSDKValidationError("reference_duration_limit", "parameters.duration");
@@ -287,6 +338,29 @@ export function validateGeneration(operation: "generate_image" | "generate_video
     }
   }
   if (Object.hasOwn(body, "webhook_url")) validateHTTPSURL(body.webhook_url, "webhook_url");
+}
+
+// Protocol rules shared by every music model: lyrics, instrumental and the lyrics optimizer exclude each other.
+function validateMusicInput(input: Record<string, unknown>, parameters: Record<string, unknown>): void {
+  if (input.type !== "text") throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  for (const name of ["instrumental", "lyrics_optimizer"]) {
+    if (parameters[name] !== undefined && typeof parameters[name] !== "boolean") {
+      throw new YirSDKValidationError("parameter_type", `parameters.${name}`, { type: "boolean" });
+    }
+  }
+  const hasLyrics = input.lyrics !== undefined;
+  if (hasLyrics && (typeof input.lyrics !== "string" || !input.lyrics.trim())) {
+    throw new YirSDKValidationError("lyrics_invalid", "input.lyrics");
+  }
+  if (parameters.instrumental === true && parameters.lyrics_optimizer === true) {
+    throw new YirSDKValidationError("parameter_conflict", "parameters.lyrics_optimizer");
+  }
+  if (hasLyrics && (parameters.instrumental === true || parameters.lyrics_optimizer === true)) {
+    throw new YirSDKValidationError("lyrics_not_allowed", "input.lyrics");
+  }
+  if (!hasLyrics && parameters.instrumental !== true && parameters.lyrics_optimizer !== true) {
+    throw new YirSDKValidationError("lyrics_required", "input.lyrics");
+  }
 }
 
 function requireObject(value: unknown, path: string): Record<string, unknown> {

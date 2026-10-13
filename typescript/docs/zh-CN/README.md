@@ -69,6 +69,17 @@ const client = createNodeYirClient();
 
 视频使用 `quoteVideo(request)` 和 `submitVideo(savedRequest, savedKey)`，遵循同样流程。报价不会提交任务，接受新工作前应检查报价是否过期。提交结果未知时，不得用新报价或新预算替换已保存请求，应先恢复原操作。
 
+音乐使用 `quoteMusic(request)` 和 `submitMusic(savedRequest, savedKey)`，流程相同；也可在 `quoteBatch` 中传 `generate_music` 项。输入只有文本：风格描述 `prompt` 加可选的 `lyrics`；`parameters` 可省略（`instrumental`、`lyrics_optimizer`、`n`）。带人声的音乐须传 `lyrics`；`instrumental: true` 时不能传 `lyrics` 或 `lyrics_optimizer`；`lyrics_optimizer: true` 按提示词自动写词，此时不传 `lyrics`（报价会显示写词附加费用）。其他组合在发送前由 SDK 拒绝。每个 Job 交付一个音频文件，实测时长见 `duration_ms`。音乐报价的参数回显包含 `instrumental` 与 `lyrics_optimizer`，不含 `resolution` 与 `aspect_ratio`，因此 `QuoteParameters.resolution` 与 `aspect_ratio` 在类型上改为可选；图片与视频回显仍始终包含二者。
+
+```ts
+const request = {
+  model: "minimax/music-2.6",
+  input: { type: "text", prompt: "A warm acoustic folk ballad", lyrics: "[Verse]\nWalking down a dusty road" },
+} as const;
+const quote = await client.quoteMusic(request);
+const job = await client.submitMusic({ ...request, max_cost: "0.20" }, savedKey);
+```
+
 
 ## 任务和恢复
 

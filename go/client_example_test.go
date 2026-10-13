@@ -12,6 +12,7 @@ import (
 type generationClient interface {
 	SubmitImage(context.Context, yir.SubmitRequest, ...string) (yir.Job, error)
 	SubmitVideo(context.Context, yir.SubmitRequest, ...string) (yir.Job, error)
+	SubmitMusic(context.Context, yir.SubmitRequest, ...string) (yir.Job, error)
 }
 
 var _ generationClient = (*yir.Client)(nil)

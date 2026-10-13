@@ -27,7 +27,7 @@ export type ModelChannelPrice = {
 
 export type ModelSpecification = {
   readonly request_model_id: string;
-  readonly operation: "generate_image" | "generate_video" | (string & {});
+  readonly operation: "generate_image" | "generate_video" | "generate_music" | (string & {});
   readonly input_mode: "text" | "image" | "reference" | (string & {});
   readonly specification_label: string;
   readonly currency: "USD" | (string & {});

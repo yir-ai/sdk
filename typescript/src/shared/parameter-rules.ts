@@ -9,7 +9,7 @@ export type ParameterRule = {
 export type ChannelParameters = {
   readonly provider: string;
   readonly channel_variant: string;
-  readonly operation: "generate_image" | "generate_video";
+  readonly operation: "generate_image" | "generate_video" | "generate_music";
   readonly input_mode: "text" | "image" | "reference";
   readonly parameter_rules: Readonly<Record<string, ParameterRule>>;
 };

@@ -1,11 +1,14 @@
 import type {
   Job,
   JobCancellation,
+  JobResultFile,
   JobStatusResponse,
   Quote,
   QuoteParameters,
   StandardImageGenerationRequest,
   StandardMediaSource,
+  StandardMusicGenerationRequest,
+  StandardMusicQuoteRequest,
   StandardVideoGenerationRequest,
   YirClient,
   YirErrorCode,
@@ -31,6 +34,19 @@ const echoedDuration: number | "auto" | undefined = videoEcho.duration;
 void echoedDuration;
 const jobParameters: Job["parameters"] = imageEcho;
 void jobParameters;
+// Music parameters are optional; a music echo has no resolution or aspect_ratio.
+const music: StandardMusicGenerationRequest = {
+  model: "minimax/music-2.6", input: { type: "text", prompt: "Lo-fi piano", lyrics: "[Verse]\nRain" },
+  webhook_url: "https://example.com/webhooks/yir",
+};
+const musicQuote: StandardMusicQuoteRequest = { model: "music-2.6", input: { type: "text", prompt: "Lo-fi piano" }, parameters: { instrumental: true } };
+// @ts-expect-error A quote request carries no webhook.
+const musicQuoteWithWebhook: StandardMusicQuoteRequest = { model: "music-2.6", input: { type: "text", prompt: "Lo-fi piano" }, webhook_url: "https://example.com/webhooks/yir" };
+const musicEcho: QuoteParameters = { instrumental: false, lyrics_optimizer: true, n: 1 };
+function readDuration(file: JobResultFile): number | undefined {
+  return file.duration_ms;
+}
+void [musicQuoteWithWebhook, musicEcho, readDuration];
 // A source is a File ID or a public HTTPS URL, never both.
 const urlSource: StandardMediaSource = { url: "https://example.com/image.png" };
 // @ts-expect-error A source carries exactly one of file_id and url.
@@ -41,6 +57,9 @@ function submitWithOptionalKeys(client: YirClient) {
   void client.submitVideo(video);
   void client.submitImage(image, "persisted-key");
   void client.submitVideo(video, undefined, { signal: new AbortController().signal });
+  void client.quoteMusic(musicQuote);
+  void client.submitMusic(music, "persisted-key");
+  void client.quoteBatch([{ operation: "generate_music", request: musicQuote }]);
 }
 
 void submitWithOptionalKeys;
