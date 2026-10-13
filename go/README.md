@@ -16,7 +16,7 @@ Run in your application's Go module:
 go get github.com/yir-ai/sdk/go@latest
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.11.2`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.12.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -33,6 +33,27 @@ _ = client
 ```
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected. If you publish an app that others deploy with their own or their users' keys, set `ClientOptions.ReferralCode` to your Yir referral code; it is sent as `Yir-Referral`, and Jobs count toward your referral rebate once Yir has enabled the code for partner attribution. Otherwise the header is ignored.
+
+## Upgrading to 0.12.0
+
+0.12.0 is a minor release with incompatible behavior changes; the exported API only gains additions. 0.11.2 was never published on its own; its [changes](#0112-changes) ship with this release. The Gateway features it relies on are already live.
+
+Incompatible changes:
+
+- Quote and submit no longer validate model parameters against `ClientOptions.ModelContracts`. They check the protocol skeleton and let the Gateway validate, so an invalid parameter returns `*APIError` with `ErrCodeInvalidRequest` (fields in `Details`) instead of a local `*ParameterError`. Call `ValidateGenerationWithCatalog` when you want strict local checks.
+- A failed submit returns `*SubmissionError`, which carries the `IdempotencyKey` and wraps the transport or API error. Reach the `*APIError` with `errors.As`; a direct type assertion on the returned error no longer matches.
+- `HTTPClient.Timeout` (30 seconds by default) bounds the whole call, including the transport retries below.
+- A legacy `BillingMode: "actual"` request no longer requires `Routing.Only`.
+
+Additions:
+
+- Network failures and HTTP 502/503/504 are retried up to three times for reads and for generation submits with a key, with the same body and idempotency key; a `Retry-After` of up to one minute is honored. `WaitJob` keeps waiting for an accepted Job through Gateway outages and waits out `429 YIR_RATE_LIMITED` (`APIError.RetryAfter`).
+- `QuoteMusic` and `SubmitMusic`, `GenerationInput.Lyrics` and `ResultFile.DurationMS`; see [Quote and submit](#quote-and-submit).
+- `ClientOptions.ReferralCode`, sent as `Yir-Referral`.
+- `client.GetBalance`, and `NewAccountClient` for the Account API, including routing profile `ExcludedModelProviders`.
+- `Routing.Fidelity` (`RoutingFidelity*`, `ErrCodeFidelityExcluded`), `Routing.Accelerate`, and per-file `ResultFile.Fidelity`.
+- `APIError.ProviderError`, `ErrCodeInputRejected` and `JobBilling.Status` (`pending` or `settled`).
+- Model contracts carry `StringValues` (such as Seedance 2.5 duration `"auto"`, kept in quote and Job parameter echoes) and `PromptOptional`. Market specifications with no listed channels are kept.
 
 ## 0.11.2 changes
 

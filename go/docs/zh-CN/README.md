@@ -16,7 +16,7 @@
 go get github.com/yir-ai/sdk/go@latest
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.11.2`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.12.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -33,6 +33,27 @@ _ = client
 ```
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。如果你发布的应用由他人用自己或其用户的 Key 部署，把 `ClientOptions.ReferralCode` 设为你的 Yir 推广码；它作为 `Yir-Referral` 发送，Yir 为该码开通合作归因后，这些 Job 计入你的邀请返利，否则该请求头被忽略。
+
+## 升级到 0.12.0
+
+0.12.0 是包含不兼容行为变化的 minor 版本，导出 API 只有新增。0.11.2 未单独发布，其[变化](#0112-变化)随本版本一并发布。所依赖的 Gateway 功能均已上线。
+
+不兼容变化：
+
+- 报价与提交不再按 `ClientOptions.ModelContracts` 校验模型参数，只校验协议骨架，交给 Gateway 校验。参数非法时返回带 `ErrCodeInvalidRequest` 的 `*APIError`（字段见 `Details`），不再是本地的 `*ParameterError`。需要本地严格校验时调用 `ValidateGenerationWithCatalog`。
+- 提交失败返回 `*SubmissionError`，携带 `IdempotencyKey` 并包装传输或 API 错误。用 `errors.As` 取得 `*APIError`；直接对返回错误做类型断言将不再匹配。
+- `HTTPClient.Timeout`（默认 30 秒）限制整次调用，包括下文的传输重试。
+- 旧的 `BillingMode: "actual"` 请求不再要求 `Routing.Only`。
+
+新增：
+
+- 读取请求和带幂等键的生成提交遇到网络错误或 HTTP 502/503/504 时，最多重试三次，保持原请求体与幂等键；遵守不超过一分钟的 `Retry-After`。`WaitJob` 在 Gateway 短暂不可用时继续等待已受理的 Job，并等待 `429 YIR_RATE_LIMITED`（`APIError.RetryAfter`）过去。
+- `QuoteMusic`、`SubmitMusic`、`GenerationInput.Lyrics` 与 `ResultFile.DurationMS`，见[报价与提交](#报价与提交)。
+- `ClientOptions.ReferralCode`，作为 `Yir-Referral` 发送。
+- `client.GetBalance`，以及用于 Account API 的 `NewAccountClient`，含路由配置的 `ExcludedModelProviders`。
+- `Routing.Fidelity`（`RoutingFidelity*`、`ErrCodeFidelityExcluded`）、`Routing.Accelerate`，以及每个结果文件的 `ResultFile.Fidelity`。
+- `APIError.ProviderError`、`ErrCodeInputRejected` 与 `JobBilling.Status`（`pending` 或 `settled`）。
+- 模型合同新增 `StringValues`（如 Seedance 2.5 时长 `"auto"`，报价与 Job 参数回显中保留）和 `PromptOptional`；没有在售渠道的市场规格予以保留。
 
 ## 0.11.2 变化
 

@@ -156,6 +156,21 @@ Image models expose `supportsFileInputs` from the caller-provided model catalog 
 
 The adapter does not automatically split `n` into separately billed Jobs. Video operation handles, Yir routing options, budgets and billing metadata are provider-specific. Basic generation calls are portable, but these fields need explicit migration when switching providers.
 
+## Upgrading to 0.12.0
+
+0.12.0 is a minor release with incompatible type changes. The Gateway features it relies on are already live.
+
+Incompatible changes:
+
+- `YirClient` adds `quoteMusic` and `submitMusic`. Code that implements `YirClient` itself must add them; callers of `createNodeYirClient` need no change.
+- `QuoteParameters.resolution` and `aspect_ratio` are optional in the type, because music quote echoes omit them. Image and video echoes still include both; narrow the type before use.
+
+Additions:
+
+- `quoteMusic` and `submitMusic`, the `StandardMusic*` request types, a `generate_music` item in `quoteBatch`, `JobResultFile.duration_ms`, and `QuoteParameters.instrumental` / `lyrics_optimizer`; see [Quote, authorize, persist, submit](#quote-authorize-persist-submit).
+- The `referralCode` client option, sent as `Yir-Referral`.
+- Account API types include routing profile `excluded_model_providers`.
+
 ## Upgrading to 0.11.0
 
 0.11.0 is a minor release with incompatible changes. The Gateway features it relies on are already live.

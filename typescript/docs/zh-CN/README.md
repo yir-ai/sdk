@@ -155,6 +155,21 @@ if (operation) {
 
 适配器不会把 `n` 自动拆成多笔收费任务。视频 operation、Yir 路由、预算与账单元数据属于 Provider 专有能力；切换 Provider 时须显式迁移这些字段。
 
+## 升级到 0.12.0
+
+0.12.0 是包含不兼容类型变化的 minor 版本，所依赖的 Gateway 功能均已上线。
+
+不兼容变化：
+
+- `YirClient` 新增 `quoteMusic` 与 `submitMusic`。自行实现 `YirClient` 的代码须补上这两个方法；使用 `createNodeYirClient` 的调用方无需改动。
+- `QuoteParameters.resolution` 与 `aspect_ratio` 在类型上改为可选，因为音乐报价回显不含这两项。图片和视频回显仍然包含，使用前先收窄类型。
+
+新增：
+
+- `quoteMusic`、`submitMusic`、`StandardMusic*` 请求类型、`quoteBatch` 的 `generate_music` 项、`JobResultFile.duration_ms`，以及 `QuoteParameters.instrumental` / `lyrics_optimizer`。
+- 客户端选项 `referralCode`，作为 `Yir-Referral` 发送。
+- Account API 类型包含路由配置的 `excluded_model_providers`。
+
 ## 升级到 0.11.0
 
 0.11.0 是包含不兼容变化的 minor 版本，所依赖的 Gateway 功能均已上线。
