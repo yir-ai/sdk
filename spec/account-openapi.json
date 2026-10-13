@@ -1800,6 +1800,12 @@
           "created_at": {
             "type": "string"
           },
+          "credentials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRLogCredentialView"
+            }
+          },
           "duration_ms": {
             "type": "integer"
           },
@@ -2071,6 +2077,20 @@
             "type": "string"
           },
           "status": {
+            "type": "string"
+          }
+        }
+      },
+      "types.YIRLogCredentialView": {
+        "type": "object",
+        "properties": {
+          "file_index": {
+            "type": "integer"
+          },
+          "model": {
+            "type": "string"
+          },
+          "signer": {
             "type": "string"
           }
         }
@@ -2615,6 +2635,12 @@
               "type": "string"
             }
           },
+          "excluded_model_providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.RoutingModelProviderExclusion"
+            }
+          },
           "excluded_providers": {
             "type": "array",
             "items": {
@@ -2644,6 +2670,23 @@
           },
           "version": {
             "type": "integer"
+          }
+        }
+      },
+      "types.RoutingModelProviderExclusion": {
+        "type": "object",
+        "required": [
+          "model",
+          "provider"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 64
           }
         }
       },
@@ -2735,6 +2778,12 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "excluded_model_providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.RoutingModelProviderExclusion"
             }
           },
           "excluded_providers": {

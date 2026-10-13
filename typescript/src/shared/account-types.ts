@@ -245,6 +245,7 @@ export type AccountTaskDetail = {
   "completed_at"?: string;
   "core_model"?: string;
   "created_at"?: string;
+  "credentials"?: Array<AccountLogCredentialView>;
   "duration_ms"?: number;
   "elapsed_ms"?: number;
   "error"?: AccountStandardV1Error;
@@ -333,6 +334,12 @@ export type AccountLogCancellationView = {
   "effect"?: string;
   "requested_at"?: string;
   "status"?: string;
+};
+
+export type AccountLogCredentialView = {
+  "file_index"?: number;
+  "model"?: string;
+  "signer"?: string;
 };
 
 export type AccountStandardV1Error = {
@@ -488,6 +495,7 @@ export type AccountRoutingProfileView = {
   "default_provider_order"?: Array<string>;
   "default_provider_order_strict"?: boolean;
   "excluded_model_patterns"?: Array<string>;
+  "excluded_model_providers"?: Array<AccountRoutingModelProviderExclusion>;
   "excluded_providers"?: Array<string>;
   "fallback_enabled"?: boolean;
   "id"?: string;
@@ -496,6 +504,11 @@ export type AccountRoutingProfileView = {
   "name"?: string;
   "updated_at"?: string;
   "version"?: number;
+};
+
+export type AccountRoutingModelProviderExclusion = {
+  "model": string;
+  "provider": string;
 };
 
 export type AccountRoutingModelOrder = {
@@ -518,6 +531,7 @@ export type AccountUpdateRoutingProfile = {
   "default_fidelity"?: "original" | "genuine" | "any";
   "default_preference"?: "balanced" | "cost" | "speed";
   "excluded_model_patterns"?: Array<string>;
+  "excluded_model_providers"?: Array<AccountRoutingModelProviderExclusion>;
   "excluded_providers"?: Array<string>;
   "fallback_enabled"?: boolean;
   "name"?: string;

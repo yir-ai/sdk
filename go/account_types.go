@@ -247,6 +247,7 @@ type AccountTaskDetail struct {
 	CompletedAt              *string                           `json:"completed_at,omitempty"`
 	CoreModel                *string                           `json:"core_model,omitempty"`
 	CreatedAt                *string                           `json:"created_at,omitempty"`
+	Credentials              *[]AccountLogCredentialView       `json:"credentials,omitempty"`
 	DurationMs               *int64                            `json:"duration_ms,omitempty"`
 	ElapsedMs                *int64                            `json:"elapsed_ms,omitempty"`
 	Error                    *AccountStandardV1Error           `json:"error,omitempty"`
@@ -335,6 +336,12 @@ type AccountLogCancellationView struct {
 	Effect      *string `json:"effect,omitempty"`
 	RequestedAt *string `json:"requested_at,omitempty"`
 	Status      *string `json:"status,omitempty"`
+}
+
+type AccountLogCredentialView struct {
+	FileIndex *int64  `json:"file_index,omitempty"`
+	Model     *string `json:"model,omitempty"`
+	Signer    *string `json:"signer,omitempty"`
 }
 
 type AccountStandardV1Error struct {
@@ -481,23 +488,29 @@ type AccountUsageView struct {
 }
 
 type AccountRoutingProfileView struct {
-	ActiveKeyCount             *int64                      `json:"active_key_count,omitempty"`
-	AllowedModelPatterns       *[]string                   `json:"allowed_model_patterns,omitempty"`
-	CreatedAt                  *string                     `json:"created_at,omitempty"`
-	DefaultAccelerate          *bool                       `json:"default_accelerate,omitempty"`
-	DefaultFidelity            *string                     `json:"default_fidelity,omitempty"`
-	DefaultPreference          *string                     `json:"default_preference,omitempty"`
-	DefaultProviderOrder       *[]string                   `json:"default_provider_order,omitempty"`
-	DefaultProviderOrderStrict *bool                       `json:"default_provider_order_strict,omitempty"`
-	ExcludedModelPatterns      *[]string                   `json:"excluded_model_patterns,omitempty"`
-	ExcludedProviders          *[]string                   `json:"excluded_providers,omitempty"`
-	FallbackEnabled            *bool                       `json:"fallback_enabled,omitempty"`
-	Id                         *string                     `json:"id,omitempty"`
-	IsDefault                  *bool                       `json:"is_default,omitempty"`
-	ModelProviderOrders        *[]AccountRoutingModelOrder `json:"model_provider_orders,omitempty"`
-	Name                       *string                     `json:"name,omitempty"`
-	UpdatedAt                  *string                     `json:"updated_at,omitempty"`
-	Version                    *int64                      `json:"version,omitempty"`
+	ActiveKeyCount             *int64                                  `json:"active_key_count,omitempty"`
+	AllowedModelPatterns       *[]string                               `json:"allowed_model_patterns,omitempty"`
+	CreatedAt                  *string                                 `json:"created_at,omitempty"`
+	DefaultAccelerate          *bool                                   `json:"default_accelerate,omitempty"`
+	DefaultFidelity            *string                                 `json:"default_fidelity,omitempty"`
+	DefaultPreference          *string                                 `json:"default_preference,omitempty"`
+	DefaultProviderOrder       *[]string                               `json:"default_provider_order,omitempty"`
+	DefaultProviderOrderStrict *bool                                   `json:"default_provider_order_strict,omitempty"`
+	ExcludedModelPatterns      *[]string                               `json:"excluded_model_patterns,omitempty"`
+	ExcludedModelProviders     *[]AccountRoutingModelProviderExclusion `json:"excluded_model_providers,omitempty"`
+	ExcludedProviders          *[]string                               `json:"excluded_providers,omitempty"`
+	FallbackEnabled            *bool                                   `json:"fallback_enabled,omitempty"`
+	Id                         *string                                 `json:"id,omitempty"`
+	IsDefault                  *bool                                   `json:"is_default,omitempty"`
+	ModelProviderOrders        *[]AccountRoutingModelOrder             `json:"model_provider_orders,omitempty"`
+	Name                       *string                                 `json:"name,omitempty"`
+	UpdatedAt                  *string                                 `json:"updated_at,omitempty"`
+	Version                    *int64                                  `json:"version,omitempty"`
+}
+
+type AccountRoutingModelProviderExclusion struct {
+	Model    string `json:"model"`
+	Provider string `json:"provider"`
 }
 
 type AccountRoutingModelOrder struct {
@@ -515,14 +528,15 @@ type AccountCreateRoutingProfile struct {
 }
 
 type AccountUpdateRoutingProfile struct {
-	AllowedModelPatterns  *[]string `json:"allowed_model_patterns,omitempty"`
-	DefaultAccelerate     *bool     `json:"default_accelerate,omitempty"`
-	DefaultFidelity       *string   `json:"default_fidelity,omitempty"`
-	DefaultPreference     *string   `json:"default_preference,omitempty"`
-	ExcludedModelPatterns *[]string `json:"excluded_model_patterns,omitempty"`
-	ExcludedProviders     *[]string `json:"excluded_providers,omitempty"`
-	FallbackEnabled       *bool     `json:"fallback_enabled,omitempty"`
-	Name                  *string   `json:"name,omitempty"`
+	AllowedModelPatterns   *[]string                               `json:"allowed_model_patterns,omitempty"`
+	DefaultAccelerate      *bool                                   `json:"default_accelerate,omitempty"`
+	DefaultFidelity        *string                                 `json:"default_fidelity,omitempty"`
+	DefaultPreference      *string                                 `json:"default_preference,omitempty"`
+	ExcludedModelPatterns  *[]string                               `json:"excluded_model_patterns,omitempty"`
+	ExcludedModelProviders *[]AccountRoutingModelProviderExclusion `json:"excluded_model_providers,omitempty"`
+	ExcludedProviders      *[]string                               `json:"excluded_providers,omitempty"`
+	FallbackEnabled        *bool                                   `json:"fallback_enabled,omitempty"`
+	Name                   *string                                 `json:"name,omitempty"`
 }
 
 type AccountLowBalanceAlertSetting struct {
