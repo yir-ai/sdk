@@ -201,13 +201,15 @@ func (c *Client) QuoteVideo(ctx context.Context, request GenerationRequest) (Quo
 	return c.quote(ctx, "videos", "generate_video", request)
 }
 
-// QuoteMusic quotes a music request. Parameters are optional for music; the
-// echo carries instrumental and lyrics_optimizer but no resolution or aspect_ratio.
+// QuoteMusic quotes a music or sound-effect request. Parameters are optional;
+// the echo carries the parameters the model declares (n, and instrumental,
+// lyrics_optimizer or duration as applicable) but no resolution or aspect_ratio.
+// A sound-effect model's quote reports operation generate_sound_effect.
 func (c *Client) QuoteMusic(ctx context.Context, request GenerationRequest) (Quote, error) {
 	return c.quote(ctx, "music", "generate_music", request)
 }
 
-// QuoteBatch quotes explicit image, video and music requests together. Invalid items
+// QuoteBatch quotes explicit image, video, music and sound-effect requests together. Invalid items
 // are returned in their own positions so one model does not hide other quotes.
 func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestItem) (QuoteBatch, error) {
 	var batch QuoteBatch
@@ -298,7 +300,9 @@ func (c *Client) quoteMatchesRequest(quote Quote, request GenerationRequest, ope
 			modelMatches = returnedFound && requested.ID == returned.ID
 		}
 	}
-	return modelMatches && quote.Operation == operation && quote.InputMode == request.Input.Type
+	// The music endpoints also serve sound-effect models.
+	operationMatches := quote.Operation == operation || operation == "generate_music" && quote.Operation == "generate_sound_effect"
+	return modelMatches && operationMatches && quote.InputMode == request.Input.Type
 }
 
 func (c *Client) SubmitImage(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
@@ -309,8 +313,9 @@ func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempot
 	return c.submit(ctx, "videos", "generate_video", request, idempotencyKey...)
 }
 
-// SubmitMusic submits one music track per Job. The result is an audio file
-// whose measured length is reported as ResultFile.DurationMS.
+// SubmitMusic submits a music or sound-effect Job. The result holds the audio
+// files the model makes per request (one for most models, two for Suno), each
+// with its measured length in ResultFile.DurationMS.
 func (c *Client) SubmitMusic(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
 	return c.submit(ctx, "music", "generate_music", request, idempotencyKey...)
 }

@@ -43,10 +43,13 @@ const musicQuote: StandardMusicQuoteRequest = { model: "music-2.6", input: { typ
 // @ts-expect-error A quote request carries no webhook.
 const musicQuoteWithWebhook: StandardMusicQuoteRequest = { model: "music-2.6", input: { type: "text", prompt: "Lo-fi piano" }, webhook_url: "https://example.com/webhooks/yir" };
 const musicEcho: QuoteParameters = { instrumental: false, lyrics_optimizer: true, n: 1 };
+// Length-priced models take duration; sound effects use the music request shape.
+const soundEffect: StandardMusicQuoteRequest = { model: "elevenlabs/sound-effects-v2", input: { type: "text", prompt: "Glass shattering" }, parameters: { duration: 5 } };
+const soundEcho: QuoteParameters = { n: 1, duration: 5 };
 function readDuration(file: JobResultFile): number | undefined {
   return file.duration_ms;
 }
-void [musicQuoteWithWebhook, musicEcho, readDuration];
+void [musicQuoteWithWebhook, musicEcho, soundEcho, readDuration];
 // A source is a File ID or a public HTTPS URL, never both.
 const urlSource: StandardMediaSource = { url: "https://example.com/image.png" };
 // @ts-expect-error A source carries exactly one of file_id and url.
@@ -59,7 +62,7 @@ function submitWithOptionalKeys(client: YirClient) {
   void client.submitVideo(video, undefined, { signal: new AbortController().signal });
   void client.quoteMusic(musicQuote);
   void client.submitMusic(music, "persisted-key");
-  void client.quoteBatch([{ operation: "generate_music", request: musicQuote }]);
+  void client.quoteBatch([{ operation: "generate_music", request: musicQuote }, { operation: "generate_sound_effect", request: soundEffect }]);
 }
 
 void submitWithOptionalKeys;

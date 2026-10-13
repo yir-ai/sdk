@@ -206,7 +206,7 @@
       "post": {
         "operationId": "quoteMusicGeneration",
         "summary": "Quote a music job",
-        "description": "Estimates the price and checks available supply for a music generation request. Creates no job and charges nothing.",
+        "description": "Estimates the price and checks available supply for a music or sound-effect generation request. Creates no job and charges nothing.",
         "tags": ["Music"],
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
@@ -1100,18 +1100,19 @@
         "required": ["type", "prompt"],
         "properties": {
           "type": { "type": "string", "const": "text" },
-          "prompt": { "type": "string", "minLength": 1, "maxLength": 2000, "pattern": "\\S", "description": "Style, mood and scenario of the music." },
-          "lyrics": { "type": "string", "minLength": 1, "maxLength": 3500, "pattern": "\\S", "description": "Song lyrics, lines separated by \\n; structure tags such as [Verse] and [Chorus] are allowed. Required for vocal music unless parameters.lyrics_optimizer is true; omit it when parameters.instrumental or parameters.lyrics_optimizer is true." }
+          "prompt": { "type": "string", "minLength": 1, "maxLength": 4100, "pattern": "\\S", "description": "Style, mood and scenario of the music, or the description of a sound effect. The per-model limit is in the model contract (for example 2000 for MiniMax, 1000 for Suno, 450 for ElevenLabs sound effects)." },
+          "lyrics": { "type": "string", "minLength": 1, "maxLength": 5000, "pattern": "\\S", "description": "Song lyrics, lines separated by \\n; structure tags such as [Verse] and [Chorus] are allowed. Only models that accept custom lyrics take this field (per-model limit in the model contract). For vocal music send lyrics, parameters.lyrics_optimizer or parameters.instrumental as the model supports; omit it when parameters.instrumental or parameters.lyrics_optimizer is true. Sound effects take no lyrics." }
         }
       },
       "StandardMusicParameters": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Optional music parameters; omitted fields take their defaults. There is no duration, tempo or key control: the delivered file reports its measured duration.",
+        "description": "Optional music and sound-effect parameters; omitted fields take the model's defaults, and a model accepts only the parameters its contract declares. There is no tempo or key control; delivered audio reports its measured duration.",
         "properties": {
+          "duration": { "type": "integer", "minimum": 1, "maximum": 300, "description": "Output length in seconds, only for models priced by length (ElevenLabs music and sound effects). Allowed values and the default come from the model contract; the price follows this length." },
           "instrumental": { "type": "boolean", "default": false, "description": "Generate music without vocals. Omit input.lyrics and lyrics_optimizer." },
-          "lyrics_optimizer": { "type": "boolean", "default": false, "description": "Write the lyrics from the prompt. Omit input.lyrics. Adds a lyrics-writing charge shown in the quote." },
-          "n": { "type": "integer", "enum": [1] }
+          "lyrics_optimizer": { "type": "boolean", "default": false, "description": "Write the lyrics from the prompt. Omit input.lyrics. Some models add a lyrics-writing charge shown in the quote." },
+          "n": { "type": "integer", "enum": [1, 2], "description": "Tracks per Job. Most models make one; Suno always makes two per request." }
         }
       },
       "StandardMusicGenerationRequest": {
@@ -1131,7 +1132,7 @@
           "webhook_url": { "type": "string", "format": "uri", "maxLength": 1000, "pattern": "^https://" },
           "parameters": { "$ref": "#/components/schemas/StandardMusicParameters" }
         },
-        "description": "Music request: one track per Job, delivered as an audio file behind a short-lived link."
+        "description": "Music or sound-effect request: one Job delivers the tracks the model makes per request (one for most models, two for Suno) as audio files behind short-lived links."
       },
       "StandardMusicQuoteRequest": {
         "type": "object",
@@ -1183,6 +1184,13 @@
                   "type": "object", "additionalProperties": false, "required": ["operation", "request"],
                   "properties": {
                     "operation": { "const": "generate_music" },
+                    "request": { "$ref": "#/components/schemas/StandardMusicQuoteRequest" }
+                  }
+                },
+                {
+                  "type": "object", "additionalProperties": false, "required": ["operation", "request"],
+                  "properties": {
+                    "operation": { "const": "generate_sound_effect" },
                     "request": { "$ref": "#/components/schemas/StandardMusicQuoteRequest" }
                   }
                 }
@@ -1255,7 +1263,8 @@
             "enum": [
               "generate_image",
               "generate_video",
-              "generate_music"
+              "generate_music",
+              "generate_sound_effect"
             ]
           },
           "input_mode": {
@@ -1406,7 +1415,7 @@
         "type": "object",
         "additionalProperties": true,
         "required": ["n"],
-        "description": "The normalized parameters a request resolves to: every parameter the model contract declares for the operation, at its contract spelling, with omitted parameters at their published default. Parameters the model does not declare are absent, so an image echo carries no duration, a silent video model carries no generate_audio, and a music echo carries instrumental and lyrics_optimizer but no resolution or aspect_ratio. Image and video echoes always include resolution and aspect_ratio. Only the common parameters are documented here; model-specific parameters are echoed under their contract names.",
+        "description": "The normalized parameters a request resolves to: every parameter the model contract declares for the operation, at its contract spelling, with omitted parameters at their published default. Parameters the model does not declare are absent, so an image echo carries no duration, a silent video model carries no generate_audio, a music echo carries instrumental and lyrics_optimizer (plus duration for length-priced models) but no resolution or aspect_ratio, and a sound-effect echo carries n and duration. Image and video echoes always include resolution and aspect_ratio. Only the common parameters are documented here; model-specific parameters are echoed under their contract names.",
         "properties": {
           "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
           "quality": { "type": "string", "minLength": 1, "description": "Image quality tier when the request constrains one; absent when omitted, which lets any channel run." },
@@ -1729,7 +1738,7 @@
         "properties": {
           "provider": { "type": "string" },
           "channel_variant": { "type": "string" },
-          "operation": { "enum": ["generate_image", "generate_video", "generate_music"] },
+          "operation": { "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect"] },
           "input_mode": { "enum": ["text", "image", "reference"] },
           "parameter_rules": { "type": "object", "additionalProperties": false,
             "properties": { "quality": { "$ref": "#/components/schemas/ParameterRule" } } }
@@ -1763,7 +1772,7 @@
         "required": ["request_model_id", "operation", "input_mode", "specification_label", "currency", "channels"],
         "properties": {
 		  "request_model_id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
-          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music"] },
+          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect"] },
 		  "input_mode": { "type": "string", "enum": ["text", "image", "reference"] },
           "specification_label": { "type": "string", "minLength": 1 },
           "currency": { "type": "string", "const": "USD" },
@@ -1843,7 +1852,7 @@
         "additionalProperties": false,
         "required": ["operation", "input_modes", "input_constraints", "request_schema", "parameters"],
         "properties": {
-          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music"] },
+          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect"] },
           "input_modes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["text", "image", "reference"] } },
           "input_constraints": {
             "type": "object",

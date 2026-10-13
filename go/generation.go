@@ -10,7 +10,9 @@ import (
 
 // GenerationRequest is the common demand used for Quote and Submit.
 // The endpoint selects image, video or music generation; provider fields are not accepted.
-// Music parameters are optional; nil Parameters are sent as an empty object.
+// Music and sound-effect parameters (n, duration, instrumental, lyrics_optimizer,
+// as the model contract declares) are optional; nil Parameters are sent as an
+// empty object. Length-priced models take parameters["duration"] in seconds.
 type GenerationRequest struct {
 	// Deprecated: Omit for new requests; actual-cost settlement is the default.
 	// Retained for legacy callers with the existing validation rules.
@@ -96,9 +98,10 @@ type GenerationInput struct {
 	Prompt     string      `json:"prompt"`
 	References []Reference `json:"references,omitempty"`
 	// Lyrics is music only: song lyrics, lines separated by \n, with optional
-	// structure tags such as [Verse]. Required for vocal music unless the
-	// lyrics_optimizer parameter is true; omit it when instrumental or
-	// lyrics_optimizer is true.
+	// structure tags such as [Verse]. Only models that accept custom lyrics take
+	// it; vocal music needs lyrics, lyrics_optimizer or instrumental as the
+	// model supports. Omit it when instrumental or lyrics_optimizer is true,
+	// and for sound effects.
 	Lyrics string `json:"lyrics,omitempty"`
 }
 
@@ -166,17 +169,31 @@ func ValidateGenerationWithCatalog(operation string, request GenerationRequest, 
 		return &ParameterError{"model", "model_contract_unavailable"}
 	}
 	var contract *ModelOperationContract
-	for i := range model.Operations {
-		candidate := &model.Operations[i]
-		if candidate.Operation == operation && containsString(candidate.InputModes, request.Input.Type) {
-			contract = candidate
-			break
+	for _, wanted := range catalogOperations(operation) {
+		for i := range model.Operations {
+			candidate := &model.Operations[i]
+			if contract == nil && candidate.Operation == wanted && containsString(candidate.InputModes, request.Input.Type) {
+				contract = candidate
+			}
 		}
 	}
 	if contract == nil {
 		return &ParameterError{"input.type", "operation_contract_unavailable"}
 	}
-	return validateGenerationWithContract(operation, request, contract)
+	return validateGenerationWithContract(contract.Operation, request, contract)
+}
+
+// catalogOperations lists the contract operations a request operation may
+// resolve to: the music methods also serve sound-effect models.
+func catalogOperations(operation string) []string {
+	if operation == "generate_music" {
+		return []string{"generate_music", "generate_sound_effect"}
+	}
+	return []string{operation}
+}
+
+func isAudioOperation(operation string) bool {
+	return operation == "generate_music" || operation == "generate_sound_effect"
 }
 
 // ValidateGenerationProtocol checks only stable request structure. New models
@@ -194,7 +211,7 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	if strings.TrimSpace(request.Model) == "" {
 		return &ParameterError{"model", "model_required"}
 	}
-	if operation != "generate_image" && operation != "generate_video" && operation != "generate_music" {
+	if operation != "generate_image" && operation != "generate_video" && !isAudioOperation(operation) {
 		return &ParameterError{"operation", "invalid_operation"}
 	}
 	if request.Input.Type == "" {
@@ -208,8 +225,8 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 			return &ParameterError{"extra." + key, "reserved_field"}
 		}
 	}
-	if operation == "generate_music" {
-		if err := validateMusicInput(request); err != nil {
+	if isAudioOperation(operation) {
+		if err := validateMusicInput(operation, request, contract != nil); err != nil {
 			return err
 		}
 	} else if request.Input.Lyrics != "" {
@@ -289,8 +306,11 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 }
 
 // validateMusicInput applies the protocol rules shared by every music model:
-// lyrics, instrumental and the lyrics optimizer exclude each other.
-func validateMusicInput(request GenerationRequest) error {
+// lyrics, instrumental and the lyrics optimizer exclude each other, and sound
+// effects take no lyrics. n, duration and the accepted switches come from the
+// model contract. Without a contract generate_music may name a sound-effect
+// model, so a missing lyrics source is left to the Gateway.
+func validateMusicInput(operation string, request GenerationRequest, contractKnown bool) error {
 	if request.Input.Type != "text" {
 		return &ParameterError{"input.type", "input_mode_invalid"}
 	}
@@ -310,11 +330,13 @@ func validateMusicInput(request GenerationRequest) error {
 	switch {
 	case hasLyrics && strings.TrimSpace(request.Input.Lyrics) == "":
 		return &ParameterError{"input.lyrics", "invalid_value"}
+	case hasLyrics && operation == "generate_sound_effect":
+		return &ParameterError{"input.lyrics", "not_allowed"}
 	case flags["instrumental"] && flags["lyrics_optimizer"]:
 		return &ParameterError{"parameters.lyrics_optimizer", "parameter_conflict"}
 	case hasLyrics && (flags["instrumental"] || flags["lyrics_optimizer"]):
 		return &ParameterError{"input.lyrics", "not_allowed"}
-	case !hasLyrics && !flags["instrumental"] && !flags["lyrics_optimizer"]:
+	case contractKnown && operation == "generate_music" && !hasLyrics && !flags["instrumental"] && !flags["lyrics_optimizer"]:
 		return &ParameterError{"input.lyrics", "required_parameter"}
 	}
 	return nil

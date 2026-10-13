@@ -69,7 +69,7 @@ const client = createNodeYirClient();
 
 视频使用 `quoteVideo(request)` 和 `submitVideo(savedRequest, savedKey)`，遵循同样流程。报价不会提交任务，接受新工作前应检查报价是否过期。提交结果未知时，不得用新报价或新预算替换已保存请求，应先恢复原操作。
 
-音乐使用 `quoteMusic(request)` 和 `submitMusic(savedRequest, savedKey)`，流程相同；也可在 `quoteBatch` 中传 `generate_music` 项。输入只有文本：风格描述 `prompt` 加可选的 `lyrics`；`parameters` 可省略（`instrumental`、`lyrics_optimizer`、`n`）。带人声的音乐须传 `lyrics`；`instrumental: true` 时不能传 `lyrics` 或 `lyrics_optimizer`；`lyrics_optimizer: true` 按提示词自动写词，此时不传 `lyrics`（报价会显示写词附加费用）。其他组合在发送前由 SDK 拒绝。每个 Job 交付一个音频文件，实测时长见 `duration_ms`。音乐报价的参数回显包含 `instrumental` 与 `lyrics_optimizer`，不含 `resolution` 与 `aspect_ratio`，因此 `QuoteParameters.resolution` 与 `aspect_ratio` 在类型上改为可选；图片与视频回显仍始终包含二者。
+音乐与音效使用 `quoteMusic(request)` 和 `submitMusic(savedRequest, savedKey)`，流程相同；也可在 `quoteBatch` 中传 `generate_music` / `generate_sound_effect` 项。输入只有文本：`prompt`，模型支持自定义歌词时可加 `lyrics`；`parameters` 可省略，每个模型只接受其合同声明的参数（`n`、`duration`、`instrumental`、`lyrics_optimizer`）。带人声的音乐须使用模型支持的一种歌词来源：`lyrics`、`lyrics_optimizer: true`（按提示词自动写词，部分模型另收写词费用，以报价为准）或 `instrumental: true`，三者互斥。ElevenLabs 音乐不接受歌词，按 `duration` 计价（30–300 秒固定档位，默认 60）；ElevenLabs 音效（`elevenlabs/sound-effects-v2`）只传描述，不接受歌词，`duration` 为 1–22 秒（默认 5），报价的 operation 为 `generate_sound_effect`。Suno（`suno/suno-v6`，非官方接入，Suno 没有官方 API）每次请求返回两首（`n` 固定为 2）。SDK 在发送前拒绝通用冲突；`validateGeneration(operation, request, catalog)` 还按模型合同检查 `n`、`duration` 与歌词来源，各模型的文本长度上限由 Gateway 校验。每个音频文件的实测时长见 `duration_ms`。音乐报价的参数回显不含 `resolution` 与 `aspect_ratio`，因此 `QuoteParameters.resolution` 与 `aspect_ratio` 在类型上为可选；图片与视频回显仍始终包含二者。
 
 ```ts
 const request = {

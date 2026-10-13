@@ -91,7 +91,7 @@ _ = client
 
 应用审批预算后，持久化包含完整生成请求和 `MaxCost` 的 `SubmitRequest`，以及稳定幂等键；同时保存路由、引用和 `WebhookURL`。之后才调用 `SubmitImage(ctx, savedRequest, savedKey)` 或 `SubmitVideo`。报价不授权或触发生成。重试不得生成新键；传输结果未知时使用原请求与键恢复，不得悄悄用新报价或预算替换请求。
 
-音乐使用 `QuoteMusic` 和 `SubmitMusic`，流程相同；也可在 `QuoteBatch` 中传 `generate_music` 项。输入只有文本：设置 `Input.Prompt`，带人声的音乐还须设置 `Input.Lyrics`；`Parameters` 可省略（`instrumental`、`lyrics_optimizer`、`n`）。`instrumental: true` 时不能传歌词或 `lyrics_optimizer`；`lyrics_optimizer: true` 按提示词自动写词，此时 `Lyrics` 留空（报价会显示写词附加费用）。其他组合在本地以 `ParameterError` 拒绝。每个 Job 交付一个音频文件，实测时长见 `ResultFile.DurationMS`。音乐报价的参数回显包含 `instrumental` 与 `lyrics_optimizer`，不含 `resolution` 与 `aspect_ratio`。
+音乐与音效使用 `QuoteMusic` 和 `SubmitMusic`，流程相同；也可在 `QuoteBatch` 中传 `generate_music` / `generate_sound_effect` 项。输入只有文本：设置 `Input.Prompt`，模型支持自定义歌词时可设置 `Input.Lyrics`；`Parameters` 可省略，每个模型只接受其合同声明的参数（`n`、`duration`、`instrumental`、`lyrics_optimizer`）。带人声的音乐须使用模型支持的一种歌词来源：`Lyrics`、`lyrics_optimizer: true`（按提示词自动写词，部分模型另收写词费用，以报价为准）或 `instrumental: true`，三者互斥。ElevenLabs 音乐不接受歌词，按 `duration` 计价（30–300 秒固定档位，默认 60）；ElevenLabs 音效（`elevenlabs/sound-effects-v2`）只传描述，不接受歌词，`duration` 为 1–22 秒（默认 5），报价的 operation 为 `generate_sound_effect`。Suno（`suno/suno-v6`，非官方接入，Suno 没有官方 API）每次请求返回两首（`n` 固定为 2）。SDK 在发送前检查通用冲突；`ValidateGenerationWithCatalog` 还按模型合同检查 `n`、`duration` 与歌词来源，各模型的文本长度上限由 Gateway 校验。每个音频文件的实测时长见 `ResultFile.DurationMS`。音乐报价的参数回显不含 `resolution` 与 `aspect_ratio`。
 
 ```go
 request := yir.GenerationRequest{Model: "minimax/music-2.6", Input: yir.GenerationInput{

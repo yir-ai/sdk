@@ -104,33 +104,38 @@ export type StandardVideoQuoteRequest = Omit<
   "webhook_url" | "max_cost"
 >;
 
-/** Music input: a style prompt plus optional lyrics; music takes no references. */
+/** Music and sound-effect input: a prompt plus optional lyrics; no references. */
 export type StandardMusicTextInput = {
   readonly type: "text";
-  /** Style, mood and scenario of the music. */
+  /** Style, mood and scenario of the music, or the description of a sound effect (per-model length limit). */
   readonly prompt: string;
   /**
    * Song lyrics, lines separated by \n; structure tags such as [Verse] and [Chorus] are allowed.
-   * Required for vocal music unless parameters.lyrics_optimizer is true; omit it when
-   * parameters.instrumental or parameters.lyrics_optimizer is true.
+   * Only models that accept custom lyrics take this field. Vocal music needs lyrics,
+   * parameters.lyrics_optimizer or parameters.instrumental as the model supports; omit it when
+   * instrumental or lyrics_optimizer is true. Sound effects take no lyrics.
    */
   readonly lyrics?: string;
 };
 
 /**
- * Optional music parameters; omitted fields take their defaults. There is no duration,
- * tempo or key control: the delivered file reports its measured `duration_ms`.
+ * Optional music and sound-effect parameters; omitted fields take the model's defaults and
+ * a model accepts only the parameters its contract declares. There is no tempo or key
+ * control; delivered audio reports its measured `duration_ms`.
  */
 export type StandardMusicParameters = {
+  /** Output length in seconds, only for length-priced models (ElevenLabs music and sound effects); allowed values and default come from the model contract. */
+  readonly duration?: number;
   /** Generate music without vocals (default false). Omit input.lyrics and lyrics_optimizer. */
   readonly instrumental?: boolean;
-  /** Write the lyrics from the prompt (default false). Omit input.lyrics; adds a lyrics-writing charge shown in the quote. */
+  /** Write the lyrics from the prompt (default false). Omit input.lyrics; some models add a lyrics-writing charge shown in the quote. */
   readonly lyrics_optimizer?: boolean;
+  /** Tracks per Job: 1 for most models; Suno always makes 2. */
   readonly n?: number;
   readonly [name: string]: unknown;
 };
 
-/** Music request: one track per Job, delivered as an audio file behind a short-lived link. */
+/** Music or sound-effect request: one Job delivers the tracks the model makes per request (two for Suno) as audio files behind short-lived links. */
 export type StandardMusicGenerationRequest = {
   /** @deprecated Omit for new requests; actual-cost settlement is the default. Retained for legacy callers with the existing validation rules. */
   readonly billing_mode?: "actual";
@@ -150,7 +155,15 @@ export type StandardMusicQuoteRequest = Omit<
 >;
 
 /** Generation operations known to this SDK release. */
-export type GenerationOperation = "generate_image" | "generate_video" | "generate_music";
+export type GenerationOperation = "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect";
+
+const isAudioOperation = (operation: string) => operation === "generate_music" || operation === "generate_sound_effect";
+
+/** The music methods also serve sound-effect models: generate_music resolves to the operation the catalog declares. */
+function resolveCatalogOperation(catalog: ModelContractCatalog, model: string, operation: GenerationOperation, inputMode: string): GenerationOperation {
+  if (operation !== "generate_music" || findModelOperationContract(catalog, model, operation, inputMode)) return operation;
+  return findModelOperationContract(catalog, model, "generate_sound_effect", inputMode) ? "generate_sound_effect" : operation;
+}
 
 export type BuildImageGenerationRequest = {
   /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
@@ -203,7 +216,7 @@ export function validateModelParameters(
   catalog: ModelContractCatalog,
 ): void {
   if (!catalog) throw new YirSDKValidationError("model_contract_required", "catalog");
-  const contract = findModelOperationContract(catalog, model, operation, inputMode);
+  const contract = findModelOperationContract(catalog, model, resolveCatalogOperation(catalog, model, operation, inputMode), inputMode);
   if (!contract) throw new YirSDKValidationError("model_contract_unavailable", "model");
   const values = requireObject(parameters, "parameters");
   const rules = new Map(contract.parameters.map(rule => [rule.name, rule]));
@@ -261,7 +274,7 @@ export function validateModelParameters(
  * skeleton; model limits, roles, lengths and routing codes are Gateway facts.
  * Fields newer than this SDK are passed through unchanged.
  */
-export function validateGeneration(operation: GenerationOperation, request: unknown, catalog?: ModelContractCatalog): void {
+export function validateGeneration(requestedOperation: GenerationOperation, request: unknown, catalog?: ModelContractCatalog): void {
   const body = requireObject(request, "request");
   if (Object.hasOwn(body, "billing_mode") && body.billing_mode !== undefined) {
     if (body.billing_mode !== "actual") throw new YirSDKValidationError("billing_mode_invalid", "billing_mode");
@@ -270,15 +283,16 @@ export function validateGeneration(operation: GenerationOperation, request: unkn
   if (typeof body.model !== "string" || !body.model.trim()) throw new YirSDKValidationError("model_required", "model");
   const input = requireObject(body.input, "input");
   if (typeof input.type !== "string" || !input.type) throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  const operation = catalog ? resolveCatalogOperation(catalog, body.model, requestedOperation, input.type) : requestedOperation;
   const optionalVideoPrompt = operation === "generate_video" && input.type === "image";
   if ((input.prompt !== undefined && typeof input.prompt !== "string") ||
       (!optionalVideoPrompt && (typeof input.prompt !== "string" || !input.prompt.trim()))) {
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
   // Music parameters are optional; image and video requests send them explicitly.
-  const parameters = operation === "generate_music" && body.parameters === undefined
+  const parameters = isAudioOperation(operation) && body.parameters === undefined
     ? {} : requireObject(body.parameters, "parameters");
-  if (operation === "generate_music") validateMusicInput(input, parameters);
+  if (isAudioOperation(operation)) validateMusicInput(operation, input, parameters, catalog !== undefined);
   if (catalog) validateModelParameters(body.model, operation, input.type, parameters, catalog);
   const contract = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
   const constraint = contract?.input_constraints[input.type];
@@ -340,8 +354,11 @@ export function validateGeneration(operation: GenerationOperation, request: unkn
   if (Object.hasOwn(body, "webhook_url")) validateHTTPSURL(body.webhook_url, "webhook_url");
 }
 
-// Protocol rules shared by every music model: lyrics, instrumental and the lyrics optimizer exclude each other.
-function validateMusicInput(input: Record<string, unknown>, parameters: Record<string, unknown>): void {
+// Protocol rules shared by every music model: lyrics, instrumental and the lyrics optimizer exclude each
+// other, and sound effects take no lyrics. n, duration and the accepted switches come from the model
+// contract. Without a catalog generate_music may name a sound-effect model, so a missing lyrics source
+// is left to the Gateway.
+function validateMusicInput(operation: GenerationOperation, input: Record<string, unknown>, parameters: Record<string, unknown>, catalogKnown: boolean): void {
   if (input.type !== "text") throw new YirSDKValidationError("input_mode_invalid", "input.type");
   for (const name of ["instrumental", "lyrics_optimizer"]) {
     if (parameters[name] !== undefined && typeof parameters[name] !== "boolean") {
@@ -352,13 +369,14 @@ function validateMusicInput(input: Record<string, unknown>, parameters: Record<s
   if (hasLyrics && (typeof input.lyrics !== "string" || !input.lyrics.trim())) {
     throw new YirSDKValidationError("lyrics_invalid", "input.lyrics");
   }
+  if (hasLyrics && operation === "generate_sound_effect") throw new YirSDKValidationError("lyrics_not_allowed", "input.lyrics");
   if (parameters.instrumental === true && parameters.lyrics_optimizer === true) {
     throw new YirSDKValidationError("parameter_conflict", "parameters.lyrics_optimizer");
   }
   if (hasLyrics && (parameters.instrumental === true || parameters.lyrics_optimizer === true)) {
     throw new YirSDKValidationError("lyrics_not_allowed", "input.lyrics");
   }
-  if (!hasLyrics && parameters.instrumental !== true && parameters.lyrics_optimizer !== true) {
+  if (catalogKnown && operation === "generate_music" && !hasLyrics && parameters.instrumental !== true && parameters.lyrics_optimizer !== true) {
     throw new YirSDKValidationError("lyrics_required", "input.lyrics");
   }
 }

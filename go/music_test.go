@@ -126,7 +126,6 @@ func TestMusicProtocolRules(t *testing.T) {
 		request    GenerationRequest
 		path, code string
 	}{
-		{text("Ballad", "", nil), "input.lyrics", "required_parameter"},
 		{text("Ballad", "[Verse]", map[string]any{"instrumental": true}), "input.lyrics", "not_allowed"},
 		{text("Ballad", "[Verse]", map[string]any{"lyrics_optimizer": true}), "input.lyrics", "not_allowed"},
 		{text("Ballad", "", map[string]any{"instrumental": true, "lyrics_optimizer": true}), "parameters.lyrics_optimizer", "parameter_conflict"},
@@ -141,8 +140,17 @@ func TestMusicProtocolRules(t *testing.T) {
 			t.Fatalf("%+v: got %v, want %s %s", tc.request, err, tc.path, tc.code)
 		}
 	}
-	// The current catalog also checks parameter values.
+	// Without a contract the model may be a sound effect, so only the catalog
+	// requires a lyrics source for music.
+	if err := ValidateGenerationProtocol("generate_music", text("Ballad", "", nil)); err != nil {
+		t.Fatalf("protocol required lyrics: %v", err)
+	}
 	var parameterError *ParameterError
+	if err := ValidateGenerationWithCatalog("generate_music", text("Ballad", "", nil), *testModelContracts()); !errors.As(err, &parameterError) ||
+		parameterError.Path != "input.lyrics" || parameterError.Code != "required_parameter" {
+		t.Fatalf("missing lyrics source accepted: %v", err)
+	}
+	// The current catalog also checks parameter values.
 	if err := ValidateGenerationWithCatalog("generate_music", text("Ballad", "[Verse]", map[string]any{"n": 2}), *testModelContracts()); !errors.As(err, &parameterError) {
 		t.Fatalf("n=2 accepted: %v", err)
 	}
@@ -164,5 +172,85 @@ func TestMusicContractAndResultDuration(t *testing.T) {
 		"result":{"availability":"available","files":[{"url":"https://example.com/a.mp3","media_type":"audio/mpeg","duration_ms":183250,"expires_at":2}]}}`
 	if err := json.Unmarshal([]byte(raw), &job); err != nil || job.Result.Files[0].DurationMS != 183250 {
 		t.Fatalf("duration lost: %+v %v", job.Result, err)
+	}
+}
+
+func TestAudioModelContractRules(t *testing.T) {
+	catalog := *testModelContracts()
+	request := func(model, lyrics string, parameters map[string]any) GenerationRequest {
+		return GenerationRequest{Model: model, Input: GenerationInput{Type: "text", Prompt: "Rain on a tin roof", Lyrics: lyrics}, Parameters: parameters}
+	}
+	for _, tc := range []struct {
+		operation string
+		request   GenerationRequest
+	}{
+		{"generate_music", request("suno/suno-v6", "[Verse]\nRain", nil)},
+		{"generate_music", request("suno/suno-v6", "", map[string]any{"n": 2, "lyrics_optimizer": true})},
+		{"generate_music", request("elevenlabs/music-v2", "", map[string]any{"duration": 120, "instrumental": true})},
+		{"generate_music", request("elevenlabs/music-v2.5", "", map[string]any{"lyrics_optimizer": true})},
+		{"generate_music", request("minimax/music-3", "[Verse]\nRain", nil)},
+		// The music methods also serve sound effects; no lyrics source is needed.
+		{"generate_music", request("elevenlabs/sound-effects-v2", "", map[string]any{"duration": 22})},
+		{"generate_sound_effect", request("elevenlabs/sound-effects-v2", "", nil)},
+	} {
+		if err := ValidateGenerationProtocol(tc.operation, tc.request); err != nil {
+			t.Fatalf("protocol rejected %s: %v", tc.request.Model, err)
+		}
+		if err := ValidateGenerationWithCatalog(tc.operation, tc.request, catalog); err != nil {
+			t.Fatalf("catalog rejected %s %v: %v", tc.request.Model, tc.request.Parameters, err)
+		}
+	}
+	for _, tc := range []struct {
+		request    GenerationRequest
+		path, code string
+	}{
+		{request("suno/suno-v6", "[Verse]", map[string]any{"n": 1}), "parameters.n", "invalid_enum"},
+		{request("elevenlabs/music-v2", "", map[string]any{"duration": 45, "instrumental": true}), "parameters.duration", "invalid_enum"},
+		{request("elevenlabs/music-v2", "", map[string]any{"duration": 600, "instrumental": true}), "parameters.duration", "above_maximum"},
+		{request("elevenlabs/music-v2", "", nil), "input.lyrics", "required_parameter"},
+		{request("elevenlabs/sound-effects-v2", "", map[string]any{"duration": 23}), "parameters.duration", "above_maximum"},
+		{request("elevenlabs/sound-effects-v2", "", map[string]any{"instrumental": true}), "parameters.instrumental", "unknown_parameter"},
+		{request("elevenlabs/sound-effects-v2", "[Verse]", nil), "input.lyrics", "not_allowed"},
+		{request("minimax/music-3", "", map[string]any{"lyrics_optimizer": true}), "parameters.lyrics_optimizer", "unknown_parameter"},
+		{request("minimax/music-2.6", "[Verse]", map[string]any{"duration": 60}), "parameters.duration", "unknown_parameter"},
+	} {
+		var parameterError *ParameterError
+		err := ValidateGenerationWithCatalog("generate_music", tc.request, catalog)
+		if !errors.As(err, &parameterError) || parameterError.Path != tc.path || parameterError.Code != tc.code {
+			t.Fatalf("%s %v: got %v, want %s %s", tc.request.Model, tc.request.Parameters, err, tc.path, tc.code)
+		}
+	}
+	// An explicit sound-effect operation rejects lyrics without a catalog.
+	var parameterError *ParameterError
+	if err := ValidateGenerationProtocol("generate_sound_effect", request("elevenlabs/sound-effects-v2", "[Verse]", nil)); !errors.As(err, &parameterError) || parameterError.Path != "input.lyrics" {
+		t.Fatalf("sound-effect lyrics accepted: %v", err)
+	}
+}
+
+func TestSoundEffectQuoteThroughMusicMethodsAndTwoTrackResult(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/music/quotes" {
+			t.Errorf("path %s", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(map[string]any{"supply": map[string]any{"available": true, "issues": []string{}}, "object": "quote",
+			"model": "elevenlabs/sound-effects-v2", "operation": "generate_sound_effect", "input_mode": "text",
+			"parameters": map[string]any{"n": 1, "duration": 5}, "currency": "USD", "expires_at": 3000000000,
+			"primary": map[string]any{"kind": "fixed", "amount": "0.01"}, "official": map[string]any{"kind": "fixed", "amount": "0.01"}})
+	}))
+	defer server.Close()
+	for _, catalog := range []*ModelContractCatalog{nil, testModelContracts()} {
+		client, _ := NewClient("fixture", ClientOptions{BaseURL: server.URL, ModelContracts: catalog})
+		quote, err := client.QuoteMusic(context.Background(), GenerationRequest{Model: "elevenlabs/sound-effects-v2",
+			Input: GenerationInput{Type: "text", Prompt: "Glass shattering"}})
+		if err != nil || quote.Operation != "generate_sound_effect" {
+			t.Fatalf("sound-effect quote: %+v %v", quote, err)
+		}
+	}
+	var job Job
+	raw := `{"object":"job","id":"7201","status":"succeeded","model":"suno/suno-v6","error":null,"created_at":1,
+		"result":{"availability":"available","files":[{"url":"https://example.com/a.mp3","media_type":"audio/mpeg","duration_ms":120000,"expires_at":2},
+		{"url":"https://example.com/b.mp3","media_type":"audio/mpeg","duration_ms":118000,"expires_at":2}]}}`
+	if err := json.Unmarshal([]byte(raw), &job); err != nil || len(job.Result.Files) != 2 || job.Result.Files[1].DurationMS != 118000 {
+		t.Fatalf("two tracks lost: %+v %v", job.Result, err)
 	}
 }

@@ -3608,6 +3608,328 @@
       ]
     },
     {
+      "id": "elevenlabs/music-v2",
+      "aliases": [
+        "music-v2",
+        "music_v2"
+      ],
+      "locales": {
+        "en": {
+          "label": "ElevenLabs Music v2",
+          "description": "ElevenLabs music model for songs or instrumentals of a chosen length from a prompt"
+        },
+        "zh-CN": {
+          "label": "ElevenLabs Music v2",
+          "description": "ElevenLabs 音乐生成模型，按提示词生成指定时长的歌曲或纯音乐"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "values": [
+                30,
+                60,
+                120,
+                180,
+                240,
+                300
+              ],
+              "default": 60,
+              "minimum": 30,
+              "maximum": 300,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output audio length in seconds; the price follows this length."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出音频的秒数，价格随时长计算。"
+                }
+              }
+            },
+            {
+              "name": "instrumental",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Instrumental",
+                  "description": "Generate music without vocals. input.lyrics and lyrics_optimizer must be omitted."
+                },
+                "zh-CN": {
+                  "label": "纯音乐",
+                  "description": "生成无人声的纯音乐；不能同时传 input.lyrics 或 lyrics_optimizer。"
+                }
+              }
+            },
+            {
+              "name": "lyrics_optimizer",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Auto lyrics",
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; some models add a lyrics-writing charge (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "自动写词",
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，部分模型另收写词费用（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elevenlabs/music-v2.5",
+      "aliases": [
+        "music-v2.5",
+        "music_v2_5"
+      ],
+      "locales": {
+        "en": {
+          "label": "ElevenLabs Music v2.5",
+          "description": "ElevenLabs' newer music model with richer melodies and arrangements, for songs or instrumentals of a chosen length"
+        },
+        "zh-CN": {
+          "label": "ElevenLabs Music v2.5",
+          "description": "ElevenLabs 新版音乐生成模型，旋律与编曲更丰富，按提示词生成指定时长的歌曲或纯音乐"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "values": [
+                30,
+                60,
+                120,
+                180,
+                240,
+                300
+              ],
+              "default": 60,
+              "minimum": 30,
+              "maximum": 300,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output audio length in seconds; the price follows this length."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出音频的秒数，价格随时长计算。"
+                }
+              }
+            },
+            {
+              "name": "instrumental",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Instrumental",
+                  "description": "Generate music without vocals. input.lyrics and lyrics_optimizer must be omitted."
+                },
+                "zh-CN": {
+                  "label": "纯音乐",
+                  "description": "生成无人声的纯音乐；不能同时传 input.lyrics 或 lyrics_optimizer。"
+                }
+              }
+            },
+            {
+              "name": "lyrics_optimizer",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Auto lyrics",
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; some models add a lyrics-writing charge (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "自动写词",
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，部分模型另收写词费用（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elevenlabs/sound-effects-v2",
+      "aliases": [
+        "sound-effects-v2",
+        "eleven_text_to_sound_v2"
+      ],
+      "locales": {
+        "en": {
+          "label": "ElevenLabs Sound Effects v2",
+          "description": "ElevenLabs sound effects model for 1-22 second sound effects from a text description"
+        },
+        "zh-CN": {
+          "label": "ElevenLabs Sound Effects v2",
+          "description": "ElevenLabs 音效生成模型，按文字描述生成 1–22 秒的音效"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_sound_effect",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 5,
+              "minimum": 1,
+              "maximum": 22,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output audio length in seconds; the price follows this length."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出音频的秒数，价格随时长计算。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "google/gemini-2.5-flash-image",
       "aliases": [
         "gemini-2.5-flash-image",
@@ -6363,14 +6685,69 @@
               "locales": {
                 "en": {
                   "label": "Auto lyrics",
-                  "description": "Write lyrics from the prompt. Omit input.lyrics; adds a lyrics-writing charge."
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; some models add a lyrics-writing charge (see the quote)."
                 },
                 "zh-CN": {
                   "label": "自动写词",
-                  "description": "按提示词自动写词；不能同时传 input.lyrics，另收写词费用。"
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，部分模型另收写词费用（以报价为准）。"
                 }
               }
             },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "minimax/music-3",
+      "aliases": [
+        "music-3",
+        "music-3.0"
+      ],
+      "locales": {
+        "en": {
+          "label": "MiniMax Music 3",
+          "description": "MiniMax's newer music model for complete vocal songs up to five minutes from a prompt and lyrics"
+        },
+        "zh-CN": {
+          "label": "MiniMax Music 3",
+          "description": "MiniMax 新一代音乐生成模型，按提示词与歌词生成最长 5 分钟的带人声完整歌曲"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
             {
               "name": "n",
               "type": "integer",
@@ -7819,6 +8196,102 @@
                 1
               ],
               "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suno/suno-v6",
+      "aliases": [
+        "suno-v6"
+      ],
+      "locales": {
+        "en": {
+          "label": "Suno v6",
+          "description": "Suno music model that makes two vocal songs or instrumentals per request. Suno has no official API; Yir accesses it unofficially through third-party channels"
+        },
+        "zh-CN": {
+          "label": "Suno v6",
+          "description": "Suno 音乐生成模型，每次生成两首带人声歌曲或纯音乐。Suno 没有官方 API，Yir 经第三方渠道非官方接入"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "instrumental",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Instrumental",
+                  "description": "Generate music without vocals. input.lyrics and lyrics_optimizer must be omitted."
+                },
+                "zh-CN": {
+                  "label": "纯音乐",
+                  "description": "生成无人声的纯音乐；不能同时传 input.lyrics 或 lyrics_optimizer。"
+                }
+              }
+            },
+            {
+              "name": "lyrics_optimizer",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Auto lyrics",
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; some models add a lyrics-writing charge (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "自动写词",
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，部分模型另收写词费用（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                2
+              ],
+              "default": 2,
               "control": "number",
               "locales": {
                 "en": {

@@ -61,7 +61,6 @@ test("music requests enforce the lyrics, instrumental and lyrics optimizer rules
     validateGeneration("generate_music", request);
   }
   const invalid = [
-    [{ model: "music-2.6", input: { type: "text", prompt: "A ballad" } }, "lyrics_required", "input.lyrics"],
     [{ ...vocal, parameters: { instrumental: true } }, "lyrics_not_allowed", "input.lyrics"],
     [{ ...vocal, parameters: { lyrics_optimizer: true } }, "lyrics_not_allowed", "input.lyrics"],
     [{ model: "music-2.6", input: { type: "text", prompt: "x" }, parameters: { instrumental: true, lyrics_optimizer: true } },
@@ -77,6 +76,11 @@ test("music requests enforce the lyrics, instrumental and lyrics optimizer rules
     assert.throws(() => validateProtocol("generate_music", request),
       error => error instanceof YirSDKValidationError && error.code === code && error.path === path, code);
   }
+  // Without a catalog the model may be a sound effect, so only the catalog requires a lyrics source for music.
+  const noLyricsSource = { model: "music-2.6", input: { type: "text", prompt: "A ballad" } };
+  validateProtocol("generate_music", noLyricsSource);
+  assert.throws(() => validateGeneration("generate_music", noLyricsSource),
+    error => error.code === "lyrics_required" && error.path === "input.lyrics");
   // The current catalog also checks parameter values.
   assert.throws(() => validateGeneration("generate_music", { ...vocal, parameters: { n: 2 } }),
     error => error.code === "parameter_value" && error.path === "parameters.n");
@@ -117,4 +121,67 @@ test("the Node transport retries music submits with the same key and body", asyn
   assert.equal(seen[0].url, "https://gateway.example/v1/music/generations");
   assert.deepEqual(seen.map(item => item.key), ["music-retry", "music-retry"]);
   assert.equal(seen[0].body, seen[1].body);
+});
+
+test("audio models follow their contract for n, duration and lyrics sources", () => {
+  const request = (model, parameters, lyrics) => ({
+    model, input: { type: "text", prompt: "Rain on a tin roof", ...(lyrics ? { lyrics } : {}) },
+    ...(parameters ? { parameters } : {}),
+  });
+  const valid = [
+    ["generate_music", request("suno/suno-v6", undefined, "[Verse]\nRain")],
+    ["generate_music", request("suno/suno-v6", { n: 2, lyrics_optimizer: true })],
+    ["generate_music", request("elevenlabs/music-v2", { duration: 120, instrumental: true })],
+    ["generate_music", request("elevenlabs/music-v2.5", { lyrics_optimizer: true })],
+    ["generate_music", request("minimax/music-3", undefined, "[Verse]\nRain")],
+    // The music methods also serve sound effects; no lyrics source is needed.
+    ["generate_music", request("elevenlabs/sound-effects-v2", { duration: 22 })],
+    ["generate_sound_effect", request("elevenlabs/sound-effects-v2")],
+  ];
+  for (const [operation, body] of valid) {
+    validateProtocol(operation, body);
+    validateGeneration(operation, body);
+  }
+  const invalid = [
+    [request("suno/suno-v6", { n: 1 }, "[Verse]"), "parameter_value", "parameters.n"],
+    [request("elevenlabs/music-v2", { duration: 45, instrumental: true }), "parameter_value", "parameters.duration"],
+    [request("elevenlabs/music-v2", { duration: 600, instrumental: true }), "parameter_range", "parameters.duration"],
+    [request("elevenlabs/music-v2"), "lyrics_required", "input.lyrics"],
+    [request("elevenlabs/sound-effects-v2", { duration: 23 }), "parameter_range", "parameters.duration"],
+    [request("elevenlabs/sound-effects-v2", { instrumental: true }), "parameter_unknown", "parameters.instrumental"],
+    [request("elevenlabs/sound-effects-v2", undefined, "[Verse]"), "lyrics_not_allowed", "input.lyrics"],
+    [request("minimax/music-3", { lyrics_optimizer: true }), "parameter_unknown", "parameters.lyrics_optimizer"],
+    [request("minimax/music-2.6", { duration: 60 }, "[Verse]"), "parameter_unknown", "parameters.duration"],
+  ];
+  for (const [body, code, path] of invalid) {
+    assert.throws(() => validateGeneration("generate_music", body),
+      error => error instanceof YirSDKValidationError && error.code === code && error.path === path, `${body.model} ${code}`);
+  }
+  // An explicit sound-effect operation rejects lyrics without a catalog.
+  assert.throws(() => validateProtocol("generate_sound_effect", request("elevenlabs/sound-effects-v2", undefined, "[Verse]")),
+    error => error.code === "lyrics_not_allowed");
+});
+
+test("sound effects quote through the music methods and Suno delivers two tracks", async () => {
+  const soundQuote = {
+    supply: { available: true, issues: [] }, object: "quote", model: "elevenlabs/sound-effects-v2",
+    operation: "generate_sound_effect", input_mode: "text", parameters: { n: 1, duration: 5 },
+    currency: "USD", expires_at: 1900000000,
+    primary: { kind: "fixed", amount: "0.01" }, official: { kind: "fixed", amount: "0.01" },
+  };
+  const sound = { model: "elevenlabs/sound-effects-v2", input: { type: "text", prompt: "Glass shattering" } };
+  for (const client of [createYirClient(async () => soundQuote), createBareClient(async () => soundQuote)]) {
+    assert.equal((await client.quoteMusic(sound)).operation, "generate_sound_effect");
+  }
+  const batchClient = createYirClient(async () => ({ object: "quote_batch", request_id: "req_sfx", data: [{ index: 0, quote: soundQuote }] }));
+  assert.equal((await batchClient.quoteBatch([{ operation: "generate_sound_effect", request: sound }])).data[0].quote.operation, "generate_sound_effect");
+  const job = {
+    id: "7201", object: "job", status: "succeeded", model: "suno/suno-v6", error: null, created_at: 1,
+    result: { availability: "available", files: [
+      { url: "https://example.com/a.mp3", media_type: "audio/mpeg", duration_ms: 120000, expires_at: 2 },
+      { url: "https://example.com/b.mp3", media_type: "audio/mpeg", duration_ms: 118000, expires_at: 2 },
+    ] },
+  };
+  const fetched = await createBareClient(async () => job).getJob("7201");
+  assert.deepEqual(fetched.result.files.map(file => file.duration_ms), [120000, 118000]);
 });
