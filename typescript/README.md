@@ -85,6 +85,22 @@ Submission and quote clients perform protocol checks and let the Gateway validat
 
 Failed submit calls expose `error.idempotencyKey`, including when the SDK generated the key. Recover with that key and the exact original request. Persist a caller-generated key before submission for crash recovery. `client.getBalance()` reads a wallet snapshot in USD decimal strings; available and total amounts can be negative after settlement. Reading balance is optional and does not authorize or gate submission.
 
+## Parameter controls
+
+`describeModelParameters(operation, inputMode, current, referenceRoles)` turns one operation contract into form fields: name, type, `control` hint, `required`, the current value (or the published default), `options`, numeric bounds and locales. `describeReferences(constraint, referenceRoles)` summarizes upload limits for one input mode: total and per-role minimum, maximum, count and `remaining`, which roles are required, `required_any` and `prompt_optional`. `defaultModelParameters(operation)` returns the published defaults for prefilling a form. All three are pure functions in `@yir-ai/sdk/frontend` and `@yir-ai/sdk/browser`; they read caller-supplied contracts (`client.getModelContracts()` or a `yir-models` snapshot) and never fetch, price or change the caller's values.
+
+Only conditions the contract declares are applied. Today that is `max_duration_by_reference_role`: while such a reference is present, `duration` reports the lower `maximum` with `maximum_reason: "reference_duration_limit"`, and discrete options above it are marked `disabled` rather than removed. Other combinations are still checked by the Gateway at quote or submit; read `error.details`. A field with `type_known: false` has a type newer than this SDK; render a generic input. Prices are not part of the contract: quote the request, or keep your own price table and show only the options it prices.
+
+```ts
+import { findModelOperationContract, describeModelParameters, describeReferences } from '@yir-ai/sdk/frontend';
+
+const operation = findModelOperationContract(catalog, 'google/nano-banana-pro', 'generate_image', 'image');
+if (operation) {
+  const fields = describeModelParameters(operation, 'image', form.parameters, form.references.map(r => r.role));
+  const slots = describeReferences(operation.input_constraints.image!, form.references.map(r => r.role));
+}
+```
+
 ## Files and Webhooks
 
 A media reference carries exactly one of `file_id` (a ready File) or `url` (a public HTTPS URL that Yir imports at submission, up to 100 MiB; data URLs are refused). Use Files for larger media or media that is not publicly reachable. `completeFile` may return `processing`; `uploadFile` waits for `ready` with a five-minute default timeout, and `waitForFileReady` can resume waiting for a saved file ID. A waiting timeout does not cancel server analysis. The AI SDK adapter uploads inline bytes and passes public HTTPS URL inputs to the Gateway for import. Mixed URL and inline inputs retain their order and reference roles; URLs are not fetched by the adapter.

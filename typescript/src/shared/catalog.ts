@@ -1,4 +1,4 @@
-import type { ModelContractCatalog, ModelOperationContract, ModelParameterContract, StaticModelContract } from "./model-contracts.js";
+import type { ModelContractCatalog, ModelInputConstraint, ModelOperationContract, ModelParameterContract, ModelParameterValue, StaticModelContract } from "./model-contracts.js";
 import type { ChannelParameters } from "./parameter-rules.js";
 
 export type { ModelContractCatalog, ModelOperationContract, StaticModelContract, ModelParameterContract, ModelInputConstraint } from "./model-contracts.js";
@@ -246,4 +246,121 @@ export function findModelOperationContract(
   return findModelContract(catalog, model)?.operations.find(
     item => item.operation === operation && item.input_modes.includes(inputMode),
   );
+}
+
+/** A contract parameter resolved for a form; the application owns labels, layout and control state. */
+export type ModelParameterField = {
+  readonly name: string;
+  readonly type: ModelParameterContract["type"];
+  readonly control: ModelParameterContract["control"];
+  readonly required: boolean;
+  /** The caller's current value, else the published default; undefined when neither exists. */
+  readonly value?: unknown;
+  readonly default?: ModelParameterValue;
+  readonly options?: readonly ModelParameterOption[];
+  readonly string_values?: readonly string[];
+  readonly minimum?: number;
+  /** Lowered when the current references cap the value; maximum_reason then names the limit. */
+  readonly maximum?: number;
+  readonly maximum_reason?: "reference_duration_limit";
+  readonly locales: ModelParameterContract["locales"];
+  /** False for a parameter type newer than this SDK; render a generic input and let the Gateway validate. */
+  readonly type_known: boolean;
+};
+
+export type ModelParameterOption = {
+  readonly value: ModelParameterValue;
+  readonly disabled?: "reference_duration_limit";
+};
+
+/** Published defaults for prefilling controls; omitted parameters already resolve to them on the Gateway. */
+export function defaultModelParameters(operation: ModelOperationContract): Record<string, ModelParameterValue> {
+  const defaults: Record<string, ModelParameterValue> = {};
+  for (const parameter of operation.parameters) {
+    if (parameter.default !== undefined) defaults[parameter.name] = parameter.default;
+  }
+  return defaults;
+}
+
+/**
+ * Describes each parameter for the given input mode, current values and reference roles.
+ * Only conditions the contract declares are applied; the current values are never changed.
+ */
+export function describeModelParameters(
+  operation: ModelOperationContract,
+  inputMode: string,
+  current: Readonly<Record<string, unknown>> = {},
+  referenceRoles: readonly string[] = [],
+): readonly ModelParameterField[] {
+  const durationLimits = Object.entries(operation.input_constraints[inputMode]?.max_duration_by_reference_role ?? {})
+    .filter(([role]) => referenceRoles.includes(role)).map(([, limit]) => limit);
+  const durationLimit = durationLimits.length ? Math.min(...durationLimits) : undefined;
+  return operation.parameters.map(parameter => {
+    const limit = parameter.name === "duration" && durationLimit !== undefined &&
+      (parameter.maximum === undefined || durationLimit < parameter.maximum) ? durationLimit : undefined;
+    const value = Object.hasOwn(current, parameter.name) ? current[parameter.name] : parameter.default;
+    return {
+      name: parameter.name,
+      type: parameter.type,
+      control: parameter.control,
+      required: parameter.required,
+      ...(value !== undefined ? { value } : {}),
+      ...(parameter.default !== undefined ? { default: parameter.default } : {}),
+      ...(parameter.values ? {
+        options: parameter.values.map(option => limit !== undefined && typeof option === "number" && option > limit
+          ? { value: option, disabled: "reference_duration_limit" as const } : { value: option }),
+      } : {}),
+      ...(parameter.string_values ? { string_values: parameter.string_values } : {}),
+      ...(parameter.minimum !== undefined ? { minimum: parameter.minimum } : {}),
+      ...(limit !== undefined ? { maximum: limit, maximum_reason: "reference_duration_limit" as const }
+        : parameter.maximum !== undefined ? { maximum: parameter.maximum } : {}),
+      locales: parameter.locales,
+      type_known: parameterTypeKnown(parameter),
+    };
+  });
+}
+
+export type ReferenceRoleSlot = {
+  readonly role: string;
+  readonly minimum: number;
+  readonly maximum: number;
+  readonly count: number;
+  /** Further references of this role that fit both the role and the total limit. */
+  readonly remaining: number;
+  readonly required: boolean;
+};
+
+export type ReferenceSlots = {
+  readonly minimum: number;
+  readonly maximum: number;
+  readonly count: number;
+  readonly remaining: number;
+  readonly prompt_optional: boolean;
+  readonly roles: readonly ReferenceRoleSlot[];
+  /** At least one of these roles must be present. */
+  readonly required_any?: readonly string[];
+};
+
+/** Summarizes reference limits for upload controls from one input mode's constraint and the current roles. */
+export function describeReferences(constraint: ModelInputConstraint, referenceRoles: readonly string[] = []): ReferenceSlots {
+  const remaining = Math.max(0, constraint.max_references - referenceRoles.length);
+  return {
+    minimum: constraint.min_references,
+    maximum: constraint.max_references,
+    count: referenceRoles.length,
+    remaining,
+    prompt_optional: constraint.prompt_optional === true,
+    roles: constraint.allowed_reference_roles.map(role => {
+      const range = constraint.reference_counts_by_role?.[role];
+      const minimum = range?.minimum ?? 0;
+      const maximum = range?.maximum ?? constraint.max_references;
+      const count = referenceRoles.filter(item => item === role).length;
+      return {
+        role, minimum, maximum, count,
+        remaining: Math.min(remaining, Math.max(0, maximum - count)),
+        required: minimum > 0 || (constraint.required_reference_roles ?? []).includes(role),
+      };
+    }),
+    ...(constraint.required_any_reference_roles?.length ? { required_any: constraint.required_any_reference_roles } : {}),
+  };
 }

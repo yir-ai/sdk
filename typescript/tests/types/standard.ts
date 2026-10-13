@@ -104,3 +104,14 @@ function checkAIProviderCompatibility(client: YirClient) {
   void [supportsFiles, supportsMasks];
 }
 void checkAIProviderCompatibility;
+
+import { defaultModelParameters, describeModelParameters, describeReferences, type ModelParameterField, type ReferenceSlots } from "../../src/browser/index.js";
+import type { ModelOperationContract } from "../../src/index.js";
+function describeForm(operation: ModelOperationContract) {
+  const defaults: Record<string, string | number | boolean> = defaultModelParameters(operation);
+  const fields: readonly ModelParameterField[] = describeModelParameters(operation, "image", defaults, ["reference_image"]);
+  const disabled: "reference_duration_limit" | undefined = fields[0]?.options?.[0]?.disabled;
+  const slots: ReferenceSlots | undefined = operation.input_constraints.image && describeReferences(operation.input_constraints.image);
+  void [disabled, slots];
+}
+void describeForm;

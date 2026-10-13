@@ -84,6 +84,22 @@ const client = createNodeYirClient();
 
 提交失败的错误携带本次 `idempotencyKey`，可用原请求体和该键恢复，不能换键重新生成。`client.getBalance()` 可按需读取余额，不是提交前置条件。新请求省略 `billing_mode`；`gateway_fee`、`supply_type`、`billed_by` 仅保留兼容，已标记弃用。
 
+## 参数控件
+
+`describeModelParameters(operation, inputMode, current, referenceRoles)` 把一个操作合同转成表单字段：名称、类型、`control` 控件提示、`required`、当前值（未设置时为公开默认值）、`options`、数值范围与多语言文案。`describeReferences(constraint, referenceRoles)` 汇总某个输入模式的上传限制：总数与每种角色的最少、最多、已有数量和 `remaining`，必填角色、`required_any` 与 `prompt_optional`。`defaultModelParameters(operation)` 返回用于预填表单的公开默认值。三者都是 `@yir-ai/sdk/frontend` 与 `@yir-ai/sdk/browser` 中的纯函数，只读调用方传入的合同（`client.getModelContracts()` 或 `yir-models` 快照），不联网、不计价，也不改动调用方的取值。
+
+只应用合同声明的条件。目前是 `max_duration_by_reference_role`：存在该角色参考素材时，`duration` 返回更低的 `maximum` 并带 `maximum_reason: "reference_duration_limit"`，超出的离散选项标记 `disabled` 而不删除。其他组合仍由 Gateway 在报价或提交时校验，读取 `error.details`。`type_known: false` 表示类型比本 SDK 新，渲染通用输入框即可。合同不含价格：请对请求报价，或使用自己的价格表，只展示已定价的选项。
+
+```ts
+import { findModelOperationContract, describeModelParameters, describeReferences } from '@yir-ai/sdk/frontend';
+
+const operation = findModelOperationContract(catalog, 'google/nano-banana-pro', 'generate_image', 'image');
+if (operation) {
+  const fields = describeModelParameters(operation, 'image', form.parameters, form.references.map(r => r.role));
+  const slots = describeReferences(operation.input_constraints.image!, form.references.map(r => r.role));
+}
+```
+
 ## 文件与 Webhook
 
 媒体引用二选一：`file_id`（ready 的文件）或 `url`（公开 HTTPS 地址，Yir 在提交时导入，最大 100 MiB，拒绝 data URL）。更大或不可公开访问的媒体使用文件上传。`completeFile` 可能返回 `processing`，`uploadFile` 默认最多等待五分钟到 `ready`，也可用 `waitForFileReady` 继续等待已保存的文件 ID。等待超时不会取消服务端分析。AI SDK 适配器上传内联字节，并将公开 HTTPS URL 交给 Gateway 导入；混合 URL 与字节输入时保留顺序和引用角色，适配器不自行下载 URL。
