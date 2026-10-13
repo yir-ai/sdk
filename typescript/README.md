@@ -145,6 +145,26 @@ Image models expose `supportsFileInputs` from the caller-provided model catalog 
 
 The adapter does not automatically split `n` into separately billed Jobs. Video operation handles, Yir routing options, budgets and billing metadata are provider-specific. Basic generation calls are portable, but these fields need explicit migration when switching providers.
 
+## Upgrading to 0.11.0
+
+0.11.0 is a minor release with incompatible changes. The Gateway features it relies on are already live.
+
+Incompatible changes:
+
+- Quote and submit clients no longer reject requests against a supplied catalog snapshot. They check the protocol skeleton and let the Gateway validate model parameters, so an invalid parameter now rejects with `YirAPIError` `YIR_INVALID_REQUEST` (fields in `error.details`) instead of `YirSDKValidationError`. Call `validateGeneration(operation, request, catalog)` when you want strict local checks.
+- Vercel adapter: `seed` and video `fps` are forwarded even when the catalog lacks them, instead of being dropped with an `unsupported` warning. Image `size` and video pixel `resolution` map to `parameters.size` instead of being unsupported. The Gateway rejects values the model or channel does not declare.
+- `StandardVideoImageInput.prompt` is optional: first-frame video may omit text where the model declares `prompt_optional`.
+- A legacy `billing_mode: "actual"` request no longer requires `routing.only`.
+
+Additions:
+
+- The built-in transport retries network failures and HTTP 502/503/504 up to three times with the same body and idempotency key. A failed submit exposes `error.idempotencyKey` (`YirSubmissionError`), and `waitForJob` keeps waiting for an accepted Job through Gateway outages.
+- `client.getBalance()`, and `createAccountClient` for the Account API.
+- `YirPublicError.provider_error`, the `YIR_INPUT_REJECTED` code and `Job.billing.status` (`pending` or `settled`).
+- Model contracts carry `string_values` (such as Seedance 2.5 duration `"auto"`, echoed in `QuoteParameters.duration`), `prompt_optional` and optional native `fps`. Market specifications with no listed channels are kept.
+- Form helpers `defaultModelParameters`, `describeModelParameters` and `describeReferences`; see [Parameter controls](#parameter-controls).
+- Vercel adapter: `provider.image()` and `provider.video()` aliases, `supportsFileInputs`, public HTTPS URL inputs, preserved first and last frames, webhook factories, the call-level `Idempotency-Key` header, adaptive ratio mapping, and `return_last_frame` outputs in `providerMetadata.yir.additionalFiles` with result warnings.
+
 ## 0.10.2 changes
 
 0.10.2 is a compatible release:
@@ -171,7 +191,7 @@ The adapter does not automatically split `n` into separately billed Jobs. Video 
 - Without a catalog, a quote may echo the canonical `creator/model` ID for an alias you sent; any other different model fails validation. With a catalog the SDK compares the resolved IDs. The Vercel video adapter no longer requires `job.model` to equal the alias it was created with.
 - `YirPublicError.details` (`YirErrorDetail[]`) locates invalid fields of `YIR_INVALID_REQUEST`: `field`, a stable `reason` such as `unsupported` or `required`, and `allowed` contract values.
 - `StandardMediaSource` and `StandardReference` accept `url` as well as `file_id`, as the API always did; `buildImageGenerationRequest` accepts `image: { url }`.
-- In 0.10.0 the Vercel adapter dropped `seed` and video `fps` absent from a supplied catalog. Current main forwards both and leaves model validation to the Gateway.
+- In 0.10.0 the Vercel adapter dropped `seed` and video `fps` absent from a supplied catalog. 0.11.0 forwards both and leaves model validation to the Gateway.
 - Veo 3.0 (`google/veo-3.0-generate-001`) and the Gemini Omni preview (`google/gemini-omni-video`) are retired: they are gone from the API catalog and from the reviewed snapshot that earlier versions bundled. Requests for them return `YIR_INVALID_REQUEST` with `details[0].reason` `retired` and the replacement model in `allowed`.
 - Gateway changes released together with this SDK: `parameters` is required; top-level `resolution`, `aspect_ratio`, `n`, `duration` and `generate_audio`, `input.image`, and case-variant `input.type` or reference roles are rejected; `resolution` and `aspect_ratio` must use a model contract value (case-insensitive), so `1024`, `2048x2048` or `16x9` are rejected. Model aliases are reduced to the short name, the vendor model ID and, where one exists, the Vercel AI Gateway ID; prefer canonical IDs such as `bytedance/seedance-2.0`.
 

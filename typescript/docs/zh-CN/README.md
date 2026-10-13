@@ -144,6 +144,26 @@ if (operation) {
 
 适配器不会把 `n` 自动拆成多笔收费任务。视频 operation、Yir 路由、预算与账单元数据属于 Provider 专有能力；切换 Provider 时须显式迁移这些字段。
 
+## 升级到 0.11.0
+
+0.11.0 是包含不兼容变化的 minor 版本，所依赖的 Gateway 功能均已上线。
+
+不兼容变化：
+
+- 报价与提交客户端不再按传入的目录快照拒绝请求，只校验协议骨架，模型参数交给 Gateway 校验。参数非法时改为 `YirAPIError` `YIR_INVALID_REQUEST`（字段见 `error.details`），不再是 `YirSDKValidationError`。需要本地严格校验时显式调用 `validateGeneration(operation, request, catalog)`。
+- Vercel 适配器：`seed` 与视频 `fps` 即使目录未声明也会透传，不再丢弃并返回 `unsupported` 警告；图片 `size` 与视频像素 `resolution` 映射为 `parameters.size`，不再视为不支持。模型或渠道未声明的取值由 Gateway 拒绝。
+- `StandardVideoImageInput.prompt` 改为可选：模型声明 `prompt_optional` 时，首帧视频可以不带文字。
+- 旧的 `billing_mode: "actual"` 请求不再要求 `routing.only`。
+
+新增：
+
+- 内置传输对网络错误和 HTTP 502/503/504 最多重试三次，保持原请求体与幂等键。提交失败时可读 `error.idempotencyKey`（`YirSubmissionError`）；`waitForJob` 在 Gateway 短暂不可用时继续等待已受理的 Job。
+- `client.getBalance()`，以及用于 Account API 的 `createAccountClient`。
+- `YirPublicError.provider_error`、错误码 `YIR_INPUT_REJECTED` 与 `Job.billing.status`（`pending` 或 `settled`）。
+- 模型合同新增 `string_values`（如 Seedance 2.5 时长 `"auto"`，回显在 `QuoteParameters.duration`）、`prompt_optional` 与可选的原生 `fps`；没有在售渠道的市场规格予以保留。
+- 表单辅助函数 `defaultModelParameters`、`describeModelParameters`、`describeReferences`，见[参数控件](#参数控件)。
+- Vercel 适配器：`provider.image()`、`provider.video()` 别名，`supportsFileInputs`，公网 HTTPS URL 输入，保留首尾帧，Webhook 工厂，调用级 `Idempotency-Key` 头，自适应比例映射，`return_last_frame` 额外输出放在 `providerMetadata.yir.additionalFiles` 并附结果警告。
+
 ## 0.10.2 变化
 
 0.10.2 为兼容版本：
@@ -170,7 +190,7 @@ if (operation) {
 - 未配置目录时，报价可能把你传入的别名回显为 `creator/model` 形式的规范 ID，其他不同的模型会校验失败；配置目录时按解析后的 ID 比对。Vercel 视频适配器不再要求 `job.model` 等于创建时使用的别名。
 - `YirPublicError.details`（`YirErrorDetail[]`）定位 `YIR_INVALID_REQUEST` 的无效字段：`field`、稳定的 `reason`（如 `unsupported`、`required`）以及合同允许值 `allowed`。
 - `StandardMediaSource` 与 `StandardReference` 除 `file_id` 外也接受 `url`，与 API 一致；`buildImageGenerationRequest` 接受 `image: { url }`。
-- 0.10.0 的 Vercel 适配器曾按目录丢弃未声明的 `seed`、视频 `fps`；当前 main 已改为透传，由 Gateway 判断。
+- 0.10.0 的 Vercel 适配器曾按目录丢弃未声明的 `seed`、视频 `fps`；0.11.0 已改为透传，由 Gateway 判断。
 - Veo 3.0（`google/veo-3.0-generate-001`）与 Gemini Omni 预览版（`google/gemini-omni-video`）已下架：API 目录和早期版本内置的审阅快照中都已移除。请求它们会返回 `YIR_INVALID_REQUEST`，`details[0].reason` 为 `retired`，`allowed` 给出替代模型。
 - 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
 
