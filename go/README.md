@@ -32,7 +32,7 @@ if err != nil {
 _ = client
 ```
 
-Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected.
+Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected. If you publish an app that others deploy with their own or their users' keys, set `ClientOptions.ReferralCode` to your Yir referral code; it is sent as `Yir-Referral`, and Jobs count toward your referral rebate once Yir has enabled the code for partner attribution. Otherwise the header is ignored.
 
 ## 0.11.2 changes
 

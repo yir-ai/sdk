@@ -32,7 +32,7 @@ if err != nil {
 _ = client
 ```
 
-密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。
+密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。如果你发布的应用由他人用自己或其用户的 Key 部署，把 `ClientOptions.ReferralCode` 设为你的 Yir 推广码；它作为 `Yir-Referral` 发送，Yir 为该码开通合作归因后，这些 Job 计入你的邀请返利，否则该请求头被忽略。
 
 ## 0.11.2 变化
 

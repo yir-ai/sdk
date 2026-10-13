@@ -79,7 +79,7 @@
         "summary": "Submit an image job",
         "tags": ["Images"],
         "security": [{ "BearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }, { "$ref": "#/components/parameters/YirReferral" }],
         "requestBody": {
           "required": true,
           "content": {
@@ -169,7 +169,7 @@
         "summary": "Submit a video job",
         "tags": ["Videos"],
         "security": [{ "BearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }, { "$ref": "#/components/parameters/YirReferral" }],
         "requestBody": {
           "required": true,
           "content": {
@@ -242,7 +242,7 @@
         "description": "Generates one song or instrumental track as an audio file. The model decides the track length, reported on the result file as duration_ms; prompts do not guarantee a duration or tempo.",
         "tags": ["Music"],
         "security": [{ "BearerAuth": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }, { "$ref": "#/components/parameters/YirReferral" }],
         "requestBody": {
           "required": true,
           "content": {
@@ -521,6 +521,13 @@
         "required": true,
         "description": "Required. Missing or blank keys are rejected with a non-retryable 400 before any resource is created or anything is charged. Replaying the same key with an identical standardized request returns the original result; reusing a key with a changed request is rejected. Generation SDK methods accept an omitted key and generate a random key per call; they do not automatically retry Submit. Persist one key per logical request before submitting and reuse it with the original request when the outcome is unknown. Separate SDK calls without an explicit key can create separate billable Jobs. Server-side fallback within an accepted Job is independent of this header.",
         "schema": { "type": "string", "minLength": 1, "maxLength": 200 }
+      },
+      "YirReferral": {
+        "name": "Yir-Referral",
+        "in": "header",
+        "required": false,
+        "description": "Optional referral code of the partner who deployed the app sending this request, for example a self-hosted open-source studio. Jobs created with a code Yir has enabled for partner attribution count toward that partner's referral rebate instead of the account's sign-up referrer; it does not change the price, routing or idempotency of the Job. Unknown, ineligible or suspended codes, and a partner's own API key, are ignored and never fail the request.",
+        "schema": { "type": "string", "minLength": 1, "maxLength": 20 }
       },
       "JobID": {
         "name": "id",

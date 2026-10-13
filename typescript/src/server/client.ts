@@ -676,6 +676,12 @@ export type CreateNodeYirClientOptions = {
   readonly fetch?: typeof globalThis.fetch;
   readonly headers?: Readonly<Record<string, string>>;
   /**
+   * Referral code of the partner who deployed this app, sent as `Yir-Referral`.
+   * Jobs count toward that partner's referral rebate only when Yir has enabled
+   * the code for partner attribution; otherwise it is ignored and never fails a request.
+   */
+  readonly referralCode?: string;
+  /**
    * Per-request limit in milliseconds for Gateway calls, matching the Go SDK's
    * 30-second default. 0 or Infinity disables it. A timed-out submit has an
    * unknown outcome: recover with the same request and idempotency key.
@@ -716,6 +722,10 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
   if (typeof fetchFn !== "function") {
     throw new Error("fetch_unavailable");
   }
+  const referralCode = options.referralCode?.trim();
+  if (referralCode && /[\r\n]/.test(referralCode)) {
+    throw new Error("referral_code_invalid");
+  }
   const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   if (timeoutMs !== Infinity && !(Number.isInteger(timeoutMs) && timeoutMs >= 0 && timeoutMs <= 2147483647)) {
     throw new Error("timeout_invalid");
@@ -729,6 +739,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       Authorization: `Bearer ${apiKey}`,
       "User-Agent": userAgent,
       ...(request.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(referralCode ? { "Yir-Referral": referralCode } : {}),
       ...options.headers,
       ...request.headers,
     };

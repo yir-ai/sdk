@@ -59,3 +59,27 @@ func TestUserAgentReportsVersion(t *testing.T) {
 		t.Fatalf("User-Agent = %q", got)
 	}
 }
+
+func TestReferralCodeHeader(t *testing.T) {
+	var got []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = append(got, r.Header.Get("Yir-Referral"))
+		io.WriteString(w, `{"id":"7","status":"running","error":null}`)
+	}))
+	defer server.Close()
+	for _, code := range []string{" studio1 ", ""} {
+		client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL, ReferralCode: code})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := client.GetJobStatus(context.Background(), "7"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(got) != 2 || got[0] != "studio1" || got[1] != "" {
+		t.Fatalf("Yir-Referral = %q", got)
+	}
+	if _, err := NewClient("test-key", ClientOptions{ReferralCode: "a\r\nb"}); err == nil {
+		t.Fatal("referral code with a line break must be rejected")
+	}
+}

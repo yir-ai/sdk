@@ -81,6 +81,19 @@ test("createNodeHttpTransport injects Authorization, User-Agent, and standard he
   assert.equal(req.init.body, JSON.stringify({ prompt: "test prompt" }));
 });
 
+test("createNodeHttpTransport sends a configured referral code as Yir-Referral", async () => {
+  const recorded = [];
+  const mockFetch = async (url, init) => {
+    recorded.push(init.headers);
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  await createNodeHttpTransport({ apiKey: "k", fetch: mockFetch, referralCode: " studio1 " })({ method: "GET", path: "/v1/jobs/1" });
+  await createNodeHttpTransport({ apiKey: "k", fetch: mockFetch, referralCode: "  " })({ method: "GET", path: "/v1/jobs/1" });
+  assert.equal(recorded[0]["Yir-Referral"], "studio1");
+  assert.equal("Yir-Referral" in recorded[1], false);
+  assert.throws(() => createNodeHttpTransport({ apiKey: "k", fetch: mockFetch, referralCode: "a\r\nb" }), /referral_code_invalid/);
+});
+
 test("createNodeHttpTransport supports custom baseURL and custom userAgent", async () => {
   const recorded = [];
   const mockFetch = async (url, init) => {

@@ -24,11 +24,16 @@ type ClientOptions struct {
 	BaseURL        string
 	HTTPClient     *http.Client
 	ModelContracts *ModelContractCatalog
+	// ReferralCode is the referral code of the partner who deployed this app, sent as
+	// Yir-Referral. Jobs count toward that partner's referral rebate only when Yir has
+	// enabled the code for partner attribution; otherwise it is ignored and never fails a request.
+	ReferralCode string
 }
 
 type Client struct {
 	baseURL        string
 	apiKey         string
+	referralCode   string
 	httpClient     *http.Client
 	modelContracts *ModelContractCatalog
 }
@@ -38,6 +43,10 @@ func NewClient(apiKey string, options ClientOptions) (*Client, error) {
 	apiKey = strings.TrimSpace(apiKey)
 	if apiKey == "" || strings.ContainsAny(apiKey, "\r\n") {
 		return nil, errors.New("api_key_invalid")
+	}
+	referralCode := strings.TrimSpace(options.ReferralCode)
+	if strings.ContainsAny(referralCode, "\r\n") {
+		return nil, errors.New("referral_code_invalid")
 	}
 	baseURL := options.BaseURL
 	if baseURL == "" {
@@ -62,7 +71,7 @@ func NewClient(apiKey string, options ClientOptions) (*Client, error) {
 		copy.Models = cloneStaticModelContracts(copy.Models)
 		catalog = &copy
 	}
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, httpClient: &httpClient, modelContracts: catalog}, nil
+	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, referralCode: referralCode, httpClient: &httpClient, modelContracts: catalog}, nil
 }
 
 type SubmitRequest struct {
@@ -506,6 +515,9 @@ func (c *Client) sendOnce(ctx context.Context, method, path, key string, data []
 	}
 	if key != "" {
 		request.Header.Set("Idempotency-Key", key)
+	}
+	if c.referralCode != "" {
+		request.Header.Set("Yir-Referral", c.referralCode)
 	}
 	result, err := c.httpClient.Do(request)
 	if err != nil {

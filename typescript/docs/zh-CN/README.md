@@ -53,7 +53,7 @@ import type { Job } from '@yir-ai/sdk/shared';
 const client = createNodeYirClient();
 ```
 
-也可传入 `{ apiKey, baseURL, fetch, headers, userAgent, timeoutMs }`。默认地址为 `https://gateway.yir.ai`。`timeoutMs` 限制每个 Gateway 请求（包括读取响应体）的时长，默认为 `DEFAULT_REQUEST_TIMEOUT_MS`（30 秒，与 Go SDK 一致）；设为 `0` 或 `Infinity` 时不限制，超时以 `TimeoutError` 拒绝。提交超时或结果未知时，须用同一请求和幂等键恢复。`createYirClient(transport)` 保留显式传输合同：注入的传输负责认证、HTTP 序列化、响应解码和错误处理，不是浏览器密钥客户端。要支持 `getFileContentURL`，自定义传输须遵守 `redirect: "manual"`：遇到 3xx 时不跟随，返回 `{ status, location }`；否则该调用会安全失败。
+也可传入 `{ apiKey, baseURL, fetch, headers, userAgent, timeoutMs, referralCode }`。默认地址为 `https://gateway.yir.ai`。`timeoutMs` 限制每个 Gateway 请求（包括读取响应体）的时长，默认为 `DEFAULT_REQUEST_TIMEOUT_MS`（30 秒，与 Go SDK 一致）；设为 `0` 或 `Infinity` 时不限制，超时以 `TimeoutError` 拒绝。提交超时或结果未知时，须用同一请求和幂等键恢复。如果你发布的应用由他人用自己或其用户的 Key 部署，`referralCode` 会把你的 Yir 推广码作为 `Yir-Referral` 发送；Yir 为该码开通合作归因后，这些 Job 计入你的邀请返利，否则该请求头被忽略。`createYirClient(transport)` 保留显式传输合同：注入的传输负责认证、HTTP 序列化、响应解码和错误处理，不是浏览器密钥客户端。要支持 `getFileContentURL`，自定义传输须遵守 `redirect: "manual"`：遇到 3xx 时不跟随，返回 `{ status, location }`；否则该调用会安全失败。
 
 ## 报价、授权、持久化、提交
 
