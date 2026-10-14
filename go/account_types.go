@@ -405,6 +405,7 @@ type AccountLogInputReferenceView struct {
 
 type AccountInputSummary struct {
 	ExplicitParameters *[]string                            `json:"explicit_parameters,omitempty"`
+	IgnoredParameters  *[]string                            `json:"ignored_parameters,omitempty"`
 	ReferenceCount     *int64                               `json:"reference_count,omitempty"`
 	Specification      *AccountCanonicalTaskSpecificationV2 `json:"specification,omitempty"`
 }

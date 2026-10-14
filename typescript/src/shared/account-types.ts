@@ -403,6 +403,7 @@ export type AccountLogInputReferenceView = {
 
 export type AccountInputSummary = {
   "explicit_parameters"?: Array<string>;
+  "ignored_parameters"?: Array<string>;
   "reference_count"?: number;
   "specification"?: AccountCanonicalTaskSpecificationV2;
 };

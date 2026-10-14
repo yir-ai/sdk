@@ -2329,6 +2329,13 @@
               "type": "string"
             }
           },
+          "ignored_parameters": {
+            "description": "IgnoredParameters 记录过渡期按旧值放行、已改写为合同值的参数名，查询 Job 时投影为参数通知。",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "reference_count": {
             "type": "integer"
           },
