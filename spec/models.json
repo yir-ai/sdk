@@ -8307,6 +8307,198 @@
           ]
         }
       ]
+    },
+    {
+      "id": "suno/suno-v6-mini",
+      "aliases": [
+        "suno-v6-mini"
+      ],
+      "locales": {
+        "en": {
+          "label": "Suno v6 Mini",
+          "description": "Suno's efficient music model that makes two vocal songs or instrumentals per request. Suno has no official API; Yir accesses it unofficially through third-party channels"
+        },
+        "zh-CN": {
+          "label": "Suno v6 Mini",
+          "description": "Suno 高效版音乐生成模型，每次生成两首带人声歌曲或纯音乐。Suno 没有官方 API，Yir 经第三方渠道非官方接入"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "instrumental",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Instrumental",
+                  "description": "Generate music without vocals. input.lyrics and lyrics_optimizer must be omitted."
+                },
+                "zh-CN": {
+                  "label": "纯音乐",
+                  "description": "生成无人声的纯音乐；不能同时传 input.lyrics 或 lyrics_optimizer。"
+                }
+              }
+            },
+            {
+              "name": "lyrics_optimizer",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Auto lyrics",
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; some models add a lyrics-writing charge (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "自动写词",
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，部分模型另收写词费用（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                2
+              ],
+              "default": 2,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "suno/suno-v6-wild",
+      "aliases": [
+        "suno-v6-wild"
+      ],
+      "locales": {
+        "en": {
+          "label": "Suno v6 Wild",
+          "description": "Suno's experimental music model that makes two vocal songs or instrumentals per request. Suno has no official API; Yir accesses it unofficially through third-party channels"
+        },
+        "zh-CN": {
+          "label": "Suno v6 Wild",
+          "description": "Suno 偏实验风格的音乐生成模型，每次生成两首带人声歌曲或纯音乐。Suno 没有官方 API，Yir 经第三方渠道非官方接入"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "instrumental",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Instrumental",
+                  "description": "Generate music without vocals. input.lyrics and lyrics_optimizer must be omitted."
+                },
+                "zh-CN": {
+                  "label": "纯音乐",
+                  "description": "生成无人声的纯音乐；不能同时传 input.lyrics 或 lyrics_optimizer。"
+                }
+              }
+            },
+            {
+              "name": "lyrics_optimizer",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Auto lyrics",
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; some models add a lyrics-writing charge (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "自动写词",
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，部分模型另收写词费用（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                2
+              ],
+              "default": 2,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
