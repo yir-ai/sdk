@@ -2617,13 +2617,9 @@
               "name": "duration",
               "type": "integer",
               "required": false,
-              "values": [
-                5,
-                10
-              ],
               "default": 5,
-              "minimum": 5,
-              "maximum": 10,
+              "minimum": 4,
+              "maximum": 15,
               "control": "number",
               "locales": {
                 "en": {
