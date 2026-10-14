@@ -32,6 +32,25 @@ export type ModelInputConstraint = {
   readonly max_duration_by_reference_role?: Readonly<Record<string, number>>;
   readonly reference_counts_by_role?: Readonly<Record<string, { readonly minimum: number; readonly maximum: number }>>;
   readonly required_any_reference_roles?: readonly string[];
+  /** Present when reference_image photos may be grouped into named characters with `subject`. */
+  readonly subject_references?: SubjectReferenceLimits;
+};
+
+/**
+ * Photo character reference limits. Requests whose references carry `subject` use these limits;
+ * non-empty value lists replace the operation parameter values for that mode.
+ */
+export type SubjectReferenceLimits = {
+  readonly min_images_per_subject: number;
+  readonly max_images_per_subject: number;
+  readonly max_subjects: number;
+  readonly resolutions?: readonly string[];
+  readonly aspect_ratios?: readonly string[];
+  readonly default_aspect_ratio?: string;
+  readonly allowed_durations?: readonly number[];
+  readonly min_duration_seconds?: number;
+  readonly max_duration_seconds?: number;
+  readonly allowed_audios?: readonly boolean[];
 };
 
 export type ModelOperationContract = {

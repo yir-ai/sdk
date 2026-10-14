@@ -96,3 +96,39 @@ func TestH3ReferenceRoleContract(t *testing.T) {
 		}
 	}
 }
+
+func TestReferenceSubjectContract(t *testing.T) {
+	photo := func(subject string, i int) Reference {
+		return Reference{Role: "reference_image", URL: fmt.Sprintf("https://example.com/%s-%d.png", subject, i), Subject: subject}
+	}
+	subjectRequest := func(parameters map[string]any, references ...Reference) GenerationRequest {
+		return GenerationRequest{Model: "klingai/kling-3.0", Input: GenerationInput{Type: "reference", Prompt: "@hero meets @friend", References: references}, Parameters: parameters}
+	}
+	valid := subjectRequest(map[string]any{"resolution": "1080p", "aspect_ratio": "9:16", "duration": 10, "generate_audio": true},
+		photo("hero", 1), photo("hero", 2), photo("friend", 1), photo("friend", 2), photo("friend", 3))
+	if err := ValidateGeneration("generate_video", valid); err != nil {
+		t.Fatalf("subject request rejected: %v", err)
+	}
+	// Omitted aspect_ratio resolves to the subject-mode default instead of motion's auto.
+	if err := ValidateGeneration("generate_video", subjectRequest(map[string]any{}, photo("hero", 1), photo("hero", 2))); err != nil {
+		t.Fatalf("subject defaults rejected: %v", err)
+	}
+	for name, request := range map[string]GenerationRequest{
+		"one photo":        subjectRequest(map[string]any{}, photo("hero", 1)),
+		"five photos":      subjectRequest(map[string]any{}, photo("a", 1), photo("a", 2), photo("a", 3), photo("a", 4), photo("a", 5)),
+		"four subjects":    subjectRequest(map[string]any{}, photo("a", 1), photo("a", 2), photo("b", 1), photo("b", 2), photo("c", 1), photo("c", 2), photo("d", 1), photo("d", 2)),
+		"motion aspect":    subjectRequest(map[string]any{"aspect_ratio": "auto"}, photo("hero", 1), photo("hero", 2)),
+		"twenty seconds":   subjectRequest(map[string]any{"duration": 20}, photo("hero", 1), photo("hero", 2)),
+		"invalid name":     subjectRequest(map[string]any{}, photo("1hero", 1), photo("1hero", 2)),
+		"mixed unlabelled": subjectRequest(map[string]any{}, photo("hero", 1), photo("hero", 2), Reference{Role: "reference_image", URL: "https://example.com/x.png"}),
+		"no subject model": {Model: "bytedance/seedance-2.0", Input: GenerationInput{Type: "reference", Prompt: "fixture", References: []Reference{photo("hero", 1), photo("hero", 2)}}},
+	} {
+		if err := ValidateGeneration("generate_video", request); err == nil {
+			t.Fatalf("%s accepted", name)
+		}
+	}
+	encoded, err := json.Marshal(photo("hero", 1))
+	if err != nil || string(encoded) != `{"role":"reference_image","url":"https://example.com/hero-1.png","subject":"hero"}` {
+		t.Fatalf("subject wire shape: %s %v", encoded, err)
+	}
+}

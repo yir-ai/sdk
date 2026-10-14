@@ -42,3 +42,27 @@ test("duplicate references fail before transport", () => {
   assert.throws(() => validateGeneration("generate_video", { model: "bytedance/seedance-2.0", input: { type: "reference", prompt: "fixture", references: [ref("reference_image"), ref("reference_image")] }, parameters: {} }), error => error.code === "duplicate_reference");
 });
 
+
+test("Kling 3.0 subject photos use the declared subject limits and parameter values", () => {
+  const photo = (subject, i) => ({ role: "reference_image", url: `https://example.com/${subject}-${i}.png`, subject });
+  const request = (parameters, ...references) => ({ model: "klingai/kling-3.0", input: { type: "reference", prompt: "@hero meets @friend", references }, parameters });
+  const contract = getModelOperationContract("klingai/kling-3.0", "generate_video", "reference");
+  assert.equal(contract.input_constraints.reference.subject_references.max_subjects, 3);
+  assert.doesNotThrow(() => validateGeneration("generate_video", request({ resolution: "1080p", aspect_ratio: "9:16", duration: 10, generate_audio: true },
+    photo("hero", 1), photo("hero", 2), photo("friend", 1), photo("friend", 2), photo("friend", 3))));
+  assert.doesNotThrow(() => validateGeneration("generate_video", request({}, photo("hero", 1), photo("hero", 2))));
+  for (const [name, body] of Object.entries({
+    onePhoto: request({}, photo("hero", 1)),
+    fivePhotos: request({}, ...[1, 2, 3, 4, 5].map(i => photo("a", i))),
+    fourSubjects: request({}, ..."abcd".split("").flatMap(s => [photo(s, 1), photo(s, 2)])),
+    motionAspect: request({ aspect_ratio: "auto" }, photo("hero", 1), photo("hero", 2)),
+    twentySeconds: request({ duration: 20 }, photo("hero", 1), photo("hero", 2)),
+    invalidName: request({}, photo("1hero", 1), photo("1hero", 2)),
+    mixed: request({}, photo("hero", 1), photo("hero", 2), { role: "reference_image", url: "https://example.com/x.png" }),
+    otherModel: { model: "bytedance/seedance-2.0", input: { type: "reference", prompt: "x", references: [photo("hero", 1), photo("hero", 2)] }, parameters: {} },
+  })) {
+    assert.throws(() => validateGeneration("generate_video", body), undefined, name);
+  }
+  // Motion control is unchanged: one image plus one video at auto aspect ratio.
+  assert.doesNotThrow(() => validateGeneration("generate_video", request({}, ref("reference_image", 1), ref("reference_video", 2))));
+});

@@ -33,6 +33,7 @@ type ModelInputConstraint struct {
 	MaxDurationByReferenceRole map[string]int                 `json:"max_duration_by_reference_role,omitempty"`
 	ReferenceCountsByRole      map[string]ReferenceCountRange `json:"reference_counts_by_role,omitempty"`
 	RequiredAnyReferenceRoles  []string                       `json:"required_any_reference_roles,omitempty"`
+	SubjectReferences          *SubjectReferenceLimits        `json:"subject_references,omitempty"`
 }
 
 // localTypeKnown reports whether this SDK can check values of the parameter's type;
@@ -127,6 +128,7 @@ func cloneModelOperationContract(source ModelOperationContract) ModelOperationCo
 		constraint.ReferenceCountsByRole = maps.Clone(constraint.ReferenceCountsByRole)
 		constraint.RequiredAnyReferenceRoles = append([]string(nil), constraint.RequiredAnyReferenceRoles...)
 		constraint.MaxDurationByReferenceRole = cloneStringIntMap(constraint.MaxDurationByReferenceRole)
+		constraint.SubjectReferences = cloneSubjectReferenceLimits(constraint.SubjectReferences)
 		result.InputConstraints[inputMode] = constraint
 	}
 	result.Parameters = make([]ModelParameterContract, len(source.Parameters))

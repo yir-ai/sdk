@@ -153,6 +153,12 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
             integerRange(count.minimum, count.maximum);
           }
         }
+        if (constraint.subject_references !== undefined) {
+          const subjects = object(constraint.subject_references);
+          for (const key of ["min_images_per_subject", "max_images_per_subject", "max_subjects"]) natural(subjects[key]);
+          integerRange(subjects.min_images_per_subject, subjects.max_images_per_subject);
+          if (!allowed.includes("reference_image")) invalid();
+        }
         if (constraint.max_duration_by_reference_role !== undefined) {
           for (const [role, max] of Object.entries(object(constraint.max_duration_by_reference_role))) {
             oneOf(role, allowed);

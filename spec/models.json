@@ -5450,7 +5450,35 @@
               "required_reference_roles": [
                 "reference_image",
                 "reference_video"
-              ]
+              ],
+              "subject_references": {
+                "min_images_per_subject": 2,
+                "max_images_per_subject": 4,
+                "max_subjects": 3,
+                "resolutions": [
+                  "720p",
+                  "1080p",
+                  "4K"
+                ],
+                "aspect_ratios": [
+                  "16:9",
+                  "9:16",
+                  "1:1"
+                ],
+                "default_aspect_ratio": "16:9",
+                "allowed_durations": [
+                  3,
+                  5,
+                  10,
+                  15
+                ],
+                "min_duration_seconds": 3,
+                "max_duration_seconds": 15,
+                "allowed_audios": [
+                  false,
+                  true
+                ]
+              }
             }
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",

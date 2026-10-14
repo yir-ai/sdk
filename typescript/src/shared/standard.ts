@@ -1,5 +1,5 @@
 import { findModelOperationContract, parameterTypeKnown, type ModelContractCatalog } from "./catalog.js";
-import type { ModelParameterContract, ReferenceRole } from "./model-contracts.js";
+import type { ModelOperationContract, ModelParameterContract, ReferenceRole } from "./model-contracts.js";
 
 /**
  * Channel ordering for a request; the Gateway validates the value.
@@ -55,6 +55,11 @@ export type StandardImageInput = {
 
 export type StandardReference = {
   readonly role: ReferenceRole;
+  /**
+   * Groups reference_image photos into one named character on models whose input constraint declares
+   * `subject_references`; write `@<subject>` in the prompt. When any reference has a subject, all must.
+   */
+  readonly subject?: string;
 } & StandardMediaSource;
 
 export type StandardImageGenerationRequest = {
@@ -214,10 +219,12 @@ export function validateModelParameters(
   inputMode: string,
   parameters: unknown,
   catalog: ModelContractCatalog,
+  subjectReferences = false,
 ): void {
   if (!catalog) throw new YirSDKValidationError("model_contract_required", "catalog");
-  const contract = findModelOperationContract(catalog, model, resolveCatalogOperation(catalog, model, operation, inputMode), inputMode);
-  if (!contract) throw new YirSDKValidationError("model_contract_unavailable", "model");
+  const found = findModelOperationContract(catalog, model, resolveCatalogOperation(catalog, model, operation, inputMode), inputMode);
+  if (!found) throw new YirSDKValidationError("model_contract_unavailable", "model");
+  const contract = subjectReferences ? subjectModeContract(found, inputMode) : found;
   const values = requireObject(parameters, "parameters");
   const rules = new Map(contract.parameters.map(rule => [rule.name, rule]));
   for (const key of Object.keys(values).sort()) {
@@ -293,9 +300,19 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   const parameters = isAudioOperation(operation) && body.parameters === undefined
     ? {} : requireObject(body.parameters, "parameters");
   if (isAudioOperation(operation)) validateMusicInput(operation, input, parameters, catalog !== undefined);
-  if (catalog) validateModelParameters(body.model, operation, input.type, parameters, catalog);
-  const contract = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
+  const subjects = validateReferenceSubjects(input);
+  const found = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
+  if (subjects && found && !found.input_constraints[input.type]?.subject_references) {
+    throw new YirSDKValidationError("reference_subject_unsupported", "input.references");
+  }
+  if (catalog) validateModelParameters(body.model, operation, input.type, parameters, catalog, subjects !== undefined);
+  const contract = found && subjects ? subjectModeContract(found, input.type) : found;
   const constraint = contract?.input_constraints[input.type];
+  const subjectLimits = subjects ? constraint?.subject_references : undefined;
+  if (subjects && subjectLimits && (subjects.size > subjectLimits.max_subjects ||
+      [...subjects.values()].some(count => count < subjectLimits.min_images_per_subject || count > subjectLimits.max_images_per_subject))) {
+    throw new YirSDKValidationError("reference_subject_count", "input.references");
+  }
   if (catalog && optionalVideoPrompt && (input.prompt === undefined || !(input.prompt as string).trim()) && constraint?.prompt_optional !== true) {
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
@@ -316,7 +333,7 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
       throw new YirSDKValidationError("reference_role_invalid", `${path}.role`);
     }
     roles.set(reference.role, (roles.get(reference.role) ?? 0) + 1);
-    const identity = JSON.stringify([reference.role, reference.url ?? null, reference.file_id ?? null]);
+    const identity = JSON.stringify([reference.role, reference.url ?? null, reference.file_id ?? null, reference.subject ?? null]);
     if (seenReferences.has(identity)) throw new YirSDKValidationError("duplicate_reference", "input.references");
     seenReferences.add(identity);
   }
@@ -516,4 +533,73 @@ function normalizeWebhookURL(value?: string): string | undefined {
     throw new YirSDKValidationError("webhook_url_invalid", "webhook_url");
   }
   return url.toString();
+}
+
+const SUBJECT_NAME = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
+
+// Counts photos per subject. Once any reference has a subject, every reference must be a
+// reference_image with a valid name; model limits are checked against the catalog when present.
+function validateReferenceSubjects(input: Record<string, unknown>): Map<string, number> | undefined {
+  const references = Array.isArray(input.references) ? input.references : [];
+  if (!references.some(reference => typeof reference === "object" && reference !== null && "subject" in reference)) return undefined;
+  const groups = new Map<string, number>();
+  for (const [index, value] of references.entries()) {
+    const reference = requireObject(value, `input.references.${index}`);
+    if (input.type !== "reference" || reference.role !== "reference_image" ||
+        typeof reference.subject !== "string" || !SUBJECT_NAME.test(reference.subject)) {
+      throw new YirSDKValidationError("reference_subject_invalid", `input.references.${index}.subject`);
+    }
+    groups.set(reference.subject, (groups.get(reference.subject) ?? 0) + 1);
+  }
+  return groups;
+}
+
+// The subject (photo character) mode of an operation: subject limits replace reference counts and roles,
+// and its declared value lists replace the matching parameter values.
+function subjectModeContract(contract: ModelOperationContract, inputMode: string): ModelOperationContract {
+  const constraint = contract.input_constraints[inputMode];
+  const limits = constraint?.subject_references;
+  if (!constraint || !limits) return contract;
+  const durations = limits.allowed_durations?.length || limits.min_duration_seconds || limits.max_duration_seconds;
+  const parameters = contract.parameters.map(parameter => {
+    switch (parameter.name) {
+      case "resolution":
+        return limits.resolutions?.length ? { ...parameter, values: limits.resolutions } : parameter;
+      case "aspect_ratio":
+        return {
+          ...parameter,
+          ...(limits.aspect_ratios?.length ? { values: limits.aspect_ratios } : {}),
+          ...(limits.default_aspect_ratio ? { default: limits.default_aspect_ratio } : {}),
+        };
+      case "duration": {
+        if (!durations) return parameter;
+        const { values: _values, string_values: _strings, minimum: _minimum, maximum: _maximum, ...rest } = parameter;
+        return {
+          ...rest,
+          ...(limits.allowed_durations?.length ? { values: limits.allowed_durations } : {}),
+          ...(limits.min_duration_seconds ? { minimum: limits.min_duration_seconds } : {}),
+          ...(limits.max_duration_seconds ? { maximum: limits.max_duration_seconds } : {}),
+        };
+      }
+      case "generate_audio":
+        return limits.allowed_audios?.length ? { ...parameter, values: limits.allowed_audios } : parameter;
+      default:
+        return parameter;
+    }
+  });
+  return {
+    ...contract,
+    parameters,
+    input_constraints: {
+      ...contract.input_constraints,
+      [inputMode]: {
+        ...(constraint.prompt_optional !== undefined ? { prompt_optional: constraint.prompt_optional } : {}),
+        min_references: limits.min_images_per_subject,
+        max_references: limits.max_images_per_subject * limits.max_subjects,
+        allowed_reference_roles: ["reference_image"],
+        required_reference_roles: ["reference_image"],
+        subject_references: limits,
+      },
+    },
+  };
 }

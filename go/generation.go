@@ -113,6 +113,10 @@ type Reference struct {
 	// use FileID for larger media. Set exactly one of URL or FileID.
 	URL    string `json:"url,omitempty"`
 	FileID string `json:"file_id,omitempty"`
+	// Subject groups reference_image photos into one named character on models
+	// whose input constraint declares SubjectReferences; write @Subject in the
+	// prompt. When any reference has a subject, all must be subject photos.
+	Subject string `json:"subject,omitempty"`
 }
 
 // Routing preferences known to this SDK release. Routing.Preference is a
@@ -239,6 +243,10 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 			return &ParameterError{"input.type", "input_contract_unavailable"}
 		}
 		constraint = &declared
+	}
+	constraint, contract, subjectErr := validateSubjectReferences(request, constraint, contract)
+	if subjectErr != nil {
+		return subjectErr
 	}
 	if constraint != nil && strings.TrimSpace(request.Input.Prompt) == "" && !constraint.PromptOptional {
 		return &ParameterError{"input.prompt", "required_parameter"}

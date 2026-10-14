@@ -938,6 +938,11 @@
                 },
                 "url": {
                   "$ref": "#/components/schemas/InputURL"
+                },
+                "subject": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$",
+                  "description": "Groups reference_image photos into one character for models whose input constraint declares subject_references. Reference it in the prompt as @<subject>. When any reference has a subject, every reference must be a reference_image with a subject."
                 }
               },
               "oneOf": [
@@ -1899,6 +1904,24 @@
           "required_any_reference_roles": {
             "type": "array", "uniqueItems": true,
             "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
+          },
+          "subject_references": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Present when reference_image photos may be grouped by references[].subject (photo character reference). Requests with subjects use these limits; non-empty value lists replace the operation parameter values for that mode.",
+            "required": ["min_images_per_subject", "max_images_per_subject", "max_subjects"],
+            "properties": {
+              "min_images_per_subject": { "type": "integer", "minimum": 1 },
+              "max_images_per_subject": { "type": "integer", "minimum": 1 },
+              "max_subjects": { "type": "integer", "minimum": 1 },
+              "resolutions": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+              "aspect_ratios": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+              "default_aspect_ratio": { "type": "string" },
+              "allowed_durations": { "type": "array", "uniqueItems": true, "items": { "type": "integer", "minimum": 1 } },
+              "min_duration_seconds": { "type": "integer", "minimum": 1 },
+              "max_duration_seconds": { "type": "integer", "minimum": 1 },
+              "allowed_audios": { "type": "array", "uniqueItems": true, "items": { "type": "boolean" } }
+            }
           }
         }
       },
