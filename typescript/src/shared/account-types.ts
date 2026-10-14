@@ -389,10 +389,20 @@ export type AccountFinancialConfirmationView = {
 export type AccountLogInputView = {
   "prompt"?: string;
   "prompt_length"?: number;
+  "references"?: Array<AccountLogInputReferenceView>;
   "summary"?: AccountInputSummary;
 };
 
+export type AccountLogInputReferenceView = {
+  "expires_at"?: string;
+  "media_type"?: string;
+  "role"?: string;
+  "source"?: string;
+  "url"?: string;
+};
+
 export type AccountInputSummary = {
+  "explicit_parameters"?: Array<string>;
   "reference_count"?: number;
   "specification"?: AccountCanonicalTaskSpecificationV2;
 };
@@ -405,6 +415,8 @@ export type AccountCanonicalTaskSpecificationV2 = {
   "generate_audio"?: boolean;
   "ignore_quality"?: boolean;
   "image_search"?: boolean;
+  "instrumental"?: boolean;
+  "lyrics_optimizer"?: boolean;
   "output_count"?: number;
   "quality_tier"?: string;
   "resolution"?: string;
@@ -452,6 +464,7 @@ export type AccountStandardV1ContentSafety = {
 };
 
 export type AccountStandardV1ResultFile = {
+  "duration_ms"?: number;
   "expires_at"?: number;
   "fidelity"?: AccountStandardV1ResultFidelity;
   "height"?: number;

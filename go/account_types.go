@@ -389,14 +389,24 @@ type AccountFinancialConfirmationView struct {
 }
 
 type AccountLogInputView struct {
-	Prompt       *string              `json:"prompt,omitempty"`
-	PromptLength *int64               `json:"prompt_length,omitempty"`
-	Summary      *AccountInputSummary `json:"summary,omitempty"`
+	Prompt       *string                         `json:"prompt,omitempty"`
+	PromptLength *int64                          `json:"prompt_length,omitempty"`
+	References   *[]AccountLogInputReferenceView `json:"references,omitempty"`
+	Summary      *AccountInputSummary            `json:"summary,omitempty"`
+}
+
+type AccountLogInputReferenceView struct {
+	ExpiresAt *string `json:"expires_at,omitempty"`
+	MediaType *string `json:"media_type,omitempty"`
+	Role      *string `json:"role,omitempty"`
+	Source    *string `json:"source,omitempty"`
+	Url       *string `json:"url,omitempty"`
 }
 
 type AccountInputSummary struct {
-	ReferenceCount *int64                               `json:"reference_count,omitempty"`
-	Specification  *AccountCanonicalTaskSpecificationV2 `json:"specification,omitempty"`
+	ExplicitParameters *[]string                            `json:"explicit_parameters,omitempty"`
+	ReferenceCount     *int64                               `json:"reference_count,omitempty"`
+	Specification      *AccountCanonicalTaskSpecificationV2 `json:"specification,omitempty"`
 }
 
 type AccountCanonicalTaskSpecificationV2 struct {
@@ -407,6 +417,8 @@ type AccountCanonicalTaskSpecificationV2 struct {
 	GenerateAudio    *bool   `json:"generate_audio,omitempty"`
 	IgnoreQuality    *bool   `json:"ignore_quality,omitempty"`
 	ImageSearch      *bool   `json:"image_search,omitempty"`
+	Instrumental     *bool   `json:"instrumental,omitempty"`
+	LyricsOptimizer  *bool   `json:"lyrics_optimizer,omitempty"`
 	OutputCount      *int64  `json:"output_count,omitempty"`
 	QualityTier      *string `json:"quality_tier,omitempty"`
 	Resolution       *string `json:"resolution,omitempty"`
@@ -454,12 +466,13 @@ type AccountStandardV1ContentSafety struct {
 }
 
 type AccountStandardV1ResultFile struct {
-	ExpiresAt *int64          `json:"expires_at,omitempty"`
-	Fidelity  *map[string]any `json:"fidelity,omitempty"`
-	Height    *int64          `json:"height,omitempty"`
-	MediaType *string         `json:"media_type,omitempty"`
-	Url       *string         `json:"url,omitempty"`
-	Width     *int64          `json:"width,omitempty"`
+	DurationMs *int64          `json:"duration_ms,omitempty"`
+	ExpiresAt  *int64          `json:"expires_at,omitempty"`
+	Fidelity   *map[string]any `json:"fidelity,omitempty"`
+	Height     *int64          `json:"height,omitempty"`
+	MediaType  *string         `json:"media_type,omitempty"`
+	Url        *string         `json:"url,omitempty"`
+	Width      *int64          `json:"width,omitempty"`
 }
 
 type AccountStandardV1ResultFidelity struct {

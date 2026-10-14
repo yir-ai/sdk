@@ -2288,14 +2288,47 @@
           "prompt_length": {
             "type": "integer"
           },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/types.YIRLogInputReferenceView"
+            }
+          },
           "summary": {
             "$ref": "#/components/schemas/model.YIRInputSummary"
+          }
+        }
+      },
+      "types.YIRLogInputReferenceView": {
+        "type": "object",
+        "properties": {
+          "expires_at": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
           }
         }
       },
       "model.YIRInputSummary": {
         "type": "object",
         "properties": {
+          "explicit_parameters": {
+            "description": "ExplicitParameters 记录调用方显式传入的参数名（不含取值），用于判断谁依赖已发布默认值。",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "reference_count": {
             "type": "integer"
           },
@@ -2328,6 +2361,13 @@
             "type": "boolean"
           },
           "image_search": {
+            "type": "boolean"
+          },
+          "instrumental": {
+            "description": "Instrumental 与 LyricsOptimizer 只用于 generate_music；默认 false 不进入既有任务身份。",
+            "type": "boolean"
+          },
+          "lyrics_optimizer": {
             "type": "boolean"
           },
           "output_count": {
@@ -2485,6 +2525,10 @@
       "types.YIRStandardV1ResultFile": {
         "type": "object",
         "properties": {
+          "duration_ms": {
+            "description": "DurationMs 是音频结果交付时实测的播放时长；未测得时省略。",
+            "type": "integer"
+          },
           "expires_at": {
             "type": "integer"
           },
