@@ -86,7 +86,7 @@ test("the reviewed catalog snapshot carries multilingual contracts for image and
   assert.equal(duration?.maximum, 15);
   assert.deepEqual(
     video.parameters.find(({ name }) => name === "resolution")?.values,
-    ["480p", "720p", "1080p"],
+    ["480p", "720p", "1080p", "4K"],
   );
   assert.deepEqual(
     video.parameters.find(({ name }) => name === "generate_audio")?.values,

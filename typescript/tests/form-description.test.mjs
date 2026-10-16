@@ -88,8 +88,9 @@ test("reference slots combine role and total limits", () => {
 
   const seedance = getModelOperationContract("bytedance/seedance-2.5", "generate_video", "reference").input_constraints.reference;
   const mixed = describeReferences(seedance);
-  assert.deepEqual(mixed.required_any, ["reference_image", "reference_video"]);
-  assert.equal(mixed.roles.find(({ role }) => role === "reference_audio").maximum, 50);
+  // Seedance 2.5 accepts audio-only references (up to 10 clips) since 2026-10-16.
+  assert.equal(mixed.required_any, undefined);
+  assert.equal(mixed.roles.find(({ role }) => role === "reference_audio").maximum, 10);
   assert.equal(mixed.roles.find(({ role }) => role === "reference_video").maximum, 10);
 
   const kling = getModelOperationContract("klingai/kling-3.0", "generate_video", "reference").input_constraints.reference;
