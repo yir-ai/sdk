@@ -4222,11 +4222,11 @@
       "locales": {
         "en": {
           "label": "Nano Banana",
-          "description": "Google lightweight high-speed image model. Scheduled for deprecation on 2026-10-02; migration to Nano Banana 2 recommended"
+          "description": "Google's original Nano Banana (Gemini 2.5 Flash Image), lightweight and fast. Google lists shutdown no earlier than 2027-03-15; Nano Banana 2 is recommended for new projects"
         },
         "zh-CN": {
           "label": "Nano Banana",
-          "description": "谷歌初代轻量高速生图模型，响应迅速。官方生命周期将于 2026-10-02 截止，建议迁移至 Nano Banana 2"
+          "description": "谷歌初代 Nano Banana（Gemini 2.5 Flash Image），轻量高速。谷歌公布的最早停用日期为 2027-03-15，新项目建议用 Nano Banana 2"
         }
       },
       "operations": [
