@@ -10,11 +10,11 @@
       "locales": {
         "en": {
           "label": "HappyHorse 1.1",
-          "description": "Alibaba HappyHorse 1.1 generates videos with native audio from text or a single first frame."
+          "description": "Alibaba HappyHorse 1.1 generates videos with native audio from text, a single first frame, or up to 9 reference images."
         },
         "zh-CN": {
           "label": "HappyHorse 1.1",
-          "description": "阿里巴巴 HappyHorse 1.1 原生有声视频模型，支持文生视频与单首帧图生视频。"
+          "description": "阿里巴巴 HappyHorse 1.1 原生有声视频模型，支持文生视频、单首帧图生视频与最多 9 张图的参考生视频。"
         }
       },
       "operations": [
