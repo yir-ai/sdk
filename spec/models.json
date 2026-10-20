@@ -2811,11 +2811,11 @@
       "locales": {
         "en": {
           "label": "Seedance 1.5 Pro",
-          "description": "ByteDance cost-effective video generation model"
+          "description": "ByteDance cost-effective video generation model. ByteDance shuts it down on 2026-11-11; Seedance 2.0 Mini is recommended for new projects"
         },
         "zh-CN": {
           "label": "Seedance 1.5 Pro",
-          "description": "字节跳动高性价比视频生成模型，表现稳健"
+          "description": "字节跳动高性价比视频生成模型，表现稳健。字节跳动将于 2026-11-11 停用该模型，新项目建议用 Seedance 2.0 Mini"
         }
       },
       "operations": [
