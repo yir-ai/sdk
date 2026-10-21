@@ -1360,6 +1360,9 @@
           },
           "savings_percent": {
             "type": "number"
+          },
+          "savings_usd": {
+            "type": "string"
           }
         }
       },
@@ -1925,6 +1928,10 @@
             "type": "integer"
           },
           "error_category": {
+            "type": "string"
+          },
+          "error_message": {
+            "description": "ErrorMessage 是上游对本次尝试的失败原文（已清洗）；Yir 自身账户或检查导致的失败不给。",
             "type": "string"
           },
           "id": {

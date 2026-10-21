@@ -91,6 +91,7 @@ type AccountAnalyticsOfficialSavings struct {
 	ComparableJobs  *int64   `json:"comparable_jobs,omitempty"`
 	CoveragePercent *float64 `json:"coverage_percent,omitempty"`
 	SavingsPercent  *float64 `json:"savings_percent,omitempty"`
+	SavingsUsd      *string  `json:"savings_usd,omitempty"`
 }
 
 type AccountAnalyticsStatusBreakdown struct {
@@ -286,6 +287,7 @@ type AccountLogAttemptView struct {
 	CreatedAt           *string                       `json:"created_at,omitempty"`
 	DurationMs          *int64                        `json:"duration_ms,omitempty"`
 	ErrorCategory       *string                       `json:"error_category,omitempty"`
+	ErrorMessage        *string                       `json:"error_message,omitempty"`
 	Id                  *string                       `json:"id,omitempty"`
 	Provider            *string                       `json:"provider,omitempty"`
 	ResultAdopted       *bool                         `json:"result_adopted,omitempty"`

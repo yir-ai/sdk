@@ -89,6 +89,7 @@ export type AccountAnalyticsOfficialSavings = {
   "comparable_jobs"?: number;
   "coverage_percent"?: number;
   "savings_percent"?: number;
+  "savings_usd"?: string;
 };
 
 export type AccountAnalyticsStatusBreakdown = {
@@ -284,6 +285,7 @@ export type AccountLogAttemptView = {
   "created_at"?: string;
   "duration_ms"?: number;
   "error_category"?: string;
+  "error_message"?: string;
   "id"?: string;
   "provider"?: string;
   "result_adopted"?: boolean;
