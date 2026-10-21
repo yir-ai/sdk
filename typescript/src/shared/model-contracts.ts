@@ -54,7 +54,7 @@ export type SubjectReferenceLimits = {
 };
 
 export type ModelOperationContract = {
-  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | (string & {});
+  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech" | (string & {});
   readonly input_modes: readonly ("text" | "image" | "reference" | (string & {}))[];
   readonly input_constraints: Readonly<Record<string, ModelInputConstraint>>;
   readonly request_schema: string;

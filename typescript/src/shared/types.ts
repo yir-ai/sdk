@@ -165,17 +165,17 @@ export type QuotePrice =
  * parameters at their published default. Parameters the model does not declare
  * are absent: an image echo has no duration, a silent video model has no
  * generate_audio, a music echo has instrumental and lyrics_optimizer (plus duration
- * for length-priced models) but no resolution or aspect_ratio, and a sound-effect
- * echo has n and duration. Image and video echoes always include resolution
+ * for length-priced models) but no resolution or aspect_ratio, a sound-effect
+ * echo has n and duration, and a text-to-speech echo has n and voice. Image and video echoes always include resolution
  * and aspect_ratio. Model-specific parameters are echoed under their contract names.
  */
 export type QuoteParameters = {
   readonly fps?: number;
   /** Exact output pixels, only present when explicitly requested. */
   readonly size?: string;
-  /** Always present on image and video echoes; absent on music and sound-effect echoes. */
+  /** Always present on image and video echoes; absent on audio echoes. */
   readonly resolution?: string;
-  /** Always present on image and video echoes; absent on music and sound-effect echoes. */
+  /** Always present on image and video echoes; absent on audio echoes. */
   readonly aspect_ratio?: string;
   readonly n: number;
   /** Preserves auto intent; internal measured seconds are not substituted. */
@@ -189,6 +189,8 @@ export type QuoteParameters = {
   readonly instrumental?: boolean;
   /** Music only: lyrics written from the prompt. */
   readonly lyrics_optimizer?: boolean;
+  /** Text-to-speech only: the resolved preset voice ID. */
+  readonly voice?: string;
   readonly [name: string]: unknown;
 };
 
@@ -209,7 +211,7 @@ export type Quote = {
   };
   readonly object: "quote";
   readonly model: string;
-  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect";
+  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech";
   readonly input_mode: "text" | "image" | "reference";
   readonly parameters: QuoteParameters;
   readonly currency: "USD";
@@ -220,7 +222,8 @@ export type QuoteBatchRequestItem =
   | { readonly operation: "generate_image"; readonly request: StandardImageQuoteRequest }
   | { readonly operation: "generate_video"; readonly request: StandardVideoQuoteRequest }
   | { readonly operation: "generate_music"; readonly request: StandardMusicQuoteRequest }
-  | { readonly operation: "generate_sound_effect"; readonly request: StandardMusicQuoteRequest };
+  | { readonly operation: "generate_sound_effect"; readonly request: StandardMusicQuoteRequest }
+  | { readonly operation: "generate_speech"; readonly request: StandardMusicQuoteRequest };
 
 export type QuoteBatchItem =
   | { readonly index: number; readonly quote: Quote; readonly error?: never }

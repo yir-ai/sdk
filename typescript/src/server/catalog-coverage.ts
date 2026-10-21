@@ -7,7 +7,7 @@ import { findModelOperationContract, type ModelContractCatalog } from "../shared
  */
 export function coveringCatalog(
   catalog: ModelContractCatalog | undefined,
-  operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect",
+  operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech",
   request: { readonly model?: unknown; readonly input?: { readonly type?: unknown } },
 ): ModelContractCatalog | undefined {
   if (!catalog || typeof request?.model !== "string" || typeof request.input?.type !== "string") return undefined;

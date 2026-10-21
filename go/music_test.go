@@ -254,3 +254,92 @@ func TestSoundEffectQuoteThroughMusicMethodsAndTwoTrackResult(t *testing.T) {
 		t.Fatalf("two tracks lost: %+v %v", job.Result, err)
 	}
 }
+
+func TestSpeechThroughMusicMethods(t *testing.T) {
+	catalog := *testModelContracts()
+	request := func(model, lyrics string, parameters map[string]any) GenerationRequest {
+		return GenerationRequest{Model: model, Input: GenerationInput{Type: "text", Prompt: "Welcome to Yir.", Lyrics: lyrics}, Parameters: parameters}
+	}
+	for _, tc := range []struct {
+		operation string
+		request   GenerationRequest
+	}{
+		{"generate_music", request("minimax/speech-2.8-hd", "", nil)},
+		{"generate_music", request("speech-2.8-hd", "", map[string]any{"voice": "Chinese (Mandarin)_News_Anchor"})},
+		{"generate_music", request("elevenlabs/eleven-v3", "", map[string]any{"n": 1, "voice": "JBFqnCBsd6RMkjVDRZzb"})},
+		{"generate_speech", request("eleven_v3", "", nil)},
+	} {
+		if err := ValidateGenerationProtocol(tc.operation, tc.request); err != nil {
+			t.Fatalf("protocol rejected %s: %v", tc.request.Model, err)
+		}
+		if err := ValidateGenerationWithCatalog(tc.operation, tc.request, catalog); err != nil {
+			t.Fatalf("catalog rejected %s %v: %v", tc.request.Model, tc.request.Parameters, err)
+		}
+	}
+	for _, tc := range []struct {
+		request    GenerationRequest
+		path, code string
+	}{
+		{request("minimax/speech-2.8-hd", "[Verse]", nil), "input.lyrics", "not_allowed"},
+		{request("minimax/speech-2.8-hd", "", map[string]any{"instrumental": true}), "parameters.instrumental", "unknown_parameter"},
+		{request("elevenlabs/eleven-v3", "", map[string]any{"duration": 10}), "parameters.duration", "unknown_parameter"},
+		{request("elevenlabs/eleven-v3", "", map[string]any{"n": 2}), "parameters.n", "invalid_enum"},
+		{request("elevenlabs/eleven-v3", "", map[string]any{"voice": "bad/voice"}), "parameters.voice", "invalid_value"},
+		{request("elevenlabs/eleven-v3", "", map[string]any{"voice": 7}), "parameters.voice", "invalid_type"},
+		// A voice is a text-to-speech parameter; music contracts do not declare it.
+		{request("minimax/music-2.6", "[Verse]", map[string]any{"voice": "English_expressive_narrator"}), "parameters.voice", "unknown_parameter"},
+	} {
+		var parameterError *ParameterError
+		err := ValidateGenerationWithCatalog("generate_music", tc.request, catalog)
+		if !errors.As(err, &parameterError) || parameterError.Path != tc.path || parameterError.Code != tc.code {
+			t.Fatalf("%s %v: got %v, want %s %s", tc.request.Model, tc.request.Parameters, err, tc.path, tc.code)
+		}
+	}
+	// An explicit speech operation rejects lyrics and music switches without a catalog.
+	for _, tc := range []struct {
+		request GenerationRequest
+		path    string
+	}{
+		{request("minimax/speech-2.8-hd", "[Verse]", nil), "input.lyrics"},
+		{request("minimax/speech-2.8-hd", "", map[string]any{"lyrics_optimizer": false}), "parameters.lyrics_optimizer"},
+		{request("minimax/speech-2.8-hd", "", map[string]any{"duration": 30}), "parameters.duration"},
+	} {
+		var parameterError *ParameterError
+		if err := ValidateGenerationProtocol("generate_speech", tc.request); !errors.As(err, &parameterError) || parameterError.Path != tc.path {
+			t.Fatalf("speech %v accepted: %v", tc.request.Parameters, err)
+		}
+	}
+}
+
+func TestSpeechQuoteThroughMusicMethods(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		quote := map[string]any{"supply": map[string]any{"available": true, "issues": []string{}}, "object": "quote",
+			"model": "minimax/speech-2.8-hd", "operation": "generate_speech", "input_mode": "text",
+			"parameters": map[string]any{"n": 1, "voice": "English_expressive_narrator"}, "currency": "USD", "expires_at": 3000000000,
+			"primary": map[string]any{"kind": "fixed", "amount": "0.0015"}, "official": map[string]any{"kind": "fixed", "amount": "0.0015"}}
+		switch r.URL.Path {
+		case "/v1/music/quotes":
+			json.NewEncoder(w).Encode(quote)
+		case "/v1/quotes":
+			json.NewEncoder(w).Encode(map[string]any{"object": "quote_batch", "request_id": "req_1", "data": []any{map[string]any{"index": 0, "quote": quote}}})
+		default:
+			t.Errorf("path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	speech := GenerationRequest{Model: "minimax/speech-2.8-hd", Input: GenerationInput{Type: "text", Prompt: "Welcome to Yir."}}
+	for _, catalog := range []*ModelContractCatalog{nil, testModelContracts()} {
+		client, _ := NewClient("fixture", ClientOptions{BaseURL: server.URL, ModelContracts: catalog})
+		quote, err := client.QuoteMusic(context.Background(), speech)
+		if err != nil || quote.Operation != "generate_speech" || quote.Parameters["voice"] != "English_expressive_narrator" {
+			t.Fatalf("speech quote: %+v %v", quote, err)
+		}
+	}
+	client, _ := NewClient("fixture", ClientOptions{BaseURL: server.URL})
+	batch, err := client.QuoteBatch(context.Background(), []QuoteBatchRequestItem{{Operation: "generate_speech", Request: speech}})
+	if err != nil || batch.Data[0].Quote.Operation != "generate_speech" {
+		t.Fatalf("speech batch: %+v %v", batch, err)
+	}
+}

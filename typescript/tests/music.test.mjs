@@ -185,3 +185,57 @@ test("sound effects quote through the music methods and Suno delivers two tracks
   const fetched = await createBareClient(async () => job).getJob("7201");
   assert.deepEqual(fetched.result.files.map(file => file.duration_ms), [120000, 118000]);
 });
+
+test("text-to-speech models take only n and voice through the music methods", async () => {
+  const request = (model, parameters, lyrics) => ({
+    model, input: { type: "text", prompt: "Welcome to Yir.", ...(lyrics ? { lyrics } : {}) },
+    ...(parameters ? { parameters } : {}),
+  });
+  const valid = [
+    ["generate_music", request("minimax/speech-2.8-hd")],
+    ["generate_music", request("speech-2.8-hd", { voice: "Chinese (Mandarin)_News_Anchor" })],
+    ["generate_music", request("elevenlabs/eleven-v3", { n: 1, voice: "JBFqnCBsd6RMkjVDRZzb" })],
+    ["generate_speech", request("eleven_v3")],
+  ];
+  for (const [operation, body] of valid) {
+    validateProtocol(operation, body);
+    validateGeneration(operation, body);
+  }
+  const invalid = [
+    [request("minimax/speech-2.8-hd", undefined, "[Verse]"), "lyrics_not_allowed", "input.lyrics"],
+    [request("minimax/speech-2.8-hd", { instrumental: true }), "parameter_unknown", "parameters.instrumental"],
+    [request("elevenlabs/eleven-v3", { duration: 10 }), "parameter_unknown", "parameters.duration"],
+    [request("elevenlabs/eleven-v3", { n: 2 }), "parameter_value", "parameters.n"],
+    [request("elevenlabs/eleven-v3", { voice: "bad/voice" }), "voice_invalid", "parameters.voice"],
+    [request("elevenlabs/eleven-v3", { voice: 7 }), "parameter_type", "parameters.voice"],
+    // A voice is a text-to-speech parameter; music contracts do not declare it.
+    [request("minimax/music-2.6", { voice: "English_expressive_narrator" }, "[Verse]"), "parameter_unknown", "parameters.voice"],
+  ];
+  for (const [body, code, path] of invalid) {
+    assert.throws(() => validateGeneration("generate_music", body),
+      error => error instanceof YirSDKValidationError && error.code === code && error.path === path, `${body.model} ${code}`);
+  }
+  // An explicit speech operation rejects lyrics and music switches without a catalog.
+  for (const [body, path] of [
+    [request("minimax/speech-2.8-hd", undefined, "[Verse]"), "input.lyrics"],
+    [request("minimax/speech-2.8-hd", { lyrics_optimizer: false }), "parameters.lyrics_optimizer"],
+    [request("minimax/speech-2.8-hd", { duration: 30 }), "parameters.duration"],
+  ]) {
+    assert.throws(() => validateProtocol("generate_speech", body), error => error.path === path);
+  }
+
+  const speechQuote = {
+    supply: { available: true, issues: [] }, object: "quote", model: "minimax/speech-2.8-hd",
+    operation: "generate_speech", input_mode: "text", parameters: { n: 1, voice: "English_expressive_narrator" },
+    currency: "USD", expires_at: 1900000000,
+    primary: { kind: "fixed", amount: "0.0015" }, official: { kind: "fixed", amount: "0.0015" },
+  };
+  const speech = request("minimax/speech-2.8-hd");
+  for (const client of [createYirClient(async () => speechQuote), createBareClient(async () => speechQuote)]) {
+    const quote = await client.quoteMusic(speech);
+    assert.equal(quote.operation, "generate_speech");
+    assert.equal(quote.parameters.voice, "English_expressive_narrator");
+  }
+  const batchClient = createYirClient(async () => ({ object: "quote_batch", request_id: "req_tts", data: [{ index: 0, quote: speechQuote }] }));
+  assert.equal((await batchClient.quoteBatch([{ operation: "generate_speech", request: speech }])).data[0].quote.operation, "generate_speech");
+});

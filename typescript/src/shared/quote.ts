@@ -27,8 +27,9 @@ export function validateQuoteResponse(
   const echoMatches = typeof value.model === "string" &&
     (value.model === request.model.trim() || /^[a-z0-9._-]+\/[a-z0-9._-]+$/.test(value.model));
   if (!echoMatches || (requested && returned?.id !== requested.id)
-    // The music endpoints also serve sound-effect models.
-    || (value.operation !== operation && !(operation === "generate_music" && value.operation === "generate_sound_effect"))
+    // The music endpoints also serve sound-effect and text-to-speech models.
+    || (value.operation !== operation && !(operation === "generate_music"
+      && (value.operation === "generate_sound_effect" || value.operation === "generate_speech")))
     || value.input_mode !== request.input.type
     || !record(value.parameters) || !Number.isSafeInteger(value.expires_at)
     || (value.expires_at as number) <= 0) return invalid();

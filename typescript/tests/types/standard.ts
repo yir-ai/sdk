@@ -46,10 +46,13 @@ const musicEcho: QuoteParameters = { instrumental: false, lyrics_optimizer: true
 // Length-priced models take duration; sound effects use the music request shape.
 const soundEffect: StandardMusicQuoteRequest = { model: "elevenlabs/sound-effects-v2", input: { type: "text", prompt: "Glass shattering" }, parameters: { duration: 5 } };
 const soundEcho: QuoteParameters = { n: 1, duration: 5 };
+// Text-to-speech reads input.prompt aloud in a preset voice through the music request shape.
+const speech: StandardMusicQuoteRequest = { model: "minimax/speech-2.8-hd", input: { type: "text", prompt: "Welcome to Yir." }, parameters: { voice: "English_expressive_narrator" } };
+const speechEcho: QuoteParameters = { n: 1, voice: "English_expressive_narrator" };
 function readDuration(file: JobResultFile): number | undefined {
   return file.duration_ms;
 }
-void [musicQuoteWithWebhook, musicEcho, soundEcho, readDuration];
+void [musicQuoteWithWebhook, musicEcho, soundEcho, speechEcho, readDuration];
 // A source is a File ID or a public HTTPS URL, never both.
 const urlSource: StandardMediaSource = { url: "https://example.com/image.png" };
 // @ts-expect-error A source carries exactly one of file_id and url.
@@ -62,7 +65,7 @@ function submitWithOptionalKeys(client: YirClient) {
   void client.submitVideo(video, undefined, { signal: new AbortController().signal });
   void client.quoteMusic(musicQuote);
   void client.submitMusic(music, "persisted-key");
-  void client.quoteBatch([{ operation: "generate_music", request: musicQuote }, { operation: "generate_sound_effect", request: soundEffect }]);
+  void client.quoteBatch([{ operation: "generate_music", request: musicQuote }, { operation: "generate_sound_effect", request: soundEffect }, { operation: "generate_speech", request: speech }]);
 }
 
 void submitWithOptionalKeys;

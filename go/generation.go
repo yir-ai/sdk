@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"regexp"
 	"strings"
 )
 
 // GenerationRequest is the common demand used for Quote and Submit.
 // The endpoint selects image, video or music generation; provider fields are not accepted.
-// Music and sound-effect parameters (n, duration, instrumental, lyrics_optimizer,
-// as the model contract declares) are optional; nil Parameters are sent as an
-// empty object. Length-priced models take parameters["duration"] in seconds.
+// Music, sound-effect and text-to-speech parameters (n, duration, instrumental,
+// lyrics_optimizer, voice, as the model contract declares) are optional; nil
+// Parameters are sent as an empty object. Length-priced models take
+// parameters["duration"] in seconds; text-to-speech models take
+// parameters["voice"], a preset voice ID of the model.
 type GenerationRequest struct {
 	// Deprecated: Omit for new requests; actual-cost settlement is the default.
 	// Retained for legacy callers with the existing validation rules.
@@ -188,17 +191,21 @@ func ValidateGenerationWithCatalog(operation string, request GenerationRequest, 
 }
 
 // catalogOperations lists the contract operations a request operation may
-// resolve to: the music methods also serve sound-effect models.
+// resolve to: the music methods also serve sound-effect and text-to-speech models.
 func catalogOperations(operation string) []string {
 	if operation == "generate_music" {
-		return []string{"generate_music", "generate_sound_effect"}
+		return []string{"generate_music", "generate_sound_effect", "generate_speech"}
 	}
 	return []string{operation}
 }
 
 func isAudioOperation(operation string) bool {
-	return operation == "generate_music" || operation == "generate_sound_effect"
+	return operation == "generate_music" || operation == "generate_sound_effect" || operation == "generate_speech"
 }
+
+// speechVoicePattern is the shape of a preset voice ID; whether the voice
+// exists is decided by the Gateway and the provider.
+var speechVoicePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9 _().\-]{0,127}$`)
 
 // ValidateGenerationProtocol checks only stable request structure. New models
 // are left for the Gateway unless the caller provides a current catalog.
@@ -315,9 +322,11 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 
 // validateMusicInput applies the protocol rules shared by every music model:
 // lyrics, instrumental and the lyrics optimizer exclude each other, and sound
-// effects take no lyrics. n, duration and the accepted switches come from the
-// model contract. Without a contract generate_music may name a sound-effect
-// model, so a missing lyrics source is left to the Gateway.
+// effects take no lyrics. Text-to-speech reads input.prompt aloud and takes only
+// n and voice. n, duration and the accepted switches come from the model
+// contract. Without a contract generate_music may name a sound-effect or
+// text-to-speech model, so a missing lyrics source and a voice on a music
+// model are left to the Gateway.
 func validateMusicInput(operation string, request GenerationRequest, contractKnown bool) error {
 	if request.Input.Type != "text" {
 		return &ParameterError{"input.type", "input_mode_invalid"}
@@ -334,7 +343,27 @@ func validateMusicInput(operation string, request GenerationRequest, contractKno
 		}
 		flags[name] = flag
 	}
+	if value, present := request.Parameters["voice"]; present && value != nil {
+		voice, ok := value.(string)
+		if !ok {
+			return &ParameterError{"parameters.voice", "invalid_type"}
+		}
+		if !speechVoicePattern.MatchString(voice) {
+			return &ParameterError{"parameters.voice", "invalid_value"}
+		}
+	}
 	hasLyrics := request.Input.Lyrics != ""
+	if operation == "generate_speech" {
+		if hasLyrics {
+			return &ParameterError{"input.lyrics", "not_allowed"}
+		}
+		for _, name := range []string{"duration", "instrumental", "lyrics_optimizer"} {
+			if _, present := request.Parameters[name]; present {
+				return &ParameterError{"parameters." + name, "unknown_parameter"}
+			}
+		}
+		return nil
+	}
 	switch {
 	case hasLyrics && strings.TrimSpace(request.Input.Lyrics) == "":
 		return &ParameterError{"input.lyrics", "invalid_value"}

@@ -4431,6 +4431,78 @@
       ]
     },
     {
+      "id": "elevenlabs/eleven-v3",
+      "aliases": [
+        "eleven-v3",
+        "eleven_v3"
+      ],
+      "locales": {
+        "en": {
+          "label": "ElevenLabs Eleven v3",
+          "description": "ElevenLabs expressive text-to-speech model with audio tags such as [whispers] for delivery control"
+        },
+        "zh-CN": {
+          "label": "ElevenLabs Eleven v3",
+          "description": "ElevenLabs 文字转语音模型，表现力强，支持 [whispers] 等音频标签控制语气"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_speech",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "voice",
+              "type": "string",
+              "required": false,
+              "default": "JBFqnCBsd6RMkjVDRZzb",
+              "control": "text",
+              "locales": {
+                "en": {
+                  "label": "Voice",
+                  "description": "Preset voice ID of this model (for example a MiniMax system voice or an ElevenLabs voice ID). The price does not depend on the voice."
+                },
+                "zh-CN": {
+                  "label": "音色",
+                  "description": "本模型的预设音色 ID（如 MiniMax 系统音色、ElevenLabs 音色 ID），音色不影响价格。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "elevenlabs/music-v2",
       "aliases": [
         "music-v2",
@@ -8161,6 +8233,77 @@
           },
           "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
           "parameters": [
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "minimax/speech-2.8-hd",
+      "aliases": [
+        "speech-2.8-hd"
+      ],
+      "locales": {
+        "en": {
+          "label": "MiniMax Speech 2.8 HD",
+          "description": "MiniMax text-to-speech model with strong Chinese output that reads text aloud in a preset voice"
+        },
+        "zh-CN": {
+          "label": "MiniMax Speech 2.8 HD",
+          "description": "MiniMax 文字转语音模型，中文表现好，用预设音色把文本朗读成音频"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_speech",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "voice",
+              "type": "string",
+              "required": false,
+              "default": "English_expressive_narrator",
+              "control": "text",
+              "locales": {
+                "en": {
+                  "label": "Voice",
+                  "description": "Preset voice ID of this model (for example a MiniMax system voice or an ElevenLabs voice ID). The price does not depend on the voice."
+                },
+                "zh-CN": {
+                  "label": "音色",
+                  "description": "本模型的预设音色 ID（如 MiniMax 系统音色、ElevenLabs 音色 ID），音色不影响价格。"
+                }
+              }
+            },
             {
               "name": "n",
               "type": "integer",

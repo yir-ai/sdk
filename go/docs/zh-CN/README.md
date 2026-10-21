@@ -93,6 +93,8 @@ _ = client
 
 音乐与音效使用 `QuoteMusic` 和 `SubmitMusic`，流程相同；也可在 `QuoteBatch` 中传 `generate_music` / `generate_sound_effect` 项。输入只有文本：设置 `Input.Prompt`，模型支持自定义歌词时可设置 `Input.Lyrics`；`Parameters` 可省略，每个模型只接受其合同声明的参数（`n`、`duration`、`instrumental`、`lyrics_optimizer`）。带人声的音乐须使用模型支持的一种歌词来源：`Lyrics`、`lyrics_optimizer: true`（按提示词自动写词，部分模型另收写词费用，以报价为准）或 `instrumental: true`，三者互斥。ElevenLabs 音乐不接受歌词，按 `duration` 计价（30–300 秒固定档位，默认 60）；ElevenLabs 音效（`elevenlabs/sound-effects-v2`）只传描述，不接受歌词，`duration` 为 1–22 秒（默认 5），报价的 operation 为 `generate_sound_effect`。Suno（`suno/suno-v6`，非官方接入，Suno 没有官方 API）每次请求返回两首（`n` 固定为 2）。SDK 在发送前检查通用冲突；`ValidateGenerationWithCatalog` 还按模型合同检查 `n`、`duration` 与歌词来源，各模型的文本长度上限由 Gateway 校验。每个音频文件的实测时长见 `ResultFile.DurationMS`。音乐报价的参数回显不含 `resolution` 与 `aspect_ratio`。
 
+文字转语音模型（`minimax/speech-2.8-hd`，最多 10000 字符；`elevenlabs/eleven-v3`，最多 5000 字符）同样使用 `QuoteMusic` / `SubmitMusic`，或在 `QuoteBatch` 中传 `generate_speech` 项：`Input.Prompt` 即朗读文本，`Parameters` 只接受 `n`（1）与 `voice`（模型的预设音色 ID，省略则用模型默认音色，音色不影响价格），不接受歌词、`instrumental`、`lyrics_optimizer` 或 `duration`。报价的 operation 为 `generate_speech`，按提示词字符数计价（空格、标点与音频标签都计入），参数回显为 `n` 与 `voice`；Job 交付一个 MP3，实测时长见 `ResultFile.DurationMS`。
+
 ```go
 request := yir.GenerationRequest{Model: "minimax/music-2.6", Input: yir.GenerationInput{
 	Type: "text", Prompt: "A warm acoustic folk ballad", Lyrics: "[Verse]\nWalking down a dusty road"}}
