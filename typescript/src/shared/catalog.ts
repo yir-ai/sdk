@@ -156,6 +156,8 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
         if (constraint.subject_references !== undefined) {
           const subjects = object(constraint.subject_references);
           for (const key of ["min_images_per_subject", "max_images_per_subject", "max_subjects"]) natural(subjects[key]);
+          for (const key of ["max_audios_per_subject", "max_audio_only_subjects"]) if (subjects[key] !== undefined) natural(subjects[key]);
+          if (subjects.mixed !== undefined && typeof subjects.mixed !== "boolean") throw new TypeError("subject_references.mixed must be boolean");
           integerRange(subjects.min_images_per_subject, subjects.max_images_per_subject);
           if (!allowed.includes("reference_image")) invalid();
         }

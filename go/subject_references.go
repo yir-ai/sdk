@@ -8,18 +8,29 @@ import (
 // SubjectReferenceLimits is declared by an input constraint whose
 // reference_image photos may be grouped into named characters with
 // Reference.Subject. Non-empty value lists replace the operation parameter
-// values for requests that use subjects.
+// values for requests that use subjects. With Mixed, subjects coexist with
+// ungrouped references and the operation values stay; MinReferences and
+// MaxReferences then count ungrouped references plus subjects, and role
+// counts apply to ungrouped references only.
 type SubjectReferenceLimits struct {
-	MinImagesPerSubject int      `json:"min_images_per_subject"`
-	MaxImagesPerSubject int      `json:"max_images_per_subject"`
-	MaxSubjects         int      `json:"max_subjects"`
-	Resolutions         []string `json:"resolutions,omitempty"`
-	AspectRatios        []string `json:"aspect_ratios,omitempty"`
-	DefaultAspectRatio  string   `json:"default_aspect_ratio,omitempty"`
-	AllowedDurations    []int    `json:"allowed_durations,omitempty"`
-	MinDurationSeconds  int      `json:"min_duration_seconds,omitempty"`
-	MaxDurationSeconds  int      `json:"max_duration_seconds,omitempty"`
-	AllowedAudios       []bool   `json:"allowed_audios,omitempty"`
+	MinImagesPerSubject int `json:"min_images_per_subject"`
+	MaxImagesPerSubject int `json:"max_images_per_subject"`
+	// MaxSubjects is the maximum number of subjects with photos.
+	MaxSubjects int  `json:"max_subjects"`
+	Mixed       bool `json:"mixed,omitempty"`
+	// MaxAudiosPerSubject is the reference_audio allowed per subject as its
+	// voice; zero means subjects take photos only.
+	MaxAudiosPerSubject int `json:"max_audios_per_subject,omitempty"`
+	// MaxAudioOnlySubjects caps subjects that have only reference_audio
+	// (standalone voices).
+	MaxAudioOnlySubjects int      `json:"max_audio_only_subjects,omitempty"`
+	Resolutions          []string `json:"resolutions,omitempty"`
+	AspectRatios         []string `json:"aspect_ratios,omitempty"`
+	DefaultAspectRatio   string   `json:"default_aspect_ratio,omitempty"`
+	AllowedDurations     []int    `json:"allowed_durations,omitempty"`
+	MinDurationSeconds   int      `json:"min_duration_seconds,omitempty"`
+	MaxDurationSeconds   int      `json:"max_duration_seconds,omitempty"`
+	AllowedAudios        []bool   `json:"allowed_audios,omitempty"`
 }
 
 var subjectNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,31}$`)
@@ -40,36 +51,56 @@ func cloneSubjectReferenceLimits(source *SubjectReferenceLimits) *SubjectReferen
 // contract it returns the constraint and parameters that apply to the
 // subject mode; without one the Gateway checks the model limits.
 func validateSubjectReferences(request GenerationRequest, constraint *ModelInputConstraint, contract *ModelOperationContract) (*ModelInputConstraint, *ModelOperationContract, error) {
-	labelled := 0
+	type group struct{ images, audios int }
+	groups := make(map[string]*group)
+	ungrouped, audios := 0, 0
 	for _, reference := range request.Input.References {
-		if reference.Subject != "" {
-			labelled++
+		if reference.Subject == "" {
+			ungrouped++
+			continue
 		}
-	}
-	if labelled == 0 {
-		return constraint, contract, nil
-	}
-	groups := make(map[string]int)
-	for _, reference := range request.Input.References {
-		if request.Input.Type != "reference" || reference.Role != "reference_image" || !subjectNamePattern.MatchString(reference.Subject) {
+		if request.Input.Type != "reference" || (reference.Role != "reference_image" && reference.Role != "reference_audio") || !subjectNamePattern.MatchString(reference.Subject) {
 			return nil, nil, &ParameterError{"input.references", "invalid_reference_subject"}
 		}
-		groups[reference.Subject]++
+		if groups[reference.Subject] == nil {
+			groups[reference.Subject] = &group{}
+		}
+		if reference.Role == "reference_audio" {
+			groups[reference.Subject].audios++
+			audios++
+		} else {
+			groups[reference.Subject].images++
+		}
 	}
-	if constraint == nil || contract == nil {
+	if len(groups) == 0 || constraint == nil || contract == nil {
 		return constraint, contract, nil
 	}
 	limits := constraint.SubjectReferences
 	if limits == nil {
 		return nil, nil, &ParameterError{"input.references", "reference_subject_not_supported"}
 	}
-	if len(groups) > limits.MaxSubjects {
-		return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
+	if !limits.Mixed && ungrouped > 0 || limits.MaxAudiosPerSubject == 0 && audios > 0 {
+		return nil, nil, &ParameterError{"input.references", "invalid_reference_subject"}
 	}
-	for _, count := range groups {
-		if count < limits.MinImagesPerSubject || count > limits.MaxImagesPerSubject {
+	photoSubjects, audioOnly := 0, 0
+	for _, g := range groups {
+		if g.audios > limits.MaxAudiosPerSubject {
 			return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
 		}
+		if g.images == 0 {
+			audioOnly++
+			continue
+		}
+		photoSubjects++
+		if g.images < limits.MinImagesPerSubject || g.images > limits.MaxImagesPerSubject {
+			return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
+		}
+	}
+	if photoSubjects > limits.MaxSubjects || audioOnly > limits.MaxAudioOnlySubjects {
+		return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
+	}
+	if limits.Mixed {
+		return constraint, contract, nil
 	}
 	subjectConstraint := ModelInputConstraint{
 		PromptOptional: constraint.PromptOptional,

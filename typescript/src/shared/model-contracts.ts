@@ -43,7 +43,17 @@ export type ModelInputConstraint = {
 export type SubjectReferenceLimits = {
   readonly min_images_per_subject: number;
   readonly max_images_per_subject: number;
+  /** Maximum subjects with photos. */
   readonly max_subjects: number;
+  /**
+   * Subjects coexist with ungrouped references and the operation values stay; min/max_references
+   * count ungrouped references plus subjects, and role counts apply to ungrouped references only.
+   */
+  readonly mixed?: boolean;
+  /** reference_audio allowed per subject as its voice; absent means subjects take photos only. */
+  readonly max_audios_per_subject?: number;
+  /** Maximum subjects that have only reference_audio (standalone voices). */
+  readonly max_audio_only_subjects?: number;
   readonly resolutions?: readonly string[];
   readonly aspect_ratios?: readonly string[];
   readonly default_aspect_ratio?: string;

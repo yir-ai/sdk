@@ -942,7 +942,7 @@
                 "subject": {
                   "type": "string",
                   "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$",
-                  "description": "Groups reference_image photos into one character for models whose input constraint declares subject_references. Reference it in the prompt as @<subject>. When any reference has a subject, every reference must be a reference_image with a subject."
+                  "description": "Groups references into one named subject for models whose input constraint declares subject_references. Reference it in the prompt as @<subject>. Same-named reference_image photos form a character; where max_audios_per_subject is set, a reference_audio with the same name is that character's voice, and a name with only reference_audio is a standalone voice. Unless subject_references.mixed is true, every reference must then be a reference_image with a subject."
                 }
               },
               "oneOf": [
@@ -1918,12 +1918,15 @@
           "subject_references": {
             "type": "object",
             "additionalProperties": false,
-            "description": "Present when reference_image photos may be grouped by references[].subject (photo character reference). Requests with subjects use these limits; non-empty value lists replace the operation parameter values for that mode.",
+            "description": "Present when reference_image photos may be grouped by references[].subject (photo character reference). Requests with subjects use these limits; non-empty value lists replace the operation parameter values for that mode. With mixed, subjects coexist with ungrouped references, the operation values stay, min/max_references count ungrouped references plus subjects, and reference role counts apply to ungrouped references only.",
             "required": ["min_images_per_subject", "max_images_per_subject", "max_subjects"],
             "properties": {
               "min_images_per_subject": { "type": "integer", "minimum": 1 },
               "max_images_per_subject": { "type": "integer", "minimum": 1 },
-              "max_subjects": { "type": "integer", "minimum": 1 },
+              "max_subjects": { "type": "integer", "minimum": 1, "description": "Maximum subjects with photos." },
+              "mixed": { "type": "boolean", "description": "Subjects may be combined with ungrouped references in one request." },
+              "max_audios_per_subject": { "type": "integer", "minimum": 1, "description": "reference_audio allowed per subject as its voice; absent means subjects take photos only." },
+              "max_audio_only_subjects": { "type": "integer", "minimum": 1, "description": "Maximum subjects that have only reference_audio (standalone voices)." },
               "resolutions": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
               "aspect_ratios": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
               "default_aspect_ratio": { "type": "string" },

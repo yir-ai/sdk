@@ -7176,18 +7176,28 @@
           "input_constraints": {
             "reference": {
               "min_references": 1,
-              "max_references": 10,
+              "max_references": 15,
               "allowed_reference_roles": [
-                "reference_image"
-              ],
-              "required_reference_roles": [
-                "reference_image"
+                "reference_image",
+                "reference_audio"
               ],
               "reference_counts_by_role": {
+                "reference_audio": {
+                  "minimum": 0,
+                  "maximum": 0
+                },
                 "reference_image": {
-                  "minimum": 1,
+                  "minimum": 0,
                   "maximum": 10
                 }
+              },
+              "subject_references": {
+                "min_images_per_subject": 2,
+                "max_images_per_subject": 4,
+                "max_subjects": 7,
+                "mixed": true,
+                "max_audios_per_subject": 1,
+                "max_audio_only_subjects": 3
               }
             }
           },

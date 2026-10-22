@@ -118,7 +118,10 @@ type Reference struct {
 	FileID string `json:"file_id,omitempty"`
 	// Subject groups reference_image photos into one named character on models
 	// whose input constraint declares SubjectReferences; write @Subject in the
-	// prompt. When any reference has a subject, all must be subject photos.
+	// prompt. When any reference has a subject, all must be subject photos
+	// unless the constraint's subject_references is mixed; there a
+	// reference_audio with a subject is that subject's voice (or a standalone
+	// voice when the subject has no photos).
 	Subject string `json:"subject,omitempty"`
 }
 
@@ -259,8 +262,23 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 		return &ParameterError{"input.prompt", "required_parameter"}
 	}
 	count := len(request.Input.References)
+	// Mixed subject mode counts ungrouped references plus subjects; role counts use ungrouped references only.
+	mixed := constraint != nil && constraint.SubjectReferences != nil && constraint.SubjectReferences.Mixed
+	items := count
+	if mixed {
+		subjects := make(map[string]bool)
+		items = 0
+		for _, reference := range request.Input.References {
+			if reference.Subject == "" {
+				items++
+			} else if !subjects[reference.Subject] {
+				subjects[reference.Subject] = true
+				items++
+			}
+		}
+	}
 	if request.Input.Type == "text" && count != 0 || (request.Input.Type == "image" || request.Input.Type == "reference") && count == 0 ||
-		constraint != nil && (count < constraint.MinReferences || count > constraint.MaxReferences) {
+		constraint != nil && (items < constraint.MinReferences || items > constraint.MaxReferences) {
 		return &ParameterError{"input.references", "invalid_reference_count"}
 	}
 	roles := make(map[string]int)
@@ -274,7 +292,9 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 		if reference.Role == "" || constraint != nil && !containsString(constraint.AllowedReferenceRoles, reference.Role) {
 			return &ParameterError{path + ".role", "invalid_reference_role"}
 		}
-		roles[reference.Role]++
+		if !mixed || reference.Subject == "" {
+			roles[reference.Role]++
+		}
 	}
 	if contract != nil {
 		if err := validateParameters(contract.Parameters, request.Parameters); err != nil {

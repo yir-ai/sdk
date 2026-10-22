@@ -57,7 +57,9 @@ export type StandardReference = {
   readonly role: ReferenceRole;
   /**
    * Groups reference_image photos into one named character on models whose input constraint declares
-   * `subject_references`; write `@<subject>` in the prompt. When any reference has a subject, all must.
+   * `subject_references`; write `@<subject>` in the prompt. When any reference has a subject, all must, unless
+   * `subject_references.mixed`; where `max_audios_per_subject` is set, a `reference_audio` with the subject's
+   * name is its voice, and a name with only `reference_audio` is a standalone voice.
    */
   readonly subject?: string;
 } & StandardMediaSource;
@@ -321,10 +323,22 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   const contract = found && subjects ? subjectModeContract(found, input.type) : found;
   const constraint = contract?.input_constraints[input.type];
   const subjectLimits = subjects ? constraint?.subject_references : undefined;
-  if (subjects && subjectLimits && (subjects.size > subjectLimits.max_subjects ||
-      [...subjects.values()].some(count => count < subjectLimits.min_images_per_subject || count > subjectLimits.max_images_per_subject))) {
-    throw new YirSDKValidationError("reference_subject_count", "input.references");
+  if (subjects && subjectLimits) {
+    if ((!subjectLimits.mixed && subjects.ungrouped > 0) ||
+        (!subjectLimits.max_audios_per_subject && [...subjects.groups.values()].some(group => group.audios > 0))) {
+      throw new YirSDKValidationError("reference_subject_invalid", "input.references");
+    }
+    const groups = [...subjects.groups.values()];
+    const photoSubjects = groups.filter(group => group.images > 0);
+    if (photoSubjects.length > subjectLimits.max_subjects ||
+        groups.length - photoSubjects.length > (subjectLimits.max_audio_only_subjects ?? 0) ||
+        groups.some(group => group.audios > (subjectLimits.max_audios_per_subject ?? 0)) ||
+        photoSubjects.some(group => group.images < subjectLimits.min_images_per_subject || group.images > subjectLimits.max_images_per_subject)) {
+      throw new YirSDKValidationError("reference_subject_count", "input.references");
+    }
   }
+  // Mixed subject mode counts ungrouped references plus subjects; role counts use ungrouped references only.
+  const mixed = subjects !== undefined && subjectLimits?.mixed === true;
   if (catalog && optionalVideoPrompt && (input.prompt === undefined || !(input.prompt as string).trim()) && constraint?.prompt_optional !== true) {
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
@@ -332,7 +346,7 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   const references = input.references === undefined ? [] : input.references;
   if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||
       ((input.type === "image" || input.type === "reference") && references.length === 0) ||
-      (constraint && (references.length < constraint.min_references || references.length > constraint.max_references))) {
+      (constraint && (referenceItems(references, mixed) < constraint.min_references || referenceItems(references, mixed) > constraint.max_references))) {
     throw new YirSDKValidationError("reference_count", "input.references");
   }
   const roles = new Map<string, number>();
@@ -344,7 +358,7 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
         (constraint && !constraint.allowed_reference_roles.includes(reference.role))) {
       throw new YirSDKValidationError("reference_role_invalid", `${path}.role`);
     }
-    roles.set(reference.role, (roles.get(reference.role) ?? 0) + 1);
+    if (!mixed || reference.subject === undefined) roles.set(reference.role, (roles.get(reference.role) ?? 0) + 1);
     const identity = JSON.stringify([reference.role, reference.url ?? null, reference.file_id ?? null, reference.subject ?? null]);
     if (seenReferences.has(identity)) throw new YirSDKValidationError("duplicate_reference", "input.references");
     seenReferences.add(identity);
@@ -563,29 +577,56 @@ function normalizeWebhookURL(value?: string): string | undefined {
 
 const SUBJECT_NAME = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
 
-// Counts photos per subject. Once any reference has a subject, every reference must be a
-// reference_image with a valid name; model limits are checked against the catalog when present.
-function validateReferenceSubjects(input: Record<string, unknown>): Map<string, number> | undefined {
+type SubjectSummary = { readonly groups: Map<string, { images: number; audios: number }>; readonly ungrouped: number };
+
+// Counts photos and voices per subject. Subjects go on reference_image or reference_audio with a valid
+// name; whether ungrouped references and voices may join them is checked against the catalog when present.
+function validateReferenceSubjects(input: Record<string, unknown>): SubjectSummary | undefined {
   const references = Array.isArray(input.references) ? input.references : [];
   if (!references.some(reference => typeof reference === "object" && reference !== null && "subject" in reference)) return undefined;
-  const groups = new Map<string, number>();
+  const groups = new Map<string, { images: number; audios: number }>();
+  let ungrouped = 0;
   for (const [index, value] of references.entries()) {
     const reference = requireObject(value, `input.references.${index}`);
-    if (input.type !== "reference" || reference.role !== "reference_image" ||
+    if (!("subject" in reference)) {
+      ungrouped++;
+      continue;
+    }
+    if (input.type !== "reference" || (reference.role !== "reference_image" && reference.role !== "reference_audio") ||
         typeof reference.subject !== "string" || !SUBJECT_NAME.test(reference.subject)) {
       throw new YirSDKValidationError("reference_subject_invalid", `input.references.${index}.subject`);
     }
-    groups.set(reference.subject, (groups.get(reference.subject) ?? 0) + 1);
+    const group = groups.get(reference.subject) ?? { images: 0, audios: 0 };
+    if (reference.role === "reference_audio") group.audios++;
+    else group.images++;
+    groups.set(reference.subject, group);
   }
-  return groups;
+  return { groups, ungrouped };
+}
+
+// Items counted against min/max_references: every reference, or in mixed subject mode the
+// ungrouped references plus one per subject.
+function referenceItems(references: readonly unknown[], mixed: boolean): number {
+  if (!mixed) return references.length;
+  const subjects = new Set<string>();
+  let items = 0;
+  for (const value of references) {
+    const subject = typeof value === "object" && value !== null ? (value as { subject?: unknown }).subject : undefined;
+    if (typeof subject !== "string") items++;
+    else if (!subjects.has(subject)) {
+      subjects.add(subject);
+      items++;
+    }
+  }
+  return items;
 }
 
 // The subject (photo character) mode of an operation: subject limits replace reference counts and roles,
-// and its declared value lists replace the matching parameter values.
+// and its declared value lists replace the matching parameter values. Mixed subjects keep the operation.
 function subjectModeContract(contract: ModelOperationContract, inputMode: string): ModelOperationContract {
   const constraint = contract.input_constraints[inputMode];
   const limits = constraint?.subject_references;
-  if (!constraint || !limits) return contract;
+  if (!constraint || !limits || limits.mixed) return contract;
   const durations = limits.allowed_durations?.length || limits.min_duration_seconds || limits.max_duration_seconds;
   const parameters = contract.parameters.map(parameter => {
     switch (parameter.name) {

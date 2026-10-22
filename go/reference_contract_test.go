@@ -132,3 +132,47 @@ func TestReferenceSubjectContract(t *testing.T) {
 		t.Fatalf("subject wire shape: %s %v", encoded, err)
 	}
 }
+
+// Kling 4.0 declares mixed subjects: photo characters, their voices and standalone
+// voices sit next to ungrouped reference images, and counts use items, not files.
+func TestMixedSubjectReferenceContract(t *testing.T) {
+	photo := func(subject string, i int) Reference {
+		return Reference{Role: "reference_image", URL: fmt.Sprintf("https://example.com/%s-%d.png", subject, i), Subject: subject}
+	}
+	voice := func(subject string) Reference {
+		return Reference{Role: "reference_audio", URL: "https://example.com/" + subject + ".mp3", Subject: subject}
+	}
+	request := func(references ...Reference) GenerationRequest {
+		return GenerationRequest{Model: "klingai/kling-4.0", Input: GenerationInput{Type: "reference", Prompt: "@Hero holds @image_1", References: references}, Parameters: map[string]any{}}
+	}
+	plain := func(i int) Reference { return photo("", i) }
+	for name, valid := range map[string]GenerationRequest{
+		"mixed":      request(photo("Hero", 1), plain(1), photo("Hero", 2), voice("Hero"), voice("Narrator")),
+		"voice only": request(voice("Narrator")),
+		"plain only": request(plain(1), plain(2)),
+		"ten plain":  request(plain(1), plain(2), plain(3), plain(4), plain(5), plain(6), plain(7), plain(8), plain(9), plain(10), photo("Hero", 1), photo("Hero", 2)),
+	} {
+		if err := ValidateGeneration("generate_video", valid); err != nil {
+			t.Fatalf("%s rejected: %v", name, err)
+		}
+	}
+	for name, invalid := range map[string]GenerationRequest{
+		"eleven plain":    request(plain(1), plain(2), plain(3), plain(4), plain(5), plain(6), plain(7), plain(8), plain(9), plain(10), plain(11)),
+		"one photo":       request(photo("Hero", 1)),
+		"two voices":      request(voice("Hero"), voice("Hero")),
+		"four voice-only": request(voice("A"), voice("B"), voice("C"), voice("D")),
+		"ungrouped audio": request(plain(1), Reference{Role: "reference_audio", URL: "https://example.com/a.mp3"}),
+		"sixteen items": request(plain(1), plain(2), plain(3), plain(4), plain(5), plain(6), plain(7), plain(8), plain(9), plain(10),
+			photo("A", 1), photo("A", 2), photo("B", 1), photo("B", 2), photo("C", 1), photo("C", 2), photo("D", 1), photo("D", 2), photo("E", 1), photo("E", 2), photo("F", 1), photo("F", 2)),
+	} {
+		if err := ValidateGeneration("generate_video", invalid); err == nil {
+			t.Fatalf("%s accepted", name)
+		}
+	}
+	// Kling 3.0 is not mixed: a voice subject is rejected there.
+	kling3 := request(photo("hero", 1), photo("hero", 2), voice("hero"))
+	kling3.Model = "klingai/kling-3.0"
+	if err := ValidateGeneration("generate_video", kling3); err == nil {
+		t.Fatal("kling 3.0 voice subject accepted")
+	}
+}

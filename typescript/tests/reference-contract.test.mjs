@@ -66,3 +66,23 @@ test("Kling 3.0 subject photos use the declared subject limits and parameter val
   // Motion control is unchanged: one image plus one video at auto aspect ratio.
   assert.doesNotThrow(() => validateGeneration("generate_video", request({}, ref("reference_image", 1), ref("reference_video", 2))));
 });
+
+test("Kling 4.0 mixes subjects, voices and ungrouped reference images", () => {
+  const photo = (subject, i) => ({ role: "reference_image", url: `https://example.com/${subject}-${i}.png`, ...(subject ? { subject } : {}) });
+  const voice = subject => ({ role: "reference_audio", url: `https://example.com/${subject || "x"}.mp3`, ...(subject ? { subject } : {}) });
+  const check = references => () => validateGeneration("generate_video", { model: "klingai/kling-4.0", input: { type: "reference", prompt: "@Hero holds @image_1", references }, parameters: {} });
+  const plain = n => Array.from({ length: n }, (_, i) => photo("", i));
+  assert.doesNotThrow(check([photo("Hero", 1), photo("", 1), photo("Hero", 2), voice("Hero"), voice("Narrator")]));
+  assert.doesNotThrow(check([voice("Narrator")]));
+  assert.doesNotThrow(check([...plain(10), photo("Hero", 1), photo("Hero", 2)]));
+  for (const invalid of [
+    plain(11),
+    [photo("Hero", 1)],
+    [voice("Hero"), voice("Hero")],
+    [voice("A"), voice("B"), voice("C"), voice("D")],
+    [photo("", 1), voice("")],
+    [...plain(10), ...["A", "B", "C", "D", "E", "F"].flatMap(s => [photo(s, 1), photo(s, 2)])],
+  ]) assert.throws(check(invalid));
+  // Kling 3.0 subjects are not mixed and take photos only.
+  assert.throws(() => validateGeneration("generate_video", { model: "klingai/kling-3.0", input: { type: "reference", prompt: "@hero", references: [photo("hero", 1), photo("hero", 2), voice("hero")] }, parameters: {} }));
+});
