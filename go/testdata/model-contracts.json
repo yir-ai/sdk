@@ -10421,6 +10421,658 @@
       ]
     },
     {
+      "id": "spacexai/grok-imagine-video-1.5",
+      "aliases": [
+        "grok-imagine-video-1.5"
+      ],
+      "locales": {
+        "en": {
+          "label": "Grok Imagine Video 1.5",
+          "description": "xAI Grok Imagine Video 1.5 (preview) with native 1080p and lip-synced audio, first/last frames and up to 7 reference images, up to 15 seconds"
+        },
+        "zh-CN": {
+          "label": "Grok Imagine Video 1.5",
+          "description": "xAI Grok Imagine 视频 1.5（预览版），原生 1080p 与口型同步音频，支持首尾帧与最多 7 张参考图，最长 15 秒"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 8,
+              "minimum": 1,
+              "maximum": 15,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "480p",
+                "720p",
+                "1080p"
+              ],
+              "default": "480p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "16:9",
+                "9:16",
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3"
+              ],
+              "default": "16:9",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 2,
+              "allowed_reference_roles": [
+                "first_frame",
+                "last_frame"
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 8,
+              "minimum": 1,
+              "maximum": 15,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "480p",
+                "720p"
+              ],
+              "default": "480p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "reference"
+          ],
+          "input_constraints": {
+            "reference": {
+              "min_references": 2,
+              "max_references": 7,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 8,
+              "minimum": 1,
+              "maximum": 15,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "480p",
+                "720p"
+              ],
+              "default": "480p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "16:9",
+                "9:16",
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3"
+              ],
+              "default": "16:9",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spacexai/grok-imagine-video-1.5-lite",
+      "aliases": [
+        "grok-imagine-video-1.5-lite"
+      ],
+      "locales": {
+        "en": {
+          "label": "Grok Imagine Video 1.5 Lite",
+          "description": "xAI Grok Imagine Video 1.5 Lite, the lowest per-second price for text and first-frame video with lip-synced audio"
+        },
+        "zh-CN": {
+          "label": "Grok Imagine Video 1.5 Lite",
+          "description": "xAI Grok Imagine 视频 1.5 轻量版，每秒价格最低，文生与首帧图生带口型同步音频"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 8,
+              "minimum": 1,
+              "maximum": 15,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "480p",
+                "720p"
+              ],
+              "default": "480p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "16:9",
+                "9:16",
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3"
+              ],
+              "default": "16:9",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "first_frame"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 8,
+              "minimum": 1,
+              "maximum": 15,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "480p",
+                "720p"
+              ],
+              "default": "480p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "suno/suno-v6",
       "aliases": [
         "suno-v6"
