@@ -54,6 +54,10 @@ export type SubjectReferenceLimits = {
   readonly max_audios_per_subject?: number;
   /** Maximum subjects that have only reference_audio (standalone voices). */
   readonly max_audio_only_subjects?: number;
+  /** reference_video allowed per subject as a video character (no photos then); absent means no video subjects. */
+  readonly max_videos_per_subject?: number;
+  /** Maximum subjects built from reference_video. */
+  readonly max_video_subjects?: number;
   readonly resolutions?: readonly string[];
   readonly aspect_ratios?: readonly string[];
   readonly default_aspect_ratio?: string;

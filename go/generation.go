@@ -121,7 +121,8 @@ type Reference struct {
 	// prompt. When any reference has a subject, all must be subject photos
 	// unless the constraint's subject_references is mixed; there a
 	// reference_audio with a subject is that subject's voice (or a standalone
-	// voice when the subject has no photos).
+	// voice when the subject has no photos), and where max_videos_per_subject
+	// is declared a reference_video with a subject is a video character.
 	Subject string `json:"subject,omitempty"`
 }
 

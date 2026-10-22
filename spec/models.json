@@ -7179,6 +7179,7 @@
               "max_references": 15,
               "allowed_reference_roles": [
                 "reference_image",
+                "reference_video",
                 "reference_audio"
               ],
               "reference_counts_by_role": {
@@ -7189,6 +7190,10 @@
                 "reference_image": {
                   "minimum": 0,
                   "maximum": 10
+                },
+                "reference_video": {
+                  "minimum": 0,
+                  "maximum": 5
                 }
               },
               "subject_references": {
@@ -7197,7 +7202,9 @@
                 "max_subjects": 7,
                 "mixed": true,
                 "max_audios_per_subject": 1,
-                "max_audio_only_subjects": 3
+                "max_audio_only_subjects": 3,
+                "max_videos_per_subject": 1,
+                "max_video_subjects": 3
               }
             }
           },

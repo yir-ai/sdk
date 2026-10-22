@@ -23,14 +23,19 @@ type SubjectReferenceLimits struct {
 	MaxAudiosPerSubject int `json:"max_audios_per_subject,omitempty"`
 	// MaxAudioOnlySubjects caps subjects that have only reference_audio
 	// (standalone voices).
-	MaxAudioOnlySubjects int      `json:"max_audio_only_subjects,omitempty"`
-	Resolutions          []string `json:"resolutions,omitempty"`
-	AspectRatios         []string `json:"aspect_ratios,omitempty"`
-	DefaultAspectRatio   string   `json:"default_aspect_ratio,omitempty"`
-	AllowedDurations     []int    `json:"allowed_durations,omitempty"`
-	MinDurationSeconds   int      `json:"min_duration_seconds,omitempty"`
-	MaxDurationSeconds   int      `json:"max_duration_seconds,omitempty"`
-	AllowedAudios        []bool   `json:"allowed_audios,omitempty"`
+	MaxAudioOnlySubjects int `json:"max_audio_only_subjects,omitempty"`
+	// MaxVideosPerSubject is the reference_video allowed per subject as a
+	// video character (which then takes no photos); zero means no video subjects.
+	MaxVideosPerSubject int `json:"max_videos_per_subject,omitempty"`
+	// MaxVideoSubjects caps subjects built from reference_video.
+	MaxVideoSubjects   int      `json:"max_video_subjects,omitempty"`
+	Resolutions        []string `json:"resolutions,omitempty"`
+	AspectRatios       []string `json:"aspect_ratios,omitempty"`
+	DefaultAspectRatio string   `json:"default_aspect_ratio,omitempty"`
+	AllowedDurations   []int    `json:"allowed_durations,omitempty"`
+	MinDurationSeconds int      `json:"min_duration_seconds,omitempty"`
+	MaxDurationSeconds int      `json:"max_duration_seconds,omitempty"`
+	AllowedAudios      []bool   `json:"allowed_audios,omitempty"`
 }
 
 var subjectNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,31}$`)
@@ -51,24 +56,28 @@ func cloneSubjectReferenceLimits(source *SubjectReferenceLimits) *SubjectReferen
 // contract it returns the constraint and parameters that apply to the
 // subject mode; without one the Gateway checks the model limits.
 func validateSubjectReferences(request GenerationRequest, constraint *ModelInputConstraint, contract *ModelOperationContract) (*ModelInputConstraint, *ModelOperationContract, error) {
-	type group struct{ images, audios int }
+	type group struct{ images, videos, audios int }
 	groups := make(map[string]*group)
-	ungrouped, audios := 0, 0
+	ungrouped, audios, videos := 0, 0, 0
 	for _, reference := range request.Input.References {
 		if reference.Subject == "" {
 			ungrouped++
 			continue
 		}
-		if request.Input.Type != "reference" || (reference.Role != "reference_image" && reference.Role != "reference_audio") || !subjectNamePattern.MatchString(reference.Subject) {
+		if request.Input.Type != "reference" || (reference.Role != "reference_image" && reference.Role != "reference_audio" && reference.Role != "reference_video") || !subjectNamePattern.MatchString(reference.Subject) {
 			return nil, nil, &ParameterError{"input.references", "invalid_reference_subject"}
 		}
 		if groups[reference.Subject] == nil {
 			groups[reference.Subject] = &group{}
 		}
-		if reference.Role == "reference_audio" {
+		switch reference.Role {
+		case "reference_audio":
 			groups[reference.Subject].audios++
 			audios++
-		} else {
+		case "reference_video":
+			groups[reference.Subject].videos++
+			videos++
+		default:
 			groups[reference.Subject].images++
 		}
 	}
@@ -79,13 +88,20 @@ func validateSubjectReferences(request GenerationRequest, constraint *ModelInput
 	if limits == nil {
 		return nil, nil, &ParameterError{"input.references", "reference_subject_not_supported"}
 	}
-	if !limits.Mixed && ungrouped > 0 || limits.MaxAudiosPerSubject == 0 && audios > 0 {
+	if !limits.Mixed && ungrouped > 0 || limits.MaxAudiosPerSubject == 0 && audios > 0 || limits.MaxVideosPerSubject == 0 && videos > 0 {
 		return nil, nil, &ParameterError{"input.references", "invalid_reference_subject"}
 	}
-	photoSubjects, audioOnly := 0, 0
+	photoSubjects, audioOnly, videoSubjects := 0, 0, 0
 	for _, g := range groups {
 		if g.audios > limits.MaxAudiosPerSubject {
 			return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
+		}
+		if g.videos > 0 {
+			if g.videos > limits.MaxVideosPerSubject || g.images > 0 {
+				return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
+			}
+			videoSubjects++
+			continue
 		}
 		if g.images == 0 {
 			audioOnly++
@@ -96,7 +112,7 @@ func validateSubjectReferences(request GenerationRequest, constraint *ModelInput
 			return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
 		}
 	}
-	if photoSubjects > limits.MaxSubjects || audioOnly > limits.MaxAudioOnlySubjects {
+	if photoSubjects > limits.MaxSubjects || audioOnly > limits.MaxAudioOnlySubjects || videoSubjects > limits.MaxVideoSubjects {
 		return nil, nil, &ParameterError{"input.references", "invalid_reference_subject_count"}
 	}
 	if limits.Mixed {

@@ -59,7 +59,8 @@ export type StandardReference = {
    * Groups reference_image photos into one named character on models whose input constraint declares
    * `subject_references`; write `@<subject>` in the prompt. When any reference has a subject, all must, unless
    * `subject_references.mixed`; where `max_audios_per_subject` is set, a `reference_audio` with the subject's
-   * name is its voice, and a name with only `reference_audio` is a standalone voice.
+   * name is its voice, and a name with only `reference_audio` is a standalone voice; where `max_videos_per_subject`
+   * is set, a `reference_video` with a subject is a video character.
    */
   readonly subject?: string;
 } & StandardMediaSource;
@@ -325,13 +326,17 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   const subjectLimits = subjects ? constraint?.subject_references : undefined;
   if (subjects && subjectLimits) {
     if ((!subjectLimits.mixed && subjects.ungrouped > 0) ||
-        (!subjectLimits.max_audios_per_subject && [...subjects.groups.values()].some(group => group.audios > 0))) {
+        (!subjectLimits.max_audios_per_subject && [...subjects.groups.values()].some(group => group.audios > 0)) ||
+        (!subjectLimits.max_videos_per_subject && [...subjects.groups.values()].some(group => group.videos > 0))) {
       throw new YirSDKValidationError("reference_subject_invalid", "input.references");
     }
     const groups = [...subjects.groups.values()];
-    const photoSubjects = groups.filter(group => group.images > 0);
+    const videoSubjects = groups.filter(group => group.videos > 0);
+    const photoSubjects = groups.filter(group => group.videos === 0 && group.images > 0);
     if (photoSubjects.length > subjectLimits.max_subjects ||
-        groups.length - photoSubjects.length > (subjectLimits.max_audio_only_subjects ?? 0) ||
+        videoSubjects.length > (subjectLimits.max_video_subjects ?? 0) ||
+        videoSubjects.some(group => group.images > 0 || group.videos > (subjectLimits.max_videos_per_subject ?? 0)) ||
+        groups.length - photoSubjects.length - videoSubjects.length > (subjectLimits.max_audio_only_subjects ?? 0) ||
         groups.some(group => group.audios > (subjectLimits.max_audios_per_subject ?? 0)) ||
         photoSubjects.some(group => group.images < subjectLimits.min_images_per_subject || group.images > subjectLimits.max_images_per_subject)) {
       throw new YirSDKValidationError("reference_subject_count", "input.references");
@@ -577,14 +582,14 @@ function normalizeWebhookURL(value?: string): string | undefined {
 
 const SUBJECT_NAME = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
 
-type SubjectSummary = { readonly groups: Map<string, { images: number; audios: number }>; readonly ungrouped: number };
+type SubjectSummary = { readonly groups: Map<string, { images: number; videos: number; audios: number }>; readonly ungrouped: number };
 
 // Counts photos and voices per subject. Subjects go on reference_image or reference_audio with a valid
 // name; whether ungrouped references and voices may join them is checked against the catalog when present.
 function validateReferenceSubjects(input: Record<string, unknown>): SubjectSummary | undefined {
   const references = Array.isArray(input.references) ? input.references : [];
   if (!references.some(reference => typeof reference === "object" && reference !== null && "subject" in reference)) return undefined;
-  const groups = new Map<string, { images: number; audios: number }>();
+  const groups = new Map<string, { images: number; videos: number; audios: number }>();
   let ungrouped = 0;
   for (const [index, value] of references.entries()) {
     const reference = requireObject(value, `input.references.${index}`);
@@ -592,12 +597,13 @@ function validateReferenceSubjects(input: Record<string, unknown>): SubjectSumma
       ungrouped++;
       continue;
     }
-    if (input.type !== "reference" || (reference.role !== "reference_image" && reference.role !== "reference_audio") ||
+    if (input.type !== "reference" || (reference.role !== "reference_image" && reference.role !== "reference_audio" && reference.role !== "reference_video") ||
         typeof reference.subject !== "string" || !SUBJECT_NAME.test(reference.subject)) {
       throw new YirSDKValidationError("reference_subject_invalid", `input.references.${index}.subject`);
     }
-    const group = groups.get(reference.subject) ?? { images: 0, audios: 0 };
+    const group = groups.get(reference.subject) ?? { images: 0, videos: 0, audios: 0 };
     if (reference.role === "reference_audio") group.audios++;
+    else if (reference.role === "reference_video") group.videos++;
     else group.images++;
     groups.set(reference.subject, group);
   }

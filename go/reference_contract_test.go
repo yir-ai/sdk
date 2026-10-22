@@ -176,3 +176,36 @@ func TestMixedSubjectReferenceContract(t *testing.T) {
 		t.Fatal("kling 3.0 voice subject accepted")
 	}
 }
+
+// Kling 4.0 video characters: one reference_video per subject, no photos, at most three.
+func TestVideoSubjectReferenceContract(t *testing.T) {
+	video := func(subject string, i int) Reference {
+		return Reference{Role: "reference_video", URL: fmt.Sprintf("https://example.com/%s-%d.mp4", subject, i), Subject: subject}
+	}
+	photo := func(subject string, i int) Reference {
+		return Reference{Role: "reference_image", URL: fmt.Sprintf("https://example.com/%s-%d.png", subject, i), Subject: subject}
+	}
+	request := func(model string, references ...Reference) GenerationRequest {
+		return GenerationRequest{Model: model, Input: GenerationInput{Type: "reference", Prompt: "@Hero in @video_1", References: references}, Parameters: map[string]any{}}
+	}
+	for name, valid := range map[string]GenerationRequest{
+		"video subject":           request("klingai/kling-4.0", video("Hero", 1)),
+		"video subject and voice": request("klingai/kling-4.0", video("Hero", 1), Reference{Role: "reference_audio", URL: "https://example.com/h.mp3", Subject: "Hero"}),
+		"plain video":             request("klingai/kling-4.0", video("", 1), video("", 2)),
+	} {
+		if err := ValidateGeneration("generate_video", valid); err != nil {
+			t.Fatalf("%s rejected: %v", name, err)
+		}
+	}
+	for name, invalid := range map[string]GenerationRequest{
+		"video subject with photos": request("klingai/kling-4.0", video("Hero", 1), photo("Hero", 1), photo("Hero", 2)),
+		"two videos one subject":    request("klingai/kling-4.0", video("Hero", 1), video("Hero", 2)),
+		"four video subjects":       request("klingai/kling-4.0", video("A", 1), video("B", 1), video("C", 1), video("D", 1)),
+		"six plain videos":          request("klingai/kling-4.0", video("", 1), video("", 2), video("", 3), video("", 4), video("", 5), video("", 6)),
+		"kling 3.0 video subject":   request("klingai/kling-3.0", video("hero", 1)),
+	} {
+		if err := ValidateGeneration("generate_video", invalid); err == nil {
+			t.Fatalf("%s accepted", name)
+		}
+	}
+}

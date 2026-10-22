@@ -86,3 +86,18 @@ test("Kling 4.0 mixes subjects, voices and ungrouped reference images", () => {
   // Kling 3.0 subjects are not mixed and take photos only.
   assert.throws(() => validateGeneration("generate_video", { model: "klingai/kling-3.0", input: { type: "reference", prompt: "@hero", references: [photo("hero", 1), photo("hero", 2), voice("hero")] }, parameters: {} }));
 });
+
+test("Kling 4.0 video characters take one reference_video and no photos", () => {
+  const video = (subject, i) => ({ role: "reference_video", url: `https://example.com/${subject || "v"}-${i}.mp4`, ...(subject ? { subject } : {}) });
+  const photo = (subject, i) => ({ role: "reference_image", url: `https://example.com/${subject}-${i}.png`, subject });
+  const check = references => () => validateGeneration("generate_video", { model: "klingai/kling-4.0", input: { type: "reference", prompt: "@Hero in @video_1", references }, parameters: {} });
+  assert.doesNotThrow(check([video("Hero", 1)]));
+  assert.doesNotThrow(check([video("Hero", 1), { role: "reference_audio", url: "https://example.com/h.mp3", subject: "Hero" }]));
+  assert.doesNotThrow(check([video("", 1), video("", 2)]));
+  for (const invalid of [
+    [video("Hero", 1), photo("Hero", 1), photo("Hero", 2)],
+    [video("Hero", 1), video("Hero", 2)],
+    [video("A", 1), video("B", 1), video("C", 1), video("D", 1)],
+    [1, 2, 3, 4, 5, 6].map(i => video("", i)),
+  ]) assert.throws(check(invalid));
+});
