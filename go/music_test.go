@@ -85,6 +85,40 @@ func TestMusicQuoteAndSubmitUseMusicPaths(t *testing.T) {
 	}
 }
 
+func TestAudioQuoteAndSubmitUseAudioPaths(t *testing.T) {
+	var paths []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		var body map[string]json.RawMessage
+		json.NewDecoder(r.Body).Decode(&body)
+		if r.URL.Path == "/v1/audio/quotes" {
+			var parameters map[string]any
+			json.Unmarshal(body["parameters"], &parameters)
+			json.NewEncoder(w).Encode(musicQuoteResponse(parameters))
+			return
+		}
+		if r.Header.Get("Idempotency-Key") != "audio-key" {
+			t.Error("idempotency key lost")
+		}
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(map[string]any{"object": "job", "id": "7103", "status": "queued", "model": "minimax/music-2.6"})
+	}))
+	defer server.Close()
+	client, err := NewClient("fixture", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if quote, err := client.QuoteAudio(context.Background(), musicRequest()); err != nil || quote.Operation != "generate_music" {
+		t.Fatalf("audio quote: %+v %v", quote, err)
+	}
+	if job, err := client.SubmitAudio(context.Background(), SubmitRequest{GenerationRequest: musicRequest()}, "audio-key"); err != nil || job.ID != "7103" {
+		t.Fatalf("audio submit: %+v %v", job, err)
+	}
+	if len(paths) != 2 || paths[0] != "/v1/audio/quotes" || paths[1] != "/v1/audio/generations" {
+		t.Fatalf("paths: %v", paths)
+	}
+}
+
 func TestMusicQuoteRejectsMismatchedEcho(t *testing.T) {
 	for _, override := range []map[string]any{{"operation": "generate_image"}, {"input_mode": "image"}} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

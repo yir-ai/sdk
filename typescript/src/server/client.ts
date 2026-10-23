@@ -96,7 +96,13 @@ export type YirClient = YirFileClient & {
   submitImage(request: StandardImageGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   quoteVideo(request: StandardVideoQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
   submitVideo(request: StandardVideoGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
+  /** Quotes a music, sound-effect or text-to-speech request (POST /v1/audio/quotes). */
+  quoteAudio(request: StandardMusicQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
+  /** Submits a music, sound-effect or text-to-speech Job (POST /v1/audio/generations). */
+  submitAudio(request: StandardMusicGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
+  /** Original name of quoteAudio; calls the permanent legacy path /v1/music/quotes with identical behavior. */
   quoteMusic(request: StandardMusicQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
+  /** Original name of submitAudio; calls the permanent legacy path /v1/music/generations with identical behavior. */
   submitMusic(request: StandardMusicGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
   getJobStatus(id: string, options?: YirJobStatusOptions): Promise<JobStatusResponse>;
@@ -109,6 +115,30 @@ export type YirClient = YirFileClient & {
  */
 export function createYirClient(transport: YirTransport, catalog?: ModelContractCatalog): YirClient {
   const localCatalog = catalog === undefined ? undefined : parseModelContractCatalog(catalog);
+  // Audio requests (music, sound effects, speech) share one contract; path picks /v1/audio or the legacy /v1/music.
+  const quoteAudioAt = (path: string, request: StandardMusicQuoteRequest, options?: YirRequestOptions) => {
+    options?.signal?.throwIfAborted();
+    validateGeneration("generate_music", request);
+    return transport<Quote>({
+      method: "POST",
+      path,
+      body: request,
+      ...(options?.signal ? { signal: options.signal } : {}),
+    }).then(value => validateQuoteResponse(value, request, "generate_music", localCatalog));
+  };
+  const submitAudioAt = (path: string, request: StandardMusicGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions) => {
+    options?.signal?.throwIfAborted();
+    const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
+    if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
+    validateGeneration("generate_music", request);
+    return Promise.resolve().then(() => transport<Job>({
+      method: "POST",
+      path,
+      ...(options?.signal ? { signal: options.signal } : {}),
+      headers: { "Idempotency-Key": key },
+      body: request,
+    })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
+  };
   return {
     ...createFileClient(transport),
     modelContracts: localCatalog,
@@ -197,28 +227,17 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         body: request,
       })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
     },
+    quoteAudio(request, options) {
+      return quoteAudioAt("/v1/audio/quotes", request, options);
+    },
+    submitAudio(request, idempotencyKey, options) {
+      return submitAudioAt("/v1/audio/generations", request, idempotencyKey, options);
+    },
     quoteMusic(request, options) {
-      options?.signal?.throwIfAborted();
-      validateGeneration("generate_music", request);
-      return transport<Quote>({
-        method: "POST",
-        path: "/v1/music/quotes",
-        body: request,
-        ...(options?.signal ? { signal: options.signal } : {}),
-      }).then(value => validateQuoteResponse(value, request, "generate_music", localCatalog));
+      return quoteAudioAt("/v1/music/quotes", request, options);
     },
     submitMusic(request, idempotencyKey, options) {
-      options?.signal?.throwIfAborted();
-      const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
-      if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
-      validateGeneration("generate_music", request);
-      return Promise.resolve().then(() => transport<Job>({
-        method: "POST",
-        path: "/v1/music/generations",
-        ...(options?.signal ? { signal: options.signal } : {}),
-        headers: { "Idempotency-Key": key },
-        body: request,
-      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
+      return submitAudioAt("/v1/music/generations", request, idempotencyKey, options);
     },
     getJob(id, options) {
       options?.signal?.throwIfAborted();
@@ -747,7 +766,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     const body = request.body !== undefined ? JSON.stringify(request.body) : undefined;
     const signal = requestSignal(request.signal, timeoutMs, request.holdMs);
     const canRetry = request.method === "GET" || (request.method === "POST" &&
-      /^\/v1\/(images|videos|music)\/generations$/.test(path) &&
+      /^\/v1\/(images|videos|audio|music)\/generations$/.test(path) &&
       Boolean(new Headers(headers).get("Idempotency-Key")?.trim()));
     let response: globalThis.Response;
     let text = "";

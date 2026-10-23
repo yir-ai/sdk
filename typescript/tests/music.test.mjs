@@ -42,6 +42,20 @@ test("music Quote and Submit use the music paths and validate the music echo", a
   assert.throws(() => client.submitMusic(vocal, " "), /idempotency_key_invalid/);
 });
 
+test("audio Quote and Submit use the audio paths; the music methods stay on the legacy paths", async () => {
+  const calls = [];
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path.endsWith("/quotes")) return musicQuote(request.body);
+    return { id: "7103", object: "job", status: "queued", model: "minimax/music-2.6", error: null, created_at: 1 };
+  });
+  assert.equal((await client.quoteAudio(vocal)).operation, "generate_music");
+  await client.submitAudio({ ...vocal, max_cost: "0.20" }, "audio-7103");
+  assert.deepEqual(calls.map(call => [call.method, call.path]), [["POST", "/v1/audio/quotes"], ["POST", "/v1/audio/generations"]]);
+  assert.deepEqual(calls[1].headers, { "Idempotency-Key": "audio-7103" });
+  assert.throws(() => client.submitAudio(vocal, " "), /idempotency_key_invalid/);
+});
+
 test("music quote rejects an echo for another operation or input mode", async () => {
   for (const overrides of [{ operation: "generate_image" }, { input_mode: "image" }, { currency: "EUR" }]) {
     const client = createBareClient(async request => musicQuote(request.body, overrides));
@@ -121,6 +135,24 @@ test("the Node transport retries music submits with the same key and body", asyn
   assert.equal(seen[0].url, "https://gateway.example/v1/music/generations");
   assert.deepEqual(seen.map(item => item.key), ["music-retry", "music-retry"]);
   assert.equal(seen[0].body, seen[1].body);
+});
+
+test("the Node transport retries audio submits with the same key", async () => {
+  const seen = [];
+  const client = createNodeYirClient({
+    apiKey: "test-key", baseURL: "https://gateway.example",
+    fetch: async (url, init) => {
+      seen.push({ url, key: new Headers(init.headers).get("Idempotency-Key") });
+      if (seen.length === 1) return new Response("unavailable", { status: 503 });
+      return new Response(JSON.stringify({ id: "7104", object: "job", status: "queued" }), {
+        status: 202, headers: { "content-type": "application/json" },
+      });
+    },
+  });
+  assert.equal((await client.submitAudio(vocal, "audio-retry")).id, "7104");
+  assert.deepEqual(seen.map(item => [item.url, item.key]), [
+    ["https://gateway.example/v1/audio/generations", "audio-retry"], ["https://gateway.example/v1/audio/generations", "audio-retry"],
+  ]);
 });
 
 test("audio models follow their contract for n, duration and lyrics sources", () => {

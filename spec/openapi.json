@@ -3,7 +3,7 @@
   "info": {
     "title": "Yir Standard Async AIGC API",
     "version": "1.0.0-preview",
-    "description": "Public REST API of the Yir Image & Video API Router: quote and submit image, video and music generation jobs, upload input files, read model contracts, and track jobs.\n\nCompatibility: this API only grows. New fields are optional, enums may gain values, and clients must ignore unknown fields and tolerate unknown enum values. Models, their parameters, allowed values and defaults come from the model contract (GET /v1/models?include=parameters) and change without an SDK release. A published model keeps its defaults, value meanings and billing semantics; a change to any of them ships as a new model ID. IDs are opaque strings; do not parse them. Deprecated fields stay for at least one minor SDK release and are announced in the SDK changelog."
+    "description": "Public REST API of the Yir Image & Video API Router: quote and submit image, video and audio (music, sound effect, speech) generation jobs, upload input files, read model contracts, and track jobs.\n\nCompatibility: this API only grows. New fields are optional, enums may gain values, and clients must ignore unknown fields and tolerate unknown enum values. Models, their parameters, allowed values and defaults come from the model contract (GET /v1/models?include=parameters) and change without an SDK release. A published model keeps its defaults, value meanings and billing semantics; a change to any of them ships as a new model ID. IDs are opaque strings; do not parse them. Deprecated fields stay for at least one minor SDK release and are announced in the SDK changelog."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
   "tags": [
     { "name": "Images" },
     { "name": "Videos" },
-    { "name": "Music" },
+    { "name": "Audio" },
     { "name": "Files" },
     { "name": "Models" },
     { "name": "Jobs" },
@@ -112,8 +112,8 @@
       "post": {
         "operationId": "quoteBatch",
         "summary": "Quote up to 20 requests",
-        "description": "Quotes up to 20 image, video or music requests against the same pricing snapshot. Each request is evaluated with the same rules as the corresponding single-request quote. An invalid request returns an error in its own result entry; pricing-data and infrastructure failures fail the entire call. This endpoint does not enumerate model specifications or infer equivalent quality across models.",
-        "tags": ["Images", "Videos", "Music"],
+        "description": "Quotes up to 20 image, video or audio requests against the same pricing snapshot. Each request is evaluated with the same rules as the corresponding single-request quote. An invalid request returns an error in its own result entry; pricing-data and infrastructure failures fail the entire call. This endpoint does not enumerate model specifications or infer equivalent quality across models.",
+        "tags": ["Images", "Videos", "Audio"],
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -202,12 +202,80 @@
         }
       }
     },
+    "/v1/audio/quotes": {
+      "post": {
+        "operationId": "quoteAudioGeneration",
+        "summary": "Quote an audio job",
+        "description": "Estimates the price and checks available supply for a music, sound-effect or text-to-speech request. Text-to-speech is quoted per character of input.prompt. Creates no job and charges nothing.",
+        "tags": ["Audio"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StandardMusicQuoteRequest" },
+              "example": {
+                "model": "minimax/music-2.6",
+                "input": { "type": "text", "prompt": "A warm acoustic folk ballad with fingerpicked guitar", "lyrics": "[Verse]\nWalking down a dusty road\n[Chorus]\nEvery step a story told" },
+                "parameters": { "instrumental": false, "lyrics_optimizer": false, "n": 1 }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current advisory quote",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Quote" } } }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/audio/generations": {
+      "post": {
+        "operationId": "submitAudioGeneration",
+        "summary": "Submit an audio job",
+        "description": "Generates one song, instrumental track, sound effect or text-to-speech narration as an audio file. POST /v1/music/generations is the legacy name of this endpoint. For text-to-speech models (operation generate_speech) input.prompt is the text to read aloud in parameters.voice. The model decides the length, reported on the result file as duration_ms; prompts do not guarantee a duration or tempo.",
+        "tags": ["Audio"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }, { "$ref": "#/components/parameters/YirReferral" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StandardMusicGenerationRequest" },
+              "example": {
+                "model": "minimax/music-2.6",
+                "input": { "type": "text", "prompt": "A calm lo-fi hip hop instrumental with mellow piano chords" },
+                "parameters": { "instrumental": true, "n": 1 },
+                "webhook_url": "https://example.com/webhooks/yir"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "$ref": "#/components/responses/JobAccepted" },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/InsufficientBalance" },
+          "403": { "$ref": "#/components/responses/SpendLimitExceeded" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/NoExecutableRoute" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
     "/v1/music/quotes": {
       "post": {
         "operationId": "quoteMusicGeneration",
-        "summary": "Quote a music job",
-        "description": "Estimates the price and checks available supply for a music, sound-effect or text-to-speech request. Text-to-speech is quoted per character of input.prompt. Creates no job and charges nothing.",
-        "tags": ["Music"],
+        "summary": "Quote an audio job (legacy path)",
+        "description": "Legacy name of POST /v1/audio/quotes, kept permanently with the same request, response and pricing. New code should call /v1/audio/quotes.",
+        "tags": ["Audio"],
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -238,9 +306,9 @@
     "/v1/music/generations": {
       "post": {
         "operationId": "submitMusicGeneration",
-        "summary": "Submit a music job",
-        "description": "Generates one song, instrumental track, sound effect or text-to-speech narration as an audio file. For text-to-speech models (operation generate_speech) input.prompt is the text to read aloud in parameters.voice. The model decides the length, reported on the result file as duration_ms; prompts do not guarantee a duration or tempo.",
-        "tags": ["Music"],
+        "summary": "Submit an audio job (legacy path)",
+        "description": "Legacy name of POST /v1/audio/generations, kept permanently with the same request, response and billing; an Idempotency-Key used on one path replays on the other. New code should call /v1/audio/generations.",
+        "tags": ["Audio"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }, { "$ref": "#/components/parameters/YirReferral" }],
         "requestBody": {

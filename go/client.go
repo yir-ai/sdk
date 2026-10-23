@@ -201,12 +201,18 @@ func (c *Client) QuoteVideo(ctx context.Context, request GenerationRequest) (Quo
 	return c.quote(ctx, "videos", "generate_video", request)
 }
 
-// QuoteMusic quotes a music, sound-effect or text-to-speech request. Parameters
+// QuoteAudio quotes a music, sound-effect or text-to-speech request. Parameters
 // are optional; the echo carries the parameters the model declares (n, and
 // instrumental, lyrics_optimizer, duration or voice as applicable) but no
 // resolution or aspect_ratio. A sound-effect model's quote reports operation
 // generate_sound_effect; a text-to-speech model's quote reports generate_speech
 // and is priced per character of Input.Prompt.
+func (c *Client) QuoteAudio(ctx context.Context, request GenerationRequest) (Quote, error) {
+	return c.quote(ctx, "audio", "generate_music", request)
+}
+
+// QuoteMusic is the original name of QuoteAudio. It calls the permanent legacy
+// path /v1/music/quotes and behaves identically.
 func (c *Client) QuoteMusic(ctx context.Context, request GenerationRequest) (Quote, error) {
 	return c.quote(ctx, "music", "generate_music", request)
 }
@@ -316,9 +322,15 @@ func (c *Client) SubmitVideo(ctx context.Context, request SubmitRequest, idempot
 	return c.submit(ctx, "videos", "generate_video", request, idempotencyKey...)
 }
 
-// SubmitMusic submits a music, sound-effect or text-to-speech Job. The result holds the audio
+// SubmitAudio submits a music, sound-effect or text-to-speech Job. The result holds the audio
 // files the model makes per request (one for most models, two for Suno), each
 // with its measured length in ResultFile.DurationMS.
+func (c *Client) SubmitAudio(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
+	return c.submit(ctx, "audio", "generate_music", request, idempotencyKey...)
+}
+
+// SubmitMusic is the original name of SubmitAudio. It calls the permanent legacy
+// path /v1/music/generations and behaves identically.
 func (c *Client) SubmitMusic(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
 	return c.submit(ctx, "music", "generate_music", request, idempotencyKey...)
 }
@@ -474,7 +486,7 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 		defer cancel()
 	}
 	canRetry := method == http.MethodGet || (method == http.MethodPost && key != "" &&
-		(path == "/v1/images/generations" || path == "/v1/videos/generations" || path == "/v1/music/generations"))
+		(path == "/v1/images/generations" || path == "/v1/videos/generations" || path == "/v1/audio/generations" || path == "/v1/music/generations"))
 	for attempt := 0; ; attempt++ {
 		result, raw, err := c.sendOnce(ctx, method, path, key, data, body != nil)
 		var networkError net.Error
