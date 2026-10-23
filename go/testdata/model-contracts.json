@@ -7708,11 +7708,11 @@
       "locales": {
         "en": {
           "label": "MiniMax H3",
-          "description": "Video generation with native audio, first/last frames, multimodal references, and 768P/2K output"
+          "description": "Video generation with native audio, first/last frames, multimodal references, and 480p to 2K output"
         },
         "zh-CN": {
           "label": "MiniMax H3",
-          "description": "原生音频视频生成，支持首尾帧、多模态参考与 768P/2K 输出"
+          "description": "原生音频视频生成，支持首尾帧、多模态参考与 480p 至 2K 输出"
         }
       },
       "operations": [
@@ -7754,7 +7754,9 @@
               "type": "string",
               "required": false,
               "values": [
+                "480p",
                 "768P",
+                "1080p",
                 "2K"
               ],
               "default": "768P",
@@ -7888,7 +7890,9 @@
               "type": "string",
               "required": false,
               "values": [
+                "480p",
                 "768P",
+                "1080p",
                 "2K"
               ],
               "default": "768P",
@@ -8022,7 +8026,9 @@
               "type": "string",
               "required": false,
               "values": [
+                "480p",
                 "768P",
+                "1080p",
                 "2K"
               ],
               "default": "768P",
