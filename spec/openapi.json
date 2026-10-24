@@ -895,7 +895,7 @@
             }
           }
         },
-        "description": "The image generation request contract without webhook_url or max_cost. A quote creates no job and charges nothing."
+        "description": "The image generation request contract. A quote ignores the submit-only webhook_url and max_cost and reports them in parameter_notices. A quote creates no job and charges nothing."
       },
       "StandardVideoTextInput": {
         "type": "object",
@@ -1165,7 +1165,7 @@
             }
           }
         },
-        "description": "The video generation request contract without webhook_url or max_cost. A quote creates no job and charges nothing."
+        "description": "The video generation request contract. A quote ignores the submit-only webhook_url and max_cost and reports them in parameter_notices. A quote creates no job and charges nothing."
       },
       "StandardMusicTextInput": {
         "type": "object",
@@ -1223,7 +1223,7 @@
           "routing": { "$ref": "#/components/schemas/RoutingOverride" },
           "parameters": { "$ref": "#/components/schemas/StandardMusicParameters" }
         },
-        "description": "The music generation request contract without webhook_url or max_cost. A quote creates no job and charges nothing."
+        "description": "The music generation request contract. A quote ignores the submit-only webhook_url and max_cost and reports them in parameter_notices. A quote creates no job and charges nothing."
       },
       "MaxCost": {
         "type": "string",
@@ -1810,7 +1810,7 @@
         "properties": {
           "name": { "type": "string", "minLength": 1 },
           "disposition": { "type": "string", "const": "ignored" },
-          "reason": { "type": "string", "enum": ["channel_parameter_unsupported", "quality_requires_official_channel", "parameter_fixed_by_model", "duplicate_reference"] },
+          "reason": { "type": "string", "enum": ["channel_parameter_unsupported", "quality_requires_official_channel", "parameter_fixed_by_model", "duplicate_reference", "not_used_by_quote"] },
           "message": { "type": "string" }
         }
       },
