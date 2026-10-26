@@ -20,6 +20,8 @@ type ChannelParameters struct {
 }
 
 // ParameterNotice is expected in Quote and actual only in a succeeded Job.
+// Disposition is "ignored" or "exceeded" (the delivered result exceeds the request
+// and is charged no more than the quote).
 type ParameterNotice struct {
 	Name        string `json:"name"`
 	Disposition string `json:"disposition"`

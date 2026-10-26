@@ -14,10 +14,14 @@ export type ChannelParameters = {
   readonly parameter_rules: Readonly<Record<string, ParameterRule>>;
 };
 
-/** Quote notices are expected; only a succeeded Job confirms actual handling. */
+/**
+ * Quote notices are expected; only a succeeded Job confirms actual handling.
+ * `exceeded` marks a delivered result that exceeds the request (extra outputs trimmed to n,
+ * a higher resolution, or audio although generate_audio is false), charged no more than the quote.
+ */
 export type ParameterNotice = {
   readonly name: string;
-  readonly disposition: "ignored";
+  readonly disposition: "ignored" | "exceeded";
   readonly reason: string;
   readonly message: string;
 };
