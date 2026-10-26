@@ -286,7 +286,8 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	seenReferences := make(map[Reference]bool)
 	for i, reference := range request.Input.References {
 		path := fmt.Sprintf("input.references[%d]", i)
-		if seenReferences[reference] {
+		// Keyframes form an ordered sequence; repeating one (returning to the same shot) is intentional.
+		if reference.Role != "keyframe" && seenReferences[reference] {
 			return &ParameterError{"input.references", "duplicate_reference"}
 		}
 		seenReferences[reference] = true

@@ -21,7 +21,7 @@ export type ModelParameterContract = {
   readonly locales: Readonly<Record<string, ModelContractLocale>>;
 };
 
-export type ReferenceRole = "first_frame" | "last_frame" | "reference_image" | "reference_video" | "reference_audio" | (string & {});
+export type ReferenceRole = "first_frame" | "keyframe" | "last_frame" | "reference_image" | "reference_video" | "reference_audio" | (string & {});
 
 export type ModelInputConstraint = {
   readonly prompt_optional?: boolean;

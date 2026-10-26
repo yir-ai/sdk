@@ -101,3 +101,17 @@ test("Kling 4.0 video characters take one reference_video and no photos", () => 
     [1, 2, 3, 4, 5, 6].map(i => video("", i)),
   ]) assert.throws(check(invalid));
 });
+
+test("Kling 4.0 keyframes keep their order, may repeat a shot and respect the declared count", () => {
+  const frame = (role, name) => ({ role, url: `https://example.com/${name}.png` });
+  const request = (...references) => ({ model: "klingai/kling-4.0", input: { type: "image", prompt: "@first_frame then @keyframe_1", references }, parameters: { duration: 10 } });
+  const contract = getModelOperationContract("klingai/kling-4.0", "generate_video", "image");
+  assert.equal(contract.input_constraints.image.reference_counts_by_role.keyframe.maximum, 8);
+  const body = request(frame("first_frame", "a"), frame("keyframe", "b"), frame("keyframe", "b"), frame("last_frame", "c"));
+  const before = structuredClone(body.input.references);
+  assert.doesNotThrow(() => validateGeneration("generate_video", body));
+  assert.deepEqual(body.input.references, before);
+  assert.throws(() => validateGeneration("generate_video", request(frame("first_frame", "a"), ...Array.from({ length: 9 }, (_, i) => frame("keyframe", i)))));
+  assert.throws(() => validateGeneration("generate_video", request(frame("first_frame", "a"), frame("last_frame", "c"), frame("last_frame", "c"))));
+  assert.throws(() => validateGeneration("generate_video", { model: "klingai/kling-3.0", input: { type: "image", prompt: "fixture", references: [frame("first_frame", "a"), frame("keyframe", "b")] }, parameters: {} }));
+});

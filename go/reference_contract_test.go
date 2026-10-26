@@ -209,3 +209,29 @@ func TestVideoSubjectReferenceContract(t *testing.T) {
 		}
 	}
 }
+
+func TestKeyframeContract(t *testing.T) {
+	frame := func(role, name string) Reference {
+		return Reference{Role: role, URL: "https://example.com/" + name + ".png"}
+	}
+	request := func(references ...Reference) GenerationRequest {
+		return GenerationRequest{Model: "klingai/kling-4.0", Input: GenerationInput{Type: "image", Prompt: "@first_frame then @keyframe_1", References: references}, Parameters: map[string]any{"duration": 10}}
+	}
+	// Keyframes keep their order and may repeat a shot.
+	if err := ValidateGeneration("generate_video", request(frame("first_frame", "a"), frame("keyframe", "b"), frame("keyframe", "b"), frame("last_frame", "c"))); err != nil {
+		t.Fatal(err)
+	}
+	nine := []Reference{frame("first_frame", "a")}
+	for i := 0; i < 9; i++ {
+		nine = append(nine, frame("keyframe", fmt.Sprint(i)))
+	}
+	for name, r := range map[string]GenerationRequest{
+		"nine keyframes":       request(nine...),
+		"duplicate last frame": request(frame("first_frame", "a"), frame("last_frame", "c"), frame("last_frame", "c")),
+		"other model":          {Model: "klingai/kling-3.0", Input: GenerationInput{Type: "image", Prompt: "fixture", References: []Reference{frame("first_frame", "a"), frame("keyframe", "b")}}},
+	} {
+		if ValidateGeneration("generate_video", r) == nil {
+			t.Fatal(name)
+		}
+	}
+}

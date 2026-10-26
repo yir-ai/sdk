@@ -6912,11 +6912,11 @@
       "locales": {
         "en": {
           "label": "Kling 4.0",
-          "description": "Kuaishou Kling 4.0 video model with native audio: text, up to 10 reference images or first/last frames, up to 30 seconds"
+          "description": "Kuaishou Kling 4.0 video model with native audio: text, up to 10 reference images or up to 10 keyframes, up to 30 seconds"
         },
         "zh-CN": {
           "label": "Kling 4.0",
-          "description": "快手可灵 4.0 原生有声视频模型，支持文生视频、最多 10 张参考图的参考生视频与首尾帧，最长 30 秒"
+          "description": "快手可灵 4.0 原生有声视频模型，支持文生视频、最多 10 张参考图的参考生视频与最多 10 个关键帧，最长 30 秒"
         }
       },
       "operations": [
@@ -7047,15 +7047,20 @@
           "input_constraints": {
             "image": {
               "min_references": 1,
-              "max_references": 2,
+              "max_references": 10,
               "allowed_reference_roles": [
                 "first_frame",
+                "keyframe",
                 "last_frame"
               ],
               "reference_counts_by_role": {
                 "first_frame": {
                   "minimum": 1,
                   "maximum": 1
+                },
+                "keyframe": {
+                  "minimum": 0,
+                  "maximum": 8
                 },
                 "last_frame": {
                   "minimum": 0,

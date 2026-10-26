@@ -939,8 +939,10 @@
                   "type": "string",
                   "enum": [
                     "first_frame",
+                    "keyframe",
                     "last_frame"
-                  ]
+                  ],
+                  "description": "keyframe is a middle frame between first_frame and last_frame. Keyframes play in the order they appear in references and carry no timestamp; models that accept them declare the role and its count in their input contract."
                 },
                 "file_id": {
                   "$ref": "#/components/schemas/FileID"
@@ -1962,12 +1964,12 @@
           "allowed_reference_roles": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
+            "items": { "type": "string", "enum": ["first_frame", "keyframe", "last_frame", "reference_image", "reference_video", "reference_audio"] }
           },
           "required_reference_roles": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
+            "items": { "type": "string", "enum": ["first_frame", "keyframe", "last_frame", "reference_image", "reference_video", "reference_audio"] }
           },
           "max_duration_by_reference_role": {
             "type": "object",
@@ -1987,7 +1989,7 @@
           },
           "required_any_reference_roles": {
             "type": "array", "uniqueItems": true,
-            "items": { "type": "string", "enum": ["first_frame", "last_frame", "reference_image", "reference_video", "reference_audio"] }
+            "items": { "type": "string", "enum": ["first_frame", "keyframe", "last_frame", "reference_image", "reference_video", "reference_audio"] }
           },
           "subject_references": {
             "type": "object",

@@ -365,7 +365,8 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
     }
     if (!mixed || reference.subject === undefined) roles.set(reference.role, (roles.get(reference.role) ?? 0) + 1);
     const identity = JSON.stringify([reference.role, reference.url ?? null, reference.file_id ?? null, reference.subject ?? null]);
-    if (seenReferences.has(identity)) throw new YirSDKValidationError("duplicate_reference", "input.references");
+    // Keyframes form an ordered sequence; repeating one (returning to the same shot) is intentional.
+    if (reference.role !== "keyframe" && seenReferences.has(identity)) throw new YirSDKValidationError("duplicate_reference", "input.references");
     seenReferences.add(identity);
   }
   for (const role of constraint?.required_reference_roles ?? []) {
