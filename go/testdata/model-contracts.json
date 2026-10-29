@@ -2988,6 +2988,147 @@
       ]
     },
     {
+      "id": "bytedance/omnihuman-2.0",
+      "aliases": [
+        "omnihuman-2.0"
+      ],
+      "locales": {
+        "en": {
+          "label": "OmniHuman 2.0",
+          "description": "ByteDance avatar model that turns one portrait and an audio track into a lip-synced, full-body performance video up to 5 minutes"
+        },
+        "zh-CN": {
+          "label": "OmniHuman 2.0",
+          "description": "字节跳动数字人模型，一张人物图加一段音频生成口型同步、全身动作的视频，最长 5 分钟"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "reference"
+          ],
+          "input_constraints": {
+            "reference": {
+              "prompt_optional": true,
+              "min_references": 2,
+              "max_references": 2,
+              "allowed_reference_roles": [
+                "reference_image",
+                "reference_audio"
+              ],
+              "required_reference_roles": [
+                "reference_image",
+                "reference_audio"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 5,
+              "minimum": 4,
+              "maximum": 300,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "720p"
+              ],
+              "default": "720p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "bytedance/seedance-1.5-pro",
       "aliases": [
         "seedance-1.5-pro",
