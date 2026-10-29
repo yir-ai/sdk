@@ -54,7 +54,7 @@ func TestQuoteMayEchoCanonicalModelForAlias(t *testing.T) {
 	if !client.quoteMatchesRequest(quote, request, "generate_image") {
 		t.Fatal("catalog-resolved alias must match")
 	}
-	quote.Model = "openai/gpt-image-1"
+	quote.Model = "openai/gpt-image-1.5"
 	if client.quoteMatchesRequest(quote, request, "generate_image") {
 		t.Fatal("a different known model must be rejected")
 	}
