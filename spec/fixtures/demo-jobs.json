@@ -1,10 +1,10 @@
 {
   "cases": [
     {
-      "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+      "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
       "now_ms": 1793000001000,
       "job": {
-        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
         "object": "job",
         "status": "queued",
         "model": "openai/gpt-image-2",
@@ -14,8 +14,8 @@
           "resolution": "2K"
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2",
-          "cancel": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2/cancel"
+          "get": "/v1/jobs/demo_1tni7nki22007o24ql_openai~gpt-image-2",
+          "cancel": "/v1/jobs/demo_1tni7nki22007o24ql_openai~gpt-image-2/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -31,16 +31,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
         "status": "queued",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+      "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
       "now_ms": 1793000005000,
       "job": {
-        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
         "object": "job",
         "status": "running",
         "model": "openai/gpt-image-2",
@@ -50,8 +50,8 @@
           "resolution": "2K"
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2",
-          "cancel": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2/cancel"
+          "get": "/v1/jobs/demo_1tni7nki22007o24ql_openai~gpt-image-2",
+          "cancel": "/v1/jobs/demo_1tni7nki22007o24ql_openai~gpt-image-2/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -67,16 +67,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
         "status": "running",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+      "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
       "now_ms": 1793000008000,
       "job": {
-        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
         "object": "job",
         "status": "succeeded",
         "model": "openai/gpt-image-2",
@@ -86,8 +86,8 @@
           "resolution": "2K"
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2",
-          "cancel": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2/cancel"
+          "get": "/v1/jobs/demo_1tni7nki22007o24ql_openai~gpt-image-2",
+          "cancel": "/v1/jobs/demo_1tni7nki22007o24ql_openai~gpt-image-2/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -127,16 +127,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "id": "demo_1tni7nki22007o24ql_openai~gpt-image-2",
         "status": "succeeded",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
+      "id": "demo_1tni7nkia6006oca6e_google~gemini-3.1-flash-lite-image",
       "now_ms": 1793000009000,
       "job": {
-        "id": "demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
+        "id": "demo_1tni7nkia6006oca6e_google~gemini-3.1-flash-lite-image",
         "object": "job",
         "status": "succeeded",
         "model": "google/gemini-3.1-flash-lite-image",
@@ -146,8 +146,8 @@
           "resolution": "1K"
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
-          "cancel": "/v1/jobs/demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image/cancel"
+          "get": "/v1/jobs/demo_1tni7nkia6006oca6e_google~gemini-3.1-flash-lite-image",
+          "cancel": "/v1/jobs/demo_1tni7nkia6006oca6e_google~gemini-3.1-flash-lite-image/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -215,16 +215,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
+        "id": "demo_1tni7nkia6006oca6e_google~gemini-3.1-flash-lite-image",
         "status": "succeeded",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+      "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
       "now_ms": 1793000002000,
       "job": {
-        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
         "object": "job",
         "status": "queued",
         "model": "spacexai/grok-imagine-video-1.5-lite",
@@ -235,8 +235,8 @@
           "duration": 8
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
-          "cancel": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite/cancel"
+          "get": "/v1/jobs/demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
+          "cancel": "/v1/jobs/demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -252,16 +252,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
         "status": "queued",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+      "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
       "now_ms": 1793000010000,
       "job": {
-        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
         "object": "job",
         "status": "running",
         "model": "spacexai/grok-imagine-video-1.5-lite",
@@ -272,8 +272,8 @@
           "duration": 8
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
-          "cancel": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite/cancel"
+          "get": "/v1/jobs/demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
+          "cancel": "/v1/jobs/demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -289,16 +289,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
         "status": "running",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+      "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
       "now_ms": 1793000025000,
       "job": {
-        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
         "object": "job",
         "status": "succeeded",
         "model": "spacexai/grok-imagine-video-1.5-lite",
@@ -309,8 +309,8 @@
           "duration": 8
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
-          "cancel": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite/cancel"
+          "get": "/v1/jobs/demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
+          "cancel": "/v1/jobs/demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -327,6 +327,7 @@
               "media_type": "video/mp4",
               "width": 720,
               "height": 1280,
+              "duration_ms": 10000,
               "expires_at": 1793604825
             }
           ]
@@ -343,16 +344,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "id": "demo_1tni7nkv31082ozwds_spacexai~grok-imagine-video-1.5-lite",
         "status": "succeeded",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+      "id": "demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
       "now_ms": 1793000024000,
       "job": {
-        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "id": "demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
         "object": "job",
         "status": "running",
         "model": "bytedance/seedance-2.0",
@@ -363,8 +364,8 @@
           "duration": "auto"
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
-          "cancel": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0/cancel"
+          "get": "/v1/jobs/demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
+          "cancel": "/v1/jobs/demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -380,16 +381,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "id": "demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
         "status": "running",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+      "id": "demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
       "now_ms": 1793000025000,
       "job": {
-        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "id": "demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
         "object": "job",
         "status": "failed",
         "model": "bytedance/seedance-2.0",
@@ -400,8 +401,8 @@
           "duration": "auto"
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
-          "cancel": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0/cancel"
+          "get": "/v1/jobs/demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
+          "cancel": "/v1/jobs/demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0/cancel"
         },
         "error": {
           "code": "YIR_EXECUTION_FAILED",
@@ -422,7 +423,7 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "id": "demo_1tni7nkvl1zz3fpb6a_bytedance~seedance-2.0",
         "status": "failed",
         "error": {
           "code": "YIR_EXECUTION_FAILED",
@@ -432,10 +433,10 @@
       }
     },
     {
-      "id": "demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
+      "id": "demo_1tni7nkv810f0c9fcy_klingai~kling-4.0",
       "now_ms": 1793000030000,
       "job": {
-        "id": "demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
+        "id": "demo_1tni7nkv810f0c9fcy_klingai~kling-4.0",
         "object": "job",
         "status": "cancelled",
         "model": "klingai/kling-4.0",
@@ -445,8 +446,8 @@
           "duration": 15
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
-          "cancel": "/v1/jobs/demo_1tni7nkv810f0cuclv_klingai~kling-4.0/cancel"
+          "get": "/v1/jobs/demo_1tni7nkv810f0c9fcy_klingai~kling-4.0",
+          "cancel": "/v1/jobs/demo_1tni7nkv810f0c9fcy_klingai~kling-4.0/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -467,7 +468,7 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
+        "id": "demo_1tni7nkv810f0c9fcy_klingai~kling-4.0",
         "status": "cancelled",
         "error": null,
         "cancellation": {
@@ -477,10 +478,10 @@
       }
     },
     {
-      "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+      "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
       "now_ms": 1793000359000,
       "job": {
-        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
         "object": "job",
         "status": "queued",
         "model": "minimax/music-2.6",
@@ -488,8 +489,8 @@
           "n": 2
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6",
-          "cancel": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6/cancel"
+          "get": "/v1/jobs/demo_1tni7nkm02000sh8mb_minimax~music-2.6",
+          "cancel": "/v1/jobs/demo_1tni7nkm02000sh8mb_minimax~music-2.6/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -505,16 +506,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
         "status": "queued",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+      "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
       "now_ms": 1793000360000,
       "job": {
-        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
         "object": "job",
         "status": "running",
         "model": "minimax/music-2.6",
@@ -522,8 +523,8 @@
           "n": 2
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6",
-          "cancel": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6/cancel"
+          "get": "/v1/jobs/demo_1tni7nkm02000sh8mb_minimax~music-2.6",
+          "cancel": "/v1/jobs/demo_1tni7nkm02000sh8mb_minimax~music-2.6/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -539,16 +540,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
         "status": "running",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+      "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
       "now_ms": 1793000480000,
       "job": {
-        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
         "object": "job",
         "status": "succeeded",
         "model": "minimax/music-2.6",
@@ -556,8 +557,8 @@
           "n": 2
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6",
-          "cancel": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6/cancel"
+          "get": "/v1/jobs/demo_1tni7nkm02000sh8mb_minimax~music-2.6",
+          "cancel": "/v1/jobs/demo_1tni7nkm02000sh8mb_minimax~music-2.6/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -595,16 +596,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "id": "demo_1tni7nkm02000sh8mb_minimax~music-2.6",
         "status": "succeeded",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
+      "id": "demo_1tni7nkx01050oo117_elevenlabs~sound-effects-v2",
       "now_ms": 1793000012000,
       "job": {
-        "id": "demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
+        "id": "demo_1tni7nkx01050oo117_elevenlabs~sound-effects-v2",
         "object": "job",
         "status": "succeeded",
         "model": "elevenlabs/sound-effects-v2",
@@ -613,8 +614,8 @@
           "duration": 5
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
-          "cancel": "/v1/jobs/demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2/cancel"
+          "get": "/v1/jobs/demo_1tni7nkx01050oo117_elevenlabs~sound-effects-v2",
+          "cancel": "/v1/jobs/demo_1tni7nkx01050oo117_elevenlabs~sound-effects-v2/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -646,16 +647,16 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
+        "id": "demo_1tni7nkx01050oo117_elevenlabs~sound-effects-v2",
         "status": "succeeded",
         "error": null
       }
     },
     {
-      "id": "demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
+      "id": "demo_1tni7nkt01000o2x6u_minimax~speech-2.8-hd",
       "now_ms": 1793000012000,
       "job": {
-        "id": "demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
+        "id": "demo_1tni7nkt01000o2x6u_minimax~speech-2.8-hd",
         "object": "job",
         "status": "succeeded",
         "model": "minimax/speech-2.8-hd",
@@ -663,8 +664,8 @@
           "n": 1
         },
         "urls": {
-          "get": "/v1/jobs/demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
-          "cancel": "/v1/jobs/demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd/cancel"
+          "get": "/v1/jobs/demo_1tni7nkt01000o2x6u_minimax~speech-2.8-hd",
+          "cancel": "/v1/jobs/demo_1tni7nkt01000o2x6u_minimax~speech-2.8-hd/cancel"
         },
         "error": null,
         "created_at": 1793000000,
@@ -696,7 +697,7 @@
         }
       },
       "status": {
-        "id": "demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
+        "id": "demo_1tni7nkt01000o2x6u_minimax~speech-2.8-hd",
         "status": "succeeded",
         "error": null
       }

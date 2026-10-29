@@ -22,6 +22,8 @@ export type YirAIImageModel = ImageModelV4 & {
 
 /** AI SDK 7 / Provider V4 adapter. Uses the same Yir request and Job lifecycle. */
 export function createYirAIProvider(options: YirAIProviderOptions = {}) {
+  // An injected client keeps its own settings; a demo flag here would be silently ignored.
+  if (options.client && options.demo !== undefined) throw new Error("demo_requires_client_option");
   const client = options.client ?? createNodeYirClient(options);
   const fetchResult = options.fetch ?? globalThis.fetch;
   const finish = async (job: Job, signal?: AbortSignal) => job.status === "succeeded" ? job : waitForJob(client, job.id, {

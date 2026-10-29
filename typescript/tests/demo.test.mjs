@@ -188,3 +188,15 @@ test("the SDK asset table matches the published manifest", () => {
   assert.equal(manifest.base_url, "https://public.yir.ai/demo/v1/");
   assert.deepEqual(DEMO_ASSETS, manifest.assets.map(({ sha256: _, ...asset }) => asset));
 });
+
+test("the Vercel adapter refuses a demo flag next to an injected client", async () => {
+  const { createYirAIProvider } = await import("../dist/server/vercel.js");
+  const client = createYirClient(async request => { throw new Error(`unexpected ${request.path}`); });
+  assert.throws(() => createYirAIProvider({ client, demo: true }), /demo_requires_client_option/);
+  assert.doesNotThrow(() => createYirAIProvider({ client: createYirClient(gateway([]), undefined, { demo: true }) }));
+});
+
+test("demo video results report the sample's measured length", () => {
+  const item = fixture.cases.find(item => item.job.status === "succeeded" && item.job.result.files[0].media_type === "video/mp4");
+  assert.equal(item.job.result.files[0].duration_ms, 10000);
+});

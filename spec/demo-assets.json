@@ -329,6 +329,7 @@
       "media_type": "video/mp4",
       "width": 1280,
       "height": 720,
+      "duration_ms": 5000,
       "sha256": "4d0bc49921661230235f24ba3075da7c7f33294f67c1ee0478f73f4aa33d84de"
     },
     {
@@ -339,6 +340,7 @@
       "media_type": "video/mp4",
       "width": 1280,
       "height": 720,
+      "duration_ms": 10000,
       "sha256": "534ea3b923ecf3dd75094d09ccc4cce3030cb3d4a79737df9272802c83a1302f"
     },
     {
@@ -349,6 +351,7 @@
       "media_type": "video/mp4",
       "width": 720,
       "height": 1280,
+      "duration_ms": 5000,
       "sha256": "7cd526d76726a54e4e83781b335e8e060fd8b1fb493b61d13e4e6cb6e492f000"
     },
     {
@@ -359,6 +362,7 @@
       "media_type": "video/mp4",
       "width": 720,
       "height": 1280,
+      "duration_ms": 10000,
       "sha256": "9a489bb0f3617a0877ac5a19b1699af7bfd701bde46dcd8efac91f80fd6228fd"
     },
     {
@@ -369,6 +373,7 @@
       "media_type": "video/mp4",
       "width": 720,
       "height": 720,
+      "duration_ms": 5000,
       "sha256": "c4ff917926cdc589bb13db02fb54a9ecbf2a6d9625ed2ccabad74f7d43cac6c6"
     },
     {
@@ -379,6 +384,7 @@
       "media_type": "video/mp4",
       "width": 720,
       "height": 720,
+      "duration_ms": 10000,
       "sha256": "9d2e62ba34847c18315103b8627674c524b04d0dc2c5cbeb14bc2b431700fd13"
     },
     {
@@ -389,6 +395,7 @@
       "media_type": "video/mp4",
       "width": 960,
       "height": 720,
+      "duration_ms": 5000,
       "sha256": "3988069c376b2351107e8cf7368ac09c289f6ad0befd5446683981310895a2d0"
     },
     {
@@ -399,6 +406,7 @@
       "media_type": "video/mp4",
       "width": 960,
       "height": 720,
+      "duration_ms": 10000,
       "sha256": "9e002b0c702fa9a04f90d178a8f86bf6c61b61584f71396f0bd2575d6b95ae72"
     },
     {
@@ -409,6 +417,7 @@
       "media_type": "video/mp4",
       "width": 720,
       "height": 960,
+      "duration_ms": 5000,
       "sha256": "748edfb4d9131b430425d6c9a0d9a455b420de124b71458bf2d3e1cffd023931"
     },
     {
@@ -419,6 +428,7 @@
       "media_type": "video/mp4",
       "width": 720,
       "height": 960,
+      "duration_ms": 10000,
       "sha256": "a0de268b9f61ef85e63d0c7c6ec2d6a2389d11c435b4c6eb73abe8a9b2888ef9"
     },
     {
@@ -429,6 +439,7 @@
       "media_type": "video/mp4",
       "width": 1680,
       "height": 720,
+      "duration_ms": 5000,
       "sha256": "c9a31d38901f4be2a2bd71a9ab4a5d08c34dc1c491973539f8a7d08cbcfb0b6c"
     },
     {
@@ -439,6 +450,7 @@
       "media_type": "video/mp4",
       "width": 1680,
       "height": 720,
+      "duration_ms": 10000,
       "sha256": "147cac4c49e36510a0f4ddb7d2b6c287fec84ea4f8a2aa2238124a7365411837"
     },
     {

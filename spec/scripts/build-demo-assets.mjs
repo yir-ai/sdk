@@ -104,8 +104,8 @@ function build(options) {
       const file = join(out, path);
       ffmpeg(["-stream_loop", "-1", "-i", input, "-t", String(duration), "-vf", `${fill(width, height)},${badge(font, width, height)},fps=24`,
         "-an", "-c:v", "libx264", "-preset", "slow", "-crf", "28", "-pix_fmt", "yuv420p", "-movflags", "+faststart", file]);
-      const { width: w, height: h } = probe(file);
-      record({ kind: "video", aspect_ratio: aspect, duration, path, media_type: "video/mp4", width: w, height: h }, file);
+      const { width: w, height: h, duration: seconds } = probe(file);
+      record({ kind: "video", aspect_ratio: aspect, duration, path, media_type: "video/mp4", width: w, height: h, duration_ms: Math.round(seconds * 1000) }, file);
     }
   }
 
