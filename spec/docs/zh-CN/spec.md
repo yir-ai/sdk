@@ -10,6 +10,8 @@
 
 服务端负责从业务定义导出规范，本仓库负责依据公开定义生成 SDK、测试与发布；跨服务端验证留在私有仓库。静态规范不保证实时供给或最终扣费。运行时报价与恢复见 [Go](../../../go/docs/zh-CN/README.md) 和 [TypeScript](../../../typescript/docs/zh-CN/README.md) 指南。
 
+SDK 的 demo 模式在本地解答以 `demo_` 开头的 Job ID，因此网关的 Job ID 不使用该前缀。[demo-assets.json](../../demo-assets.json) 列出这些 Job 返回的带 DEMO 徽标文件，经 `https://public.yir.ai/demo/v1/`（桶 `yir-weur`，前缀 `public/demo/v1/`）分发，并记录供上传核对的 SHA-256；`node spec/scripts/build-demo-assets.mjs --source <样片目录> --out <目录>` 用现有样片重建文件且不调用生成模型，`--tables` 重新生成 TypeScript 与 Go 的表。[fixtures/demo-jobs.json](../../fixtures/demo-jobs.json)（另有 `go/testdata/` 副本）是两端共享的 demo Job 向量，构建后用 `node typescript/scripts/generate-demo-fixture.mjs` 重新生成。
+
 中文翻译与英文文档成对维护，保留双向链接。中文仓库总览位于 `spec/docs/zh-CN/`，避免根目录堆文件；语言专属翻译位于各 SDK 的 `docs/zh-CN/`。
 
 ## 合同更新流程

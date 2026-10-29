@@ -1,0 +1,705 @@
+{
+  "cases": [
+    {
+      "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+      "now_ms": 1793000001000,
+      "job": {
+        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "object": "job",
+        "status": "queued",
+        "model": "openai/gpt-image-2",
+        "parameters": {
+          "n": 2,
+          "aspect_ratio": "16:9",
+          "resolution": "2K"
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2",
+          "cancel": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "pending",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "status": "queued",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+      "now_ms": 1793000005000,
+      "job": {
+        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "object": "job",
+        "status": "running",
+        "model": "openai/gpt-image-2",
+        "parameters": {
+          "n": 2,
+          "aspect_ratio": "16:9",
+          "resolution": "2K"
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2",
+          "cancel": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "pending",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "status": "running",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+      "now_ms": 1793000008000,
+      "job": {
+        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "object": "job",
+        "status": "succeeded",
+        "model": "openai/gpt-image-2",
+        "parameters": {
+          "n": 2,
+          "aspect_ratio": "16:9",
+          "resolution": "2K"
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2",
+          "cancel": "/v1/jobs/demo_1tni7nki22007ovnub_openai~gpt-image-2/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "completed_at": 1793000008,
+        "final_provider": "yir-demo",
+        "usage": {
+          "outputs": 2
+        },
+        "result": {
+          "availability": "available",
+          "files": [
+            {
+              "url": "https://public.yir.ai/demo/v1/image/16x9-1.jpg",
+              "media_type": "image/jpeg",
+              "width": 1280,
+              "height": 720,
+              "expires_at": 1793604808
+            },
+            {
+              "url": "https://public.yir.ai/demo/v1/image/16x9-2.jpg",
+              "media_type": "image/jpeg",
+              "width": 1280,
+              "height": 720,
+              "expires_at": 1793604808
+            }
+          ]
+        },
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nki22007ovnub_openai~gpt-image-2",
+        "status": "succeeded",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
+      "now_ms": 1793000009000,
+      "job": {
+        "id": "demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
+        "object": "job",
+        "status": "succeeded",
+        "model": "google/gemini-3.1-flash-lite-image",
+        "parameters": {
+          "n": 6,
+          "aspect_ratio": "4:5",
+          "resolution": "1K"
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
+          "cancel": "/v1/jobs/demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "completed_at": 1793000008,
+        "final_provider": "yir-demo",
+        "usage": {
+          "outputs": 6
+        },
+        "result": {
+          "availability": "available",
+          "files": [
+            {
+              "url": "https://public.yir.ai/demo/v1/image/3x4-1.jpg",
+              "media_type": "image/jpeg",
+              "width": 864,
+              "height": 1152,
+              "expires_at": 1793604808
+            },
+            {
+              "url": "https://public.yir.ai/demo/v1/image/3x4-2.jpg",
+              "media_type": "image/jpeg",
+              "width": 864,
+              "height": 1152,
+              "expires_at": 1793604808
+            },
+            {
+              "url": "https://public.yir.ai/demo/v1/image/3x4-3.jpg",
+              "media_type": "image/jpeg",
+              "width": 864,
+              "height": 1152,
+              "expires_at": 1793604808
+            },
+            {
+              "url": "https://public.yir.ai/demo/v1/image/3x4-4.jpg",
+              "media_type": "image/jpeg",
+              "width": 864,
+              "height": 1152,
+              "expires_at": 1793604808
+            },
+            {
+              "url": "https://public.yir.ai/demo/v1/image/3x4-1.jpg?i=4",
+              "media_type": "image/jpeg",
+              "width": 864,
+              "height": 1152,
+              "expires_at": 1793604808
+            },
+            {
+              "url": "https://public.yir.ai/demo/v1/image/3x4-2.jpg?i=5",
+              "media_type": "image/jpeg",
+              "width": 864,
+              "height": 1152,
+              "expires_at": 1793604808
+            }
+          ]
+        },
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkia6006o9wns_google~gemini-3.1-flash-lite-image",
+        "status": "succeeded",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+      "now_ms": 1793000002000,
+      "job": {
+        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "object": "job",
+        "status": "queued",
+        "model": "spacexai/grok-imagine-video-1.5-lite",
+        "parameters": {
+          "n": 1,
+          "aspect_ratio": "9:16",
+          "resolution": "720p",
+          "duration": 8
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+          "cancel": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "pending",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "status": "queued",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+      "now_ms": 1793000010000,
+      "job": {
+        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "object": "job",
+        "status": "running",
+        "model": "spacexai/grok-imagine-video-1.5-lite",
+        "parameters": {
+          "n": 1,
+          "aspect_ratio": "9:16",
+          "resolution": "720p",
+          "duration": 8
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+          "cancel": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "pending",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "status": "running",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+      "now_ms": 1793000025000,
+      "job": {
+        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "object": "job",
+        "status": "succeeded",
+        "model": "spacexai/grok-imagine-video-1.5-lite",
+        "parameters": {
+          "n": 1,
+          "aspect_ratio": "9:16",
+          "resolution": "720p",
+          "duration": 8
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+          "cancel": "/v1/jobs/demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "completed_at": 1793000025,
+        "final_provider": "yir-demo",
+        "usage": {
+          "outputs": 1
+        },
+        "result": {
+          "availability": "available",
+          "files": [
+            {
+              "url": "https://public.yir.ai/demo/v1/video/9x16-10s.mp4",
+              "media_type": "video/mp4",
+              "width": 720,
+              "height": 1280,
+              "expires_at": 1793604825
+            }
+          ]
+        },
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkv31082oc6a9_spacexai~grok-imagine-video-1.5-lite",
+        "status": "succeeded",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+      "now_ms": 1793000024000,
+      "job": {
+        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "object": "job",
+        "status": "running",
+        "model": "bytedance/seedance-2.0",
+        "parameters": {
+          "n": 1,
+          "aspect_ratio": "adaptive",
+          "resolution": "1080p",
+          "duration": "auto"
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+          "cancel": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "pending",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "status": "running",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+      "now_ms": 1793000025000,
+      "job": {
+        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "object": "job",
+        "status": "failed",
+        "model": "bytedance/seedance-2.0",
+        "parameters": {
+          "n": 1,
+          "aspect_ratio": "adaptive",
+          "resolution": "1080p",
+          "duration": "auto"
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+          "cancel": "/v1/jobs/demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0/cancel"
+        },
+        "error": {
+          "code": "YIR_EXECUTION_FAILED",
+          "message": "Demo Job failed by the fail scenario; nothing was charged.",
+          "retryable": false
+        },
+        "created_at": 1793000000,
+        "completed_at": 1793000025,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkvl1zz3fgt3x_bytedance~seedance-2.0",
+        "status": "failed",
+        "error": {
+          "code": "YIR_EXECUTION_FAILED",
+          "message": "Demo Job failed by the fail scenario; nothing was charged.",
+          "retryable": false
+        }
+      }
+    },
+    {
+      "id": "demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
+      "now_ms": 1793000030000,
+      "job": {
+        "id": "demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
+        "object": "job",
+        "status": "cancelled",
+        "model": "klingai/kling-4.0",
+        "parameters": {
+          "n": 1,
+          "aspect_ratio": "21:9",
+          "duration": 15
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
+          "cancel": "/v1/jobs/demo_1tni7nkv810f0cuclv_klingai~kling-4.0/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "completed_at": 1793000025,
+        "cancellation": {
+          "status": "cancelled",
+          "requested_at": 1793000025
+        },
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkv810f0cuclv_klingai~kling-4.0",
+        "status": "cancelled",
+        "error": null,
+        "cancellation": {
+          "status": "cancelled",
+          "requested_at": 1793000025
+        }
+      }
+    },
+    {
+      "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+      "now_ms": 1793000359000,
+      "job": {
+        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "object": "job",
+        "status": "queued",
+        "model": "minimax/music-2.6",
+        "parameters": {
+          "n": 2
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+          "cancel": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "pending",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "status": "queued",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+      "now_ms": 1793000360000,
+      "job": {
+        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "object": "job",
+        "status": "running",
+        "model": "minimax/music-2.6",
+        "parameters": {
+          "n": 2
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+          "cancel": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "pending",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "status": "running",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+      "now_ms": 1793000480000,
+      "job": {
+        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "object": "job",
+        "status": "succeeded",
+        "model": "minimax/music-2.6",
+        "parameters": {
+          "n": 2
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+          "cancel": "/v1/jobs/demo_1tni7nkm02000sd4d6_minimax~music-2.6/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "completed_at": 1793000480,
+        "final_provider": "yir-demo",
+        "usage": {
+          "outputs": 2
+        },
+        "result": {
+          "availability": "available",
+          "files": [
+            {
+              "url": "https://public.yir.ai/demo/v1/audio/music.mp3",
+              "media_type": "audio/mpeg",
+              "duration_ms": 30000,
+              "expires_at": 1793605280
+            },
+            {
+              "url": "https://public.yir.ai/demo/v1/audio/music.mp3?i=1",
+              "media_type": "audio/mpeg",
+              "duration_ms": 30000,
+              "expires_at": 1793605280
+            }
+          ]
+        },
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkm02000sd4d6_minimax~music-2.6",
+        "status": "succeeded",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
+      "now_ms": 1793000012000,
+      "job": {
+        "id": "demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
+        "object": "job",
+        "status": "succeeded",
+        "model": "elevenlabs/sound-effects-v2",
+        "parameters": {
+          "n": 1,
+          "duration": 5
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
+          "cancel": "/v1/jobs/demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "completed_at": 1793000012,
+        "final_provider": "yir-demo",
+        "usage": {
+          "outputs": 1
+        },
+        "result": {
+          "availability": "available",
+          "files": [
+            {
+              "url": "https://public.yir.ai/demo/v1/audio/sound-effect.mp3",
+              "media_type": "audio/mpeg",
+              "duration_ms": 5000,
+              "expires_at": 1793604812
+            }
+          ]
+        },
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkx01050ozr50_elevenlabs~sound-effects-v2",
+        "status": "succeeded",
+        "error": null
+      }
+    },
+    {
+      "id": "demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
+      "now_ms": 1793000012000,
+      "job": {
+        "id": "demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
+        "object": "job",
+        "status": "succeeded",
+        "model": "minimax/speech-2.8-hd",
+        "parameters": {
+          "n": 1
+        },
+        "urls": {
+          "get": "/v1/jobs/demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
+          "cancel": "/v1/jobs/demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd/cancel"
+        },
+        "error": null,
+        "created_at": 1793000000,
+        "completed_at": 1793000012,
+        "final_provider": "yir-demo",
+        "usage": {
+          "outputs": 1
+        },
+        "result": {
+          "availability": "available",
+          "files": [
+            {
+              "url": "https://public.yir.ai/demo/v1/audio/speech.mp3",
+              "media_type": "audio/mpeg",
+              "duration_ms": 5213,
+              "expires_at": 1793604812
+            }
+          ]
+        },
+        "billing": {
+          "currency": "USD",
+          "total_charged_by_yir": "0",
+          "status": "settled",
+          "compute_charges": [],
+          "gateway_fee": {
+            "amount": "0",
+            "status": "waived"
+          }
+        }
+      },
+      "status": {
+        "id": "demo_1tni7nkt01000ob55g_minimax~speech-2.8-hd",
+        "status": "succeeded",
+        "error": null
+      }
+    }
+  ]
+}

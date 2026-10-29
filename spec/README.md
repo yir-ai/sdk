@@ -10,6 +10,8 @@ From `typescript/`, run `pnpm generate:model-contracts` to generate the packaged
 
 The server owns exporting business definitions; this repository owns SDK generation, tests and releases from those public definitions. Cross-server validation remains in the private repository. Static specifications do not guarantee live supply or final charges. See the [Go](../go/README.md) and [TypeScript](../typescript/README.md) guides for runtime quote and recovery behavior.
 
+SDK demo mode answers Job IDs starting with `demo_` locally, so Gateway Job IDs never use that prefix. [demo-assets.json](demo-assets.json) lists the DEMO-badged files those Jobs return, served from `https://public.yir.ai/demo/v1/` (bucket `yir-weur`, prefix `public/demo/v1/`) with SHA-256 hashes for upload checks; `node spec/scripts/build-demo-assets.mjs --source <samples> --out <dir>` rebuilds them from existing samples without calling a generation model, and `--tables` regenerates the TypeScript and Go tables. [fixtures/demo-jobs.json](fixtures/demo-jobs.json) (also `go/testdata/`) holds the shared demo Job vectors; regenerate them with `node typescript/scripts/generate-demo-fixture.mjs` after a build.
+
 Keep translations paired with their English documents and maintain links in both directions. The Chinese repository overview lives under `spec/docs/zh-CN/` to keep the root clean; language-specific translations live under each SDK's `docs/zh-CN/`.
 
 ## Contract update procedure

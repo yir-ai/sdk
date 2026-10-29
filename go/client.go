@@ -28,6 +28,9 @@ type ClientOptions struct {
 	// Yir-Referral. Jobs count toward that partner's referral rebate only when Yir has
 	// enabled the code for partner attribution; otherwise it is ignored and never fails a request.
 	ReferralCode string
+	// Demo turns on demo mode (see DemoOptions); nil leaves it off. An API Key
+	// is still required because demo submits are quoted by the Gateway.
+	Demo *DemoOptions
 }
 
 type Client struct {
@@ -36,6 +39,7 @@ type Client struct {
 	referralCode   string
 	httpClient     *http.Client
 	modelContracts *ModelContractCatalog
+	demo           *DemoOptions
 }
 
 // NewClient performs no network requests. A custom BaseURL supports private gateways.
@@ -47,6 +51,14 @@ func NewClient(apiKey string, options ClientOptions) (*Client, error) {
 	referralCode := strings.TrimSpace(options.ReferralCode)
 	if strings.ContainsAny(referralCode, "\r\n") {
 		return nil, errors.New("referral_code_invalid")
+	}
+	var demo *DemoOptions
+	if options.Demo != nil {
+		if !validDemoScenario(options.Demo.Scenario) {
+			return nil, errors.New("demo_scenario_invalid")
+		}
+		copy := *options.Demo
+		demo = &copy
 	}
 	baseURL := options.BaseURL
 	if baseURL == "" {
@@ -71,7 +83,7 @@ func NewClient(apiKey string, options ClientOptions) (*Client, error) {
 		copy.Models = cloneStaticModelContracts(copy.Models)
 		catalog = &copy
 	}
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, referralCode: referralCode, httpClient: &httpClient, modelContracts: catalog}, nil
+	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, referralCode: referralCode, httpClient: &httpClient, modelContracts: catalog, demo: demo}, nil
 }
 
 type SubmitRequest struct {
@@ -382,6 +394,14 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 			return job, &ParameterError{"webhook_url", "invalid_url"}
 		}
 	}
+	if c.demo != nil {
+		// Demo submits stop after the quote and never reach the generations path.
+		job, err := c.demoSubmit(ctx, resource, operation, request)
+		if err != nil {
+			return job, &SubmissionError{IdempotencyKey: key, Err: err}
+		}
+		return job, nil
+	}
 	// Transport retries reuse this exact key and encoded body.
 	err := c.do(ctx, http.MethodPost, "/v1/"+resource+"/generations", key, request, &job)
 	if err == nil && (!validJobID(job.ID) || !validJobStatus(job.Status)) {
@@ -397,6 +417,9 @@ func (c *Client) GetJob(ctx context.Context, id string) (Job, error) {
 	var job Job
 	if !validJobID(id) {
 		return job, errors.New("job_id_invalid")
+	}
+	if IsDemoJobID(id) {
+		return withDemoRaw(demoJob(decodeDemoID(id), demoNow(), nil)), nil
 	}
 	err := c.do(ctx, http.MethodGet, "/v1/jobs/"+id, "", nil, &job)
 	if err == nil && (job.ID != id || !validJobStatus(job.Status)) {
@@ -420,6 +443,9 @@ func (c *Client) GetJobStatusWithWait(ctx context.Context, id string, wait time.
 	if wait < 0 {
 		return status, errors.New("wait_invalid")
 	}
+	if IsDemoJobID(id) {
+		return demoJobStatusWithWait(ctx, id, min(wait, 30*time.Second))
+	}
 	path := "/v1/jobs/" + id + "/status"
 	if seconds := int(wait / time.Second); seconds > 0 {
 		path += "?wait=" + strconv.Itoa(seconds)
@@ -435,6 +461,9 @@ func (c *Client) CancelJob(ctx context.Context, id string) (Job, error) {
 	var job Job
 	if !validJobID(id) {
 		return job, errors.New("job_id_invalid")
+	}
+	if IsDemoJobID(id) {
+		return cancelDemoJob(id)
 	}
 	err := c.do(ctx, http.MethodPost, "/v1/jobs/"+id+"/cancel", "", nil, &job)
 	if err == nil && (job.ID != id || !validJobStatus(job.Status)) {

@@ -2,9 +2,11 @@ import { PACKAGE_VERSION } from "./package-version.js";
 import { validateGeneration } from "../shared/standard.js";
 import { modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
 import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
+import { cancelDemoJob, createDemoJob, demoJobNextChangeMs, demoScenario, getDemoJob, getDemoJobStatus, isDemoJobID, validateDemoOptions, type YirDemoOptions } from "../shared/demo.js";
 import { createFileClient } from "./files.js";
 import type { YirFileClient } from "./files.js";
 import type {
+  GenerationOperation,
   StandardImageGenerationRequest,
   StandardImageQuoteRequest,
   StandardMusicGenerationRequest,
@@ -109,12 +111,41 @@ export type YirClient = YirFileClient & {
   cancelJob(id: string, options?: YirRequestOptions): Promise<Job>;
 };
 
+export type YirClientOptions = {
+  /**
+   * Demo mode: submits are quoted by the Gateway (free, with the same parameter
+   * checks as a submit) but never sent, and return a demo Job that goes from
+   * queued to a DEMO-badged sample result without charge. Quotes, files and
+   * account calls still use the Gateway. Demo Job IDs start with `demo_` and are
+   * answered locally by every client, demo mode or not.
+   */
+  readonly demo?: boolean | YirDemoOptions;
+};
+
 /**
  * Transport-neutral Standard API client. Authentication stays in the injected
  * transport, so browser UI code never needs to receive an API Key secret.
  */
-export function createYirClient(transport: YirTransport, catalog?: ModelContractCatalog): YirClient {
+export function createYirClient(transport: YirTransport, catalog?: ModelContractCatalog, clientOptions: YirClientOptions = {}): YirClient {
   const localCatalog = catalog === undefined ? undefined : parseModelContractCatalog(catalog);
+  const demo = clientOptions.demo === true ? {} : clientOptions.demo || undefined;
+  if (demo) validateDemoOptions(demo);
+  // Demo submits stop after the quote and never reach the generations path.
+  const demoSubmit = (quotePath: string, operation: GenerationOperation, request: { readonly input: { readonly prompt?: string }; readonly webhook_url?: string; readonly max_cost?: string }, key: string, options?: YirRequestOptions) =>
+    Promise.resolve().then(async () => {
+      const { webhook_url: _webhook, max_cost: _cost, ...quoteRequest } = request;
+      const quote = await transport<Quote>({
+        method: "POST",
+        path: quotePath,
+        body: quoteRequest,
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(value => validateQuoteResponse(value, quoteRequest as StandardImageQuoteRequest, operation, localCatalog));
+      const scenario = demoScenario(request, demo!);
+      if (scenario === "reject") {
+        throw new YirAPIError({ message: "Demo submit rejected by the reject scenario.", status: 422, code: "YIR_INPUT_REJECTED", retryable: false });
+      }
+      return createDemoJob(quote, scenario);
+    }).catch(error => { throw submissionError(error, key); });
   // Audio requests (music, sound effects, speech) share one contract; path picks /v1/audio or the legacy /v1/music.
   const quoteAudioAt = (path: string, request: StandardMusicQuoteRequest, options?: YirRequestOptions) => {
     options?.signal?.throwIfAborted();
@@ -131,6 +162,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
     if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
     validateGeneration("generate_music", request);
+    if (demo) return demoSubmit(path.replace(/generations$/, "quotes"), "generate_music", request, key, options);
     return Promise.resolve().then(() => transport<Job>({
       method: "POST",
       path,
@@ -196,6 +228,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
       validateGeneration("generate_image", request);
+      if (demo) return demoSubmit("/v1/images/quotes", "generate_image", request, key, options);
       return Promise.resolve().then(() => transport<Job>({
         method: "POST",
         path: "/v1/images/generations",
@@ -219,6 +252,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
       if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
       validateGeneration("generate_video", request);
+      if (demo) return demoSubmit("/v1/videos/quotes", "generate_video", request, key, options);
       return Promise.resolve().then(() => transport<Job>({
         method: "POST",
         path: "/v1/videos/generations",
@@ -243,6 +277,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       options?.signal?.throwIfAborted();
       const normalizedID = id.trim();
       if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
+      if (isDemoJobID(normalizedID)) return Promise.resolve(getDemoJob(normalizedID));
       const request: { method: "GET"; path: string; signal?: AbortSignal } = {
         method: "GET",
         path: `/v1/jobs/${normalizedID}`,
@@ -265,6 +300,11 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       if (!Number.isInteger(waitSeconds) || waitSeconds < 0 || waitSeconds > MAX_STATUS_WAIT_SECONDS) {
         throw new Error("wait_invalid");
       }
+      if (isDemoJobID(normalizedID)) {
+        // Hold like the Gateway: until the next status change or the wait ends.
+        const hold = Math.min(waitSeconds * 1000, demoJobNextChangeMs(normalizedID) ?? 0);
+        return (hold > 0 ? sleep(hold, options?.signal) : Promise.resolve()).then(() => getDemoJobStatus(normalizedID));
+      }
       const request: { method: "GET"; path: string; signal?: AbortSignal; holdMs?: number } = {
         method: "GET",
         path: `/v1/jobs/${normalizedID}/status${waitSeconds > 0 ? `?wait=${waitSeconds}` : ""}`,
@@ -286,6 +326,12 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       options?.signal?.throwIfAborted();
       const normalizedID = id.trim();
       if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
+      if (isDemoJobID(normalizedID)) {
+        const job = cancelDemoJob(normalizedID);
+        return job ? Promise.resolve(job) : Promise.reject(new YirAPIError({
+          message: "The demo Job has already ended.", status: 409, code: "YIR_JOB_NOT_CANCELLABLE", retryable: false,
+        }));
+      }
       return transport<Job>({
         method: "POST",
         path: `/v1/jobs/${normalizedID}/cancel`,
@@ -706,6 +752,11 @@ export type CreateNodeYirClientOptions = {
    * unknown outcome: recover with the same request and idempotency key.
    */
   readonly timeoutMs?: number;
+  /**
+   * Demo mode (see `YirClientOptions.demo`). When omitted, `YIR_DEMO=1` or
+   * `YIR_DEMO=true` turns it on. An API Key is still required for the quotes.
+   */
+  readonly demo?: boolean | YirDemoOptions;
 };
 
 export type NodeYirClient = YirClient & {
@@ -856,7 +907,10 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
 
 export function createNodeYirClient(options: CreateNodeYirClientOptions = {}): NodeYirClient {
   const transport = createNodeHttpTransport(options);
-  const baseClient = createYirClient(transport, options.modelContracts);
+  const envDemo = getEnv("YIR_DEMO")?.trim().toLowerCase();
+  const demo = options.demo ?? (envDemo === "1" || envDemo === "true");
+  if (demo) console.warn("[yir] demo mode: submits return DEMO Jobs and are not sent to the Gateway; nothing is charged.");
+  const baseClient = createYirClient(transport, options.modelContracts, { demo });
 
   return {
     ...baseClient,
