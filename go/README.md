@@ -134,7 +134,7 @@ A demo Job keeps no state: its ID encodes the creation time, type, aspect ratio,
 
 `DemoOptions.Scenario` or a `[demo:<scenario>]` marker in the prompt (which wins) picks the outcome: `DemoScenarioOK` (default); `DemoScenarioSlow`, queued for 6 minutes and succeeded after 8; `DemoScenarioFail`, failed with `YIR_EXECUTION_FAILED` and nothing charged; `DemoScenarioReject`, the submit returns `*APIError` 422 `YIR_INPUT_REJECTED` (inside a `*SubmissionError`) after the quote; `DemoScenarioCancel`, ends `cancelled`. `CancelJob` on an unfinished demo Job returns it `cancelled` and on an ended one returns 409 `YIR_JOB_NOT_CANCELLABLE`; because nothing is stored, later reads follow the original timeline, so keep the Job `CancelJob` returns.
 
-Demo mode does not cover idempotent replay of a submit, balance, spend-limit or `MaxCost` admission errors, Webhook delivery, partial or expired results, or fallback billing.
+The submit returns the quote's full `Parameters` echo; later reads of a demo Job keep only `n`, `aspect_ratio`, `resolution` and `duration`, which fit in the ID. Demo mode does not cover idempotent replay of a submit, balance, spend-limit or `MaxCost` admission errors, Webhook delivery, partial or expired results, or fallback billing.
 
 ## Pricing and contracts
 

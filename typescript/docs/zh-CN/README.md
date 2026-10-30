@@ -91,13 +91,13 @@ const job = await client.submitAudio({ ...request, max_cost: "0.20" }, savedKey)
 
 ## Demo 模式
 
-Demo 模式用于不花钱地测试完整生成流程：`createNodeYirClient({ apiKey, demo: true })`，未传 `demo` 时 `YIR_DEMO=1`（`1` 或 `true`）也会开启；transport 客户端用 `createYirClient(transport, catalog, { demo: true })`。开启时客户端打印一次警告。`createYirAIProvider` 会把 `demo` 传给它创建的客户端；传入自有 `client` 时，请在该客户端上开启 demo（两者同时传入会抛出 `demo_requires_client_option`）。提交照常做本地校验，再调用对应的报价接口（`/v1/images/quotes` 等，不扣费），参数仍由网关校验，但请求不会真正提交。提交返回一个 ID 以 `demo_` 开头的 demo Job，带报价返回的模型和参数回显。报价、文件、余额和模型接口照常访问网关，因此仍需要 API Key。
+Demo 模式用于不花钱地测试完整生成流程：`createNodeYirClient({ apiKey, demo: true })` 或 `createYirClient(transport, catalog, { demo: true })`。未传 `demo` 时，两者在有进程环境变量的运行环境中都会按 `YIR_DEMO=1`（`1` 或 `true`）开启；显式 `demo: false` 优先。开启时客户端打印一次警告。`createYirAIProvider` 会把 `demo` 传给它创建的客户端；传入自有 `client` 时，请在该客户端上开启 demo（两者同时传入会抛出 `demo_requires_client_option`）。提交照常做本地校验，再调用对应的报价接口（`/v1/images/quotes` 等，不扣费），参数仍由网关校验，但请求不会真正提交。提交返回一个 ID 以 `demo_` 开头的 demo Job，带报价返回的模型和参数回显。报价、文件、余额和模型接口照常访问网关，因此仍需要 API Key。
 
 Demo Job 不保存状态：ID 里编码了创建时间、类型、画幅、`n`、时长、分辨率和场景，所以 `getJob`、`getJobStatus`（按 `waitSeconds` 挂起到下一次状态变化）和 `waitForJob` 在任何进程或 Workers 实例里得到同样结果，且不发网络请求。所有客户端都在本地解答 `demo_` ID，关闭 demo 模式后也一样；用 `isDemoJobID(id)` 区分。图片排队 2 秒、8 秒后成功，视频 25 秒，音频 12 秒。结果指向 `https://public.yir.ai/demo/v1/` 下带 DEMO 徽标的固定文件，按类型和最接近的画幅（视频再按 5 或 10 秒）选取；`width`、`height`、`duration_ms` 是实际文件的值，请求的值保留在 `parameters` 中。像真实结果一样转存文件。扣费恒为 `"0"`。
 
 `demo: { scenario }` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`ok`（默认）；`slow`，排队 6 分钟（超过 `waitForJob` 默认超时）、8 分钟后成功；`fail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`reject`，报价后提交抛出 `YirAPIError` 422 `YIR_INPUT_REJECTED`；`cancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `cancelJob` 返回 `cancelled`，对已结束的抛出 409 `YIR_JOB_NOT_CANCELLABLE`；由于不保存状态，之后的读取仍按原时间线，请保留 `cancelJob` 返回的 Job。
 
-Demo 模式不覆盖：提交的幂等重放、余额/消费上限/`max_cost` 准入错误（402 与 422 `YIR_BUDGET_EXCEEDED`）、Webhook 投递、部分或过期结果、fallback 计费。
+提交返回报价的完整参数回显；之后按 ID 读取 demo Job 只保留 `n`、`aspect_ratio`、`resolution`、`duration` 四项（ID 装不下其余参数）。Demo 模式不覆盖：提交的幂等重放、余额/消费上限/`max_cost` 准入错误（402 与 422 `YIR_BUDGET_EXCEEDED`）、Webhook 投递、部分或过期结果、fallback 计费。
 
 ## 模型详情
 

@@ -116,8 +116,11 @@ export type YirClientOptions = {
    * Demo mode: submits are quoted by the Gateway (free, with the same parameter
    * checks as a submit) but never sent, and return a demo Job that goes from
    * queued to a DEMO-badged sample result without charge. Quotes, files and
-   * account calls still use the Gateway. Demo Job IDs start with `demo_` and are
-   * answered locally by every client, demo mode or not.
+   * account calls still use the Gateway. The submit returns the quote's full
+   * parameter echo; later reads keep only n, aspect_ratio, resolution and
+   * duration, which fit in the ID. Demo Job IDs start with `demo_` and are
+   * answered locally by every client, demo mode or not. When omitted,
+   * `YIR_DEMO=1` or `YIR_DEMO=true` turns it on where a process environment exists.
    */
   readonly demo?: boolean | YirDemoOptions;
 };
@@ -128,8 +131,13 @@ export type YirClientOptions = {
  */
 export function createYirClient(transport: YirTransport, catalog?: ModelContractCatalog, clientOptions: YirClientOptions = {}): YirClient {
   const localCatalog = catalog === undefined ? undefined : parseModelContractCatalog(catalog);
-  const demo = clientOptions.demo === true ? {} : clientOptions.demo || undefined;
-  if (demo) validateDemoOptions(demo);
+  const envDemo = getEnv("YIR_DEMO")?.trim().toLowerCase();
+  const demoOption = clientOptions.demo ?? (envDemo === "1" || envDemo === "true");
+  const demo = demoOption === true ? {} : demoOption || undefined;
+  if (demo) {
+    validateDemoOptions(demo);
+    console.warn("[yir] demo mode: submits return DEMO Jobs and are not sent to the Gateway; nothing is charged.");
+  }
   // Demo submits stop after the quote and never reach the generations path.
   const demoSubmit = (quotePath: string, operation: GenerationOperation, request: { readonly input: { readonly prompt?: string }; readonly webhook_url?: string; readonly max_cost?: string }, key: string, options?: YirRequestOptions) =>
     Promise.resolve().then(async () => {
@@ -907,10 +915,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
 
 export function createNodeYirClient(options: CreateNodeYirClientOptions = {}): NodeYirClient {
   const transport = createNodeHttpTransport(options);
-  const envDemo = getEnv("YIR_DEMO")?.trim().toLowerCase();
-  const demo = options.demo ?? (envDemo === "1" || envDemo === "true");
-  if (demo) console.warn("[yir] demo mode: submits return DEMO Jobs and are not sent to the Gateway; nothing is charged.");
-  const baseClient = createYirClient(transport, options.modelContracts, { demo });
+  const baseClient = createYirClient(transport, options.modelContracts, { demo: options.demo });
 
   return {
     ...baseClient,

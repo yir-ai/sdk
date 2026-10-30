@@ -30,8 +30,10 @@ const (
 // DemoOptions turns on demo mode: submits are quoted by the Gateway (free, with
 // the same parameter checks as a submit) but never sent, and return a demo Job
 // that goes from queued to a DEMO-badged sample result without charge. Quotes,
-// files and account calls still use the Gateway. Demo Job IDs start with
-// "demo_" and every Client answers them locally, demo mode or not.
+// files and account calls still use the Gateway. The submit returns the quote's
+// full Parameters echo; later reads keep only n, aspect_ratio, resolution and
+// duration, which fit in the ID. Demo Job IDs start with "demo_" and every
+// Client answers them locally, demo mode or not.
 type DemoOptions struct {
 	// Scenario defaults to DemoScenarioOK.
 	Scenario DemoScenario

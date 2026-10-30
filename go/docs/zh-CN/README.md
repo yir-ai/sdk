@@ -132,7 +132,7 @@ Demo Job 不保存状态：ID 里编码了创建时间、类型、画幅、`n`�
 
 `DemoOptions.Scenario` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`DemoScenarioOK`（默认）；`DemoScenarioSlow`，排队 6 分钟、8 分钟后成功；`DemoScenarioFail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`DemoScenarioReject`，报价后提交返回 `*APIError` 422 `YIR_INPUT_REJECTED`（包在 `*SubmissionError` 里）；`DemoScenarioCancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `CancelJob` 返回 `cancelled`，对已结束的返回 409 `YIR_JOB_NOT_CANCELLABLE`；由于不保存状态，之后的读取仍按原时间线，请保留 `CancelJob` 返回的 Job。
 
-Demo 模式不覆盖：提交的幂等重放、余额/消费上限/`MaxCost` 准入错误、Webhook 投递、部分或过期结果、fallback 计费。
+提交返回报价的完整 `Parameters` 回显；之后按 ID 读取 demo Job 只保留 `n`、`aspect_ratio`、`resolution`、`duration` 四项（ID 装不下其余参数）。Demo 模式不覆盖：提交的幂等重放、余额/消费上限/`MaxCost` 准入错误、Webhook 投递、部分或过期结果、fallback 计费。
 
 ## 价格与合同
 

@@ -193,7 +193,11 @@ function demoJob(fields: DemoJobFields, now: number, cancelledAt?: number): Job 
   };
 }
 
-/** The demo Job as of `now`; the ID must satisfy `isDemoJobID`. */
+/**
+ * The demo Job as of `now`; the ID must satisfy `isDemoJobID`. The ID only has
+ * room for n, aspect_ratio, resolution and duration, so `parameters` echoes just
+ * those; the submit's return carries the quote's full echo.
+ */
 export function getDemoJob(id: string, now = Date.now()): Job {
   return demoJob(decode(id), now);
 }

@@ -200,3 +200,27 @@ test("demo video results report the sample's measured length", () => {
   const item = fixture.cases.find(item => item.job.status === "succeeded" && item.job.result.files[0].media_type === "video/mp4");
   assert.equal(item.job.result.files[0].duration_ms, 10000);
 });
+
+test("createYirClient follows YIR_DEMO when demo is omitted, warns once, and an explicit false wins", async () => {
+  const previous = process.env.YIR_DEMO;
+  const warn = console.warn;
+  const warnings = [];
+  console.warn = message => warnings.push(message);
+  process.env.YIR_DEMO = "true";
+  try {
+    const calls = [];
+    const demo = createYirClient(gateway(calls));
+    assert.ok(isDemoJobID((await demo.submitImage(image)).id));
+    assert.deepEqual(calls.map(call => call.path), ["/v1/images/quotes"]);
+    const live = [];
+    const real = createYirClient(async request => { live.push(request.path); return { id: "job_7", object: "job", status: "queued", model: "m", error: null, created_at: 1 }; }, undefined, { demo: false });
+    await real.submitImage(image);
+    assert.deepEqual(live, ["/v1/images/generations"]);
+    // The Node factory delegates to createYirClient and warns once too.
+    createNodeYirClient({ apiKey: "sk-test", fetch: async () => { throw new Error("unused"); } });
+    assert.equal(warnings.length, 2);
+  } finally {
+    if (previous === undefined) delete process.env.YIR_DEMO; else process.env.YIR_DEMO = previous;
+    console.warn = warn;
+  }
+});
