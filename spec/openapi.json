@@ -835,8 +835,10 @@
               "n": {
                 "type": "integer",
                 "enum": [
-                  1
-                ]
+                  1,
+                  4
+                ],
+                "description": "Images per Job. Most models make one; Midjourney always makes four per request."
               }
             }
           }
@@ -891,8 +893,10 @@
               "n": {
                 "type": "integer",
                 "enum": [
-                  1
-                ]
+                  1,
+                  4
+                ],
+                "description": "Images per Job. Most models make one; Midjourney always makes four per request."
               }
             }
           }
