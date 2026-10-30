@@ -16,7 +16,7 @@
 go get github.com/yir-ai/sdk/go@latest
 ```
 
-模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.12.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
+模块标签使用 `go/vX.Y.Z`，此版本对应 `go/v0.13.0`。模块包含必要测试向量，不需要 Node 或仓库的 `spec/`。
 
 ```go
 import (
@@ -33,6 +33,17 @@ _ = client
 ```
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。如果你发布的应用由他人用自己或其用户的 Key 部署，把 `ClientOptions.ReferralCode` 设为你的 Yir 推广码；它作为 `Yir-Referral` 发送，Yir 为该码开通合作归因后，这些 Job 计入你的邀请返利，否则该请求头被忽略。
+
+## 升级到 0.13.0
+
+0.13.0 是 minor 版本，与 0.12.0 兼容。所依赖的网关能力均已上线。
+
+新增：
+
+- Demo 模式：`ClientOptions.Demo`（`DemoOptions`、`DemoScenario*`）、`IsDemoJobID` 与 `DemoAssetBaseURL`。所有 `Client` 都在本地解答 `demo_` Job ID。见 [Demo 模式](#demo-模式)。
+- `/v1/audio` 接口的 `QuoteAudio` / `SubmitAudio`（音乐、音效与语音合成；`QuoteMusic` / `SubmitMusic` 保留为别名）、`voice` 参数，以及 `generate_sound_effect` / `generate_speech` 报价与 `QuoteBatch` 项。
+- 有序中间帧的参考角色 `keyframe`；模型合同与 `ValidateGenerationWithCatalog` 支持混合主体、主体声音和视频主体。
+- 参数说明的 disposition 新增 `exceeded`，表示结果超出请求。
 
 ## 升级到 0.12.0
 

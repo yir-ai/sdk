@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  createNodeYirClient, createYirClient, getDemoJob, getDemoJobStatus, isDemoJobID, isValidJobID, YirAPIError,
+  createNodeYirClient, createYirClient, isDemoJobID, isValidJobID, YirAPIError,
 } from "../dist/index.js";
 import { DEMO_ASSETS } from "../dist/shared/demo-assets.js";
+import { getDemoJob, getDemoJobStatus } from "../dist/shared/demo.js";
 
 const fixture = JSON.parse(readFileSync(new URL("../../spec/fixtures/demo-jobs.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(readFileSync(new URL("../../spec/demo-assets.json", import.meta.url), "utf8"));

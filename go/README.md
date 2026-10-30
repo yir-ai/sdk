@@ -16,7 +16,7 @@ Run in your application's Go module:
 go get github.com/yir-ai/sdk/go@latest
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.12.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.13.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (
@@ -33,6 +33,17 @@ _ = client
 ```
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected. If you publish an app that others deploy with their own or their users' keys, set `ClientOptions.ReferralCode` to your Yir referral code; it is sent as `Yir-Referral`, and Jobs count toward your referral rebate once Yir has enabled the code for partner attribution. Otherwise the header is ignored.
+
+## Upgrading to 0.13.0
+
+0.13.0 is a minor release and is compatible with 0.12.0. The Gateway features it relies on are already live.
+
+Additions:
+
+- Demo mode: `ClientOptions.Demo` (`DemoOptions`, `DemoScenario*`), `IsDemoJobID` and `DemoAssetBaseURL`. Every `Client` answers `demo_` Job IDs locally. See [Demo mode](#demo-mode).
+- `QuoteAudio` / `SubmitAudio` for the `/v1/audio` endpoints (music, sound effects and text-to-speech; `QuoteMusic` / `SubmitMusic` stay as aliases), the `voice` parameter, and `generate_sound_effect` / `generate_speech` quotes and `QuoteBatch` items.
+- Reference role `keyframe` for ordered middle frames; subject references with mixed subjects, subject voices and video subjects in model contracts and `ValidateGenerationWithCatalog`.
+- Parameter notice disposition `exceeded` for over-delivered results.
 
 ## Upgrading to 0.12.0
 

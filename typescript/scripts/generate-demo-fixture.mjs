@@ -1,7 +1,7 @@
 // Regenerates the demo Job vectors shared by the TypeScript and Go tests from
 // the built SDK. Run `pnpm build` first; IDs change on every run (random nonce).
 import { writeFileSync } from "node:fs";
-import { createDemoJob, getDemoJob, getDemoJobStatus } from "../dist/index.js";
+import { createDemoJob, getDemoJob, getDemoJobStatus } from "../dist/shared/demo.js";
 
 const created = 1793000000000;
 const quote = (model, operation, parameters) => ({ model, operation, parameters });

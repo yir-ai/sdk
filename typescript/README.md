@@ -170,6 +170,23 @@ Image models expose `supportsFileInputs` from the caller-provided model catalog 
 
 The adapter does not automatically split `n` into separately billed Jobs. Video operation handles, Yir routing options, budgets and billing metadata are provider-specific. Basic generation calls are portable, but these fields need explicit migration when switching providers.
 
+## Upgrading to 0.13.0
+
+0.13.0 is a minor release with incompatible type changes. The Gateway features it relies on are already live.
+
+Incompatible changes:
+
+- `YirClient` adds `quoteAudio` and `submitAudio`. Code that implements `YirClient` itself must add them; callers of `createNodeYirClient` need no change.
+- `Quote.operation` adds `generate_sound_effect` and `generate_speech` and widens with `(string & {})`; exhaustive `switch` statements need a default branch.
+
+Additions:
+
+- Demo mode: the `demo` option of `createNodeYirClient` and `createYirClient` (third argument), or `YIR_DEMO=1`; `isDemoJobID`, `YirDemoOptions`, `YirDemoScenario` and `DEMO_ASSET_BASE_URL`. Every client answers `demo_` Job IDs locally. See [Demo mode](#demo-mode).
+- `quoteAudio` / `submitAudio` for the `/v1/audio` endpoints (music, sound effects and text-to-speech; `quoteMusic` / `submitMusic` stay as aliases), `StandardMusicParameters.voice`, and `generate_sound_effect` / `generate_speech` in `GenerationOperation` and `quoteBatch`.
+- Reference role `keyframe` for ordered middle frames; subject references with `subject_references.mixed`, subject voices (`max_audios_per_subject`, `max_audio_only_subjects`) and video subjects (`max_videos_per_subject`, `max_video_subjects`) in model contracts and `validateGeneration`.
+- `ParameterNotice.disposition` adds `exceeded` for over-delivered results.
+- `createYirAIProvider` throws `demo_requires_client_option` when `demo` is passed next to an injected `client`.
+
 ## Upgrading to 0.12.0
 
 0.12.0 is a minor release with incompatible type changes. The Gateway features it relies on are already live.

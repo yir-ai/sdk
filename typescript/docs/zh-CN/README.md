@@ -169,6 +169,23 @@ if (operation) {
 
 适配器不会把 `n` 自动拆成多笔收费任务。视频 operation、Yir 路由、预算与账单元数据属于 Provider 专有能力；切换 Provider 时须显式迁移这些字段。
 
+## 升级到 0.13.0
+
+0.13.0 是包含不兼容类型变更的 minor 版本。所依赖的网关能力均已上线。
+
+不兼容变更：
+
+- `YirClient` 新增 `quoteAudio` 与 `submitAudio`。自行实现 `YirClient` 的代码需补上；使用 `createNodeYirClient` 的调用方无需改动。
+- `Quote.operation` 新增 `generate_sound_effect`、`generate_speech`，并以 `(string & {})` 放宽；穷举的 `switch` 需要 default 分支。
+
+新增：
+
+- Demo 模式：`createNodeYirClient` 与 `createYirClient`（第三个参数）的 `demo` 选项，或 `YIR_DEMO=1`；`isDemoJobID`、`YirDemoOptions`、`YirDemoScenario`、`DEMO_ASSET_BASE_URL`。所有客户端都在本地解答 `demo_` Job ID。见 [Demo 模式](#demo-模式)。
+- `/v1/audio` 接口的 `quoteAudio` / `submitAudio`（音乐、音效与语音合成；`quoteMusic` / `submitMusic` 保留为别名）、`StandardMusicParameters.voice`，以及 `GenerationOperation` 与 `quoteBatch` 中的 `generate_sound_effect` / `generate_speech`。
+- 有序中间帧的参考角色 `keyframe`；模型合同与 `validateGeneration` 支持 `subject_references.mixed` 混合主体、主体声音（`max_audios_per_subject`、`max_audio_only_subjects`）和视频主体（`max_videos_per_subject`、`max_video_subjects`）。
+- `ParameterNotice.disposition` 新增 `exceeded`，表示结果超出请求。
+- 在注入 `client` 的同时传入 `demo` 时，`createYirAIProvider` 抛出 `demo_requires_client_option`。
+
 ## 升级到 0.12.0
 
 0.12.0 是包含不兼容类型变化的 minor 版本，所依赖的 Gateway 功能均已上线。
