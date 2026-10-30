@@ -129,6 +129,9 @@ export type YirClientOptions = {
  * Transport-neutral Standard API client. Authentication stays in the injected
  * transport, so browser UI code never needs to receive an API Key secret.
  */
+// Servers often build a client per request; one demo notice per process is enough.
+let demoNoticeShown = false;
+
 export function createYirClient(transport: YirTransport, catalog?: ModelContractCatalog, clientOptions: YirClientOptions = {}): YirClient {
   const localCatalog = catalog === undefined ? undefined : parseModelContractCatalog(catalog);
   const envDemo = getEnv("YIR_DEMO")?.trim().toLowerCase();
@@ -136,7 +139,10 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
   const demo = demoOption === true ? {} : demoOption || undefined;
   if (demo) {
     validateDemoOptions(demo);
-    console.warn("[yir] demo mode: submits return DEMO Jobs and are not sent to the Gateway; nothing is charged.");
+    if (!demoNoticeShown) {
+      demoNoticeShown = true;
+      console.warn("[yir] demo mode: submits return DEMO Jobs and are not sent to the Gateway; nothing is charged.");
+    }
   }
   // Demo submits stop after the quote and never reach the generations path.
   const demoSubmit = (quotePath: string, operation: GenerationOperation, request: { readonly input: { readonly prompt?: string }; readonly webhook_url?: string; readonly max_cost?: string }, key: string, options?: YirRequestOptions) =>
