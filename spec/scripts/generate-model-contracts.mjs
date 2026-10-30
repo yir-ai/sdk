@@ -120,11 +120,11 @@ function validateOperation(model, operation, specification) {
     }
     if (parameter.minimum !== undefined) {
       assert(property.minimum === undefined || parameter.minimum >= property.minimum, `${model.id}.${parameter.name} minimum outside OpenAPI`);
-      assert(parameter.default >= parameter.minimum, `${model.id}.${parameter.name} default below minimum`);
+      assert(parameter.default === undefined || parameter.default >= parameter.minimum, `${model.id}.${parameter.name} default below minimum`);
     }
     if (parameter.maximum !== undefined) {
       assert(property.maximum === undefined || parameter.maximum <= property.maximum, `${model.id}.${parameter.name} maximum outside OpenAPI`);
-      assert(parameter.default <= parameter.maximum, `${model.id}.${parameter.name} default above maximum`);
+      assert(parameter.default === undefined || parameter.default <= parameter.maximum, `${model.id}.${parameter.name} default above maximum`);
     }
   }
 }
