@@ -1162,6 +1162,17 @@
                   "type": "string",
                   "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$",
                   "description": "Groups references into one named subject for models whose input constraint declares subject_references. Reference it in the prompt as @<subject>. Same-named reference_image photos form a character; where max_videos_per_subject is set, a same-named reference_video forms a video character instead of photos; where max_audios_per_subject is set, a reference_audio with the same name is that character's voice, and a name with only reference_audio is a standalone voice. Unless subject_references.mixed is true, every reference must then be a reference_image with a subject."
+                },
+                "point": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["x", "y", "t"],
+                  "description": "Video person swap only (yir/video-person-swap): where the person this photo replaces appears in the reference_video template. Requires a reference_image with a subject (the position name).",
+                  "properties": {
+                    "x": { "type": "number", "minimum": 0, "maximum": 1, "description": "Face center as a fraction of the frame width." },
+                    "y": { "type": "number", "minimum": 0, "maximum": 1, "description": "Face center as a fraction of the frame height." },
+                    "t": { "type": "number", "minimum": 0, "maximum": 60, "description": "Second of the template at which the face is at that point." }
+                  }
                 }
               },
               "oneOf": [
@@ -2101,6 +2112,7 @@
           "height": { "type": "integer", "minimum": 0 },
           "duration_ms": { "type": "integer", "format": "int64", "minimum": 1, "description": "Measured playback duration of an audio result in milliseconds. Omitted when not measured." },
           "faces": { "type": "integer", "format": "int64", "minimum": 1, "description": "Measured triangle count of a 3D (glb) result. Omitted when not measured." },
+          "swap_checks": { "$ref": "#/components/schemas/ResultFileSwapChecks" },
           "expires_at": { "type": "integer", "format": "int64", "minimum": 1 },
           "fidelity": { "$ref": "#/components/schemas/ResultFileFidelity" }
         }
@@ -2113,6 +2125,30 @@
         "properties": {
           "grade": { "type": "string", "enum": ["original", "app", "equivalent", "altered", "unverified"] },
           "reason": { "type": "string", "description": "Stable reason code, for example vendor_signed, signature_scrubbed, route_audited, hash_mismatch, signature_missing, third_party_signed, unsigned." }
+        }
+      },
+      "ResultFileSwapChecks": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["threshold", "all_swapped", "passes", "slots"],
+        "description": "Video person swap only: per-position check of the delivered video. similarity_to_original is the highest face similarity between the original person at that position and any face in the output; below threshold counts as swapped. Best effort: the video is delivered even when some positions are not swapped.",
+        "properties": {
+          "threshold": { "type": "number" },
+          "all_swapped": { "type": "boolean" },
+          "passes": { "type": "integer", "minimum": 0, "description": "Repair passes run after the main generation." },
+          "slots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "similarity_to_original", "swapped"],
+              "properties": {
+                "id": { "type": "string", "description": "The reference subject." },
+                "similarity_to_original": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "swapped": { "type": "boolean" }
+              }
+            }
+          }
         }
       },
       "JobUsage": {

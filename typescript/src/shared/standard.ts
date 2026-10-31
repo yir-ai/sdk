@@ -63,7 +63,19 @@ export type StandardReference = {
    * is set, a `reference_video` with a subject is a video character.
    */
   readonly subject?: string;
+  /**
+   * Video person swap only (`yir/video-person-swap`): where the person this photo replaces appears in the
+   * reference_video template — face center as fractions of the frame width (`x`) and height (`y`) at second `t`.
+   * Requires a reference_image with a `subject` (the position name).
+   */
+  readonly point?: StandardReferencePoint;
 } & StandardMediaSource;
+
+export type StandardReferencePoint = {
+  readonly x: number;
+  readonly y: number;
+  readonly t: number;
+};
 
 export type StandardImageGenerationRequest = {
   /** @deprecated Omit for new requests; actual-cost settlement is the default. Retained for legacy callers with the existing validation rules. */

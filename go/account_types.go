@@ -480,6 +480,7 @@ type AccountStandardV1ResultFile struct {
 	Fidelity   *map[string]any `json:"fidelity,omitempty"`
 	Height     *int64          `json:"height,omitempty"`
 	MediaType  *string         `json:"media_type,omitempty"`
+	SwapChecks *map[string]any `json:"swap_checks,omitempty"`
 	Url        *string         `json:"url,omitempty"`
 	Width      *int64          `json:"width,omitempty"`
 }
@@ -487,6 +488,19 @@ type AccountStandardV1ResultFile struct {
 type AccountStandardV1ResultFidelity struct {
 	Grade  *string `json:"grade,omitempty"`
 	Reason *string `json:"reason,omitempty"`
+}
+
+type AccountPersonSwapChecks struct {
+	AllSwapped *bool                         `json:"all_swapped,omitempty"`
+	Passes     *int64                        `json:"passes,omitempty"`
+	Slots      *[]AccountPersonSwapSlotCheck `json:"slots,omitempty"`
+	Threshold  *float64                      `json:"threshold,omitempty"`
+}
+
+type AccountPersonSwapSlotCheck struct {
+	Id                   *string  `json:"id,omitempty"`
+	SimilarityToOriginal *float64 `json:"similarity_to_original,omitempty"`
+	Swapped              *bool    `json:"swapped,omitempty"`
 }
 
 type AccountLogRoutingView struct {

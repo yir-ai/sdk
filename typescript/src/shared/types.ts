@@ -85,8 +85,23 @@ export type JobResultFile = {
   /** Measured triangle count of a 3D (glb) result; absent when not measured. */
   readonly faces?: number;
   readonly expires_at: number;
+  /** Video person swap only: per-position check of the delivered video; absent on other results. */
+  readonly swap_checks?: JobResultFileSwapChecks;
   /** Where the file came from and whether its specification is genuine, judged at delivery from its C2PA content signature and Yir's channel audits; absent on historical results. */
   readonly fidelity?: JobResultFileFidelity;
+};
+
+/**
+ * Video person swap check. `similarity_to_original` is the highest face similarity between the original person at
+ * that position and any face in the output (null when no face was found there in the template); below `threshold`
+ * counts as swapped. Best effort: the video is delivered even when some positions are not swapped.
+ */
+export type JobResultFileSwapChecks = {
+  readonly threshold: number;
+  readonly all_swapped: boolean;
+  /** Repair passes run after the main generation. */
+  readonly passes: number;
+  readonly slots: { readonly id: string; readonly similarity_to_original: number | null; readonly swapped: boolean }[];
 };
 
 /**

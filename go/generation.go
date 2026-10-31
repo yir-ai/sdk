@@ -126,6 +126,19 @@ type Reference struct {
 	// voice when the subject has no photos), and where max_videos_per_subject
 	// is declared a reference_video with a subject is a video character.
 	Subject string `json:"subject,omitempty"`
+	// Point is for video person swap (yir/video-person-swap) only: where the
+	// person this photo replaces appears in the reference_video template, as
+	// fractions of the frame (X, Y) at second T. Requires a reference_image
+	// with a Subject (the position name).
+	Point *ReferencePoint `json:"point,omitempty"`
+}
+
+// ReferencePoint is a face center in the template: X and Y are fractions of
+// the frame width and height (0-1), T is the second of the template.
+type ReferencePoint struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+	T float64 `json:"t"`
 }
 
 // Routing preferences known to this SDK release. Routing.Preference is a

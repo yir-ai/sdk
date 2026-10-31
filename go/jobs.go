@@ -148,10 +148,32 @@ type ResultFile struct {
 	// not measured.
 	Faces     int64 `json:"faces,omitempty"`
 	ExpiresAt int64 `json:"expires_at"`
+	// SwapChecks is the per-position check of a video person swap result;
+	// nil on other results.
+	SwapChecks *SwapChecks `json:"swap_checks,omitempty"`
 	// Fidelity reports where the file came from and whether its specification is genuine,
 	// judged at delivery from its C2PA content signature and Yir's channel audits; nil on
 	// results delivered before the field existed.
 	Fidelity *ResultFileFidelity `json:"fidelity,omitempty"`
+}
+
+// SwapChecks reports, for each position of a video person swap, the highest
+// face similarity between the original person and any face in the output
+// (nil when no face was found there in the template). Below Threshold counts
+// as swapped. Best effort: the video is delivered even when some positions
+// are not swapped.
+type SwapChecks struct {
+	Threshold  float64         `json:"threshold"`
+	AllSwapped bool            `json:"all_swapped"`
+	Passes     int             `json:"passes"`
+	Slots      []SwapCheckSlot `json:"slots"`
+}
+
+// SwapCheckSlot is one position; ID is the reference subject.
+type SwapCheckSlot struct {
+	ID                   string   `json:"id"`
+	SimilarityToOriginal *float64 `json:"similarity_to_original"`
+	Swapped              bool     `json:"swapped"`
 }
 
 // ResultFileFidelity grades a delivered file: "original" (untouched vendor API output),

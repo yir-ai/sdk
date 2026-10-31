@@ -478,6 +478,7 @@ export type AccountStandardV1ResultFile = {
   "fidelity"?: AccountStandardV1ResultFidelity;
   "height"?: number;
   "media_type"?: string;
+  "swap_checks"?: AccountPersonSwapChecks;
   "url"?: string;
   "width"?: number;
 };
@@ -485,6 +486,19 @@ export type AccountStandardV1ResultFile = {
 export type AccountStandardV1ResultFidelity = {
   "grade"?: "original" | "app" | "equivalent" | "altered" | "unverified";
   "reason"?: string;
+};
+
+export type AccountPersonSwapChecks = {
+  "all_swapped"?: boolean;
+  "passes"?: number;
+  "slots"?: Array<AccountPersonSwapSlotCheck>;
+  "threshold"?: number;
+};
+
+export type AccountPersonSwapSlotCheck = {
+  "id"?: string;
+  "similarity_to_original"?: number;
+  "swapped"?: boolean;
 };
 
 export type AccountLogRoutingView = {

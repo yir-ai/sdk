@@ -2581,6 +2581,14 @@
           "media_type": {
             "type": "string"
           },
+          "swap_checks": {
+            "description": "SwapChecks 是视频换人成片的逐位置检查（与原演员的人脸相似度、是否换上、补换遍数）；其他结果省略。",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/aigcprotocol.PersonSwapChecks"
+              }
+            ]
+          },
           "url": {
             "type": "string"
           },
@@ -2604,6 +2612,40 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "aigcprotocol.PersonSwapChecks": {
+        "type": "object",
+        "properties": {
+          "all_swapped": {
+            "type": "boolean"
+          },
+          "passes": {
+            "type": "integer"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/aigcprotocol.PersonSwapSlotCheck"
+            }
+          },
+          "threshold": {
+            "type": "number"
+          }
+        }
+      },
+      "aigcprotocol.PersonSwapSlotCheck": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "similarity_to_original": {
+            "type": "number"
+          },
+          "swapped": {
+            "type": "boolean"
           }
         }
       },
