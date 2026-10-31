@@ -11730,9 +11730,20 @@
         {
           "operation": "generate_music",
           "input_modes": [
-            "text"
+            "text",
+            "reference"
           ],
           "input_constraints": {
+            "reference": {
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_audio"
+              ],
+              "required_reference_roles": [
+                "reference_audio"
+              ]
+            },
             "text": {
               "min_references": 0,
               "max_references": 0,
@@ -11826,9 +11837,20 @@
         {
           "operation": "generate_music",
           "input_modes": [
-            "text"
+            "text",
+            "reference"
           ],
           "input_constraints": {
+            "reference": {
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_audio"
+              ],
+              "required_reference_roles": [
+                "reference_audio"
+              ]
+            },
             "text": {
               "min_references": 0,
               "max_references": 0,
@@ -11922,9 +11944,20 @@
         {
           "operation": "generate_music",
           "input_modes": [
-            "text"
+            "text",
+            "reference"
           ],
           "input_constraints": {
+            "reference": {
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_audio"
+              ],
+              "required_reference_roles": [
+                "reference_audio"
+              ]
+            },
             "text": {
               "min_references": 0,
               "max_references": 0,

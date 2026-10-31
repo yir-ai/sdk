@@ -1,4 +1,4 @@
-import { findModelOperationContract, parameterTypeKnown, type ModelContractCatalog } from "./catalog.js";
+import { findModelContract, findModelOperationContract, parameterTypeKnown, type ModelContractCatalog } from "./catalog.js";
 import type { ModelOperationContract, ModelParameterContract, ReferenceRole } from "./model-contracts.js";
 
 /**
@@ -129,6 +129,24 @@ export type StandardMusicTextInput = {
   readonly lyrics?: string;
 };
 
+/** One source song for a cover: role reference_audio with a URL or uploaded file. */
+export type StandardMusicReference = { readonly role: "reference_audio" } & StandardMediaSource;
+
+/**
+ * Upload-a-song cover, for music models whose contract declares the reference input mode (Suno):
+ * keeps the melody of one source song (at most 8 minutes) and remakes it in the prompt's style.
+ * Lyrics follow the text-input rule: input.lyrics, parameters.lyrics_optimizer or parameters.instrumental.
+ */
+export type StandardMusicReferenceInput = {
+  readonly type: "reference";
+  /** Style of the cover, for example genre, instruments and vocal. Per-model length limit. */
+  readonly prompt: string;
+  /** New lyrics sung over the source melody; omit when instrumental or lyrics_optimizer is true. */
+  readonly lyrics?: string;
+  /** Exactly one source song. */
+  readonly references: readonly [StandardMusicReference];
+};
+
 /**
  * Optional music, sound-effect and text-to-speech parameters; omitted fields take the model's defaults and
  * a model accepts only the parameters its contract declares. There is no tempo or key
@@ -155,7 +173,7 @@ export type StandardMusicGenerationRequest = {
   /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly max_cost?: string;
   readonly model: string;
-  readonly input: StandardMusicTextInput;
+  readonly input: StandardMusicTextInput | StandardMusicReferenceInput;
   /** Optional for music; omitted parameters take their published defaults. */
   readonly parameters?: StandardMusicParameters;
   readonly routing?: RoutingOverride;
@@ -314,6 +332,11 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   // Music parameters are optional; image and video requests send them explicitly.
   const parameters = isAudioOperation(operation) && body.parameters === undefined
     ? {} : requireObject(body.parameters, "parameters");
+  // A cover is offered only by music models that declare the reference input mode.
+  if (catalog && isAudioOperation(operation) && input.type === "reference" && findModelContract(catalog, body.model) &&
+      !findModelOperationContract(catalog, body.model, operation, input.type)) {
+    throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  }
   if (isAudioOperation(operation)) validateMusicInput(operation, input, parameters, catalog !== undefined);
   const subjects = validateReferenceSubjects(input);
   const found = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
@@ -404,12 +427,14 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
 }
 
 // Protocol rules shared by every music model: lyrics, instrumental and the lyrics optimizer exclude each
-// other, and sound effects take no lyrics. Text-to-speech reads input.prompt aloud and takes only n and
-// voice. n, duration and the accepted switches come from the model contract. Without a catalog
+// other, and sound effects take no lyrics. Only music takes a reference input (a cover of one source
+// song). Text-to-speech reads input.prompt aloud and takes only n and voice. n, duration and the accepted switches come from the model contract. Without a catalog
 // generate_music may name a sound-effect or text-to-speech model, so a missing lyrics source and a voice
 // on a music model are left to the Gateway.
 function validateMusicInput(operation: GenerationOperation, input: Record<string, unknown>, parameters: Record<string, unknown>, catalogKnown: boolean): void {
-  if (input.type !== "text") throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  if (input.type !== "text" && !(input.type === "reference" && operation === "generate_music")) {
+    throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  }
   for (const name of ["instrumental", "lyrics_optimizer"]) {
     if (parameters[name] !== undefined && typeof parameters[name] !== "boolean") {
       throw new YirSDKValidationError("parameter_type", `parameters.${name}`, { type: "boolean" });

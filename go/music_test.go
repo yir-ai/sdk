@@ -377,3 +377,54 @@ func TestSpeechQuoteThroughMusicMethods(t *testing.T) {
 		t.Fatalf("speech batch: %+v %v", batch, err)
 	}
 }
+
+func TestMusicCoverRules(t *testing.T) {
+	catalog := *testModelContracts()
+	cover := func(model, lyrics string, parameters map[string]any, references ...Reference) GenerationRequest {
+		if references == nil {
+			references = []Reference{{Role: "reference_audio", URL: "https://example.com/song.mp3"}}
+		}
+		return GenerationRequest{Model: model, Input: GenerationInput{Type: "reference", Prompt: "Acoustic folk cover", Lyrics: lyrics, References: references}, Parameters: parameters}
+	}
+	for _, request := range []GenerationRequest{
+		cover("suno/suno-v6", "", map[string]any{"lyrics_optimizer": true}),
+		cover("suno/suno-v6-wild", "", map[string]any{"instrumental": true, "n": 2}),
+		cover("suno/suno-v6-mini", "[Verse]\nNew words", nil),
+	} {
+		if err := ValidateGenerationProtocol("generate_music", request); err != nil {
+			t.Fatalf("protocol rejected cover %s: %v", request.Model, err)
+		}
+		if err := ValidateGenerationWithCatalog("generate_music", request, catalog); err != nil {
+			t.Fatalf("catalog rejected cover %s: %v", request.Model, err)
+		}
+	}
+	optimizer := map[string]any{"lyrics_optimizer": true}
+	for _, tc := range []struct {
+		request    GenerationRequest
+		path, code string
+	}{
+		{cover("suno/suno-v6", "", nil), "input.lyrics", "required_parameter"},
+		{cover("suno/suno-v6", "[Verse]", map[string]any{"instrumental": true}), "input.lyrics", "not_allowed"},
+		{cover("suno/suno-v6", "", optimizer, Reference{Role: "reference_audio", URL: "https://example.com/a.mp3"},
+			Reference{Role: "reference_audio", URL: "https://example.com/b.mp3"}), "input.references", "invalid_reference_count"},
+		{cover("suno/suno-v6", "", optimizer, Reference{Role: "reference_image", URL: "https://example.com/a.png"}), "input.references[0].role", "invalid_reference_role"},
+		// Other music, sound-effect and speech models declare no reference input.
+		{cover("elevenlabs/music-v2", "", map[string]any{"instrumental": true}), "input.type", "operation_contract_unavailable"},
+		{cover("elevenlabs/sound-effects-v2", "", nil), "input.type", "operation_contract_unavailable"},
+		{cover("minimax/speech-2.8-hd", "", nil), "input.type", "operation_contract_unavailable"},
+	} {
+		var parameterError *ParameterError
+		err := ValidateGenerationWithCatalog("generate_music", tc.request, catalog)
+		if !errors.As(err, &parameterError) || parameterError.Path != tc.path || parameterError.Code != tc.code {
+			t.Fatalf("%s: got %v, want %s %s", tc.request.Model, err, tc.path, tc.code)
+		}
+	}
+	// Without a catalog an explicit sound-effect or speech operation still rejects a cover.
+	for _, operation := range []string{"generate_sound_effect", "generate_speech"} {
+		var parameterError *ParameterError
+		if err := ValidateGenerationProtocol(operation, cover("elevenlabs/sound-effects-v2", "", nil)); !errors.As(err, &parameterError) ||
+			parameterError.Path != "input.type" || parameterError.Code != "input_mode_invalid" {
+			t.Fatalf("%s accepted a cover: %v", operation, err)
+		}
+	}
+}

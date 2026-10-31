@@ -344,13 +344,14 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 
 // validateMusicInput applies the protocol rules shared by every music model:
 // lyrics, instrumental and the lyrics optimizer exclude each other, and sound
-// effects take no lyrics. Text-to-speech reads input.prompt aloud and takes only
+// effects take no lyrics. Only music takes a reference input (a cover of one
+// source song). Text-to-speech reads input.prompt aloud and takes only
 // n and voice. n, duration and the accepted switches come from the model
 // contract. Without a contract generate_music may name a sound-effect or
 // text-to-speech model, so a missing lyrics source and a voice on a music
 // model are left to the Gateway.
 func validateMusicInput(operation string, request GenerationRequest, contractKnown bool) error {
-	if request.Input.Type != "text" {
+	if request.Input.Type != "text" && (request.Input.Type != "reference" || operation != "generate_music") {
 		return &ParameterError{"input.type", "input_mode_invalid"}
 	}
 	flags := make(map[string]bool, 2)

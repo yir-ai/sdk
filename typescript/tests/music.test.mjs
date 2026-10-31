@@ -271,3 +271,63 @@ test("text-to-speech models take only n and voice through the music methods", as
   const batchClient = createYirClient(async () => ({ object: "quote_batch", request_id: "req_tts", data: [{ index: 0, quote: speechQuote }] }));
   assert.equal((await batchClient.quoteBatch([{ operation: "generate_speech", request: speech }])).data[0].quote.operation, "generate_speech");
 });
+
+test("a Suno cover takes one reference_audio and the text-input lyrics rule", () => {
+  const cover = (model, parameters, extra = {}) => ({
+    model,
+    input: { type: "reference", prompt: "Acoustic folk cover", references: [{ role: "reference_audio", url: "https://example.com/song.mp3" }], ...extra },
+    ...(parameters ? { parameters } : {}),
+  });
+  const valid = [
+    cover("suno/suno-v6", { lyrics_optimizer: true }),
+    cover("suno/suno-v6-wild", { instrumental: true, n: 2 }),
+    cover("suno/suno-v6-mini", undefined, { lyrics: "[Verse]\nNew words" }),
+  ];
+  for (const body of valid) {
+    validateProtocol("generate_music", body);
+    validateGeneration("generate_music", body);
+  }
+  const songs = [{ role: "reference_audio", url: "https://example.com/a.mp3" }, { role: "reference_audio", url: "https://example.com/b.mp3" }];
+  const invalid = [
+    [cover("suno/suno-v6"), "lyrics_required", "input.lyrics"],
+    [cover("suno/suno-v6", { instrumental: true }, { lyrics: "[Verse]" }), "lyrics_not_allowed", "input.lyrics"],
+    [cover("suno/suno-v6", { lyrics_optimizer: true }, { references: songs }), "reference_count", "input.references"],
+    [cover("suno/suno-v6", { lyrics_optimizer: true }, { references: [] }), "reference_count", "input.references"],
+    [cover("suno/suno-v6", { lyrics_optimizer: true }, { references: [{ role: "reference_image", url: "https://example.com/a.png" }] }),
+      "reference_role_invalid", "input.references.0.role"],
+    // Other music, sound-effect and speech models declare no reference input.
+    [cover("elevenlabs/music-v2", { instrumental: true }), "input_mode_invalid", "input.type"],
+    [cover("minimax/music-2.6", { lyrics_optimizer: true }), "input_mode_invalid", "input.type"],
+    [cover("elevenlabs/sound-effects-v2"), "input_mode_invalid", "input.type"],
+    [cover("minimax/speech-2.8-hd"), "input_mode_invalid", "input.type"],
+  ];
+  for (const [body, code, path] of invalid) {
+    assert.throws(() => validateGeneration("generate_music", body),
+      error => error instanceof YirSDKValidationError && error.code === code && error.path === path, `${body.model} ${code}`);
+  }
+  // Without a catalog the protocol still rejects a cover on an explicit sound-effect or speech operation.
+  for (const operation of ["generate_sound_effect", "generate_speech"]) {
+    assert.throws(() => validateProtocol(operation, cover("elevenlabs/sound-effects-v2")),
+      error => error.code === "input_mode_invalid" && error.path === "input.type", operation);
+  }
+});
+
+test("a cover quotes and submits through the music paths with input_mode reference", async () => {
+  const calls = [];
+  const body = {
+    model: "suno/suno-v6",
+    input: { type: "reference", prompt: "Lo-fi cover", references: [{ role: "reference_audio", file_id: "file_11111111-1111-4111-8111-111111111111" }] },
+    parameters: { lyrics_optimizer: true },
+  };
+  const client = createYirClient(async request => {
+    calls.push(request);
+    if (request.path.endsWith("/quotes")) {
+      return musicQuote(request.body, { model: "suno/suno-v6", input_mode: "reference", parameters: { instrumental: false, lyrics_optimizer: true, n: 2 } });
+    }
+    return { id: "7105", object: "job", status: "queued", model: "suno/suno-v6", error: null, created_at: 1 };
+  });
+  assert.equal((await client.quoteMusic(body)).input_mode, "reference");
+  await client.submitMusic(body, "cover-7105");
+  assert.deepEqual(calls.map(call => call.path), ["/v1/music/quotes", "/v1/music/generations"]);
+  assert.deepEqual(calls[1].body, body);
+});

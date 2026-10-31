@@ -16,6 +16,7 @@ import type {
 import { YirTimeoutError } from "../../src/index.js";
 
 const source: StandardMediaSource = { file_id: "file_11111111-1111-4111-8111-111111111111" };
+const urlSourceForCover = { url: "https://example.com/song.mp3" } as const;
 const image: StandardImageGenerationRequest = {
   model: "openai/gpt-image-2", input: { type: "image", prompt: "Edit the image", references: [{ role: "reference_image", ...source }] },
   parameters: { resolution: "1K", aspect_ratio: "1:1", n: 1 },
@@ -42,6 +43,15 @@ const music: StandardMusicGenerationRequest = {
 const musicQuote: StandardMusicQuoteRequest = { model: "music-2.6", input: { type: "text", prompt: "Lo-fi piano" }, parameters: { instrumental: true } };
 // @ts-expect-error A quote request carries no webhook.
 const musicQuoteWithWebhook: StandardMusicQuoteRequest = { model: "music-2.6", input: { type: "text", prompt: "Lo-fi piano" }, webhook_url: "https://example.com/webhooks/yir" };
+// A Suno cover takes exactly one source song as reference_audio.
+const cover: StandardMusicGenerationRequest = {
+  model: "suno/suno-v6", input: { type: "reference", prompt: "Acoustic folk cover", references: [{ role: "reference_audio", ...source }] },
+  parameters: { lyrics_optimizer: true },
+};
+// @ts-expect-error A cover takes exactly one source song.
+const twoSongCover: StandardMusicQuoteRequest = { model: "suno/suno-v6", input: { type: "reference", prompt: "Cover", references: [{ role: "reference_audio", ...source }, { role: "reference_audio", ...urlSourceForCover }] } };
+// @ts-expect-error A cover source is reference_audio.
+const imageCover: StandardMusicQuoteRequest = { model: "suno/suno-v6", input: { type: "reference", prompt: "Cover", references: [{ role: "reference_image", ...source }] } };
 const musicEcho: QuoteParameters = { instrumental: false, lyrics_optimizer: true, n: 1 };
 // Length-priced models take duration; sound effects use the music request shape.
 const soundEffect: StandardMusicQuoteRequest = { model: "elevenlabs/sound-effects-v2", input: { type: "text", prompt: "Glass shattering" }, parameters: { duration: 5 } };
@@ -52,7 +62,7 @@ const speechEcho: QuoteParameters = { n: 1, voice: "English_expressive_narrator"
 function readDuration(file: JobResultFile): number | undefined {
   return file.duration_ms;
 }
-void [musicQuoteWithWebhook, musicEcho, soundEcho, speechEcho, readDuration];
+void [cover, twoSongCover, imageCover, musicQuoteWithWebhook, musicEcho, soundEcho, speechEcho, readDuration];
 // A source is a File ID or a public HTTPS URL, never both.
 const urlSource: StandardMediaSource = { url: "https://example.com/image.png" };
 // @ts-expect-error A source carries exactly one of file_id and url.
