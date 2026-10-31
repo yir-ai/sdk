@@ -86,12 +86,12 @@ const job = await client.submitAudio({ ...request, max_cost: "0.20" }, savedKey)
 
 ```ts
 const model = {
-  model: "tencent/hunyuan-3d-3.1-pro",
+  model: "tripo/tripo-p2",
   input: { type: "image", references: [{ role: "reference_image", url: "https://example.com/chair.png" }] },
   parameters: { texture: "standard", pbr: false },
 } as const;
 const quote = await client.quote3D(model);
-const job = await client.submit3D({ ...model, max_cost: "0.60" }, savedKey);
+const job = await client.submit3D({ ...model, max_cost: "1.50" }, savedKey);
 ```
 
 

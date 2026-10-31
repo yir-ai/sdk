@@ -224,7 +224,7 @@
                 "$ref": "#/components/schemas/Standard3DQuoteRequest"
               },
               "example": {
-                "model": "tencent/hunyuan-3d-3.1-pro",
+                "model": "hitem3d/hi3d-v3.0",
                 "input": {
                   "type": "image",
                   "references": [
@@ -1487,7 +1487,7 @@
             "minLength": 1,
             "maxLength": 1024,
             "pattern": "\\S",
-            "description": "Description of the object to model. The per-model limit is in the model contract (1024 for Tripo and Hunyuan Pro, 600 for Meshy)."
+            "description": "Description of the object to model. The per-model limit is in the model contract (1024 for Tripo, 600 for Meshy)."
           }
         }
       },
@@ -1621,7 +1621,7 @@
           "face_limit": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 2000000,
+            "maximum": 5000000,
             "description": "Target face count. Range and default come from the model contract; omit it for the model default. Some models charge extra for a custom count."
           },
           "topology": {

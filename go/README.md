@@ -116,7 +116,7 @@ job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request
 For 3D, use `Quote3D` and `Submit3D` (the `/v1/3d` endpoints) with the same lifecycle, or a `generate_3d` item in `QuoteBatch`. `Input.Type` is `text` (with `Prompt`), `image` (exactly one `reference_image`, empty `Prompt`) or `multiview` (one `front_view` plus at least one of `left_view`, `back_view` and `right_view`, each at most once, empty `Prompt`; only models whose contract lists the multiview input mode). `Parameters` are optional: `texture` (`none`, `standard`, `hd`), `pbr` (needs a texture; `texture: "none"` with `pbr: true` is rejected), `face_limit`, `topology` (`triangle`, `quad`) and `n` (always 1); each model accepts only the values its contract declares, and omitted ones take the model default. `ValidateGenerationWithCatalog("generate_3d", request, catalog)` checks the input mode, references and values against the model contract. The Job delivers one glb file (`model/gltf-binary`) with its measured triangle count in `ResultFile.Faces`; an over-delivered result (textures or PBR maps you did not ask for) is still delivered with a parameter notice. Demo mode has no 3D sample: `Submit3D` returns `ErrDemoOperationUnsupported` without sending.
 
 ```go
-model := yir.GenerationRequest{Model: "tencent/hunyuan-3d-3.1-pro", Input: yir.GenerationInput{
+model := yir.GenerationRequest{Model: "tripo/tripo-p2", Input: yir.GenerationInput{
 	Type: "image", References: []yir.Reference{{Role: "reference_image", URL: "https://example.com/chair.png"}}},
 	Parameters: map[string]any{"texture": "standard", "pbr": false}}
 quote, err := client.Quote3D(ctx, model)

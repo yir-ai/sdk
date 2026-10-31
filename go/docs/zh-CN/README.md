@@ -116,7 +116,7 @@ job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request
 3D 使用 `Quote3D` 和 `Submit3D`（`/v1/3d` 端点），流程相同；也可在 `QuoteBatch` 中传 `generate_3d` 项。`Input.Type` 为 `text`（填 `Prompt`）、`image`（恰好一张 `reference_image`，`Prompt` 留空）或 `multiview`（一张 `front_view` 加至少一张 `left_view`、`back_view` 或 `right_view`，每个角色至多一张，`Prompt` 留空；只限合同列出 multiview 输入方式的模型）。`Parameters` 可省略：`texture`（`none`、`standard`、`hd`）、`pbr`（需要带贴图，`texture: "none"` 同时 `pbr: true` 会被拒绝）、`face_limit`、`topology`（`triangle`、`quad`）与 `n`（固定为 1）；每个模型只接受其合同声明的取值，省略即模型默认。`ValidateGenerationWithCatalog("generate_3d", request, catalog)` 按模型合同检查输入方式、参考图与取值。Job 交付一个 glb 文件（`model/gltf-binary`），实测三角面数见 `ResultFile.Faces`；超规格结果（未要求的贴图或 PBR）照常交付，并给出参数通知。Demo 模式没有 3D 样例：`Submit3D` 不发送请求，直接返回 `ErrDemoOperationUnsupported`。
 
 ```go
-model := yir.GenerationRequest{Model: "tencent/hunyuan-3d-3.1-pro", Input: yir.GenerationInput{
+model := yir.GenerationRequest{Model: "tripo/tripo-p2", Input: yir.GenerationInput{
 	Type: "image", References: []yir.Reference{{Role: "reference_image", URL: "https://example.com/chair.png"}}},
 	Parameters: map[string]any{"texture": "standard", "pbr": false}}
 quote, err := client.Quote3D(ctx, model)

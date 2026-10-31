@@ -86,17 +86,17 @@ const model3D: Standard3DGenerationRequest = {
   model: "tripo/tripo-h3.1", input: { type: "text", prompt: "A wooden armchair" }, parameters: { texture: "standard", pbr: true, face_limit: 20000 },
   webhook_url: "https://example.com/webhooks/yir",
 };
-const image3D: Standard3DQuoteRequest = { model: "trellis-2", input: { type: "image", references: [{ role: "reference_image", ...source }] } };
+const image3D: Standard3DQuoteRequest = { model: "tripo-p2", input: { type: "image", references: [{ role: "reference_image", ...source }] } };
 const views3D: Standard3DQuoteRequest = {
-  model: "hunyuan-3d-3.1-pro",
+  model: "hi3d-v3.0",
   input: { type: "multiview", references: [{ role: "front_view", ...source }, { role: "back_view", url: "https://example.com/back.png" }] },
 };
 // @ts-expect-error Image-to-3D takes no prompt.
-const promptedImage3D: Standard3DQuoteRequest = { model: "trellis-2", input: { type: "image", prompt: "A chair", references: [{ role: "reference_image", ...source }] } };
+const promptedImage3D: Standard3DQuoteRequest = { model: "tripo-p2", input: { type: "image", prompt: "A chair", references: [{ role: "reference_image", ...source }] } };
 // @ts-expect-error Image-to-3D takes exactly one image.
-const twoImages3D: Standard3DQuoteRequest = { model: "trellis-2", input: { type: "image", references: [{ role: "reference_image", ...source }, { role: "reference_image", ...source }] } };
+const twoImages3D: Standard3DQuoteRequest = { model: "tripo-p2", input: { type: "image", references: [{ role: "reference_image", ...source }, { role: "reference_image", ...source }] } };
 // @ts-expect-error One model per Job.
-const twoModels3D: Standard3DQuoteRequest = { model: "trellis-2", input: image3D.input, parameters: { n: 2 } };
+const twoModels3D: Standard3DQuoteRequest = { model: "tripo-p2", input: image3D.input, parameters: { n: 2 } };
 // @ts-expect-error A quote request carries no webhook.
 const quote3DWithWebhook: Standard3DQuoteRequest = { ...image3D, webhook_url: "https://example.com/webhooks/yir" };
 const echo3D: QuoteParameters = { n: 1, texture: "standard", pbr: false, face_limit: 500000, topology: "triangle" };

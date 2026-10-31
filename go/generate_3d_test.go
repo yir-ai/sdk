@@ -97,7 +97,7 @@ func TestQuoteBatch3DItemAndGlbFaces(t *testing.T) {
 		if r.URL.Path == "/v1/quotes" {
 			json.NewEncoder(w).Encode(map[string]any{"object": "quote_batch", "request_id": "req_3d", "data": []any{map[string]any{"index": 0,
 				"quote": map[string]any{"supply": map[string]any{"available": true, "issues": []string{}}, "object": "quote",
-					"model": "tencent/hunyuan-3d-3.1-pro", "operation": "generate_3d", "input_mode": "multiview",
+					"model": "hitem3d/hi3d-v3.0", "operation": "generate_3d", "input_mode": "multiview",
 					"parameters": map[string]any{"n": 1, "texture": "standard", "pbr": false, "face_limit": 500000, "topology": "triangle"},
 					"currency":   "USD", "expires_at": 3000000000,
 					"primary": map[string]any{"kind": "fixed", "amount": "0.525"}, "official": map[string]any{"kind": "fixed", "amount": "0.525"}}}}})
@@ -112,7 +112,7 @@ func TestQuoteBatch3DItemAndGlbFaces(t *testing.T) {
 		t.Fatal(err)
 	}
 	batch, err := client.QuoteBatch(context.Background(), []QuoteBatchRequestItem{{Operation: "generate_3d",
-		Request: multiview3DRequest("hunyuan-3d-3.1-pro", "front_view", "back_view")}})
+		Request: multiview3DRequest("hi3d-v3.0", "front_view", "back_view")}})
 	if err != nil || batch.Data[0].Quote.Operation != "generate_3d" {
 		t.Fatalf("3d batch: %+v %v", batch, err)
 	}
@@ -129,10 +129,10 @@ func Test3DContractRules(t *testing.T) {
 		text3DRequest(),
 		with3DParameters(GenerationRequest{Model: "tripo/tripo-h3.1", Input: GenerationInput{Type: "text", Prompt: "A teapot"}},
 			map[string]any{"texture": "none", "face_limit": 20000}),
-		image3DRequest("microsoft/trellis-2"),
+		image3DRequest("tripo/tripo-p2"),
 		with3DParameters(image3DRequest("meshy/meshy-7.1"), map[string]any{"texture": "standard", "pbr": true, "face_limit": 300000, "topology": "quad", "n": 1}),
-		multiview3DRequest("tencent/hunyuan-3d-3.1-pro", "front_view", "back_view"),
-		multiview3DRequest("tencent/hunyuan-3d-3.1-pro", "front_view", "left_view", "back_view", "right_view"),
+		multiview3DRequest("hitem3d/hi3d-v3.0", "front_view", "back_view"),
+		multiview3DRequest("meshy/meshy-7.1", "front_view", "left_view", "back_view", "right_view"),
 	} {
 		if err := ValidateGenerationProtocol("generate_3d", request); err != nil {
 			t.Fatalf("protocol rejected %s %s: %v", request.Model, request.Input.Type, err)
@@ -146,15 +146,15 @@ func Test3DContractRules(t *testing.T) {
 		request    GenerationRequest
 		path, code string
 	}{
-		{"mode not listed", GenerationRequest{Model: "microsoft/trellis-2", Input: GenerationInput{Type: "text", Prompt: "A chair"}}, "input.type", "operation_contract_unavailable"},
+		{"mode not listed", GenerationRequest{Model: "hitem3d/hi3d-v3.0", Input: GenerationInput{Type: "text", Prompt: "A chair"}}, "input.type", "operation_contract_unavailable"},
 		{"multiview not listed", multiview3DRequest("tripo/tripo-h3.1", "front_view", "back_view"), "input.type", "operation_contract_unavailable"},
 		{"image count", image3DRequest("tripo/tripo-h3.1", views3D("reference_image", "reference_image")...), "input.references", "invalid_reference_count"},
 		{"image role", image3DRequest("tripo/tripo-h3.1", views3D("front_view")...), "input.references[0].role", "invalid_reference_role"},
-		{"texture value", with3DParameters(image3DRequest("tencent/hunyuan-3d-3.1-pro"), map[string]any{"texture": "hd"}), "parameters.texture", "invalid_enum"},
+		{"texture value", with3DParameters(image3DRequest("hitem3d/hi3d-v3.0"), map[string]any{"texture": "hd"}), "parameters.texture", "invalid_enum"},
 		{"topology value", with3DParameters(image3DRequest("tripo/tripo-h3.1"), map[string]any{"topology": "quad"}), "parameters.topology", "invalid_enum"},
-		{"face range", with3DParameters(image3DRequest("tencent/hunyuan-3d-3.1-pro"), map[string]any{"face_limit": 1000}), "parameters.face_limit", "below_minimum"},
-		{"face unknown", with3DParameters(image3DRequest("microsoft/trellis-2"), map[string]any{"face_limit": 50000}), "parameters.face_limit", "unknown_parameter"},
-		{"pbr fixed", with3DParameters(image3DRequest("microsoft/trellis-2"), map[string]any{"pbr": false}), "parameters.pbr", "invalid_enum"},
+		{"face range", with3DParameters(image3DRequest("hitem3d/hi3d-v3.0"), map[string]any{"face_limit": 1000}), "parameters.face_limit", "below_minimum"},
+		{"face above range", with3DParameters(image3DRequest("tripo/tripo-p2"), map[string]any{"face_limit": 60000}), "parameters.face_limit", "above_maximum"},
+		{"unknown parameter", with3DParameters(image3DRequest("tripo/tripo-p2"), map[string]any{"seed": 1}), "parameters.seed", "unknown_parameter"},
 		{"n", with3DParameters(image3DRequest("meshy/meshy-7.1"), map[string]any{"n": 2}), "parameters.n", "invalid_enum"},
 	} {
 		var parameterError *ParameterError
@@ -176,9 +176,9 @@ func Test3DProtocolRules(t *testing.T) {
 		{"text prompt", GenerationRequest{Model: "tripo-h3.1", Input: GenerationInput{Type: "text", Prompt: " "}}, "input.prompt", "required_parameter"},
 		{"no image", image3DRequest("tripo-h3.1", []Reference{}...), "input.references", "invalid_reference_count"},
 		{"two images", image3DRequest("tripo-h3.1", views3D("reference_image", "reference_image")...), "input.references", "invalid_reference_count"},
-		{"one view", multiview3DRequest("hunyuan-3d-3.1-pro", "front_view"), "input.references", "invalid_reference_count"},
-		{"no front", multiview3DRequest("hunyuan-3d-3.1-pro", "back_view", "left_view"), "input.references", "required_reference_role"},
-		{"repeated view", multiview3DRequest("hunyuan-3d-3.1-pro", "front_view", "front_view"), "input.references", "invalid_reference_role_count"},
+		{"one view", multiview3DRequest("hi3d-v3.0", "front_view"), "input.references", "invalid_reference_count"},
+		{"no front", multiview3DRequest("hi3d-v3.0", "back_view", "left_view"), "input.references", "required_reference_role"},
+		{"repeated view", multiview3DRequest("hi3d-v3.0", "front_view", "front_view"), "input.references", "invalid_reference_role_count"},
 		{"pbr without texture", with3DParameters(text3DRequest(), map[string]any{"texture": "none", "pbr": true}), "parameters.pbr", "parameter_conflict"},
 		{"pbr type", with3DParameters(text3DRequest(), map[string]any{"pbr": "yes"}), "parameters.pbr", "invalid_type"},
 		{"face type", with3DParameters(text3DRequest(), map[string]any{"face_limit": 1.5}), "parameters.face_limit", "invalid_type"},
@@ -214,7 +214,7 @@ func TestSubmit3DRetriesWithSameKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	job, err := client.Submit3D(context.Background(), SubmitRequest{GenerationRequest: image3DRequest("trellis-2")}, "3d-retry")
+	job, err := client.Submit3D(context.Background(), SubmitRequest{GenerationRequest: image3DRequest("tripo-p2")}, "3d-retry")
 	if err != nil || job.ID != "7203" || len(keys) != 2 || keys[0] != "3d-retry" || keys[1] != "3d-retry" || bodies[0] != bodies[1] {
 		t.Fatalf("3d retry: %+v %v %v", job, err, keys)
 	}

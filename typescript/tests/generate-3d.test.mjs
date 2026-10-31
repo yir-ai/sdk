@@ -33,7 +33,7 @@ test("3D Quote and Submit use the 3D paths and validate the 3D echo", async () =
   const submit = { ...text, webhook_url: "https://example.com/webhooks/yir", max_cost: "0.30" };
   await client.submit3D(submit, "3d-7201");
   // Parameters are optional; omitted ones take the model defaults.
-  await client.quote3D(image("tencent/hunyuan-3d-3.1-pro"));
+  await client.quote3D(image("tripo/tripo-p2"));
   assert.deepEqual(calls.map(call => [call.method, call.path]), [
     ["POST", "/v1/3d/quotes"], ["POST", "/v1/3d/generations"], ["POST", "/v1/3d/quotes"],
   ]);
@@ -66,10 +66,10 @@ test("3D input modes and values follow the model contract", () => {
   const valid = [
     text,
     { model: "tripo/tripo-h3.1", input: { type: "text", prompt: "A teapot" }, parameters: { texture: "none", face_limit: 20000 } },
-    image("microsoft/trellis-2"),
+    image("tripo/tripo-p2"),
     { ...image("meshy/meshy-7.1"), parameters: { texture: "standard", pbr: true, face_limit: 300000, topology: "quad", n: 1 } },
-    multiview("tencent/hunyuan-3d-3.1-pro", views("front_view", "back_view")),
-    multiview("tencent/hunyuan-3d-3.1-pro", views("front_view", "left_view", "back_view", "right_view")),
+    multiview("hitem3d/hi3d-v3.0", views("front_view", "back_view")),
+    multiview("meshy/meshy-7.1", views("front_view", "left_view", "back_view", "right_view")),
   ];
   for (const body of valid) {
     validateProtocol("generate_3d", body);
@@ -77,7 +77,7 @@ test("3D input modes and values follow the model contract", () => {
   }
   const invalid = [
     // Input modes a model does not list.
-    [{ model: "microsoft/trellis-2", input: { type: "text", prompt: "A chair" } }, "input_mode_invalid", "input.type"],
+    [{ model: "hitem3d/hi3d-v3.0", input: { type: "text", prompt: "A chair" } }, "input_mode_invalid", "input.type"],
     [multiview("tripo/tripo-h3.1", views("front_view", "back_view")), "input_mode_invalid", "input.type"],
     [{ model: "tripo/tripo-h3.1", input: { type: "reference", prompt: "A chair", references: views("front_view") } }, "input_mode_invalid", "input.type"],
     // Image and multiview take no prompt; text needs one.
@@ -86,15 +86,15 @@ test("3D input modes and values follow the model contract", () => {
     // Reference counts and roles.
     [image("tripo/tripo-h3.1", views("reference_image", "reference_image")), "reference_count", "input.references"],
     [image("tripo/tripo-h3.1", views("front_view")), "reference_role_invalid", "input.references.0.role"],
-    [multiview("tencent/hunyuan-3d-3.1-pro", views("front_view")), "reference_count", "input.references"],
-    [multiview("tencent/hunyuan-3d-3.1-pro", views("left_view", "back_view")), "reference_role_required", "input.references"],
-    [multiview("tencent/hunyuan-3d-3.1-pro", views("front_view", "back_view", "back_view")), "reference_role_count", "input.references"],
+    [multiview("hitem3d/hi3d-v3.0", views("front_view")), "reference_count", "input.references"],
+    [multiview("hitem3d/hi3d-v3.0", views("left_view", "back_view")), "reference_role_required", "input.references"],
+    [multiview("hitem3d/hi3d-v3.0", views("front_view", "back_view", "back_view")), "reference_role_count", "input.references"],
     // Values outside the contract.
-    [{ ...image("tencent/hunyuan-3d-3.1-pro"), parameters: { texture: "hd" } }, "parameter_value", "parameters.texture"],
+    [{ ...image("hitem3d/hi3d-v3.0"), parameters: { texture: "hd" } }, "parameter_value", "parameters.texture"],
     [{ ...image("tripo/tripo-h3.1"), parameters: { topology: "quad" } }, "parameter_value", "parameters.topology"],
-    [{ ...image("tencent/hunyuan-3d-3.1-pro"), parameters: { face_limit: 1000 } }, "parameter_range", "parameters.face_limit"],
-    [{ ...image("microsoft/trellis-2"), parameters: { face_limit: 50000 } }, "parameter_unknown", "parameters.face_limit"],
-    [{ ...image("microsoft/trellis-2"), parameters: { pbr: false } }, "parameter_value", "parameters.pbr"],
+    [{ ...image("hitem3d/hi3d-v3.0"), parameters: { face_limit: 1000 } }, "parameter_range", "parameters.face_limit"],
+    [{ ...image("tripo/tripo-p2"), parameters: { face_limit: 60000 } }, "parameter_range", "parameters.face_limit"],
+    [{ ...image("tripo/tripo-p2"), parameters: { seed: 1 } }, "parameter_unknown", "parameters.seed"],
     [{ ...image("meshy/meshy-7.1"), parameters: { n: 2 } }, "parameter_value", "parameters.n"],
     // PBR needs a texture.
     [{ ...image("tripo/tripo-h3.1"), parameters: { texture: "none", pbr: true } }, "parameter_conflict", "parameters.pbr"],
@@ -110,9 +110,9 @@ test("without a catalog the 3D protocol rules still apply", () => {
     [{ model: "tripo-h3.1", input: { type: "image", prompt: "A chair", references: views("reference_image") } }, "prompt_not_allowed", "input.prompt"],
     [image("tripo-h3.1", []), "reference_count", "input.references"],
     [image("tripo-h3.1", views("reference_image", "reference_image")), "reference_count", "input.references"],
-    [multiview("hunyuan-3d-3.1-pro", views("front_view")), "reference_count", "input.references"],
-    [multiview("hunyuan-3d-3.1-pro", views("back_view", "left_view")), "reference_role_required", "input.references"],
-    [multiview("hunyuan-3d-3.1-pro", views("front_view", "front_view")), "reference_role_count", "input.references"],
+    [multiview("hi3d-v3.0", views("front_view")), "reference_count", "input.references"],
+    [multiview("hi3d-v3.0", views("back_view", "left_view")), "reference_role_required", "input.references"],
+    [multiview("hi3d-v3.0", views("front_view", "front_view")), "reference_role_count", "input.references"],
     [{ ...text, parameters: { texture: "none", pbr: true } }, "parameter_conflict", "parameters.pbr"],
     [{ ...text, parameters: { pbr: "yes" } }, "parameter_type", "parameters.pbr"],
     [{ ...text, parameters: { face_limit: 1.5 } }, "parameter_type", "parameters.face_limit"],
