@@ -21,7 +21,7 @@ export type ModelParameterContract = {
   readonly locales: Readonly<Record<string, ModelContractLocale>>;
 };
 
-export type ReferenceRole = "first_frame" | "keyframe" | "last_frame" | "reference_image" | "reference_video" | "reference_audio" | (string & {});
+export type ReferenceRole = "first_frame" | "keyframe" | "last_frame" | "reference_image" | "reference_video" | "reference_audio" | "front_view" | "left_view" | "back_view" | "right_view" | (string & {});
 
 export type ModelInputConstraint = {
   readonly prompt_optional?: boolean;
@@ -68,8 +68,8 @@ export type SubjectReferenceLimits = {
 };
 
 export type ModelOperationContract = {
-  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech" | (string & {});
-  readonly input_modes: readonly ("text" | "image" | "reference" | (string & {}))[];
+  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech" | "generate_3d" | (string & {});
+  readonly input_modes: readonly ("text" | "image" | "reference" | "multiview" | (string & {}))[];
   readonly input_constraints: Readonly<Record<string, ModelInputConstraint>>;
   readonly request_schema: string;
   readonly parameters: readonly ModelParameterContract[];

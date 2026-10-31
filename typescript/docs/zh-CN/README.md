@@ -82,6 +82,18 @@ const quote = await client.quoteAudio(request);
 const job = await client.submitAudio({ ...request, max_cost: "0.20" }, savedKey);
 ```
 
+3D 使用 `quote3D(request)` 和 `submit3D(savedRequest, savedKey)`（`/v1/3d` 端点），流程相同；也可在 `quoteBatch` 中传 `generate_3d` 项。输入可以是文本（`prompt`）、一张图片（`type: "image"`，恰好一张 `reference_image`，不接受 prompt）或多视角（`type: "multiview"`，一张 `front_view` 加至少一张 `left_view`、`back_view` 或 `right_view`，每个角色至多一张，不接受 prompt；只限合同列出 multiview 输入方式的模型）。`parameters` 可省略：`texture`（`none`、`standard`、`hd`）、`pbr`（需要带贴图，`texture: "none"` 同时 `pbr: true` 会被拒绝）、`face_limit`、`topology`（`triangle`、`quad`）与 `n`（固定为 1）；每个模型只接受其合同声明的取值，省略即模型默认。`validateGeneration("generate_3d", request, catalog)` 按模型合同检查输入方式、参考图与取值。Job 交付一个 glb 文件（`model/gltf-binary`），实测三角面数见 `faces`；超规格结果（未要求的贴图或 PBR）照常交付，并给出 `parameter_notices`。Demo 模式没有 3D 样例：`submit3D` 不发送请求，直接抛出 `demo_operation_unsupported`。
+
+```ts
+const model = {
+  model: "tencent/hunyuan-3d-3.1-pro",
+  input: { type: "image", references: [{ role: "reference_image", url: "https://example.com/chair.png" }] },
+  parameters: { texture: "standard", pbr: false },
+} as const;
+const quote = await client.quote3D(model);
+const job = await client.submit3D({ ...model, max_cost: "0.60" }, savedKey);
+```
+
 
 ## 任务和恢复
 

@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+// ErrDemoOperationUnsupported is returned by a demo-mode submit for an
+// operation without a demo sample (3D); nothing is sent.
+var ErrDemoOperationUnsupported = errors.New("demo_operation_unsupported")
+
 // DemoScenario selects how a demo Job ends. DemoScenarioOK succeeds,
 // DemoScenarioSlow stays queued for 6 minutes before succeeding,
 // DemoScenarioFail fails with nothing charged, DemoScenarioReject makes the

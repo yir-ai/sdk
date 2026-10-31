@@ -10,12 +10,14 @@ import (
 )
 
 // GenerationRequest is the common demand used for Quote and Submit.
-// The endpoint selects image, video or music generation; provider fields are not accepted.
+// The endpoint selects image, video, audio or 3D generation; provider fields are not accepted.
 // Music, sound-effect and text-to-speech parameters (n, duration, instrumental,
 // lyrics_optimizer, voice, as the model contract declares) are optional; nil
 // Parameters are sent as an empty object. Length-priced models take
 // parameters["duration"] in seconds; text-to-speech models take
-// parameters["voice"], a preset voice ID of the model.
+// parameters["voice"], a preset voice ID of the model. 3D parameters (texture,
+// pbr, face_limit, topology, n) are optional too; 3D image and multiview inputs
+// leave Input.Prompt empty.
 type GenerationRequest struct {
 	// Deprecated: Omit for new requests; actual-cost settlement is the default.
 	// Retained for legacy callers with the existing validation rules.
@@ -226,13 +228,21 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	if strings.TrimSpace(request.Model) == "" {
 		return &ParameterError{"model", "model_required"}
 	}
-	if operation != "generate_image" && operation != "generate_video" && !isAudioOperation(operation) {
+	if operation != "generate_image" && operation != "generate_video" && operation != "generate_3d" && !isAudioOperation(operation) {
 		return &ParameterError{"operation", "invalid_operation"}
 	}
 	if request.Input.Type == "" {
 		return &ParameterError{"input.type", "input_mode_invalid"}
 	}
-	if strings.TrimSpace(request.Input.Prompt) == "" && (operation != "generate_video" || request.Input.Type != "image") {
+	if operation == "generate_3d" && request.Input.Type != "text" {
+		// 3D takes text, one image or several views; image and multiview inputs take no prompt.
+		if request.Input.Type != "image" && request.Input.Type != "multiview" {
+			return &ParameterError{"input.type", "input_mode_invalid"}
+		}
+		if request.Input.Prompt != "" {
+			return &ParameterError{"input.prompt", "not_allowed"}
+		}
+	} else if strings.TrimSpace(request.Input.Prompt) == "" && (operation != "generate_video" || request.Input.Type != "image") {
 		return &ParameterError{"input.prompt", "required_parameter"}
 	}
 	for key := range request.Extra {
@@ -246,6 +256,11 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 		}
 	} else if request.Input.Lyrics != "" {
 		return &ParameterError{"input.lyrics", "not_allowed"}
+	}
+	if operation == "generate_3d" {
+		if err := validate3DInput(request, contract); err != nil {
+			return err
+		}
 	}
 	var constraint *ModelInputConstraint
 	if contract != nil {
@@ -278,7 +293,7 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 			}
 		}
 	}
-	if request.Input.Type == "text" && count != 0 || (request.Input.Type == "image" || request.Input.Type == "reference") && count == 0 ||
+	if request.Input.Type == "text" && count != 0 || (request.Input.Type == "image" || request.Input.Type == "reference" || request.Input.Type == "multiview") && count == 0 ||
 		constraint != nil && (items < constraint.MinReferences || items > constraint.MaxReferences) {
 		return &ParameterError{"input.references", "invalid_reference_count"}
 	}
@@ -398,6 +413,67 @@ func validateMusicInput(operation string, request GenerationRequest, contractKno
 		return &ParameterError{"input.lyrics", "not_allowed"}
 	case contractKnown && operation == "generate_music" && !hasLyrics && !flags["instrumental"] && !flags["lyrics_optimizer"]:
 		return &ParameterError{"input.lyrics", "required_parameter"}
+	}
+	return nil
+}
+
+// validate3DInput applies the protocol rules shared by every 3D model
+// (Input.Type is already text, image or multiview): one image or several views
+// of one object, and pbr needs a texture. Allowed values, defaults and
+// face_limit ranges come from the model contract.
+func validate3DInput(request GenerationRequest, contract *ModelOperationContract) error {
+	for _, name := range []string{"texture", "topology"} {
+		if value, present := request.Parameters[name]; present && value != nil {
+			if _, ok := value.(string); !ok {
+				return &ParameterError{"parameters." + name, "invalid_type"}
+			}
+		}
+	}
+	pbr, present := request.Parameters["pbr"]
+	if present && pbr != nil {
+		if _, ok := pbr.(bool); !ok {
+			return &ParameterError{"parameters.pbr", "invalid_type"}
+		}
+	}
+	for _, name := range []string{"face_limit", "n"} {
+		value, present := request.Parameters[name]
+		if !present || value == nil {
+			continue
+		}
+		normalized, err := normalizeParameter(value)
+		if err != nil {
+			return &ParameterError{"parameters." + name, "invalid_type"}
+		}
+		if number, ok := parameterInteger(normalized); !ok || number.Sign() <= 0 {
+			return &ParameterError{"parameters." + name, "invalid_type"}
+		}
+	}
+	texture, hasTexture := request.Parameters["texture"]
+	if (!hasTexture || texture == nil) && contract != nil {
+		for _, parameter := range contract.Parameters {
+			if parameter.Name == "texture" {
+				texture = parameter.Default
+			}
+		}
+	}
+	if texture == "none" && pbr == true {
+		return &ParameterError{"parameters.pbr", "parameter_conflict"}
+	}
+	count := len(request.Input.References)
+	if request.Input.Type == "image" && count != 1 || request.Input.Type == "multiview" && (count < 2 || count > 4) {
+		return &ParameterError{"input.references", "invalid_reference_count"}
+	}
+	if request.Input.Type == "multiview" {
+		roles := make(map[string]bool, count)
+		for _, reference := range request.Input.References {
+			if roles[reference.Role] {
+				return &ParameterError{"input.references", "invalid_reference_role_count"}
+			}
+			roles[reference.Role] = true
+		}
+		if !roles["front_view"] {
+			return &ParameterError{"input.references", "required_reference_role"}
+		}
 	}
 	return nil
 }

@@ -27,8 +27,8 @@ export type ModelChannelPrice = {
 
 export type ModelSpecification = {
   readonly request_model_id: string;
-  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech" | (string & {});
-  readonly input_mode: "text" | "image" | "reference" | (string & {});
+  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech" | "generate_3d" | (string & {});
+  readonly input_mode: "text" | "image" | "reference" | "multiview" | (string & {});
   readonly specification_label: string;
   readonly currency: "USD" | (string & {});
   /** Empty when this specification currently has no listed channels. */

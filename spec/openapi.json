@@ -3,7 +3,7 @@
   "info": {
     "title": "Yir Standard Async AIGC API",
     "version": "1.0.0-preview",
-    "description": "Public REST API of the Yir Image & Video API Router: quote and submit image, video and audio (music, sound effect, speech) generation jobs, upload input files, read model contracts, and track jobs.\n\nCompatibility: this API only grows. New fields are optional, enums may gain values, and clients must ignore unknown fields and tolerate unknown enum values. Models, their parameters, allowed values and defaults come from the model contract (GET /v1/models?include=parameters) and change without an SDK release. A published model keeps its defaults, value meanings and billing semantics; a change to any of them ships as a new model ID. IDs are opaque strings; do not parse them. Deprecated fields stay for at least one minor SDK release and are announced in the SDK changelog."
+    "description": "Public REST API of the Yir Image & Video API Router: quote and submit image, video, audio (music, sound effect, speech) and 3D generation jobs, upload input files, read model contracts, and track jobs.\n\nCompatibility: this API only grows. New fields are optional, enums may gain values, and clients must ignore unknown fields and tolerate unknown enum values. Models, their parameters, allowed values and defaults come from the model contract (GET /v1/models?include=parameters) and change without an SDK release. A published model keeps its defaults, value meanings and billing semantics; a change to any of them ships as a new model ID. IDs are opaque strings; do not parse them. Deprecated fields stay for at least one minor SDK release and are announced in the SDK changelog."
   },
   "servers": [
     {
@@ -16,6 +16,7 @@
     { "name": "Images" },
     { "name": "Videos" },
     { "name": "Audio" },
+    { "name": "3D" },
     { "name": "Files" },
     { "name": "Models" },
     { "name": "Jobs" },
@@ -199,6 +200,148 @@
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
           "503": { "$ref": "#/components/responses/TemporarilyUnavailable" }
+        }
+      }
+    },
+    "/v1/3d/quotes": {
+      "post": {
+        "operationId": "quote3DGeneration",
+        "summary": "Quote a 3D job",
+        "description": "Estimates the price and checks available supply for a 3D request. Creates no job and charges nothing.",
+        "tags": [
+          "3D"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Standard3DQuoteRequest"
+              },
+              "example": {
+                "model": "tencent/hunyuan-3d-3.1-pro",
+                "input": {
+                  "type": "image",
+                  "references": [
+                    {
+                      "role": "reference_image",
+                      "url": "https://example.com/chair.png"
+                    }
+                  ]
+                },
+                "parameters": {
+                  "texture": "standard",
+                  "pbr": false
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current advisory quote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/NoExecutableRoute"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/TemporarilyUnavailable"
+          }
+        }
+      }
+    },
+    "/v1/3d/generations": {
+      "post": {
+        "operationId": "submit3DGeneration",
+        "summary": "Submit a 3D job",
+        "description": "Generates one 3D model as a glb file from text, one image or several views. Texture, PBR maps, face count and topology follow parameters within the model contract; the result file reports the measured face count.",
+        "tags": [
+          "3D"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/YirReferral"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Standard3DGenerationRequest"
+              },
+              "example": {
+                "model": "tripo/tripo-h3.1",
+                "input": {
+                  "type": "text",
+                  "prompt": "A weathered wooden armchair with a woven seat"
+                },
+                "parameters": {
+                  "texture": "standard",
+                  "pbr": true
+                },
+                "webhook_url": "https://example.com/webhooks/yir"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/JobAccepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/InsufficientBalance"
+          },
+          "403": {
+            "$ref": "#/components/responses/SpendLimitExceeded"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/NoExecutableRoute"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/TemporarilyUnavailable"
+          }
         }
       }
     },
@@ -1314,11 +1457,280 @@
                     "operation": { "const": "generate_speech" },
                     "request": { "$ref": "#/components/schemas/StandardMusicQuoteRequest" }
                   }
+                },
+                {
+                  "type": "object", "additionalProperties": false, "required": ["operation", "request"],
+                  "properties": {
+                    "operation": { "const": "generate_3d" },
+                    "request": { "$ref": "#/components/schemas/Standard3DQuoteRequest" }
+                  }
                 }
               ]
             }
           }
         }
+      },
+      "Standard3DTextInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "prompt"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "text"
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "\\S",
+            "description": "Description of the object to model. The per-model limit is in the model contract (1024 for Tripo and Hunyuan Pro, 600 for Meshy)."
+          }
+        }
+      },
+      "Standard3DImageInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "references"
+        ],
+        "description": "Image-to-3D from one picture of a single object. Image input takes no prompt.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "image"
+          },
+          "references": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "const": "reference_image"
+                },
+                "file_id": {
+                  "$ref": "#/components/schemas/FileID"
+                },
+                "url": {
+                  "$ref": "#/components/schemas/InputURL"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "file_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "url"
+                  ]
+                }
+              ]
+            },
+            "description": "Exactly one image with role reference_image; a plain background and one object filling most of the frame work best."
+          }
+        }
+      },
+      "Standard3DMultiviewInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "references"
+        ],
+        "description": "Image-to-3D from several views of the same object, only for models whose contract lists input mode multiview. Multiview input takes no prompt and may cost more (see the quote).",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "multiview"
+          },
+          "references": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "front_view",
+                    "left_view",
+                    "back_view",
+                    "right_view"
+                  ]
+                },
+                "file_id": {
+                  "$ref": "#/components/schemas/FileID"
+                },
+                "url": {
+                  "$ref": "#/components/schemas/InputURL"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "file_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "url"
+                  ]
+                }
+              ]
+            },
+            "description": "One front_view plus at least one of left_view, back_view and right_view, each at most once."
+          }
+        }
+      },
+      "Standard3DParameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Optional 3D parameters; omitted fields take the model defaults and a model accepts only the values its contract declares. Every Job delivers one glb file.",
+        "properties": {
+          "texture": {
+            "type": "string",
+            "enum": [
+              "none",
+              "standard",
+              "hd"
+            ],
+            "description": "none returns an untextured mesh; standard and hd bake textures (hd is higher resolution where the model supports it)."
+          },
+          "pbr": {
+            "type": "boolean",
+            "description": "Generate PBR maps (metallic, roughness, normal) in addition to base color. Requires a texture. Some models charge extra (see the quote)."
+          },
+          "face_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2000000,
+            "description": "Target face count. Range and default come from the model contract; omit it for the model default. Some models charge extra for a custom count."
+          },
+          "topology": {
+            "type": "string",
+            "enum": [
+              "triangle",
+              "quad"
+            ],
+            "description": "Mesh face type; quad is a quad-dominant remesh where supported. The glb file stores triangles."
+          },
+          "n": {
+            "type": "integer",
+            "enum": [
+              1
+            ],
+            "description": "One model per Job."
+          }
+        }
+      },
+      "Standard3DGenerationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input"
+        ],
+        "properties": {
+          "billing_mode": {
+            "$ref": "#/components/schemas/ActualBillingMode"
+          },
+          "max_cost": {
+            "$ref": "#/components/schemas/MaxCost"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "description": "3D model ID or alias listed by GET /v1/models. An unknown or retired model returns 400 YIR_INVALID_REQUEST with retryable false."
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Standard3DTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/Standard3DImageInput"
+              },
+              {
+                "$ref": "#/components/schemas/Standard3DMultiviewInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 1000,
+            "pattern": "^https://"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/Standard3DParameters"
+          }
+        },
+        "description": "3D request: one Job delivers one glb model behind a short-lived link."
+      },
+      "Standard3DQuoteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "input"
+        ],
+        "properties": {
+          "max_cost": {
+            "description": "Submit-only. A quote ignores any value and reports max_cost in parameter_notices."
+          },
+          "webhook_url": {
+            "description": "Submit-only. A quote ignores any value and reports webhook_url in parameter_notices."
+          },
+          "billing_mode": {
+            "$ref": "#/components/schemas/ActualBillingMode"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "description": "3D model ID or alias listed by GET /v1/models. An unknown or retired model returns 400 YIR_INVALID_REQUEST with retryable false."
+          },
+          "input": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Standard3DTextInput"
+              },
+              {
+                "$ref": "#/components/schemas/Standard3DImageInput"
+              },
+              {
+                "$ref": "#/components/schemas/Standard3DMultiviewInput"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/RoutingOverride"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/Standard3DParameters"
+          }
+        },
+        "description": "The 3D generation request contract. A quote ignores the submit-only webhook_url and max_cost and reports them in parameter_notices. A quote creates no job and charges nothing."
       },
       "QuoteBatch": {
         "type": "object", "additionalProperties": false,
@@ -1386,7 +1798,8 @@
               "generate_video",
               "generate_music",
               "generate_sound_effect",
-              "generate_speech"
+              "generate_speech",
+              "generate_3d"
             ]
           },
           "input_mode": {
@@ -1394,7 +1807,8 @@
             "enum": [
               "text",
               "image",
-              "reference"
+              "reference",
+              "multiview"
             ]
           },
           "parameters": {
@@ -1686,6 +2100,7 @@
           "width": { "type": "integer", "minimum": 0 },
           "height": { "type": "integer", "minimum": 0 },
           "duration_ms": { "type": "integer", "format": "int64", "minimum": 1, "description": "Measured playback duration of an audio result in milliseconds. Omitted when not measured." },
+          "faces": { "type": "integer", "format": "int64", "minimum": 1, "description": "Measured triangle count of a 3D (glb) result. Omitted when not measured." },
           "expires_at": { "type": "integer", "format": "int64", "minimum": 1 },
           "fidelity": { "$ref": "#/components/schemas/ResultFileFidelity" }
         }
@@ -1861,8 +2276,8 @@
         "properties": {
           "provider": { "type": "string" },
           "channel_variant": { "type": "string" },
-          "operation": { "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech"] },
-          "input_mode": { "enum": ["text", "image", "reference"] },
+          "operation": { "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech", "generate_3d"] },
+          "input_mode": { "enum": ["text", "image", "reference", "multiview"] },
           "parameter_rules": { "type": "object", "additionalProperties": false,
             "properties": { "quality": { "$ref": "#/components/schemas/ParameterRule" } } }
         }
@@ -1895,8 +2310,8 @@
         "required": ["request_model_id", "operation", "input_mode", "specification_label", "currency", "channels"],
         "properties": {
 		  "request_model_id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
-          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech"] },
-		  "input_mode": { "type": "string", "enum": ["text", "image", "reference"] },
+          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech", "generate_3d"] },
+		  "input_mode": { "type": "string", "enum": ["text", "image", "reference", "multiview"] },
           "specification_label": { "type": "string", "minLength": 1 },
           "currency": { "type": "string", "const": "USD" },
           "channels": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ModelChannelPrice" } }
@@ -1975,8 +2390,8 @@
         "additionalProperties": false,
         "required": ["operation", "input_modes", "input_constraints", "request_schema", "parameters"],
         "properties": {
-          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech"] },
-          "input_modes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["text", "image", "reference"] } },
+          "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech", "generate_3d"] },
+          "input_modes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["text", "image", "reference", "multiview"] } },
           "input_constraints": {
             "type": "object",
             "additionalProperties": { "$ref": "#/components/schemas/StaticModelInputConstraint" }

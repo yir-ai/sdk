@@ -2337,7 +2337,7 @@
             }
           },
           "ignored_parameters": {
-            "description": "IgnoredParameters 记录过渡期按旧值放行、已改写为合同值的参数名，查询 Job 时投影为参数通知。",
+            "description": "IgnoredParameters 记录被模型合同固定、按忽略放行并改写为合同值的参数名，查询 Job 时投影为参数通知。",
             "type": "array",
             "items": {
               "type": "string"
@@ -2364,6 +2364,9 @@
           "duration_seconds": {
             "type": "integer"
           },
+          "face_limit": {
+            "type": "integer"
+          },
           "fps": {
             "type": "integer"
           },
@@ -2387,6 +2390,9 @@
           "output_count": {
             "type": "integer"
           },
+          "pbr": {
+            "type": "boolean"
+          },
           "quality_tier": {
             "type": "string"
           },
@@ -2400,6 +2406,17 @@
             "type": "integer"
           },
           "size": {
+            "type": "string"
+          },
+          "texture": {
+            "description": "3D（generate_3d）：贴图档位、PBR、目标面数（0 为模型默认）与网格拓扑，进入任务身份。",
+            "type": "string"
+          },
+          "topology": {
+            "type": "string"
+          },
+          "voice": {
+            "description": "Voice 只用于 generate_speech：原厂预设音色 ID，进入任务身份。",
             "type": "string"
           },
           "web_search": {
@@ -2544,6 +2561,10 @@
             "type": "integer"
           },
           "expires_at": {
+            "type": "integer"
+          },
+          "faces": {
+            "description": "Faces 是 3D（glb）结果交付时实测的三角面数；未测得时省略。",
             "type": "integer"
           },
           "fidelity": {

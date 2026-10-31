@@ -229,7 +229,14 @@ func (c *Client) QuoteMusic(ctx context.Context, request GenerationRequest) (Quo
 	return c.quote(ctx, "music", "generate_music", request)
 }
 
-// QuoteBatch quotes explicit image, video, music, sound-effect and text-to-speech requests together. Invalid items
+// Quote3D quotes a 3D request. Parameters are optional; the echo carries n and
+// the texture, pbr, face_limit and topology the model declares, but no
+// resolution or aspect_ratio.
+func (c *Client) Quote3D(ctx context.Context, request GenerationRequest) (Quote, error) {
+	return c.quote(ctx, "3d", "generate_3d", request)
+}
+
+// QuoteBatch quotes explicit image, video, music, sound-effect, text-to-speech and 3D requests together. Invalid items
 // are returned in their own positions so one model does not hide other quotes.
 func (c *Client) QuoteBatch(ctx context.Context, requests []QuoteBatchRequestItem) (QuoteBatch, error) {
 	var batch QuoteBatch
@@ -347,6 +354,13 @@ func (c *Client) SubmitMusic(ctx context.Context, request SubmitRequest, idempot
 	return c.submit(ctx, "music", "generate_music", request, idempotencyKey...)
 }
 
+// Submit3D submits a 3D Job. The result is one glb file (media type
+// model/gltf-binary) with its measured triangle count in ResultFile.Faces.
+// Demo mode has no 3D sample and returns ErrDemoOperationUnsupported without sending.
+func (c *Client) Submit3D(ctx context.Context, request SubmitRequest, idempotencyKey ...string) (Job, error) {
+	return c.submit(ctx, "3d", "generate_3d", request, idempotencyKey...)
+}
+
 var decimalCostPattern = regexp.MustCompile(`^[0-9]{1,13}(\.[0-9]{1,6})?$`)
 
 var canonicalModelIDPattern = regexp.MustCompile(`^[a-z0-9._-]+/[a-z0-9._-]+$`)
@@ -393,6 +407,10 @@ func (c *Client) submit(ctx context.Context, resource, operation string, request
 		if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
 			return job, &ParameterError{"webhook_url", "invalid_url"}
 		}
+	}
+	if c.demo != nil && operation == "generate_3d" {
+		// Demo mode never sends a submit and has no 3D sample to return.
+		return job, ErrDemoOperationUnsupported
 	}
 	if c.demo != nil {
 		// Demo submits stop after the quote and never reach the generations path.
@@ -515,7 +533,7 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 		defer cancel()
 	}
 	canRetry := method == http.MethodGet || (method == http.MethodPost && key != "" &&
-		(path == "/v1/images/generations" || path == "/v1/videos/generations" || path == "/v1/audio/generations" || path == "/v1/music/generations"))
+		(path == "/v1/images/generations" || path == "/v1/videos/generations" || path == "/v1/audio/generations" || path == "/v1/music/generations" || path == "/v1/3d/generations"))
 	for attempt := 0; ; attempt++ {
 		result, raw, err := c.sendOnce(ctx, method, path, key, data, body != nil)
 		var networkError net.Error

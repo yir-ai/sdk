@@ -185,8 +185,72 @@ export type StandardMusicQuoteRequest = Omit<
   "webhook_url" | "max_cost"
 >;
 
+/** One image of a single object for image-to-3D. */
+export type Standard3DImageReference = { readonly role: "reference_image" } & StandardMediaSource;
+
+/** One view of the same object for multiview-to-3D. */
+export type Standard3DViewReference = { readonly role: "front_view" | "left_view" | "back_view" | "right_view" } & StandardMediaSource;
+
+/** Text-to-3D: a description of the object to model. Per-model length limit. */
+export type Standard3DTextInput = {
+  readonly type: "text";
+  readonly prompt: string;
+};
+
+/** Image-to-3D from exactly one picture of a single object; takes no prompt. */
+export type Standard3DImageInput = {
+  readonly type: "image";
+  readonly references: readonly [Standard3DImageReference];
+};
+
+/**
+ * Image-to-3D from several views of the same object, only for models whose contract lists the multiview
+ * input mode: one front_view plus at least one of left_view, back_view and right_view, each at most once.
+ * Takes no prompt and may cost more (see the quote).
+ */
+export type Standard3DMultiviewInput = {
+  readonly type: "multiview";
+  readonly references: readonly Standard3DViewReference[];
+};
+
+/**
+ * Optional 3D parameters; omitted fields take the model defaults and a model accepts only the values its
+ * contract declares. Every Job delivers one glb file.
+ */
+export type Standard3DParameters = {
+  /** none returns an untextured mesh; standard and hd bake textures (hd is higher resolution where supported). */
+  readonly texture?: "none" | "standard" | "hd" | (string & {});
+  /** PBR maps (metallic, roughness, normal) in addition to base color. Requires a texture; some models charge extra. */
+  readonly pbr?: boolean;
+  /** Target face count; range and default come from the model contract. Some models charge extra for a custom count. */
+  readonly face_limit?: number;
+  /** Mesh face type; quad is a quad-dominant remesh where supported. The glb file stores triangles. */
+  readonly topology?: "triangle" | "quad" | (string & {});
+  /** One model per Job. */
+  readonly n?: 1;
+};
+
+/** 3D request: one Job delivers one glb model (media type model/gltf-binary) behind a short-lived link. */
+export type Standard3DGenerationRequest = {
+  /** @deprecated Omit for new requests; actual-cost settlement is the default. Retained for legacy callers with the existing validation rules. */
+  readonly billing_mode?: "actual";
+  /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
+  readonly max_cost?: string;
+  readonly model: string;
+  readonly input: Standard3DTextInput | Standard3DImageInput | Standard3DMultiviewInput;
+  /** Optional; omitted parameters take the model defaults. */
+  readonly parameters?: Standard3DParameters;
+  readonly routing?: RoutingOverride;
+  readonly webhook_url?: string;
+};
+
+export type Standard3DQuoteRequest = Omit<
+  Standard3DGenerationRequest,
+  "webhook_url" | "max_cost"
+>;
+
 /** Generation operations known to this SDK release. */
-export type GenerationOperation = "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech";
+export type GenerationOperation = "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech" | "generate_3d";
 
 const isAudioOperation = (operation: string) =>
   operation === "generate_music" || operation === "generate_sound_effect" || operation === "generate_speech";
@@ -325,21 +389,27 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   if (typeof input.type !== "string" || !input.type) throw new YirSDKValidationError("input_mode_invalid", "input.type");
   const operation = catalog ? resolveCatalogOperation(catalog, body.model, requestedOperation, input.type) : requestedOperation;
   const optionalVideoPrompt = operation === "generate_video" && input.type === "image";
-  if ((input.prompt !== undefined && typeof input.prompt !== "string") ||
+  // 3D takes text, one image or several views; image and multiview inputs take no prompt.
+  if (operation === "generate_3d" && input.type !== "text") {
+    if (input.type !== "image" && input.type !== "multiview") throw new YirSDKValidationError("input_mode_invalid", "input.type");
+    if (input.prompt !== undefined) throw new YirSDKValidationError("prompt_not_allowed", "input.prompt");
+  } else if ((input.prompt !== undefined && typeof input.prompt !== "string") ||
       (!optionalVideoPrompt && (typeof input.prompt !== "string" || !input.prompt.trim()))) {
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
-  // Music parameters are optional; image and video requests send them explicitly.
-  const parameters = isAudioOperation(operation) && body.parameters === undefined
+  // Audio and 3D parameters are optional; image and video requests send them explicitly.
+  const parameters = (isAudioOperation(operation) || operation === "generate_3d") && body.parameters === undefined
     ? {} : requireObject(body.parameters, "parameters");
-  // A cover is offered only by music models that declare the reference input mode.
-  if (catalog && isAudioOperation(operation) && input.type === "reference" && findModelContract(catalog, body.model) &&
-      !findModelOperationContract(catalog, body.model, operation, input.type)) {
+  // A cover is offered only by music models that declare the reference input mode, and each 3D model
+  // lists the input modes it takes.
+  if (catalog && ((isAudioOperation(operation) && input.type === "reference") || operation === "generate_3d") &&
+      findModelContract(catalog, body.model) && !findModelOperationContract(catalog, body.model, operation, input.type)) {
     throw new YirSDKValidationError("input_mode_invalid", "input.type");
   }
   if (isAudioOperation(operation)) validateMusicInput(operation, input, parameters, catalog !== undefined);
   const subjects = validateReferenceSubjects(input);
   const found = catalog ? findModelOperationContract(catalog, body.model, operation, input.type) : undefined;
+  if (operation === "generate_3d") validate3DInput(input, parameters, found);
   if (subjects && found && !found.input_constraints[input.type]?.subject_references) {
     throw new YirSDKValidationError("reference_subject_unsupported", "input.references");
   }
@@ -373,7 +443,7 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
   const references = input.references === undefined ? [] : input.references;
   if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||
-      ((input.type === "image" || input.type === "reference") && references.length === 0) ||
+      ((input.type === "image" || input.type === "reference" || input.type === "multiview") && references.length === 0) ||
       (constraint && (referenceItems(references, mixed) < constraint.min_references || referenceItems(references, mixed) > constraint.max_references))) {
     throw new YirSDKValidationError("reference_count", "input.references");
   }
@@ -466,6 +536,36 @@ function validateMusicInput(operation: GenerationOperation, input: Record<string
   }
   if (catalogKnown && operation === "generate_music" && !hasLyrics && parameters.instrumental !== true && parameters.lyrics_optimizer !== true) {
     throw new YirSDKValidationError("lyrics_required", "input.lyrics");
+  }
+}
+
+// Protocol rules shared by every 3D model (input.type is already text, image or multiview): one image or
+// several views of one object, and pbr needs a texture. Allowed values, defaults and face_limit ranges come from the model contract.
+function validate3DInput(input: Record<string, unknown>, parameters: Record<string, unknown>, contract?: ModelOperationContract): void {
+  for (const name of ["texture", "topology"]) {
+    if (parameters[name] !== undefined && typeof parameters[name] !== "string") {
+      throw new YirSDKValidationError("parameter_type", `parameters.${name}`, { type: "string" });
+    }
+  }
+  if (parameters.pbr !== undefined && typeof parameters.pbr !== "boolean") {
+    throw new YirSDKValidationError("parameter_type", "parameters.pbr", { type: "boolean" });
+  }
+  for (const name of ["face_limit", "n"]) {
+    const value = parameters[name];
+    if (value !== undefined && (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)) {
+      throw new YirSDKValidationError("parameter_type", `parameters.${name}`, { type: "integer" });
+    }
+  }
+  const texture = parameters.texture ?? contract?.parameters.find(rule => rule.name === "texture")?.default;
+  if (texture === "none" && parameters.pbr === true) throw new YirSDKValidationError("parameter_conflict", "parameters.pbr");
+  const references = Array.isArray(input.references) ? input.references : [];
+  if ((input.type === "image" && references.length !== 1) || (input.type === "multiview" && (references.length < 2 || references.length > 4))) {
+    throw new YirSDKValidationError("reference_count", "input.references");
+  }
+  if (input.type === "multiview") {
+    const roles = references.map(reference => (reference as { role?: unknown } | null)?.role);
+    if (!roles.includes("front_view")) throw new YirSDKValidationError("reference_role_required", "input.references");
+    if (new Set(roles).size !== roles.length) throw new YirSDKValidationError("reference_role_count", "input.references");
   }
 }
 

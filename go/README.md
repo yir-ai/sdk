@@ -113,6 +113,16 @@ quote, err := client.QuoteAudio(ctx, request)
 job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request, MaxCost: &maxCost}, savedKey)
 ```
 
+For 3D, use `Quote3D` and `Submit3D` (the `/v1/3d` endpoints) with the same lifecycle, or a `generate_3d` item in `QuoteBatch`. `Input.Type` is `text` (with `Prompt`), `image` (exactly one `reference_image`, empty `Prompt`) or `multiview` (one `front_view` plus at least one of `left_view`, `back_view` and `right_view`, each at most once, empty `Prompt`; only models whose contract lists the multiview input mode). `Parameters` are optional: `texture` (`none`, `standard`, `hd`), `pbr` (needs a texture; `texture: "none"` with `pbr: true` is rejected), `face_limit`, `topology` (`triangle`, `quad`) and `n` (always 1); each model accepts only the values its contract declares, and omitted ones take the model default. `ValidateGenerationWithCatalog("generate_3d", request, catalog)` checks the input mode, references and values against the model contract. The Job delivers one glb file (`model/gltf-binary`) with its measured triangle count in `ResultFile.Faces`; an over-delivered result (textures or PBR maps you did not ask for) is still delivered with a parameter notice. Demo mode has no 3D sample: `Submit3D` returns `ErrDemoOperationUnsupported` without sending.
+
+```go
+model := yir.GenerationRequest{Model: "tencent/hunyuan-3d-3.1-pro", Input: yir.GenerationInput{
+	Type: "image", References: []yir.Reference{{Role: "reference_image", URL: "https://example.com/chair.png"}}},
+	Parameters: map[string]any{"texture": "standard", "pbr": false}}
+quote, err := client.Quote3D(ctx, model)
+job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model, MaxCost: &maxCost}, savedKey)
+```
+
 See [the compile-checked example](client_example_test.go) and its [integration guide](examples/README.md). The example leaves customer authorization and durable storage to the application.
 
 **Warning: a tight `MaxCost` can interrupt delivery during failover.** Even after a Job is accepted, a failed channel may need to be replaced by a more expensive one. If its estimate exceeds the remaining budget after earlier billed attempts, Yir skips it; if no eligible fallback fits, the Job fails with `YIR_BUDGET_EXCEEDED` and may deliver no result. When delivery continuity is more important than a per-Job spending cap, omit this optional field; otherwise leave room for more expensive fallback channels and earlier attempts' charges. Omitting it removes the per-Job cap, so actual charges can exceed the quote; account balance and other limits still apply.

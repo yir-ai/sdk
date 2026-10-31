@@ -7,6 +7,8 @@ import { createFileClient } from "./files.js";
 import type { YirFileClient } from "./files.js";
 import type {
   GenerationOperation,
+  Standard3DGenerationRequest,
+  Standard3DQuoteRequest,
   StandardImageGenerationRequest,
   StandardImageQuoteRequest,
   StandardMusicGenerationRequest,
@@ -106,6 +108,10 @@ export type YirClient = YirFileClient & {
   quoteMusic(request: StandardMusicQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
   /** Original name of submitAudio; calls the permanent legacy path /v1/music/generations with identical behavior. */
   submitMusic(request: StandardMusicGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
+  /** Quotes a 3D request (POST /v1/3d/quotes). */
+  quote3D(request: Standard3DQuoteRequest, options?: YirRequestOptions): Promise<Quote>;
+  /** Submits a 3D Job (POST /v1/3d/generations); the result is one glb file whose measured triangle count is `faces`. Demo mode has no 3D sample and throws `demo_operation_unsupported`. */
+  submit3D(request: Standard3DGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
   getJobStatus(id: string, options?: YirJobStatusOptions): Promise<JobStatusResponse>;
   cancelJob(id: string, options?: YirRequestOptions): Promise<Job>;
@@ -286,6 +292,31 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
     },
     submitMusic(request, idempotencyKey, options) {
       return submitAudioAt("/v1/music/generations", request, idempotencyKey, options);
+    },
+    quote3D(request, options) {
+      options?.signal?.throwIfAborted();
+      validateGeneration("generate_3d", request);
+      return transport<Quote>({
+        method: "POST",
+        path: "/v1/3d/quotes",
+        body: request,
+        ...(options?.signal ? { signal: options.signal } : {}),
+      }).then(value => validateQuoteResponse(value, request, "generate_3d", localCatalog));
+    },
+    submit3D(request, idempotencyKey, options) {
+      options?.signal?.throwIfAborted();
+      const key = idempotencyKey === undefined ? crypto.randomUUID() : idempotencyKey.trim();
+      if (!key || (idempotencyKey !== undefined && /[\r\n]/.test(idempotencyKey))) throw new Error("idempotency_key_invalid");
+      validateGeneration("generate_3d", request);
+      // Demo mode never sends a submit and has no 3D sample to return.
+      if (demo) throw new Error("demo_operation_unsupported");
+      return Promise.resolve().then(() => transport<Job>({
+        method: "POST",
+        path: "/v1/3d/generations",
+        ...(options?.signal ? { signal: options.signal } : {}),
+        headers: { "Idempotency-Key": key },
+        body: request,
+      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
     },
     getJob(id, options) {
       options?.signal?.throwIfAborted();
@@ -831,7 +862,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     const body = request.body !== undefined ? JSON.stringify(request.body) : undefined;
     const signal = requestSignal(request.signal, timeoutMs, request.holdMs);
     const canRetry = request.method === "GET" || (request.method === "POST" &&
-      /^\/v1\/(images|videos|audio|music)\/generations$/.test(path) &&
+      /^\/v1\/(images|videos|audio|music|3d)\/generations$/.test(path) &&
       Boolean(new Headers(headers).get("Idempotency-Key")?.trim()));
     let response: globalThis.Response;
     let text = "";

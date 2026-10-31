@@ -144,7 +144,10 @@ type ResultFile struct {
 	// DurationMS is the measured playback duration of an audio result in
 	// milliseconds; zero when not measured.
 	DurationMS int64 `json:"duration_ms,omitempty"`
-	ExpiresAt  int64 `json:"expires_at"`
+	// Faces is the measured triangle count of a 3D (glb) result; zero when
+	// not measured.
+	Faces     int64 `json:"faces,omitempty"`
+	ExpiresAt int64 `json:"expires_at"`
 	// Fidelity reports where the file came from and whether its specification is genuine,
 	// judged at delivery from its C2PA content signature and Yir's channel audits; nil on
 	// results delivered before the field existed.

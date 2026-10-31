@@ -416,6 +416,7 @@ type AccountCanonicalTaskSpecificationV2 struct {
 	AdaptiveDuration *bool   `json:"adaptive_duration,omitempty"`
 	AspectRatio      *string `json:"aspect_ratio,omitempty"`
 	DurationSeconds  *int64  `json:"duration_seconds,omitempty"`
+	FaceLimit        *int64  `json:"face_limit,omitempty"`
 	Fps              *int64  `json:"fps,omitempty"`
 	GenerateAudio    *bool   `json:"generate_audio,omitempty"`
 	IgnoreQuality    *bool   `json:"ignore_quality,omitempty"`
@@ -423,11 +424,15 @@ type AccountCanonicalTaskSpecificationV2 struct {
 	Instrumental     *bool   `json:"instrumental,omitempty"`
 	LyricsOptimizer  *bool   `json:"lyrics_optimizer,omitempty"`
 	OutputCount      *int64  `json:"output_count,omitempty"`
+	Pbr              *bool   `json:"pbr,omitempty"`
 	QualityTier      *string `json:"quality_tier,omitempty"`
 	Resolution       *string `json:"resolution,omitempty"`
 	ReturnLastFrame  *bool   `json:"return_last_frame,omitempty"`
 	Seed             *int64  `json:"seed,omitempty"`
 	Size             *string `json:"size,omitempty"`
+	Texture          *string `json:"texture,omitempty"`
+	Topology         *string `json:"topology,omitempty"`
+	Voice            *string `json:"voice,omitempty"`
 	WebSearch        *bool   `json:"web_search,omitempty"`
 }
 
@@ -471,6 +476,7 @@ type AccountStandardV1ContentSafety struct {
 type AccountStandardV1ResultFile struct {
 	DurationMs *int64          `json:"duration_ms,omitempty"`
 	ExpiresAt  *int64          `json:"expires_at,omitempty"`
+	Faces      *int64          `json:"faces,omitempty"`
 	Fidelity   *map[string]any `json:"fidelity,omitempty"`
 	Height     *int64          `json:"height,omitempty"`
 	MediaType  *string         `json:"media_type,omitempty"`

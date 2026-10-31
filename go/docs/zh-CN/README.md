@@ -113,6 +113,16 @@ quote, err := client.QuoteAudio(ctx, request)
 job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request, MaxCost: &maxCost}, savedKey)
 ```
 
+3D 使用 `Quote3D` 和 `Submit3D`（`/v1/3d` 端点），流程相同；也可在 `QuoteBatch` 中传 `generate_3d` 项。`Input.Type` 为 `text`（填 `Prompt`）、`image`（恰好一张 `reference_image`，`Prompt` 留空）或 `multiview`（一张 `front_view` 加至少一张 `left_view`、`back_view` 或 `right_view`，每个角色至多一张，`Prompt` 留空；只限合同列出 multiview 输入方式的模型）。`Parameters` 可省略：`texture`（`none`、`standard`、`hd`）、`pbr`（需要带贴图，`texture: "none"` 同时 `pbr: true` 会被拒绝）、`face_limit`、`topology`（`triangle`、`quad`）与 `n`（固定为 1）；每个模型只接受其合同声明的取值，省略即模型默认。`ValidateGenerationWithCatalog("generate_3d", request, catalog)` 按模型合同检查输入方式、参考图与取值。Job 交付一个 glb 文件（`model/gltf-binary`），实测三角面数见 `ResultFile.Faces`；超规格结果（未要求的贴图或 PBR）照常交付，并给出参数通知。Demo 模式没有 3D 样例：`Submit3D` 不发送请求，直接返回 `ErrDemoOperationUnsupported`。
+
+```go
+model := yir.GenerationRequest{Model: "tencent/hunyuan-3d-3.1-pro", Input: yir.GenerationInput{
+	Type: "image", References: []yir.Reference{{Role: "reference_image", URL: "https://example.com/chair.png"}}},
+	Parameters: map[string]any{"texture": "standard", "pbr": false}}
+quote, err := client.Quote3D(ctx, model)
+job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model, MaxCost: &maxCost}, savedKey)
+```
+
 见[编译检查示例](../../client_example_test.go)和[集成指南](examples.md)。示例将客户授权及持久化留给应用实现。
 
 计费：不冻结余额。上游实际计费的每个 Attempt 都按上游权威金额乘托管折扣收取，包括失败的 Attempt 和其后发生回退的 Attempt；上游未计费的 Attempt，以及 Yir 自身的交付失败和结果超时，不收费。`MaxCost` 封顶整个 Job 的总费用，并跳过估价超过它的路线。报价的主价格是估价，不是上限。报价后价格可能变化：较便宜的渠道可能下线或冷却，路由默认值可能改变可用渠道，目录价格也可能调整。把 `MaxCost` 当作在报价之上留有余量的失控兜底，而不是锁价；上限设得等于报价时，可能开始以 `YIR_BUDGET_EXCEEDED` 失败（提交时返回 422 并给出当前最低估价，或出现在 Job 上）。收到该错误时先重新报价，由应用决定是否在新请求中调高上限，不要自动调高。

@@ -414,6 +414,7 @@ export type AccountCanonicalTaskSpecificationV2 = {
   "adaptive_duration"?: boolean;
   "aspect_ratio"?: string;
   "duration_seconds"?: number;
+  "face_limit"?: number;
   "fps"?: number;
   "generate_audio"?: boolean;
   "ignore_quality"?: boolean;
@@ -421,11 +422,15 @@ export type AccountCanonicalTaskSpecificationV2 = {
   "instrumental"?: boolean;
   "lyrics_optimizer"?: boolean;
   "output_count"?: number;
+  "pbr"?: boolean;
   "quality_tier"?: string;
   "resolution"?: string;
   "return_last_frame"?: boolean;
   "seed"?: number;
   "size"?: string;
+  "texture"?: string;
+  "topology"?: string;
+  "voice"?: string;
   "web_search"?: boolean;
 };
 
@@ -469,6 +474,7 @@ export type AccountStandardV1ContentSafety = {
 export type AccountStandardV1ResultFile = {
   "duration_ms"?: number;
   "expires_at"?: number;
+  "faces"?: number;
   "fidelity"?: AccountStandardV1ResultFidelity;
   "height"?: number;
   "media_type"?: string;

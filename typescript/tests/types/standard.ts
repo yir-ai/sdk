@@ -5,6 +5,8 @@ import type {
   JobStatusResponse,
   Quote,
   QuoteParameters,
+  Standard3DGenerationRequest,
+  Standard3DQuoteRequest,
   StandardImageGenerationRequest,
   StandardMediaSource,
   StandardMusicGenerationRequest,
@@ -79,6 +81,32 @@ function submitWithOptionalKeys(client: YirClient) {
 }
 
 void submitWithOptionalKeys;
+// 3D parameters are optional; image and multiview inputs take no prompt.
+const model3D: Standard3DGenerationRequest = {
+  model: "tripo/tripo-h3.1", input: { type: "text", prompt: "A wooden armchair" }, parameters: { texture: "standard", pbr: true, face_limit: 20000 },
+  webhook_url: "https://example.com/webhooks/yir",
+};
+const image3D: Standard3DQuoteRequest = { model: "trellis-2", input: { type: "image", references: [{ role: "reference_image", ...source }] } };
+const views3D: Standard3DQuoteRequest = {
+  model: "hunyuan-3d-3.1-pro",
+  input: { type: "multiview", references: [{ role: "front_view", ...source }, { role: "back_view", url: "https://example.com/back.png" }] },
+};
+// @ts-expect-error Image-to-3D takes no prompt.
+const promptedImage3D: Standard3DQuoteRequest = { model: "trellis-2", input: { type: "image", prompt: "A chair", references: [{ role: "reference_image", ...source }] } };
+// @ts-expect-error Image-to-3D takes exactly one image.
+const twoImages3D: Standard3DQuoteRequest = { model: "trellis-2", input: { type: "image", references: [{ role: "reference_image", ...source }, { role: "reference_image", ...source }] } };
+// @ts-expect-error One model per Job.
+const twoModels3D: Standard3DQuoteRequest = { model: "trellis-2", input: image3D.input, parameters: { n: 2 } };
+// @ts-expect-error A quote request carries no webhook.
+const quote3DWithWebhook: Standard3DQuoteRequest = { ...image3D, webhook_url: "https://example.com/webhooks/yir" };
+const echo3D: QuoteParameters = { n: 1, texture: "standard", pbr: false, face_limit: 500000, topology: "triangle" };
+function read3D(client: YirClient, file: JobResultFile): number | undefined {
+  void client.quote3D(views3D);
+  void client.submit3D(model3D, "persisted-key");
+  void client.quoteBatch([{ operation: "generate_3d", request: image3D }]);
+  return file.faces;
+}
+void [promptedImage3D, twoImages3D, twoModels3D, quote3DWithWebhook, echo3D, read3D];
 // @ts-expect-error Sources must select exactly one transport representation.
 const ambiguousSource: StandardMediaSource = { url: "https://example.com/image.png", file_id: "file_11111111-1111-4111-8111-111111111111" };
 // @ts-expect-error A source cannot be empty.

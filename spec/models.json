@@ -7798,6 +7798,154 @@
       ]
     },
     {
+      "id": "meshy/meshy-7.1",
+      "aliases": [
+        "meshy-7.1"
+      ],
+      "locales": {
+        "en": {
+          "label": "Meshy 7.1",
+          "description": "Meshy 7.1 3D model for glb models from text or a single image, with optional PBR, quad topology and target face count"
+        },
+        "zh-CN": {
+          "label": "Meshy 7.1",
+          "description": "Meshy 7.1 3D 生成模型，按文字或单张图片生成 glb 模型，可选 PBR 贴图、四边面拓扑与目标面数"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_3d",
+          "input_modes": [
+            "image",
+            "text"
+          ],
+          "input_constraints": {
+            "image": {
+              "prompt_optional": true,
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_image"
+              ],
+              "required_reference_roles": [
+                "reference_image"
+              ]
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/Standard3DGenerationRequest",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "string",
+              "required": false,
+              "values": [
+                "none",
+                "standard"
+              ],
+              "default": "standard",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Texture",
+                  "description": "Texture tier: none returns an untextured mesh, standard and hd bake textures (hd is higher resolution where supported)."
+                },
+                "zh-CN": {
+                  "label": "贴图",
+                  "description": "贴图档位：none 只出白模，standard 与 hd 带贴图（hd 为更高分辨率贴图，部分模型支持）。"
+                }
+              }
+            },
+            {
+              "name": "pbr",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "PBR",
+                  "description": "Generate PBR maps (metallic, roughness, normal) in addition to base color; requires a texture. Some models charge extra (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "PBR 贴图",
+                  "description": "在基础颜色之外生成 PBR 贴图（金属度、粗糙度、法线），需要带贴图；部分模型另收费（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "face_limit",
+              "type": "integer",
+              "required": false,
+              "default": 30000,
+              "minimum": 100,
+              "maximum": 300000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Target faces",
+                  "description": "Target polygon count of the mesh; the result can differ slightly. Omit to use the model default. Some models charge extra for a custom count (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "目标面数",
+                  "description": "网格目标面数，结果可能略有出入；省略即模型默认。部分模型自定义面数另收费（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "topology",
+              "type": "string",
+              "required": false,
+              "values": [
+                "triangle",
+                "quad"
+              ],
+              "default": "triangle",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Topology",
+                  "description": "Mesh face type: triangle or quad (quad-dominant remesh where supported). The glb file stores triangles."
+                },
+                "zh-CN": {
+                  "label": "拓扑",
+                  "description": "网格面类型：triangle 三角面或 quad 四边面（部分模型支持四边面重拓扑）；glb 文件内仍以三角面存储。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "meta/muse-image-1.0",
       "aliases": [
         "muse-image-1.0"
@@ -7864,6 +8012,127 @@
                 "zh-CN": {
                   "label": "画幅",
                   "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "microsoft/trellis-2",
+      "aliases": [
+        "trellis-2"
+      ],
+      "locales": {
+        "en": {
+          "label": "TRELLIS.2",
+          "description": "Microsoft TRELLIS.2 open-weight 3D model that turns a single image into a glb model with PBR materials"
+        },
+        "zh-CN": {
+          "label": "TRELLIS.2",
+          "description": "微软开源 3D 生成模型 TRELLIS.2，按单张图片生成带 PBR 材质的 glb 模型"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_3d",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "prompt_optional": true,
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_image"
+              ],
+              "required_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/Standard3DGenerationRequest",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "string",
+              "required": false,
+              "values": [
+                "standard",
+                "hd"
+              ],
+              "default": "standard",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Texture",
+                  "description": "Texture tier: none returns an untextured mesh, standard and hd bake textures (hd is higher resolution where supported)."
+                },
+                "zh-CN": {
+                  "label": "贴图",
+                  "description": "贴图档位：none 只出白模，standard 与 hd 带贴图（hd 为更高分辨率贴图，部分模型支持）。"
+                }
+              }
+            },
+            {
+              "name": "pbr",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "PBR",
+                  "description": "Generate PBR maps (metallic, roughness, normal) in addition to base color; requires a texture. Some models charge extra (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "PBR 贴图",
+                  "description": "在基础颜色之外生成 PBR 贴图（金属度、粗糙度、法线），需要带贴图；部分模型另收费（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "topology",
+              "type": "string",
+              "required": false,
+              "values": [
+                "triangle"
+              ],
+              "default": "triangle",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Topology",
+                  "description": "Mesh face type: triangle or quad (quad-dominant remesh where supported). The glb file stores triangles."
+                },
+                "zh-CN": {
+                  "label": "拓扑",
+                  "description": "网格面类型：triangle 三角面或 quad 四边面（部分模型支持四边面重拓扑）；glb 文件内仍以三角面存储。"
                 }
               }
             },
@@ -12033,6 +12302,186 @@
       ]
     },
     {
+      "id": "tencent/hunyuan-3d-3.1-pro",
+      "aliases": [
+        "hunyuan-3d-3.1-pro"
+      ],
+      "locales": {
+        "en": {
+          "label": "Hunyuan 3D 3.1 Pro",
+          "description": "Tencent Hunyuan 3D 3.1 Pro for high-poly glb models from text, one image or multi-view images, with optional PBR and custom face count"
+        },
+        "zh-CN": {
+          "label": "Hunyuan 3D 3.1 Pro",
+          "description": "腾讯混元 3D 3.1 专业版，按文字、单图或多视角图片生成高面数 glb 模型，可选 PBR 贴图与自定义面数"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_3d",
+          "input_modes": [
+            "image",
+            "multiview",
+            "text"
+          ],
+          "input_constraints": {
+            "image": {
+              "prompt_optional": true,
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_image"
+              ],
+              "required_reference_roles": [
+                "reference_image"
+              ]
+            },
+            "multiview": {
+              "prompt_optional": true,
+              "min_references": 2,
+              "max_references": 4,
+              "allowed_reference_roles": [
+                "front_view",
+                "left_view",
+                "back_view",
+                "right_view"
+              ],
+              "required_reference_roles": [
+                "front_view"
+              ],
+              "reference_counts_by_role": {
+                "back_view": {
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "front_view": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "left_view": {
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "right_view": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/Standard3DGenerationRequest",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "string",
+              "required": false,
+              "values": [
+                "none",
+                "standard"
+              ],
+              "default": "standard",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Texture",
+                  "description": "Texture tier: none returns an untextured mesh, standard and hd bake textures (hd is higher resolution where supported)."
+                },
+                "zh-CN": {
+                  "label": "贴图",
+                  "description": "贴图档位：none 只出白模，standard 与 hd 带贴图（hd 为更高分辨率贴图，部分模型支持）。"
+                }
+              }
+            },
+            {
+              "name": "pbr",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "PBR",
+                  "description": "Generate PBR maps (metallic, roughness, normal) in addition to base color; requires a texture. Some models charge extra (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "PBR 贴图",
+                  "description": "在基础颜色之外生成 PBR 贴图（金属度、粗糙度、法线），需要带贴图；部分模型另收费（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "face_limit",
+              "type": "integer",
+              "required": false,
+              "default": 500000,
+              "minimum": 40000,
+              "maximum": 1500000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Target faces",
+                  "description": "Target polygon count of the mesh; the result can differ slightly. Omit to use the model default. Some models charge extra for a custom count (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "目标面数",
+                  "description": "网格目标面数，结果可能略有出入；省略即模型默认。部分模型自定义面数另收费（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "topology",
+              "type": "string",
+              "required": false,
+              "values": [
+                "triangle"
+              ],
+              "default": "triangle",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Topology",
+                  "description": "Mesh face type: triangle or quad (quad-dominant remesh where supported). The glb file stores triangles."
+                },
+                "zh-CN": {
+                  "label": "拓扑",
+                  "description": "网格面类型：triangle 三角面或 quad 四边面（部分模型支持四边面重拓扑）；glb 文件内仍以三角面存储。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "topaz/proteus",
       "aliases": [
         "proteus",
@@ -12300,6 +12749,153 @@
                 "zh-CN": {
                   "label": "生成音频",
                   "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tripo/tripo-h3.1",
+      "aliases": [
+        "tripo-h3.1"
+      ],
+      "locales": {
+        "en": {
+          "label": "Tripo H3.1",
+          "description": "Tripo H3.1 3D generation model that turns text or a single image into a glb model with PBR textures"
+        },
+        "zh-CN": {
+          "label": "Tripo H3.1",
+          "description": "Tripo H3.1 3D 生成模型，按文字或单张图片生成带 PBR 贴图的 glb 模型"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_3d",
+          "input_modes": [
+            "image",
+            "text"
+          ],
+          "input_constraints": {
+            "image": {
+              "prompt_optional": true,
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_image"
+              ],
+              "required_reference_roles": [
+                "reference_image"
+              ]
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/Standard3DGenerationRequest",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "string",
+              "required": false,
+              "values": [
+                "none",
+                "standard",
+                "hd"
+              ],
+              "default": "standard",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Texture",
+                  "description": "Texture tier: none returns an untextured mesh, standard and hd bake textures (hd is higher resolution where supported)."
+                },
+                "zh-CN": {
+                  "label": "贴图",
+                  "description": "贴图档位：none 只出白模，standard 与 hd 带贴图（hd 为更高分辨率贴图，部分模型支持）。"
+                }
+              }
+            },
+            {
+              "name": "pbr",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": true,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "PBR",
+                  "description": "Generate PBR maps (metallic, roughness, normal) in addition to base color; requires a texture. Some models charge extra (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "PBR 贴图",
+                  "description": "在基础颜色之外生成 PBR 贴图（金属度、粗糙度、法线），需要带贴图；部分模型另收费（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "face_limit",
+              "type": "integer",
+              "required": false,
+              "minimum": 1000,
+              "maximum": 1500000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Target faces",
+                  "description": "Target polygon count of the mesh; the result can differ slightly. Omit to use the model default. Some models charge extra for a custom count (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "目标面数",
+                  "description": "网格目标面数，结果可能略有出入；省略即模型默认。部分模型自定义面数另收费（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "topology",
+              "type": "string",
+              "required": false,
+              "values": [
+                "triangle"
+              ],
+              "default": "triangle",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Topology",
+                  "description": "Mesh face type: triangle or quad (quad-dominant remesh where supported). The glb file stores triangles."
+                },
+                "zh-CN": {
+                  "label": "拓扑",
+                  "description": "网格面类型：triangle 三角面或 quad 四边面（部分模型支持四边面重拓扑）；glb 文件内仍以三角面存储。"
                 }
               }
             },

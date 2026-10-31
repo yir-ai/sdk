@@ -1,5 +1,5 @@
 import type { ParameterNotice } from "./parameter-rules.js";
-import type { StandardImageQuoteRequest, StandardMusicQuoteRequest, StandardVideoQuoteRequest } from "./standard.js";
+import type { Standard3DQuoteRequest, StandardImageQuoteRequest, StandardMusicQuoteRequest, StandardVideoQuoteRequest } from "./standard.js";
 
 /** Statuses newer than this SDK are in progress; only succeeded, failed and cancelled are terminal. */
 export type JobStatus = "queued" | "running" | "delivering" | "succeeded" | "failed" | "cancelled" | (string & {});
@@ -82,6 +82,8 @@ export type JobResultFile = {
   readonly height?: number;
   /** Measured playback duration of an audio result in milliseconds; absent when not measured. */
   readonly duration_ms?: number;
+  /** Measured triangle count of a 3D (glb) result; absent when not measured. */
+  readonly faces?: number;
   readonly expires_at: number;
   /** Where the file came from and whether its specification is genuine, judged at delivery from its C2PA content signature and Yir's channel audits; absent on historical results. */
   readonly fidelity?: JobResultFileFidelity;
@@ -166,16 +168,17 @@ export type QuotePrice =
  * are absent: an image echo has no duration, a silent video model has no
  * generate_audio, a music echo has instrumental and lyrics_optimizer (plus duration
  * for length-priced models) but no resolution or aspect_ratio, a sound-effect
- * echo has n and duration, and a text-to-speech echo has n and voice. Image and video echoes always include resolution
+ * echo has n and duration, a text-to-speech echo has n and voice, and a 3D echo has n plus the model's
+ * texture, pbr, face_limit and topology. Image and video echoes always include resolution
  * and aspect_ratio. Model-specific parameters are echoed under their contract names.
  */
 export type QuoteParameters = {
   readonly fps?: number;
   /** Exact output pixels, only present when explicitly requested. */
   readonly size?: string;
-  /** Always present on image and video echoes; absent on audio echoes. */
+  /** Always present on image and video echoes; absent on audio and 3D echoes. */
   readonly resolution?: string;
-  /** Always present on image and video echoes; absent on audio echoes. */
+  /** Always present on image and video echoes; absent on audio and 3D echoes. */
   readonly aspect_ratio?: string;
   readonly n: number;
   /** Preserves auto intent; internal measured seconds are not substituted. */
@@ -191,6 +194,14 @@ export type QuoteParameters = {
   readonly lyrics_optimizer?: boolean;
   /** Text-to-speech only: the resolved preset voice ID. */
   readonly voice?: string;
+  /** 3D only: texture tier (none, standard or hd). */
+  readonly texture?: string;
+  /** 3D only: PBR maps in addition to base color. */
+  readonly pbr?: boolean;
+  /** 3D only: target face count. */
+  readonly face_limit?: number;
+  /** 3D only: mesh face type (triangle or quad). */
+  readonly topology?: string;
   readonly [name: string]: unknown;
 };
 
@@ -211,8 +222,8 @@ export type Quote = {
   };
   readonly object: "quote";
   readonly model: string;
-  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech";
-  readonly input_mode: "text" | "image" | "reference";
+  readonly operation: "generate_image" | "generate_video" | "generate_music" | "generate_sound_effect" | "generate_speech" | "generate_3d";
+  readonly input_mode: "text" | "image" | "reference" | "multiview";
   readonly parameters: QuoteParameters;
   readonly currency: "USD";
   readonly expires_at: number;
@@ -223,7 +234,8 @@ export type QuoteBatchRequestItem =
   | { readonly operation: "generate_video"; readonly request: StandardVideoQuoteRequest }
   | { readonly operation: "generate_music"; readonly request: StandardMusicQuoteRequest }
   | { readonly operation: "generate_sound_effect"; readonly request: StandardMusicQuoteRequest }
-  | { readonly operation: "generate_speech"; readonly request: StandardMusicQuoteRequest };
+  | { readonly operation: "generate_speech"; readonly request: StandardMusicQuoteRequest }
+  | { readonly operation: "generate_3d"; readonly request: Standard3DQuoteRequest };
 
 export type QuoteBatchItem =
   | { readonly index: number; readonly quote: Quote; readonly error?: never }

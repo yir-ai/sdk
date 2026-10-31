@@ -83,6 +83,18 @@ const quote = await client.quoteAudio(request);
 const job = await client.submitAudio({ ...request, max_cost: "0.20" }, savedKey);
 ```
 
+For 3D, use `quote3D(request)` and `submit3D(savedRequest, savedKey)` (the `/v1/3d` endpoints) with the same lifecycle, or a `generate_3d` item in `quoteBatch`. The input is text (`prompt`), one picture (`type: "image"`, exactly one `reference_image`, no prompt) or several views (`type: "multiview"`, one `front_view` plus at least one of `left_view`, `back_view` and `right_view`, each at most once, no prompt; only models whose contract lists the multiview input mode). `parameters` are optional: `texture` (`none`, `standard`, `hd`), `pbr` (needs a texture; `texture: "none"` with `pbr: true` is rejected), `face_limit`, `topology` (`triangle`, `quad`) and `n` (always 1); each model accepts only the values its contract declares, and omitted ones take the model default. `validateGeneration("generate_3d", request, catalog)` checks the input mode, references and values against the model contract. The Job delivers one glb file (`model/gltf-binary`) whose measured triangle count is `faces`; an over-delivered result (textures or PBR maps you did not ask for) is still delivered with a `parameter_notices` entry. Demo mode has no 3D sample: `submit3D` throws `demo_operation_unsupported` without sending.
+
+```ts
+const model = {
+  model: "tencent/hunyuan-3d-3.1-pro",
+  input: { type: "image", references: [{ role: "reference_image", url: "https://example.com/chair.png" }] },
+  parameters: { texture: "standard", pbr: false },
+} as const;
+const quote = await client.quote3D(model);
+const job = await client.submit3D({ ...model, max_cost: "0.60" }, savedKey);
+```
+
 
 ## Jobs and recovery
 
