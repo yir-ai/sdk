@@ -8940,7 +8940,11 @@
                   "minimum": 0,
                   "maximum": 3
                 }
-              }
+              },
+              "required_any_reference_roles": [
+                "reference_image",
+                "reference_video"
+              ]
             }
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",

@@ -73,7 +73,7 @@ func TestH3ReferenceRoleContract(t *testing.T) {
 	for _, tc := range []struct {
 		images, videos, audios int
 		valid                  bool
-	}{{9, 0, 0, true}, {0, 3, 0, true}, {0, 0, 3, true}, {9, 3, 3, true}, {10, 0, 0, false}, {1, 4, 0, false}, {1, 0, 4, false}, {0, 0, 0, false}} {
+	}{{9, 0, 0, true}, {0, 3, 0, true}, {0, 0, 3, false}, {9, 3, 3, true}, {10, 0, 0, false}, {1, 4, 0, false}, {1, 0, 4, false}, {0, 0, 0, false}} {
 		r := GenerationRequest{Model: "minimax/minimax-h3", Input: GenerationInput{Type: "reference", Prompt: "fixture"}}
 		counter := 0
 		for _, group := range []struct {

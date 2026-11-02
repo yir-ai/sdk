@@ -7,7 +7,7 @@ const fileID = (role, i) => `file_12345678-1234-4123-8123-${String(i).padStart(1
 const ref = (role, i = 0) => ({ role, file_id: fileID(role, i) });
 
 test("H3 accepts official reference combinations without changing file_id or order", () => {
-  for (const [images, videos, audios, valid] of [[1, 0, 0, true], [9, 0, 0, true], [0, 3, 0, true], [0, 0, 3, true], [9, 3, 3, true], [10, 0, 0, false], [1, 4, 0, false], [1, 0, 4, false], [0, 0, 0, false]]) {
+  for (const [images, videos, audios, valid] of [[1, 0, 0, true], [9, 0, 0, true], [0, 3, 0, true], [0, 0, 3, false], [9, 3, 3, true], [10, 0, 0, false], [1, 4, 0, false], [1, 0, 4, false], [0, 0, 0, false]]) {
     let counter = 0;
     const references = [["reference_audio", audios], ["reference_image", images], ["reference_video", videos]].flatMap(([role, count]) => Array.from({ length: count }, () => ({ role, file_id: fileID(role, counter++) })));
     const before = structuredClone(references);
