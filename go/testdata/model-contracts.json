@@ -11166,6 +11166,81 @@
               }
             },
             {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "512x512",
+                "768x768"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Frame size",
+                  "description": "Pixels of each GIF frame, default 512x512. Requires output_format=gif; 768x768 allows up to 12 frames."
+                },
+                "zh-CN": {
+                  "label": "单帧尺寸",
+                  "description": "GIF 每帧的像素，默认 512x512。需要 output_format=gif；768x768 最多 12 帧。"
+                }
+              }
+            },
+            {
+              "name": "output_format",
+              "type": "string",
+              "required": false,
+              "values": [
+                "gif"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Output format",
+                  "description": "Set gif for an animated GIF. Text input only; omit for a still image."
+                },
+                "zh-CN": {
+                  "label": "输出格式",
+                  "description": "设为 gif 输出动图，只支持文生图；省略时输出静态图。"
+                }
+              }
+            },
+            {
+              "name": "frame_count",
+              "type": "integer",
+              "required": false,
+              "minimum": 2,
+              "maximum": 16,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Frame count",
+                  "description": "GIF frames, default 9. Frames share one generated sheet, so 2 to 8 frames cost the same. Requires output_format=gif."
+                },
+                "zh-CN": {
+                  "label": "帧数",
+                  "description": "GIF 帧数，默认 9。所有帧在同一张拼图上生成，2 到 8 帧同价。需要 output_format=gif。"
+                }
+              }
+            },
+            {
+              "name": "frame_duration_ms",
+              "type": "integer",
+              "required": false,
+              "minimum": 20,
+              "maximum": 2000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Frame duration",
+                  "description": "Milliseconds per GIF frame, default 200. Requires output_format=gif."
+                },
+                "zh-CN": {
+                  "label": "每帧时长",
+                  "description": "GIF 每帧的毫秒数，默认 200。需要 output_format=gif。"
+                }
+              }
+            },
+            {
               "name": "quality",
               "type": "string",
               "required": false,
@@ -11304,6 +11379,81 @@
                 "zh-CN": {
                   "label": "画幅",
                   "description": "输出内容的宽高比。 2K 时仅支持 1:1, 3:2, 2:3, 4:3, 3:4, 5:4, 4:5, 16:9, 9:16, 2:1, 1:2, 3:1, 1:3, 21:9, 9:21。 4K 时仅支持 1:1, 3:2, 2:3, 4:3, 3:4, 5:4, 4:5, 16:9, 9:16, 2:1, 1:2, 3:1, 1:3, 21:9, 9:21。"
+                }
+              }
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "512x512",
+                "768x768"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Frame size",
+                  "description": "Pixels of each GIF frame, default 512x512. Requires output_format=gif; 768x768 allows up to 12 frames."
+                },
+                "zh-CN": {
+                  "label": "单帧尺寸",
+                  "description": "GIF 每帧的像素，默认 512x512。需要 output_format=gif；768x768 最多 12 帧。"
+                }
+              }
+            },
+            {
+              "name": "output_format",
+              "type": "string",
+              "required": false,
+              "values": [
+                "gif"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Output format",
+                  "description": "Set gif for an animated GIF. Text input only; omit for a still image."
+                },
+                "zh-CN": {
+                  "label": "输出格式",
+                  "description": "设为 gif 输出动图，只支持文生图；省略时输出静态图。"
+                }
+              }
+            },
+            {
+              "name": "frame_count",
+              "type": "integer",
+              "required": false,
+              "minimum": 2,
+              "maximum": 16,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Frame count",
+                  "description": "GIF frames, default 9. Frames share one generated sheet, so 2 to 8 frames cost the same. Requires output_format=gif."
+                },
+                "zh-CN": {
+                  "label": "帧数",
+                  "description": "GIF 帧数，默认 9。所有帧在同一张拼图上生成，2 到 8 帧同价。需要 output_format=gif。"
+                }
+              }
+            },
+            {
+              "name": "frame_duration_ms",
+              "type": "integer",
+              "required": false,
+              "minimum": 20,
+              "maximum": 2000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Frame duration",
+                  "description": "Milliseconds per GIF frame, default 200. Requires output_format=gif."
+                },
+                "zh-CN": {
+                  "label": "每帧时长",
+                  "description": "GIF 每帧的毫秒数，默认 200。需要 output_format=gif。"
                 }
               }
             },

@@ -2370,6 +2370,13 @@
           "fps": {
             "type": "integer"
           },
+          "frame_count": {
+            "description": "FrameCount 与 FrameDurationMs 只回显 GIF 任务。",
+            "type": "integer"
+          },
+          "frame_duration_ms": {
+            "type": "integer"
+          },
           "generate_audio": {
             "type": "boolean"
           },
