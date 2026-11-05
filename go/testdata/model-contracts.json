@@ -6503,11 +6503,11 @@
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Output aspect ratio. At 1080p, use 16:9, 9:16. At 2K, use 16:9, 9:16."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "输出内容的宽高比。 1080p 时仅支持 16:9, 9:16。 2K 时仅支持 16:9, 9:16。"
                 }
               }
             },
@@ -7730,11 +7730,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Output video duration in seconds. Maximum total frames (first + intermediate + last): 3s: 4; 4s: 5; 5s: 6; 6s: 7; 7s: 8; 8s: 9; otherwise 10."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "输出视频的秒数。 总帧数（首帧 + 中间帧 + 尾帧）上限：3s: 4；4s: 5；5s: 6；6s: 7；7s: 8；8s: 9；其他合法时长为 10 帧。"
                 }
               }
             },
@@ -10201,11 +10201,11 @@
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Output aspect ratio. With quality=high, auto aspect ratio is supported only at 1K; choose an explicit aspect_ratio at other resolutions."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "输出内容的宽高比。 quality=high 时，auto 画幅仅支持 1K；其他分辨率请指定具体 aspect_ratio。"
                 }
               }
             },
@@ -10222,11 +10222,11 @@
               "locales": {
                 "en": {
                   "label": "Quality",
-                  "description": "Image generation quality tier."
+                  "description": "Image generation quality tier. With quality=high, auto aspect ratio is supported only at 1K; choose an explicit aspect_ratio at other resolutions."
                 },
                 "zh-CN": {
                   "label": "质量",
-                  "description": "图片生成质量档位。"
+                  "description": "图片生成质量档位。 quality=high 时，auto 画幅仅支持 1K；其他分辨率请指定具体 aspect_ratio。"
                 }
               }
             },
