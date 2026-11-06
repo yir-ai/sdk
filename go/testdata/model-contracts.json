@@ -11357,11 +11357,11 @@
               "locales": {
                 "en": {
                   "label": "Output format",
-                  "description": "gif for an animated GIF, svg for a vector file (1K or 2K, explicit aspect ratio, default 1:1; runs on one channel, and the text model that writes the SVG is billed too). Text input only; omit for a still image."
+                  "description": "gif for an animated GIF, svg for a vector file (1K or 2K, explicit aspect ratio, default 1:1; runs on one channel, and the text model that writes the SVG is billed too). gif accepts reference images; svg is text input only. Omit for a still image."
                 },
                 "zh-CN": {
                   "label": "输出格式",
-                  "description": "gif 输出动图，svg 输出矢量文件（1K 或 2K，需具体画幅，默认 1:1；只有一条渠道，写 SVG 的文本模型另计费）。只支持文生图；省略时输出静态图。"
+                  "description": "gif 输出动图，svg 输出矢量文件（1K 或 2K，需具体画幅，默认 1:1；只有一条渠道，写 SVG 的文本模型另计费）。gif 可带参考图，svg 只支持文生图；省略时输出静态图。"
                 }
               }
             },
@@ -11575,11 +11575,11 @@
               "locales": {
                 "en": {
                   "label": "Output format",
-                  "description": "gif for an animated GIF, svg for a vector file (1K or 2K, explicit aspect ratio, default 1:1; runs on one channel, and the text model that writes the SVG is billed too). Text input only; omit for a still image."
+                  "description": "gif for an animated GIF, svg for a vector file (1K or 2K, explicit aspect ratio, default 1:1; runs on one channel, and the text model that writes the SVG is billed too). gif accepts reference images; svg is text input only. Omit for a still image."
                 },
                 "zh-CN": {
                   "label": "输出格式",
-                  "description": "gif 输出动图，svg 输出矢量文件（1K 或 2K，需具体画幅，默认 1:1；只有一条渠道，写 SVG 的文本模型另计费）。只支持文生图；省略时输出静态图。"
+                  "description": "gif 输出动图，svg 输出矢量文件（1K 或 2K，需具体画幅，默认 1:1；只有一条渠道，写 SVG 的文本模型另计费）。gif 可带参考图，svg 只支持文生图；省略时输出静态图。"
                 }
               }
             },
