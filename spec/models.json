@@ -5672,6 +5672,166 @@
       ]
     },
     {
+      "id": "google/gemini-omni-1.2-flash",
+      "aliases": [
+        "gemini-omni-1.2-flash"
+      ],
+      "locales": {
+        "en": {
+          "label": "Gemini Omni 1.2 Flash",
+          "description": "Google Gemini video generation with native audio, 3–15 second durations and 360p or 720p output"
+        },
+        "zh-CN": {
+          "label": "Gemini Omni 1.2 Flash",
+          "description": "Google Gemini 系列视频生成模型，原生音轨，支持 3–15 秒、360p 与 720p 输出"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "text",
+            "image",
+            "reference"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 2,
+              "allowed_reference_roles": [
+                "first_frame",
+                "last_frame"
+              ],
+              "max_duration_by_reference_role": {
+                "last_frame": 10
+              },
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "reference": {
+              "min_references": 1,
+              "max_references": 6,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "values": [
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "default": 10,
+              "minimum": 3,
+              "maximum": 15,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "360p",
+                "720p"
+              ],
+              "default": "720p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "16:9",
+                "9:16"
+              ],
+              "default": "16:9",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "google/nano-banana-2",
       "aliases": [
         "nano-banana-2",
