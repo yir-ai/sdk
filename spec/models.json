@@ -8883,6 +8883,163 @@
               }
             },
             {
+              "name": "seed",
+              "type": "integer",
+              "required": false,
+              "maximum": 4294967295,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Seed",
+                  "description": "Optional random seed; matching seeds do not guarantee identical results across providers."
+                },
+                "zh-CN": {
+                  "label": "随机种子",
+                  "description": "可选随机种子；不同渠道使用相同种子不保证结果完全一致。"
+                }
+              }
+            },
+            {
+              "name": "stylize",
+              "type": "integer",
+              "required": false,
+              "maximum": 1000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Stylize",
+                  "description": "Midjourney --stylize: how strongly the default aesthetic is applied, 0 to 1000, default 100."
+                },
+                "zh-CN": {
+                  "label": "风格化",
+                  "description": "Midjourney --stylize：默认审美的强度，0 到 1000，默认 100。"
+                }
+              }
+            },
+            {
+              "name": "chaos",
+              "type": "integer",
+              "required": false,
+              "maximum": 100,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Chaos",
+                  "description": "Midjourney --chaos: how different the four images are from each other, 0 to 100, default 0."
+                },
+                "zh-CN": {
+                  "label": "多样性",
+                  "description": "Midjourney --chaos：四张图之间的差异程度，0 到 100，默认 0。"
+                }
+              }
+            },
+            {
+              "name": "weird",
+              "type": "integer",
+              "required": false,
+              "maximum": 3000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Weird",
+                  "description": "Midjourney --weird: quirky, unconventional looks, 0 to 3000, default 0."
+                },
+                "zh-CN": {
+                  "label": "怪异度",
+                  "description": "Midjourney --weird：偏离常规的古怪程度，0 到 3000，默认 0。"
+                }
+              }
+            },
+            {
+              "name": "raw",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Raw",
+                  "description": "Midjourney --raw: turn off the default aesthetic so the prompt is followed more literally."
+                },
+                "zh-CN": {
+                  "label": "原始模式",
+                  "description": "Midjourney --raw：关闭默认审美，更贴近提示词字面。"
+                }
+              }
+            },
+            {
+              "name": "tile",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Tile",
+                  "description": "Midjourney --tile: seamless repeating pattern."
+                },
+                "zh-CN": {
+                  "label": "无缝拼贴",
+                  "description": "Midjourney --tile：生成可无缝重复的图案。"
+                }
+              }
+            },
+            {
+              "name": "negative_prompt",
+              "type": "string",
+              "required": false,
+              "control": "text",
+              "locales": {
+                "en": {
+                  "label": "Negative prompt",
+                  "description": "Midjourney --no: things to leave out, comma separated, up to 500 characters; --flags are not accepted."
+                },
+                "zh-CN": {
+                  "label": "排除内容",
+                  "description": "Midjourney --no：不希望出现的内容，逗号分隔，最多 500 字符，不能包含 -- 参数。"
+                }
+              }
+            },
+            {
+              "name": "style_reference",
+              "type": "string",
+              "required": false,
+              "control": "text",
+              "locales": {
+                "en": {
+                  "label": "Style reference",
+                  "description": "Midjourney --sref style codes: 1 to 4 numeric codes separated by spaces. Image URLs are not accepted."
+                },
+                "zh-CN": {
+                  "label": "风格参考",
+                  "description": "Midjourney --sref 风格码：1 到 4 个数字码，用空格分隔；不接受图片网址。"
+                }
+              }
+            },
+            {
+              "name": "style_weight",
+              "type": "integer",
+              "required": false,
+              "maximum": 1000,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Style weight",
+                  "description": "Midjourney --sw: strength of style_reference, 0 to 1000, default 100. Requires style_reference."
+                },
+                "zh-CN": {
+                  "label": "风格权重",
+                  "description": "Midjourney --sw：风格参考的强度，0 到 1000，默认 100；需要同时传 style_reference。"
+                }
+              }
+            },
+            {
               "name": "n",
               "type": "integer",
               "required": false,
