@@ -8886,6 +8886,7 @@
               "name": "seed",
               "type": "integer",
               "required": false,
+              "minimum": 0,
               "maximum": 4294967295,
               "control": "number",
               "locales": {
@@ -8903,6 +8904,7 @@
               "name": "stylize",
               "type": "integer",
               "required": false,
+              "minimum": 0,
               "maximum": 1000,
               "control": "number",
               "locales": {
@@ -8920,6 +8922,7 @@
               "name": "chaos",
               "type": "integer",
               "required": false,
+              "minimum": 0,
               "maximum": 100,
               "control": "number",
               "locales": {
@@ -8937,6 +8940,7 @@
               "name": "weird",
               "type": "integer",
               "required": false,
+              "minimum": 0,
               "maximum": 3000,
               "control": "number",
               "locales": {
@@ -9026,6 +9030,7 @@
               "name": "style_weight",
               "type": "integer",
               "required": false,
+              "minimum": 0,
               "maximum": 1000,
               "control": "number",
               "locales": {
