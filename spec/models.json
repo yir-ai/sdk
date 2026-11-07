@@ -11337,11 +11337,11 @@
               "locales": {
                 "en": {
                   "label": "Frame size",
-                  "description": "Pixels of each GIF frame, default 512x512. Requires output_format=gif; 768x768 allows up to 12 frames."
+                  "description": "Pixels of each GIF frame, default 512x512. Requires output_format=gif; GIF frames are square at 1K, so aspect_ratio must be 1:1 or auto; 768x768 allows up to 12 frames."
                 },
                 "zh-CN": {
                   "label": "单帧尺寸",
-                  "description": "GIF 每帧的像素，默认 512x512。需要 output_format=gif；768x768 最多 12 帧。"
+                  "description": "GIF 每帧的像素，默认 512x512。需要 output_format=gif；GIF 只有 1K 方形帧，aspect_ratio 只能是 1:1 或 auto；768x768 最多 12 帧。"
                 }
               }
             },
@@ -11555,11 +11555,11 @@
               "locales": {
                 "en": {
                   "label": "Frame size",
-                  "description": "Pixels of each GIF frame, default 512x512. Requires output_format=gif; 768x768 allows up to 12 frames."
+                  "description": "Pixels of each GIF frame, default 512x512. Requires output_format=gif; GIF frames are square at 1K, so aspect_ratio must be 1:1 or auto; 768x768 allows up to 12 frames."
                 },
                 "zh-CN": {
                   "label": "单帧尺寸",
-                  "description": "GIF 每帧的像素，默认 512x512。需要 output_format=gif；768x768 最多 12 帧。"
+                  "description": "GIF 每帧的像素，默认 512x512。需要 output_format=gif；GIF 只有 1K 方形帧，aspect_ratio 只能是 1:1 或 auto；768x768 最多 12 帧。"
                 }
               }
             },
