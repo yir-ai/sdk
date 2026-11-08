@@ -9045,6 +9045,24 @@
               }
             },
             {
+              "name": "image_weight",
+              "type": "number",
+              "required": false,
+              "minimum": 0,
+              "maximum": 3,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Image weight",
+                  "description": "Midjourney --iw: how strongly the reference images (image prompts) shape the result, 0 to 3, decimals allowed, default 1. Only with reference images."
+                },
+                "zh-CN": {
+                  "label": "图片权重",
+                  "description": "Midjourney --iw：参考图（图片提示）对结果的影响强度，0 到 3，可带小数，默认 1；只在带参考图时可用。"
+                }
+              }
+            },
+            {
               "name": "n",
               "type": "integer",
               "required": false,
