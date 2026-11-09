@@ -416,6 +416,8 @@ export type AccountCanonicalTaskSpecificationV2 = {
   "duration_seconds"?: number;
   "face_limit"?: number;
   "fps"?: number;
+  "frame_count"?: number;
+  "frame_duration_ms"?: number;
   "generate_audio"?: boolean;
   "ignore_quality"?: boolean;
   "image_search"?: boolean;

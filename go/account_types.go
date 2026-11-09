@@ -418,6 +418,8 @@ type AccountCanonicalTaskSpecificationV2 struct {
 	DurationSeconds  *int64  `json:"duration_seconds,omitempty"`
 	FaceLimit        *int64  `json:"face_limit,omitempty"`
 	Fps              *int64  `json:"fps,omitempty"`
+	FrameCount       *int64  `json:"frame_count,omitempty"`
+	FrameDurationMs  *int64  `json:"frame_duration_ms,omitempty"`
 	GenerateAudio    *bool   `json:"generate_audio,omitempty"`
 	IgnoreQuality    *bool   `json:"ignore_quality,omitempty"`
 	ImageSearch      *bool   `json:"image_search,omitempty"`
