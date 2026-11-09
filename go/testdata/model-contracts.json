@@ -5541,11 +5541,11 @@
       "locales": {
         "en": {
           "label": "Gemini Omni 1.2 Flash",
-          "description": "Google Gemini video generation with native audio, 3–15 second durations and 360p or 720p output"
+          "description": "Google Gemini video generation with native audio, 3–15 second durations and 360p to 4K output"
         },
         "zh-CN": {
           "label": "Gemini Omni 1.2 Flash",
-          "description": "Google Gemini 系列视频生成模型，原生音轨，支持 3–15 秒、360p 与 720p 输出"
+          "description": "Google Gemini 系列视频生成模型，原生音轨，支持 3–15 秒、360p 至 4K 输出"
         }
       },
       "operations": [
@@ -5633,7 +5633,9 @@
               "required": false,
               "values": [
                 "360p",
-                "720p"
+                "720p",
+                "1080p",
+                "4K"
               ],
               "default": "720p",
               "control": "select",
