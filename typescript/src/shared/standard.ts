@@ -809,6 +809,7 @@ function subjectModeContract(contract: ModelOperationContract, inputMode: string
       ...contract.input_constraints,
       [inputMode]: {
         ...(constraint.prompt_optional !== undefined ? { prompt_optional: constraint.prompt_optional } : {}),
+        ...(constraint.max_prompt_characters !== undefined ? { max_prompt_characters: constraint.max_prompt_characters } : {}),
         min_references: limits.min_images_per_subject,
         max_references: limits.max_images_per_subject * limits.max_subjects,
         allowed_reference_roles: ["reference_image"],

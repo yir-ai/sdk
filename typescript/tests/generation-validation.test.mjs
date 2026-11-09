@@ -90,3 +90,15 @@ test("prompts over the declared character limit are rejected locally", () => {
   // Characters, not UTF-16 units: an emoji counts once.
   validateGeneration("generate_video", request("😀".repeat(7000)));
 });
+
+test("subject reference mode keeps the prompt limit", async () => {
+  const { catalog } = await import("./catalog-fixture.mjs");
+  const { validateGeneration: validate } = await import("../dist/shared/standard.js");
+  const copy = JSON.parse(JSON.stringify(catalog));
+  const operation = copy.models.find(model => model.id === "klingai/kling-3.0").operations.find(op => op.input_constraints.reference?.subject_references);
+  operation.input_constraints.reference.max_prompt_characters = 10;
+  const photo = i => ({ role: "reference_image", url: `https://example.com/hero-${i}.png`, subject: "hero" });
+  const request = { model: "klingai/kling-3.0", input: { type: "reference", prompt: "@hero walks", references: [photo(1), photo(2)] }, parameters: {} };
+  assert.throws(() => validate("generate_video", request, copy), error =>
+    error instanceof YirSDKValidationError && error.code === "prompt_too_long" && error.path === "input.prompt");
+});
