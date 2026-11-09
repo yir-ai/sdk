@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 // GenerationRequest is the common demand used for Quote and Submit.
@@ -289,6 +290,9 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	}
 	if constraint != nil && strings.TrimSpace(request.Input.Prompt) == "" && !constraint.PromptOptional {
 		return &ParameterError{"input.prompt", "required_parameter"}
+	}
+	if constraint != nil && constraint.MaxPromptCharacters > 0 && utf8.RuneCountInString(request.Input.Prompt) > constraint.MaxPromptCharacters {
+		return &ParameterError{"input.prompt", "prompt_too_long"}
 	}
 	count := len(request.Input.References)
 	// Mixed subject mode counts ungrouped references plus subjects; role counts use ungrouped references only.

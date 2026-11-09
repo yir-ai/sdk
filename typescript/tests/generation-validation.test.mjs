@@ -81,3 +81,12 @@ test("validation errors do not echo supplied parameter values", () => {
   assert.throws(() => validateModelParameters("openai/gpt-image-2", "generate_image", "text", { resolution: "private-value" }),
     error => error.code === "parameter_value" && !error.message.includes("private-value"));
 });
+
+test("prompts over the declared character limit are rejected locally", () => {
+  const request = prompt => ({ model: "minimax/minimax-h3", input: { type: "text", prompt }, parameters: { resolution: "768P", duration: 6 } });
+  validateGeneration("generate_video", request("字".repeat(7000)));
+  assert.throws(() => validateGeneration("generate_video", request("字".repeat(7001))), error =>
+    error instanceof YirSDKValidationError && error.code === "prompt_too_long" && error.path === "input.prompt" && error.expected?.maximum === 7000);
+  // Characters, not UTF-16 units: an emoji counts once.
+  validateGeneration("generate_video", request("😀".repeat(7000)));
+});

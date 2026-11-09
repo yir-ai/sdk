@@ -453,6 +453,10 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
   if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
+  if (constraint?.max_prompt_characters !== undefined && typeof input.prompt === "string" &&
+      Array.from(input.prompt).length > constraint.max_prompt_characters) {
+    throw new YirSDKValidationError("prompt_too_long", "input.prompt", { maximum: constraint.max_prompt_characters });
+  }
   const references = input.references === undefined ? [] : input.references;
   if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||
       ((input.type === "image" || input.type === "reference" || input.type === "multiview") && references.length === 0) ||

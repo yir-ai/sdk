@@ -141,6 +141,7 @@ export function parseModelContractCatalog(value: unknown): ModelContractCatalog 
         const constraint = object(constraints[mode as string]);
         integerRange(constraint.min_references, constraint.max_references);
         if (constraint.prompt_optional !== undefined && typeof constraint.prompt_optional !== "boolean") invalid();
+        if (constraint.max_prompt_characters !== undefined) natural(constraint.max_prompt_characters);
         const allowed = list(constraint.allowed_reference_roles);
         for (const role of allowed) nonemptyString(role);
         for (const key of ["required_reference_roles", "required_any_reference_roles"]) {
