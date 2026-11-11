@@ -212,8 +212,10 @@ func (e *SubmissionError) Unwrap() error { return e.Err }
 // *APIError rejecting the automatic retry) reads like a rejection. Do not treat
 // it as not accepted: resubmit the exact request with IdempotencyKey, and Yir
 // replays the original Job if one was created. Submit returns it inside a
-// *SubmissionError; find it with errors.As. Unwrap retains errors.Is/errors.As
-// behavior for Err.
+// *SubmissionError; find it with errors.As. It deliberately does not unwrap:
+// errors.As(err, &apiErr) does not match the last rejection, so code that maps
+// a 429/402/422/400 *APIError to "not accepted" cannot misread this case. Read
+// Err directly to inspect the last attempt's error.
 type SubmissionUncertainError struct {
 	IdempotencyKey string `json:"-"`
 	Err            error  `json:"-"`
@@ -222,7 +224,6 @@ type SubmissionUncertainError struct {
 func (e *SubmissionUncertainError) Error() string {
 	return "yir: submission outcome uncertain: " + e.Err.Error()
 }
-func (e *SubmissionUncertainError) Unwrap() error { return e.Err }
 
 func (c *Client) QuoteImage(ctx context.Context, request GenerationRequest) (Quote, error) {
 	return c.quote(ctx, "images", "generate_image", request)

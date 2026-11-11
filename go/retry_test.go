@@ -156,6 +156,11 @@ func TestSubmitRetryAfterUnknownOutcomeIsUncertain(t *testing.T) {
 			if !errors.As(uncertain.Err, &api) || api.Status != tc.status || api.Code != tc.code {
 				t.Fatalf("lost last API error: %v", err)
 			}
+			// Callers that map a rejection *APIError to "not accepted" must not match.
+			var outer *APIError
+			if errors.As(err, &outer) {
+				t.Fatalf("uncertain submit still matches *APIError %d", outer.Status)
+			}
 		})
 	}
 }
