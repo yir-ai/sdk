@@ -141,7 +141,7 @@ if (operation) {
 
 参考输入合同声明了 `subject_references` 的模型（Kling 3.0）支持照片作角色：给 `reference_image` 设置相同的 `subject`（字母、数字或 `_`，以字母开头）即可把 2–4 张照片归为一个角色，并在提示词中以 `@subject` 引用。只要有一张带 subject，所有参考都必须带。角色请求按 `subject_references` 列出的分辨率、画幅、时长与音频取值校验，不用操作默认值；本地校验同样切换。
 
-`createFiles(request, key)` 创建上传计划；`uploadFile(client, plan, blob)` 上传并完成计划；`createAndUploadFile(client, metadata, blob, key)` 合并这些步骤。使用稳定上传键并保留文件 ID；`getFile(id)` 查询状态，`completeFile(id)` 完成手动上传。生成请求仅引用 ready 文件，使用 `file_id` 和相应 role。上传辅助函数支持服务端的单段及分段计划。
+`createFiles(request, key)` 创建上传计划；`uploadFile(client, plan, blob)` 上传并完成计划；`createAndUploadFile(client, metadata, blob, key)` 合并这些步骤。使用稳定上传键并保留文件 ID；`getFile(id)` 查询状态，`completeFile(id)` 完成手动上传。生成请求仅引用 ready 文件，使用 `file_id` 和相应 role。上传辅助函数支持服务端的单段及分段计划。ready 的视频与音频文件带 `duration_seconds`，即实测时长（向上取整到毫秒）。以 `file_id` 引用时，报价按该实测值计算参考视频等输入媒体费用；URL 引用在报价时没有实测时长，报价不给完整价格。
 
 `getFileContentURL(id)` 返回 ready 文件的短时签名 URL。Node 传输以 `redirect: "manual"` 从 307 响应的 `Location` 头读取该 URL，从不跟随跳转，因此 API Key 不会发给存储端。请求该 URL 时不要带 Gateway 凭据；过期后重新获取。只接受绝对 `https` URL，其余情况以 `file_content_response_invalid` 拒绝，错误中不含该 URL。文件不存在以 `YirAPIError` 404 `YIR_FILE_NOT_FOUND` 拒绝；尚未 ready 返回 409 `YIR_FILE_NOT_READY`（用 `waitForFileReady` 等待后重试）；已过期返回 410 `YIR_FILE_EXPIRED`（需重新上传）。
 

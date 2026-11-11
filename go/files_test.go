@@ -436,3 +436,22 @@ func TestGetFileContentURLMapsFileStateErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestGetFileDecodesMeasuredDuration(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.Header().Set("Content-Type", "application/json")
+		_, _ = rw.Write([]byte(`{"id":"` + testFileID + `","object":"file","status":"ready","name":"clip.mp4","media_type":"video/mp4","size":755892,"url":"/v1/files/` + testFileID + `/content","expires_at":1794516240,"width":960,"height":540,"duration_seconds":6.038}`))
+	}))
+	defer server.Close()
+	client, err := NewClient("test-key", ClientOptions{BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	file, err := client.GetFile(context.Background(), testFileID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if file.DurationSeconds == nil || *file.DurationSeconds != 6.038 {
+		t.Fatalf("unexpected duration: %+v", file.DurationSeconds)
+	}
+}

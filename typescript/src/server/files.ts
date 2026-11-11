@@ -12,6 +12,8 @@ export type InputFile = CreateFile & {
   readonly expires_at?: number;
   readonly width?: number;
   readonly height?: number;
+  /** Measured length of a ready video or audio file in seconds, rounded up to the millisecond; quotes for file_id references price input media from it. */
+  readonly duration_seconds?: number;
   readonly upload?: {
     readonly type: "multipart";
     readonly expires_at: number;

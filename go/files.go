@@ -37,7 +37,11 @@ type File struct {
 	ExpiresAt int64       `json:"expires_at,omitempty"`
 	Width     *int        `json:"width,omitempty"`
 	Height    *int        `json:"height,omitempty"`
-	raw       string
+	// DurationSeconds is the measured length of a ready video or audio file,
+	// rounded up to the millisecond. Quotes for file_id references price input
+	// media from this measurement; it is nil for images and unsettled files.
+	DurationSeconds *float64 `json:"duration_seconds,omitempty"`
+	raw             string
 }
 
 type FileUpload struct {
