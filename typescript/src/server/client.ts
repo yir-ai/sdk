@@ -71,11 +71,16 @@ function parseBalance(value: unknown): Balance {
 /** A failed submit can already have been accepted. Retry the original body with this key. */
 export type YirSubmissionError = Error & { readonly idempotencyKey: string };
 
-function submissionError(cause: unknown, key: string): YirSubmissionError {
+function submissionError(cause: unknown, key: string, signal?: AbortSignal): YirSubmissionError {
   // Preserve APIError/AbortError identity for existing callers. A frozen custom
   // transport error remains accessible through cause instead of losing the key.
   // Reused errors (for example an abort reason) must not overwrite an earlier key.
   if (cause instanceof YirSubmissionUncertainError) return cause;
+  // An abort reason says nothing about the Gateway's answer: the submit may already
+  // have been sent. A reason that reads like a rejection must not look "not accepted".
+  if (signal?.aborted && cause === signal.reason && (cause instanceof YirAPIError || cause instanceof YirSDKValidationError)) {
+    return new YirSubmissionUncertainError(key, cause);
+  }
   const error = cause instanceof Error && Object.isExtensible(cause) && !("idempotencyKey" in cause)
     ? cause : new Error("job_submit_failed", { cause });
   Object.defineProperty(error, "idempotencyKey", { value: key, configurable: true });
@@ -172,7 +177,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         throw new YirAPIError({ message: "Demo submit rejected by the reject scenario.", status: 422, code: "YIR_INPUT_REJECTED", retryable: false });
       }
       return createDemoJob(quote, scenario);
-    }).catch(error => { throw submissionError(error, key); });
+    }).catch(error => { throw submissionError(error, key, options?.signal); });
   // Audio requests (music, sound effects, speech) share one contract; path picks /v1/audio or the legacy /v1/music.
   const quoteAudioAt = (path: string, request: StandardMusicQuoteRequest, options?: YirRequestOptions) => {
     options?.signal?.throwIfAborted();
@@ -196,7 +201,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       ...(options?.signal ? { signal: options.signal } : {}),
       headers: { "Idempotency-Key": key },
       body: request,
-    })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
+    })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key, options?.signal); });
   };
   return {
     ...createFileClient(transport),
@@ -262,7 +267,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
-      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
+      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key, options?.signal); });
     },
     quoteVideo(request, options) {
       options?.signal?.throwIfAborted();
@@ -286,7 +291,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
-      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
+      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key, options?.signal); });
     },
     quoteAudio(request, options) {
       return quoteAudioAt("/v1/audio/quotes", request, options);
@@ -323,7 +328,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
         ...(options?.signal ? { signal: options.signal } : {}),
         headers: { "Idempotency-Key": key },
         body: request,
-      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key); });
+      })).then(validateSubmittedJob).catch(error => { throw submissionError(error, key, options?.signal); });
     },
     getJob(id, options) {
       options?.signal?.throwIfAborted();
@@ -521,15 +526,21 @@ export class YirSubmissionUncertainError extends Error {
  * without reading the Job. True for a request the SDK refused before sending
  * (`YirSDKValidationError`) and for a 4xx rejection the Gateway answered with a
  * Yir error code. False for everything else: `YirSubmissionUncertainError`,
- * network errors, 5xx and an unreadable response (a Job may exist; resubmit with
- * the same key), 409 `YIR_IDEMPOTENCY_CONFLICT` (the key already belongs to
- * another request's Job) and responses that carry no Yir error code.
+ * network errors, 5xx, 408 and an unreadable response (a Job may exist; resubmit
+ * with the same key), 409 `YIR_IDEMPOTENCY_CONFLICT` (the key already belongs to
+ * another request's Job), `YIR_JOB_NOT_FOUND` (the Job was created but could not
+ * be read back) and responses that carry no Yir error code.
  *
  * It describes this call only. If an earlier call with the same key ended with
  * an unknown outcome, that call may have created a Job even though this one was
  * rejected before admission (for example by a rate limit).
+ *
+ * A custom transport passed to `createYirClient` must throw `YirAPIError` only for
+ * a response the Gateway returned; this check trusts it.
  */
 export function isSubmissionNotAccepted(error: unknown): boolean {
+  // Submit wraps a frozen or reused error object; the rejection is then its cause.
+  if (error instanceof Error && error.message === "job_submit_failed" && "idempotencyKey" in error) error = error.cause;
   if (error instanceof YirSDKValidationError) return true;
   // 408 may have reached admission; a Job-not-found answer can only follow a created Job.
   return error instanceof YirAPIError && error.code.startsWith("YIR_") &&
@@ -622,7 +633,7 @@ export type PolledJob =
  * Checks a Job once, for callers that schedule their own polling (a durable
  * workflow or job runner) instead of awaiting `waitForJob`. Reads the light
  * status and, only when that is terminal, the full Job. `waitSeconds` long-polls
- * like `getJobStatus`. Never retries and never throws for a failed or cancelled Job.
+ * like `getJobStatus`. Adds no polling loop or backoff of its own (the transport's bounded retry of network failures and 502/503/504 still applies) and never throws for a failed or cancelled Job.
  */
 export async function pollJob(
   client: Pick<YirClient, "getJob" | "getJobStatus">,
@@ -968,7 +979,10 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
         });
         if (response.status < 300 || response.status >= 400) text = await response.text();
       } catch (error) {
-        if (submit && error instanceof TypeError) state.uncertain = true;
+        // A Gateway rejection is built from a response further down, never thrown by fetch:
+        // an API or validation error raised here is an abort reason or an adapter's own
+        // error, and the submit may already have been sent.
+        if (submit && (error instanceof TypeError || error instanceof YirAPIError || error instanceof YirSDKValidationError)) state.uncertain = true;
         if (!canRetry || attempt >= 3 || signal?.aborted || !(error instanceof TypeError)) throw error;
         await sleep(500 * 2 ** attempt, signal);
         continue;

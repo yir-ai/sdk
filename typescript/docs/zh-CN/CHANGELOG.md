@@ -6,7 +6,7 @@
 
 兼容新增：
 
-- `isSubmissionNotAccepted(error)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。释放自己的预留或给用户退款前先用它判断。
+- `isSubmissionNotAccepted(error)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（408、`YIR_IDEMPOTENCY_CONFLICT` 与 `YIR_JOB_NOT_FOUND` 除外）。释放自己的预留或给用户退款前先用它判断。
 - `pollJob(client, id, options)` 供自行调度轮询的应用查询一次，返回 `{ done: false, status }` 或 `{ done: true, job }`。
 - `usdMicros(amount)` 把 API 金额转成 `bigint`（百万分之一美元）。
 

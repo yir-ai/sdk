@@ -324,7 +324,9 @@ func PollDelay(poll int) time.Duration {
 // light status and, only when that is terminal, the full Job. A Job still in
 // progress carries just ID, Status, Error and Cancellation; test it with
 // IsTerminal. wait long-polls like GetJobStatusWithWait; zero answers at once.
-// It never retries and returns a failed or cancelled Job without an error.
+// It adds no polling loop or backoff of its own (the transport's bounded retry
+// of network failures and 502/503/504 still applies) and returns a failed or
+// cancelled Job without an error.
 func (c *Client) PollJob(ctx context.Context, id string, wait time.Duration) (Job, error) {
 	status, err := c.GetJobStatusWithWait(ctx, id, wait)
 	if err != nil {

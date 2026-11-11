@@ -39,7 +39,7 @@ SDK 固定协议，API 提供模型。模型、参数、允许值和默认值都
 
 1. 构造明确的请求并取得报价，检查供给，读 `expected_amount`：这个 Job 大概要花多少。报价里的任何金额都不是上限。
 2. 由应用审批支出；提交前持久化完整提交请求和稳定幂等键。`max_cost` 可选，默认建议不传（见下方警告）。
-3. 提交已保存的请求。结果未知时使用同一请求与键恢复；取得任务 ID 后保存它，按 ID 恢复轮询。带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）没有创建 Job，也没有占用幂等键；释放预留或给用户退款前，用 `SubmissionNotAccepted`（Go）或 `isSubmissionNotAccepted`（TypeScript）判断。
+3. 提交已保存的请求。结果未知时使用同一请求与键恢复；取得任务 ID 后保存它，按 ID 恢复轮询。带 Yir 错误码的 4xx 拒绝（408、`YIR_IDEMPOTENCY_CONFLICT` 与 `YIR_JOB_NOT_FOUND` 除外）没有创建 Job，也没有占用幂等键；释放预留或给用户退款前，用 `SubmissionNotAccepted`（Go）或 `isSubmissionNotAccepted`（TypeScript）判断。
 4. 对终态账单只结算一次，并在结果 URL 过期前保存可用文件。
 
 报价和静态价格表不会授权购买，也不保证实时供给或最终计费。客户零售价、账户授权、余额和持久化由应用负责。Yir Key 只保留在服务端；浏览器入口仅提供纯逻辑与类型。

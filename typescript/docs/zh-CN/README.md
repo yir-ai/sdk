@@ -97,9 +97,9 @@ const job = await client.submit3D({ ...model, max_cost: "1.50" }, savedKey);
 
 ## 任务和恢复
 
-`isSubmissionNotAccepted(error)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求（`YirSDKValidationError`），或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。只有这时才能放心释放自己的预留或给用户退款。其余错误（`YirSubmissionUncertainError`、网络错误、5xx）都可能已经创建了 Job：用同一请求和同一个键重新提交。这个判断只针对当次调用：如果同一个键此前有过结果不明的调用，那次调用可能已经创建了 Job，之后的拒绝不能排除这一点。
+`isSubmissionNotAccepted(error)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求（`YirSDKValidationError`），或带 Yir 错误码的 4xx 拒绝（408、`YIR_IDEMPOTENCY_CONFLICT` 与 `YIR_JOB_NOT_FOUND` 除外）。只有这时才能放心释放自己的预留或给用户退款。其余错误（`YirSubmissionUncertainError`、网络错误、5xx）都可能已经创建了 Job：用同一请求和同一个键重新提交。这个判断只针对当次调用：如果同一个键此前有过结果不明的调用，那次调用可能已经创建了 Job，之后的拒绝不能排除这一点。自定义 transport 只能为 Gateway 实际返回的响应抛出 `YirAPIError`，本判断信任它。
 
-`pollJob(client, id, { waitSeconds })` 是给自行调度轮询的应用（持久化工作流或任务执行器）用的单步查询：查一次状态，终态时再读完整 Job，一致性检查与 `waitForJob` 相同。返回 `{ done: false, status }` 或 `{ done: true, job }`，不重试、不等待，失败或已取消的 Job 也不抛错。对已经成功或失败的 Job 调用 `cancelJob`，返回这个已结束的 Job，不再以 409 `YIR_JOB_NOT_CANCELLABLE` 拒绝，所以要读 `status`，不要假定已取消。`usdMicros(job.billing.total_charged_by_yir)` 把金额转成 `bigint`（百万分之一美元），方便用整数记账。
+`pollJob(client, id, { waitSeconds })` 是给自行调度轮询的应用（持久化工作流或任务执行器）用的单步查询：查一次状态，终态时再读完整 Job，一致性检查与 `waitForJob` 相同。返回 `{ done: false, status }` 或 `{ done: true, job }`，自身不循环、不退避、不等限流（传输层对网络故障与 502/503/504 的有限重试仍然生效），失败或已取消的 Job 也不抛错。对已经成功或失败的 Job 调用 `cancelJob`，返回这个已结束的 Job，不再以 409 `YIR_JOB_NOT_CANCELLABLE` 拒绝，所以要读 `status`，不要假定已取消。`usdMicros(job.billing.total_charged_by_yir)` 把金额转成 `bigint`（百万分之一美元），方便用整数记账。
 
 保存返回的 `job.id`。`getJob(id)` 查询完整任务详情，`getJobStatus(id)` 查询轻量状态摘要 `JobStatusResponse`。使用 `waitForJob(id, options)`（Node 客户端）或 `waitForJob(client, id, options)`（自定义传输客户端）。状态查询默认长轮询：`getJobStatus(id, { waitSeconds })` 让 Gateway 挂起查询直到状态变化（最长 30 秒），`waitForJob` 使用 `statusWaitSeconds`（默认 20，自动收进超时之内；设为 0 关闭），无需 Webhook，Yir 记录终态后约 1 秒即可拿到。Gateway 未挂起直接返回时，回退到 `pollDelayMs` 退避（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒；设置 `pollIntervalMs` 可改为固定间隔）。状态查询遇到 `429 YIR_RATE_LIMITED`（按 API Key 的每分钟请求上限）时按 `Retry-After`（`YirAPIError.retryAfterMs`，缺省 1 秒，最长 1 分钟）等待后继续，连续最多 5 次。默认 5 分钟超时，进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符抛出 `job_state_inconsistent` 错误。`YirTimeoutError` 保留任务 ID 与 `lastStatus`；超时和 abort 只停止本地等待，不取消任务或代表退款。用保存的 ID 恢复；提交未返回 ID 时，重交完全相同的请求与键。
 
@@ -111,7 +111,7 @@ Demo 模式用于不花钱地测试完整生成流程：`createNodeYirClient({ a
 
 Demo Job 不保存状态：ID 里编码了创建时间、类型、画幅、`n`、时长、分辨率和场景，所以 `getJob`、`getJobStatus`（按 `waitSeconds` 挂起到下一次状态变化）和 `waitForJob` 在任何进程或 Workers 实例里得到同样结果，且不发网络请求。所有客户端都在本地解答 `demo_` ID，关闭 demo 模式后也一样；用 `isDemoJobID(id)` 区分。图片排队 2 秒、8 秒后成功，视频 25 秒，音频 12 秒。结果指向 `https://public.yir.ai/demo/v1/` 下带 DEMO 徽标的固定文件，按类型和最接近的画幅（视频再按 5 或 10 秒）选取；`width`、`height`、`duration_ms` 是实际文件的值，请求的值保留在 `parameters` 中。像真实结果一样转存文件。扣费恒为 `"0"`。
 
-`demo: { scenario }` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`ok`（默认）；`slow`，排队 6 分钟（超过 `waitForJob` 默认超时）、8 分钟后成功；`fail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`reject`，报价后提交抛出 `YirAPIError` 422 `YIR_INPUT_REJECTED`；`cancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `cancelJob` 返回 `cancelled`，对已结束的抛出 409 `YIR_JOB_NOT_CANCELLABLE`；由于不保存状态，之后的读取仍按原时间线，请保留 `cancelJob` 返回的 Job。
+`demo: { scenario }` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`ok`（默认）；`slow`，排队 6 分钟（超过 `waitForJob` 默认超时）、8 分钟后成功；`fail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`reject`，报价后提交抛出 `YirAPIError` 422 `YIR_INPUT_REJECTED`；`cancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `cancelJob` 返回 `cancelled`，对已结束的返回该 Job 的终态；由于不保存状态，之后的读取仍按原时间线，请保留 `cancelJob` 返回的 Job。
 
 提交返回报价的完整参数回显；之后按 ID 读取 demo Job 只保留 `n`、`aspect_ratio`、`resolution`、`duration` 四项（ID 装不下其余参数）。Demo 模式不覆盖：提交的幂等重放、余额/消费上限/`max_cost` 准入错误（402 与 422 `YIR_BUDGET_EXCEEDED`）、Webhook 投递、部分或过期结果、fallback 计费。
 

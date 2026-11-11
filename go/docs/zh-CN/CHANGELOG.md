@@ -6,7 +6,7 @@
 
 兼容新增：
 
-- `SubmissionNotAccepted(err)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。释放自己的预留或给用户退款前先用它判断。
+- `SubmissionNotAccepted(err)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（408、`YIR_IDEMPOTENCY_CONFLICT` 与 `YIR_JOB_NOT_FOUND` 除外）。释放自己的预留或给用户退款前先用它判断。
 - `PollJob(ctx, id, wait)` 供自行调度轮询的应用查询一次：先读轻量状态，只有终态才读完整 Job，一致性检查与 `WaitJob` 相同。
 - `JobBilling.TotalChargedMicros()` 与 `USDMicros(amount)` 把 API 金额转成整数（百万分之一美元）。
 

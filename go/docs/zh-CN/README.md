@@ -70,7 +70,7 @@ fmt.Println(job.Result.Files[0].URL, job.Billing.TotalChargedByYir)
 
 应用审批花费后，持久化完整的 `SubmitRequest` 和稳定幂等键；同时保存路由、引用和 `WebhookURL`。`MaxCost` 可选，默认建议不传：它用来防止费用失控，不是锁价（见下方警告）。之后才调用 `SubmitImage(ctx, savedRequest, savedKey)` 或 `SubmitVideo`。报价不授权或触发生成。重试不得生成新键；传输结果未知时使用原请求与键恢复，不得悄悄用新报价或预算替换请求。
 
-提交失败时，`SubmissionNotAccepted(err)` 判断这个错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。只有这时才能放心释放自己的预留或给用户退款。其余错误（`*SubmissionUncertainError`、网络错误、5xx）都可能已经创建了 Job：用同一请求和同一个键重新提交。这个判断只针对当次调用：如果同一个键此前有过结果不明的调用，那次调用可能已经创建了 Job，之后的拒绝不能排除这一点。
+提交失败时，`SubmissionNotAccepted(err)` 判断这个错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（408、`YIR_IDEMPOTENCY_CONFLICT` 与 `YIR_JOB_NOT_FOUND` 除外）。只有这时才能放心释放自己的预留或给用户退款。其余错误（`*SubmissionUncertainError`、网络错误、5xx）都可能已经创建了 Job：用同一请求和同一个键重新提交。这个判断只针对当次调用：如果同一个键此前有过结果不明的调用，那次调用可能已经创建了 Job，之后的拒绝不能排除这一点。
 
 音乐与音效使用 `QuoteAudio` 和 `SubmitAudio`（`/v1/audio` 端点），流程相同；`QuoteMusic` / `SubmitMusic` 是它们的旧名，调用永久保留的旧路径 `/v1/music`，行为相同；也可在 `QuoteBatch` 中传 `generate_music` / `generate_sound_effect` 项。文本输入设置 `Input.Prompt`，模型支持自定义歌词时可设置 `Input.Lyrics`。Suno 模型还支持上传原曲翻唱（`Input.Type` 为 `"reference"`）：`Input.References` 中恰好一段 `reference_audio` 原曲（URL 或 File ID，不超过 8 分钟），`Input.Prompt` 写新风格，歌词规则与文本输入相同，价格与基础生成相同；`ValidateGenerationWithCatalog` 对其他音频模型拒绝该输入。`Parameters` 可省略，每个模型只接受其合同声明的参数（`n`、`duration`、`instrumental`、`lyrics_optimizer`）。带人声的音乐须使用模型支持的一种歌词来源：`Lyrics`、`lyrics_optimizer: true`（按提示词自动写词，部分模型另收写词费用，以报价为准）或 `instrumental: true`，三者互斥。ElevenLabs 音乐不接受歌词，按 `duration` 计价（30–300 秒固定档位，默认 60）；ElevenLabs 音效（`elevenlabs/sound-effects-v2`）只传描述，不接受歌词，`duration` 为 1–22 秒（默认 5），报价的 operation 为 `generate_sound_effect`。Suno（`suno/suno-v6`，非官方接入，Suno 没有官方 API）每次请求返回两首（`n` 固定为 2）。SDK 在发送前检查通用冲突；`ValidateGenerationWithCatalog` 还按模型合同检查 `n`、`duration` 与歌词来源，各模型的文本长度上限由 Gateway 校验。每个音频文件的实测时长见 `ResultFile.DurationMS`。音乐报价的参数回显不含 `resolution` 与 `aspect_ratio`。
 
@@ -103,7 +103,7 @@ job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model}, sa
 
 保存返回的任务 ID。`GetJob` 查询完整任务详情，`GetJobStatus` 查询轻量状态摘要 `JobStatusResponse`。`WaitJob` 默认长轮询状态摘要：`GetJobStatusWithWait` 让 Gateway 挂起查询直到状态变化（最长 30 秒），`WaitOptions.StatusWait` 默认 `DefaultStatusWait`（20 秒，自动收进 HTTP 客户端超时与 context 截止时间之内；负值关闭），无需 Webhook，Yir 记录终态后约 1 秒即可拿到。Gateway 未挂起直接返回时，回退到 `PollDelay` 退避（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒）；设置 `WaitOptions.PollInterval` 可改为固定间隔。状态查询遇到 `429 YIR_RATE_LIMITED`（按 API Key 的每分钟请求上限）时按 `Retry-After`（`APIError.RetryAfter`，缺省 1 秒，最长 1 分钟）等待后继续，连续最多 5 次。进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符返回 `ErrJobStateInconsistent`。取消或超时 context 只停止本地等待，返回零值 `Job{}`，不取消远端任务或表示退款；用保存的 ID 恢复。`JobError` 包含失败或取消的终态任务；`APIError` 包含 HTTP status、code、message、retryable 和 action。业务判断使用稳定错误码。
 
-`PollJob(ctx, id, wait)` 是给自行调度轮询的应用（持久化工作流或任务执行器）用的单步查询：查一次状态，终态时再读完整 `Job`，一致性检查相同。它不重试、不等待，失败或已取消的 Job 也不作为错误返回；仍在进行的 Job 只带 `ID`、`Status`、`Error` 和 `Cancellation`。
+`PollJob(ctx, id, wait)` 是给自行调度轮询的应用（持久化工作流或任务执行器）用的单步查询：查一次状态，终态时再读完整 `Job`，一致性检查相同。它自身不循环、不退避、不等限流（传输层对网络故障与 502/503/504 的有限重试仍然生效），失败或已取消的 Job 也不作为错误返回；仍在进行的 Job 只带 `ID`、`Status`、`Error` 和 `Cancellation`。
 
 `CancelJob` 显式申请取消并返回 Job 的最新状态；对已经成功或失败的 Job，它返回这个已结束的 Job，而不是 Gateway 的 409 `YIR_JOB_NOT_CANCELLABLE`。应检查取消状态和终态账单，不假定立即成功或零费用。`Billing.TotalChargedMicros()` 以整数（百万分之一美元）返回总额。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径；`ComputeCharges`、`GatewayFee` 和 `OfficialComparison` 说明该总额的构成。`APIError.Code` 应与 `ErrCode*` 常量比较，而非字符串字面量。`APIError.RequestID` 是失败 HTTP 请求的 `request_id`，联系 Yir 支持时请一并提供。
 
@@ -125,7 +125,7 @@ Demo 模式用于不花钱地测试完整生成流程：把 `ClientOptions.Demo`
 
 Demo Job 不保存状态：ID 里编码了创建时间、类型、画幅、`n`、时长、分辨率和场景，所以 `GetJob`、`GetJobStatusWithWait`（挂起到下一次状态变化）和 `WaitJob` 在任何进程里得到同样结果，不发网络请求，并与 TypeScript SDK 一致。所有 `Client` 都在本地解答 `demo_` ID，关闭 demo 模式后也一样；用 `IsDemoJobID(id)` 区分。图片排队 2 秒、8 秒后成功，视频 25 秒，音频 12 秒。结果指向 `DemoAssetBaseURL`（`https://public.yir.ai/demo/v1/`）下带 DEMO 徽标的固定文件，按类型和最接近的画幅（视频再按 5 或 10 秒）选取；`Width`、`Height`、`DurationMS` 是实际文件的值，请求的值保留在 `Parameters` 中。扣费恒为 `"0"`。
 
-`DemoOptions.Scenario` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`DemoScenarioOK`（默认）；`DemoScenarioSlow`，排队 6 分钟、8 分钟后成功；`DemoScenarioFail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`DemoScenarioReject`，报价后提交返回 `*APIError` 422 `YIR_INPUT_REJECTED`（包在 `*SubmissionError` 里）；`DemoScenarioCancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `CancelJob` 返回 `cancelled`，对已结束的返回 409 `YIR_JOB_NOT_CANCELLABLE`；由于不保存状态，之后的读取仍按原时间线，请保留 `CancelJob` 返回的 Job。
+`DemoOptions.Scenario` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`DemoScenarioOK`（默认）；`DemoScenarioSlow`，排队 6 分钟、8 分钟后成功；`DemoScenarioFail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`DemoScenarioReject`，报价后提交返回 `*APIError` 422 `YIR_INPUT_REJECTED`（包在 `*SubmissionError` 里）；`DemoScenarioCancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `CancelJob` 返回 `cancelled`，对已结束的返回该 Job 的终态；由于不保存状态，之后的读取仍按原时间线，请保留 `CancelJob` 返回的 Job。
 
 提交返回报价的完整 `Parameters` 回显；之后按 ID 读取 demo Job 只保留 `n`、`aspect_ratio`、`resolution`、`duration` 四项（ID 装不下其余参数）。Demo 模式不覆盖：提交的幂等重放、余额/消费上限/`MaxCost` 准入错误、Webhook 投递、部分或过期结果、fallback 计费。
 

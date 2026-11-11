@@ -6,7 +6,7 @@ Release notes before 0.10.0, moved from the README. Notes describe each release 
 
 Compatible additions:
 
-- `isSubmissionNotAccepted(error)` reports whether a submit error proves that the call created no Job and left the idempotency key unused: a request the SDK refused before sending, or a 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT`. Use it before releasing your own reservation or refunding your user.
+- `isSubmissionNotAccepted(error)` reports whether a submit error proves that the call created no Job and left the idempotency key unused: a request the SDK refused before sending, or a 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT` and `YIR_JOB_NOT_FOUND` (408 excluded). Use it before releasing your own reservation or refunding your user.
 - `pollJob(client, id, options)` checks a Job once for applications that schedule their own polling and resolves with `{ done: false, status }` or `{ done: true, job }`.
 - `usdMicros(amount)` converts an API amount to a `bigint` of millionths of a dollar.
 

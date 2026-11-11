@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  createYirClient, isSubmissionNotAccepted, pollJob, usdMicros,
+  createNodeYirClient, createYirClient, isSubmissionNotAccepted, pollJob, usdMicros,
   YirAPIError, YirSDKValidationError, YirSubmissionUncertainError,
 } from "../dist/index.js";
 
@@ -34,6 +34,39 @@ test("a rejected submit is not accepted and keeps its idempotency key", async ()
   const error = await client.submitImage(request, "saved-key").catch(error => error);
   assert.equal(isSubmissionNotAccepted(error), true);
   assert.equal(error.idempotencyKey, "saved-key");
+});
+
+test("a rejection the SDK had to wrap is still recognized as not accepted", async () => {
+  const frozen = Object.freeze(api(402, "YIR_INSUFFICIENT_BALANCE"));
+  const client = createYirClient(async () => { throw frozen; });
+  const error = await client.submitImage(request, "saved-key").catch(error => error);
+  assert.equal(error.message, "job_submit_failed");
+  assert.equal(isSubmissionNotAccepted(error), true);
+});
+
+test("an abort reason that reads like a rejection is uncertain, not a rejection", async () => {
+  for (const reason of [api(402, "YIR_INSUFFICIENT_BALANCE"), new YirSDKValidationError("model_required", "model")]) {
+    const controller = new AbortController();
+    // The request was sent, then another operation's failure aborted it.
+    const client = createYirClient(async ({ signal }) => { controller.abort(reason); throw signal.reason; });
+    const error = await client.submitImage(request, "saved-key", { signal: controller.signal }).catch(error => error);
+    assert.ok(error instanceof YirSubmissionUncertainError);
+    assert.equal(error.idempotencyKey, "saved-key");
+    assert.equal(isSubmissionNotAccepted(error), false);
+  }
+});
+
+test("an API error thrown by the fetch adapter is uncertain, not a Gateway rejection", async () => {
+  // A fetch adapter that merges its own cancellation can reject with another operation's error.
+  for (const thrown of [api(402, "YIR_INSUFFICIENT_BALANCE"), Object.freeze(api(402, "YIR_INSUFFICIENT_BALANCE")), new YirSDKValidationError("model_required", "model")]) {
+    const client = createNodeYirClient({ apiKey: "fixture", fetch: async () => { throw thrown; } });
+    const error = await client.submitImage(request, "saved-key").catch(error => error);
+    assert.ok(error instanceof YirSubmissionUncertainError);
+    assert.equal(isSubmissionNotAccepted(error), false);
+  }
+  const rejected = createNodeYirClient({ apiKey: "fixture", fetch: async () => Response.json(
+    { error: { code: "YIR_INSUFFICIENT_BALANCE", message: "fixture", retryable: false }, request_id: "r1" }, { status: 402 }) });
+  assert.equal(isSubmissionNotAccepted(await rejected.submitImage(request, "saved-key").catch(error => error)), true);
 });
 
 test("cancelJob returns a Job that already ended instead of the 409", async () => {

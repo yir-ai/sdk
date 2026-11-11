@@ -6,7 +6,7 @@ Release notes, newest first. Notes describe each release as published; later rel
 
 Compatible additions:
 
-- `SubmissionNotAccepted(err)` reports whether a Submit error proves that the call created no Job and left the idempotency key unused: a request the SDK refused before sending, or a 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT`. Use it before releasing your own reservation or refunding your user.
+- `SubmissionNotAccepted(err)` reports whether a Submit error proves that the call created no Job and left the idempotency key unused: a request the SDK refused before sending, or a 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT` and `YIR_JOB_NOT_FOUND` (408 excluded). Use it before releasing your own reservation or refunding your user.
 - `PollJob(ctx, id, wait)` checks a Job once for applications that schedule their own polling: the light status, then the full Job only when it is terminal, with the same consistency check as `WaitJob`.
 - `JobBilling.TotalChargedMicros()` and `USDMicros(amount)` convert API amounts to integer millionths of a dollar.
 

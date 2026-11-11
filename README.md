@@ -39,7 +39,7 @@ The generation idempotency key is optional: the SDKs create a new random key per
 
 1. Build an explicit request and obtain a quote. Check supply and read `expected_amount`: what the Job will probably cost. No quote amount is a ceiling.
 2. Have your application approve the spend. Persist the exact submit request and a stable idempotency key before submitting. `max_cost` is optional and best left out by default (see the warning below).
-3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID. A 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT` created no Job and left the key unused; `SubmissionNotAccepted` (Go) and `isSubmissionNotAccepted` (TypeScript) test for it before you release a reservation or refund your user.
+3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID. A 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT` and `YIR_JOB_NOT_FOUND` (408 excluded) created no Job and left the key unused; `SubmissionNotAccepted` (Go) and `isSubmissionNotAccepted` (TypeScript) test for it before you release a reservation or refund your user.
 4. Reconcile billing once `billing.status` is `settled` and copy available result files before their URLs expire.
 
 A quote or static price table does not authorize a purchase or guarantee current supply or final billing. Customer pricing, account authorization, balances and persistence belong to your application. Keep Yir API keys on the server; the browser entry exposes only pure helpers and types.

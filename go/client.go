@@ -230,10 +230,11 @@ func (e *SubmissionUncertainError) Error() string {
 // its own reservation (refund, slot) without reading the Job. It is true for a
 // request the SDK refused before sending (*ParameterError) and for a 4xx
 // rejection the Gateway answered with a Yir error code. It is false for
-// everything else: *SubmissionUncertainError, network errors, 5xx and an
+// everything else: *SubmissionUncertainError, network errors, 5xx, 408 and an
 // unreadable response (a Job may exist; resubmit with the same key), 409
-// YIR_IDEMPOTENCY_CONFLICT (the key already belongs to another request's Job)
-// and responses that carry no Yir error code.
+// YIR_IDEMPOTENCY_CONFLICT (the key already belongs to another request's Job),
+// YIR_JOB_NOT_FOUND (the Job was created but could not be read back) and
+// responses that carry no Yir error code.
 //
 // It describes this call only. If an earlier call with the same key ended with
 // an unknown outcome, that call may have created a Job even though this one was
