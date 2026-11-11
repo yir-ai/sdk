@@ -4068,11 +4068,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds. With a reference video, \"auto\" follows the input video for edits; aspect_ratio must also be auto."
+                  "description": "Output video duration in seconds. With a reference video, \"auto\" follows the input video for edits; aspect_ratio must also be auto. task_type edit implies auto."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。带参考视频时可传 \"auto\"，编辑类任务时长跟随输入视频，aspect_ratio 须同为 auto。"
+                  "description": "输出视频的秒数。带参考视频时可传 \"auto\"，编辑类任务时长跟随输入视频，aspect_ratio 须同为 auto。task_type 为 edit 时即为 auto。"
                 }
               }
             },
@@ -4121,6 +4121,29 @@
                 "zh-CN": {
                   "label": "画幅",
                   "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "task_type",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto",
+                "reference",
+                "edit",
+                "extend"
+              ],
+              "default": "auto",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Task type",
+                  "description": "How the references are used. auto (default) lets the model decide from the references and prompt. reference generates a new video guided by them. edit changes the reference video (4 to 30 seconds); its duration and aspect ratio follow that video. extend continues the reference video; aspect_ratio follows it and duration is the length of the new part. The model still checks the prompt, so a prompt that reads as an edit (for example \"replace\" or \"copy exactly\") can fail as reference; edit and extend run on fewer channels."
+                },
+                "zh-CN": {
+                  "label": "任务类型",
+                  "description": "参考素材的用法。auto（默认）由模型按素材和提示词判断；reference 参照素材生成新视频；edit 修改参考视频（4–30 秒），时长与画幅跟随原视频；extend 延长参考视频，画幅跟随原视频，duration 为新增部分的秒数。模型仍会按提示词复核，读起来像编辑的提示词（如 replace、copy exactly）在 reference 下可能失败；edit 与 extend 的可用渠道较少。"
                 }
               }
             },
