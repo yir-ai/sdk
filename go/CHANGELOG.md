@@ -1,6 +1,76 @@
 # Go SDK changelog
 
-Release notes before 0.11.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
+Release notes, newest first. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
+
+## Unreleased
+
+Compatible additions:
+
+- `SubmissionNotAccepted(err)` reports whether a Submit error proves that the call created no Job and left the idempotency key unused: a request the SDK refused before sending, or a 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT`. Use it before releasing your own reservation or refunding your user.
+- `PollJob(ctx, id, wait)` checks a Job once for applications that schedule their own polling: the light status, then the full Job only when it is terminal, with the same consistency check as `WaitJob`.
+- `JobBilling.TotalChargedMicros()` and `USDMicros(amount)` convert API amounts to integer millionths of a dollar.
+
+Behavior change:
+
+- `CancelJob` on a Job that already succeeded or failed returns that finished Job instead of the `409 YIR_JOB_NOT_CANCELLABLE` `*APIError`. Code that handled the 409 by reading the Job again can drop that branch; code that treated a nil error as "cancelled" must read `Status`, as it already had to for a Job whose cancellation is only requested.
+
+## Upgrading to 0.13.0
+
+0.13.0 is a minor release and is compatible with 0.12.0. The Gateway features it relies on are already live.
+
+Additions:
+
+- Demo mode: `ClientOptions.Demo` (`DemoOptions`, `DemoScenario*`), `IsDemoJobID` and `DemoAssetBaseURL`. Every `Client` answers `demo_` Job IDs locally. See [Demo mode](README.md#demo-mode).
+- `QuoteAudio` / `SubmitAudio` for the `/v1/audio` endpoints (music, sound effects and text-to-speech; `QuoteMusic` / `SubmitMusic` stay as aliases), the `voice` parameter, and `generate_sound_effect` / `generate_speech` quotes and `QuoteBatch` items.
+- Reference role `keyframe` for ordered middle frames; subject references with mixed subjects, subject voices and video subjects in model contracts and `ValidateGenerationWithCatalog`.
+- Parameter notice disposition `exceeded` for over-delivered results.
+
+## Upgrading to 0.12.0
+
+0.12.0 is a minor release with incompatible behavior changes; the exported API only gains additions. 0.11.2 was never published on its own; its [changes](#0112-changes) ship with this release. The Gateway features it relies on are already live.
+
+Incompatible changes:
+
+- Quote and submit no longer validate model parameters against `ClientOptions.ModelContracts`. They check the protocol skeleton and let the Gateway validate, so an invalid parameter returns `*APIError` with `ErrCodeInvalidRequest` (fields in `Details`) instead of a local `*ParameterError`. Call `ValidateGenerationWithCatalog` when you want strict local checks.
+- A failed submit returns `*SubmissionError`, which carries the `IdempotencyKey` and wraps the transport or API error. Reach the `*APIError` with `errors.As`; a direct type assertion on the returned error no longer matches.
+- `HTTPClient.Timeout` (30 seconds by default) bounds the whole call, including the transport retries below.
+- A legacy `BillingMode: "actual"` request no longer requires `Routing.Only`.
+
+Additions:
+
+- Network failures and HTTP 502/503/504 are retried up to three times for reads and for generation submits with a key, with the same body and idempotency key; a `Retry-After` of up to one minute is honored. `WaitJob` keeps waiting for an accepted Job through Gateway outages and waits out `429 YIR_RATE_LIMITED` (`APIError.RetryAfter`).
+- `QuoteAudio` and `SubmitAudio` (originally `QuoteMusic` / `SubmitMusic`), `GenerationInput.Lyrics` and `ResultFile.DurationMS`; see [Quote and submit](README.md#quote-and-submit).
+- `ClientOptions.ReferralCode`, sent as `Yir-Referral`.
+- `client.GetBalance`, and `NewAccountClient` for the Account API, including routing profile `ExcludedModelProviders`.
+- `Routing.Fidelity` (`RoutingFidelity*`, `ErrCodeFidelityExcluded`), `Routing.Accelerate`, and per-file `ResultFile.Fidelity`.
+- `APIError.ProviderError`, `ErrCodeInputRejected` and `JobBilling.Status` (`pending` or `settled`).
+- Model contracts carry `StringValues` (such as Seedance 2.5 duration `"auto"`, kept in quote and Job parameter echoes) and `PromptOptional`. Market specifications with no listed channels are kept.
+
+## 0.11.2 changes
+
+0.11.2 is a compatible release:
+
+- `Quote.ExpectedAmount` (`*string`, optional) is the first channel's admission estimate: the amount Yir checks your balance, API Key monthly limit and `max_cost` against. Unlike an output-only `estimate` price it includes known input charges such as reference images and, for usage-billed channels, recent actual charges. It is absent when no channel matches or a reliable estimate is unavailable. `Validate` requires a decimal and rejects it without supply. Prefer it over `Primary.Amount` as a cost reference; it is not a ceiling.
+
+## 0.11.1 changes
+
+0.11.1 is a compatible release that follows the Gateway's parameter echo and catalog caching changes:
+
+- `Quote.Parameters` echoes exactly the parameters the model contract declares, at contract spelling and with omitted parameters at their defaults: `duration` and `generate_audio` are absent for image quotes and for video models without that parameter. Model-specific parameters are echoed under their contract names.
+- `Job.Parameters` (`map[string]any`) carries the same echo from creation, so an application can check a delivered result against the parameters it was charged for.
+- A model contract parameter's `Required` now means "no published default, the request must send it"; every parameter with a `Default` is `Required: false` and may be omitted. `ValidateGenerationWithCatalog` already applied defaults before checking `Required`, so local validation is unchanged.
+- `GET /v1/models` and `view=contract` responses carry `ETag` (the quoted catalog `version`) and `Cache-Control: private, max-age=300`, and answer `If-None-Match` with 304. `GetModelContracts` does not send conditional requests yet; a custom `HTTPClient` can.
+
+## Upgrading to 0.11.0
+
+0.11.0 is a minor release with incompatible changes. It prepares the 1.0 contract. Upgrading from 0.9, read the [0.10.0 notes](#0100-changes) first; 0.10.0 was never published on its own and ships with this release.
+
+- The bundled model catalog is removed: package-level `ListModelContracts`, `GetModelContract`, `GetModelOperationContract`, `ValidateGeneration` and `ValidateModelParameters` are gone. Fetch the catalog with `client.GetModelContracts` and pass it to `ValidateGenerationWithCatalog` or `ClientOptions.ModelContracts`. New models and parameter changes never need an SDK release.
+- Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted; store it as a string and do not parse it.
+- Without a catalog, a quote may echo the canonical `creator/model` ID for an alias you sent; any other different model fails validation. With a catalog the SDK compares the resolved IDs.
+- `APIError.Details` (`[]ErrorDetail`) locates invalid fields of `YIR_INVALID_REQUEST`: `Field`, a stable `Reason` such as `unsupported` or `required`, and `Allowed` contract values.
+- Veo 3.0 (`google/veo-3.0-generate-001`) and the Gemini Omni preview (`google/gemini-omni-video`) are retired: they are gone from the API catalog and from the reviewed snapshot that earlier versions bundled. Requests for them return `YIR_INVALID_REQUEST` with `details[0].reason` `retired` and the replacement model in `allowed`.
+- Gateway changes released together with this SDK: `parameters` is required; top-level `resolution`, `aspect_ratio`, `n`, `duration` and `generate_audio`, `input.image`, and case-variant `input.type` or reference roles are rejected; `resolution` and `aspect_ratio` must use a model contract value (case-insensitive), so `1024`, `2048x2048` or `16x9` are rejected. Model aliases are reduced to the short name, the vendor model ID and, where one exists, the Vercel AI Gateway ID; prefer canonical IDs such as `bytedance/seedance-2.0`.
 
 ## 0.10.0 changes
 

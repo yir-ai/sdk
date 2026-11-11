@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -200,6 +201,27 @@ type JobBilling struct {
 	OfficialComparison *OfficialComparison `json:"official_comparison,omitempty"`
 }
 
+// TotalChargedMicros returns TotalChargedByYir in millionths of a US dollar,
+// for ledgers that store integers. It is final only when Status is "settled".
+func (b JobBilling) TotalChargedMicros() (int64, error) {
+	return USDMicros(b.TotalChargedByYir)
+}
+
+// USDMicros converts a decimal USD amount from the API, such as "0.0325", to
+// millionths of a dollar. It rejects amounts that are not plain decimals, have
+// more than six fraction digits or overflow int64, rather than rounding.
+func USDMicros(amount string) (int64, error) {
+	whole, fraction, _ := strings.Cut(amount, ".")
+	if !decimalCostPattern.MatchString(amount) {
+		return 0, errors.New("amount_invalid")
+	}
+	micros, err := strconv.ParseInt(whole+fraction+strings.Repeat("0", 6-len(fraction)), 10, 64)
+	if err != nil {
+		return 0, errors.New("amount_invalid")
+	}
+	return micros, nil
+}
+
 // ComputeCharge is a read-only billing fact for managed supply billed by Yir.
 type ComputeCharge struct {
 	// Deprecated: Yir Cloud always uses managed supply.
@@ -295,6 +317,30 @@ func PollDelay(poll int) time.Duration {
 	default:
 		return 20 * time.Second
 	}
+}
+
+// PollJob checks a Job once, for callers that schedule their own polling (a
+// durable workflow or job runner) instead of blocking in WaitJob. It reads the
+// light status and, only when that is terminal, the full Job. A Job still in
+// progress carries just ID, Status, Error and Cancellation; test it with
+// IsTerminal. wait long-polls like GetJobStatusWithWait; zero answers at once.
+// It never retries and returns a failed or cancelled Job without an error.
+func (c *Client) PollJob(ctx context.Context, id string, wait time.Duration) (Job, error) {
+	status, err := c.GetJobStatusWithWait(ctx, id, wait)
+	if err != nil {
+		return Job{}, err
+	}
+	if !status.IsTerminal() {
+		return Job{ID: status.ID, Status: status.Status, Error: status.Error, Cancellation: status.Cancellation}, nil
+	}
+	job, err := c.GetJob(ctx, id)
+	if err != nil {
+		return Job{}, err
+	}
+	if job.Status != status.Status || !job.IsTerminal() {
+		return Job{}, fmt.Errorf("%w: status summary reported %q but job detail returned %q", ErrJobStateInconsistent, status.Status, job.Status)
+	}
+	return job, nil
 }
 
 // WaitJob only polls. Cancelling its context never sends a Job cancellation or

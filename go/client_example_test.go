@@ -3,6 +3,7 @@ package yir_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -28,6 +29,34 @@ func ExampleClient_SubmitImage_legacyFunction() {
 		return client.SubmitImage(ctx, request, key)
 	}
 	_ = submit // Pass this wrapper to the application's existing function consumer.
+}
+
+// The README quick start, compile-checked. Without an Output directive go test
+// does not execute it or incur generation costs.
+func ExampleClient_quickStart() {
+	client, err := yir.NewClient(os.Getenv("YIR_API_KEY"), yir.ClientOptions{})
+	if err != nil {
+		panic(err)
+	}
+	ctx := context.Background()
+	request := yir.GenerationRequest{
+		Model:      "openai/gpt-image-2",
+		Input:      yir.GenerationInput{Type: "text", Prompt: "A quiet observatory"},
+		Parameters: map[string]any{"resolution": "1K", "aspect_ratio": "1:1", "n": 1},
+	}
+	// The key is yours and stable: the same request and key never create a second Job.
+	job, err := client.SubmitImage(ctx, yir.SubmitRequest{GenerationRequest: request}, "task-123")
+	if err != nil {
+		if yir.SubmissionNotAccepted(err) {
+			// No Job was created and the key is unused: safe to release your reservation.
+		}
+		return
+	}
+	job, err = client.WaitJob(ctx, job.ID, yir.WaitOptions{})
+	if err != nil {
+		return // *yir.JobError carries a failed or cancelled Job
+	}
+	fmt.Println(job.Result.Files[0].URL, job.Billing.TotalChargedByYir)
 }
 
 // This example is compile-checked; without an Output directive, go test does not

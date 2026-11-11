@@ -1,6 +1,6 @@
 # Yir Go SDK
 
-> Beta (0.x). Incompatible changes ship only in minor releases, with migration notes in the README and [changelog](https://github.com/yir-ai/sdk/blob/main/go/CHANGELOG.md). Fields and values newer than the SDK are read as data, so new models and options do not need an SDK release.
+> Beta (0.x). Incompatible changes ship only in minor releases, with migration notes in the [changelog](https://github.com/yir-ai/sdk/blob/main/go/CHANGELOG.md). Fields and values newer than the SDK are read as data, so new models and options do not need an SDK release.
 
 English | [简体中文](docs/zh-CN/README.md) · [Repository](https://github.com/yir-ai/sdk) · [Examples](examples/README.md)
 
@@ -34,73 +34,43 @@ _ = client
 
 Keep the key on your server. The default base URL is `https://gateway.yir.ai`; configure `ClientOptions.BaseURL` and `ClientOptions.HTTPClient` if needed. The default HTTP timeout is 30 seconds, and redirects are rejected. If you publish an app that others deploy with their own or their users' keys, set `ClientOptions.ReferralCode` to your Yir referral code; it is sent as `Yir-Referral`, and Jobs count toward your referral rebate once Yir has enabled the code for partner attribution. Otherwise the header is ignored.
 
-## Upgrading to 0.13.0
+## Quick start
 
-0.13.0 is a minor release and is compatible with 0.12.0. The Gateway features it relies on are already live.
+Submit, wait, read the result. This is the whole flow and it spends from your balance; [Demo mode](#demo-mode) runs it for free.
 
-Additions:
+```go
+request := yir.GenerationRequest{
+	Model:      "openai/gpt-image-2",
+	Input:      yir.GenerationInput{Type: "text", Prompt: "A quiet observatory"},
+	Parameters: map[string]any{"resolution": "1K", "aspect_ratio": "1:1", "n": 1},
+}
+// The key is yours and stable: the same request and key never create a second Job.
+job, err := client.SubmitImage(ctx, yir.SubmitRequest{GenerationRequest: request}, "task-123")
+if err != nil {
+	return err // yir.SubmissionNotAccepted(err) reports whether no Job was created
+}
+job, err = client.WaitJob(ctx, job.ID, yir.WaitOptions{})
+if err != nil {
+	return err // *yir.JobError carries a failed or cancelled Job
+}
+fmt.Println(job.Result.Files[0].URL, job.Billing.TotalChargedByYir)
+```
 
-- Demo mode: `ClientOptions.Demo` (`DemoOptions`, `DemoScenario*`), `IsDemoJobID` and `DemoAssetBaseURL`. Every `Client` answers `demo_` Job IDs locally. See [Demo mode](#demo-mode).
-- `QuoteAudio` / `SubmitAudio` for the `/v1/audio` endpoints (music, sound effects and text-to-speech; `QuoteMusic` / `SubmitMusic` stay as aliases), the `voice` parameter, and `generate_sound_effect` / `generate_speech` quotes and `QuoteBatch` items.
-- Reference role `keyframe` for ordered middle frames; subject references with mixed subjects, subject voices and video subjects in model contracts and `ValidateGenerationWithCatalog`.
-- Parameter notice disposition `exceeded` for over-delivered results.
+The result URL is short-lived: copy the file before it expires. To see the price before spending, call `QuoteImage` and read `ExpectedAmount`. The amount you paid is `Billing.TotalChargedByYir` once `Billing.Status` is `settled`. The rest of this page covers recovery, budgets, files and Webhooks.
 
-## Upgrading to 0.12.0
+## Upgrading
 
-0.12.0 is a minor release with incompatible behavior changes; the exported API only gains additions. 0.11.2 was never published on its own; its [changes](#0112-changes) ship with this release. The Gateway features it relies on are already live.
-
-Incompatible changes:
-
-- Quote and submit no longer validate model parameters against `ClientOptions.ModelContracts`. They check the protocol skeleton and let the Gateway validate, so an invalid parameter returns `*APIError` with `ErrCodeInvalidRequest` (fields in `Details`) instead of a local `*ParameterError`. Call `ValidateGenerationWithCatalog` when you want strict local checks.
-- A failed submit returns `*SubmissionError`, which carries the `IdempotencyKey` and wraps the transport or API error. Reach the `*APIError` with `errors.As`; a direct type assertion on the returned error no longer matches.
-- `HTTPClient.Timeout` (30 seconds by default) bounds the whole call, including the transport retries below.
-- A legacy `BillingMode: "actual"` request no longer requires `Routing.Only`.
-
-Additions:
-
-- Network failures and HTTP 502/503/504 are retried up to three times for reads and for generation submits with a key, with the same body and idempotency key; a `Retry-After` of up to one minute is honored. `WaitJob` keeps waiting for an accepted Job through Gateway outages and waits out `429 YIR_RATE_LIMITED` (`APIError.RetryAfter`).
-- `QuoteAudio` and `SubmitAudio` (originally `QuoteMusic` / `SubmitMusic`), `GenerationInput.Lyrics` and `ResultFile.DurationMS`; see [Quote and submit](#quote-and-submit).
-- `ClientOptions.ReferralCode`, sent as `Yir-Referral`.
-- `client.GetBalance`, and `NewAccountClient` for the Account API, including routing profile `ExcludedModelProviders`.
-- `Routing.Fidelity` (`RoutingFidelity*`, `ErrCodeFidelityExcluded`), `Routing.Accelerate`, and per-file `ResultFile.Fidelity`.
-- `APIError.ProviderError`, `ErrCodeInputRejected` and `JobBilling.Status` (`pending` or `settled`).
-- Model contracts carry `StringValues` (such as Seedance 2.5 duration `"auto"`, kept in quote and Job parameter echoes) and `PromptOptional`. Market specifications with no listed channels are kept.
-
-## 0.11.2 changes
-
-0.11.2 is a compatible release:
-
-- `Quote.ExpectedAmount` (`*string`, optional) is the first channel's admission estimate: the amount Yir checks your balance, API Key monthly limit and `max_cost` against. Unlike an output-only `estimate` price it includes known input charges such as reference images and, for usage-billed channels, recent actual charges. It is absent when no channel matches or a reliable estimate is unavailable. `Validate` requires a decimal and rejects it without supply. Prefer it over `Primary.Amount` as a cost reference; it is not a ceiling.
-
-## 0.11.1 changes
-
-0.11.1 is a compatible release that follows the Gateway's parameter echo and catalog caching changes:
-
-- `Quote.Parameters` echoes exactly the parameters the model contract declares, at contract spelling and with omitted parameters at their defaults: `duration` and `generate_audio` are absent for image quotes and for video models without that parameter. Model-specific parameters are echoed under their contract names.
-- `Job.Parameters` (`map[string]any`) carries the same echo from creation, so an application can check a delivered result against the parameters it was charged for.
-- A model contract parameter's `Required` now means "no published default, the request must send it"; every parameter with a `Default` is `Required: false` and may be omitted. `ValidateGenerationWithCatalog` already applied defaults before checking `Required`, so local validation is unchanged.
-- `GET /v1/models` and `view=contract` responses carry `ETag` (the quoted catalog `version`) and `Cache-Control: private, max-age=300`, and answer `If-None-Match` with 304. `GetModelContracts` does not send conditional requests yet; a custom `HTTPClient` can.
-
-## Upgrading to 0.11.0
-
-0.11.0 is a minor release with incompatible changes. It prepares the 1.0 contract. Upgrading from 0.9, read the [0.10.0 notes](CHANGELOG.md#0100-changes) first; 0.10.0 was never published on its own and ships with this release.
-
-- The bundled model catalog is removed: package-level `ListModelContracts`, `GetModelContract`, `GetModelOperationContract`, `ValidateGeneration` and `ValidateModelParameters` are gone. Fetch the catalog with `client.GetModelContracts` and pass it to `ValidateGenerationWithCatalog` or `ClientOptions.ModelContracts`. New models and parameter changes never need an SDK release.
-- Job IDs are opaque. Any non-empty ID of up to 64 characters that is safe as one URL path segment is accepted; store it as a string and do not parse it.
-- Without a catalog, a quote may echo the canonical `creator/model` ID for an alias you sent; any other different model fails validation. With a catalog the SDK compares the resolved IDs.
-- `APIError.Details` (`[]ErrorDetail`) locates invalid fields of `YIR_INVALID_REQUEST`: `Field`, a stable `Reason` such as `unsupported` or `required`, and `Allowed` contract values.
-- Veo 3.0 (`google/veo-3.0-generate-001`) and the Gemini Omni preview (`google/gemini-omni-video`) are retired: they are gone from the API catalog and from the reviewed snapshot that earlier versions bundled. Requests for them return `YIR_INVALID_REQUEST` with `details[0].reason` `retired` and the replacement model in `allowed`.
-- Gateway changes released together with this SDK: `parameters` is required; top-level `resolution`, `aspect_ratio`, `n`, `duration` and `generate_audio`, `input.image`, and case-variant `input.type` or reference roles are rejected; `resolution` and `aspect_ratio` must use a model contract value (case-insensitive), so `1024`, `2048x2048` or `16x9` are rejected. Model aliases are reduced to the short name, the vendor model ID and, where one exists, the Vercel AI Gateway ID; prefer canonical IDs such as `bytedance/seedance-2.0`.
-
-Earlier release notes are in the [changelog](CHANGELOG.md).
+Release notes and migration steps for every version are in the [changelog](CHANGELOG.md).
 
 ## Quote and submit
 
 `SubmitImage(ctx, request)` and `SubmitVideo(ctx, request)` generate a random idempotency key per call. You may pass one explicit, non-empty key with no CR/LF as the final argument. The built-in transport retries network failures and HTTP 502/503/504 up to three times (0.5s, 1s, 2s backoff), preserving the exact encoded body and idempotency key. Reads use the same policy. Retries share the request timeout and respect cancellation; Retry-After up to 60s is honored, and longer values are returned without retry. Other writes and terminal failed Jobs are never automatically resubmitted. If a submit still fails after an attempt with an unknown outcome (network error, cut-off response or 502/503/504), the error contains `*SubmissionUncertainError` (find it with `errors.As`) even when the last attempt was a 429, 402 or other rejection; it deliberately does not unwrap, so `errors.As(err, &apiErr)` does not match that rejection (read `Err` to inspect it). Check for it before mapping an `*APIError` to "not accepted": the earlier attempt may have created a billed Job, so resubmit the exact request with its `IdempotencyKey` instead of treating it as not accepted. Recovery across calls or process restarts requires a saved key and exact request. Server fallback within an accepted Job is independent of the client key.
 
-Build a `GenerationRequest` with `Model`, `Input` and explicit `Parameters`; use `QuoteImage` or `QuoteVideo`. Require `Supply.Available` and a priced `Primary`; its amount is an estimate, not a ceiling. Check expiry before approving new work.
+Build a `GenerationRequest` with `Model`, `Input` and explicit `Parameters`; use `QuoteImage` or `QuoteVideo`. Require `Supply.Available`. `ExpectedAmount` is the number to show and budget with: what the Job will probably cost on the current first channel, including known input charges. It is absent when there is no reliable estimate; `Primary` (a catalog reference price or an output-only estimate), `Official` and `PriceDifferencePercent` are for price display and comparison. No quote amount is a ceiling. Check expiry before approving new work.
 
-After your application's budget approval, persist a `SubmitRequest` containing the exact generation request and `MaxCost`, plus a stable idempotency key. Include routing, references and any `WebhookURL`. Only then call `SubmitImage(ctx, savedRequest, savedKey)` or `SubmitVideo`. A quote does not authorize or trigger generation. Do not generate a new key on retry; an unknown transport outcome must recover with the original request and key. Never silently replace that request with a new quote or budget.
+After your application approves the spend, persist the exact `SubmitRequest` and a stable idempotency key. Include routing, references and any `WebhookURL`. `MaxCost` is optional and best left out by default: it guards against runaway charges and is not a price lock (see the warning below). Only then call `SubmitImage(ctx, savedRequest, savedKey)` or `SubmitVideo`. A quote does not authorize or trigger generation. Do not generate a new key on retry; an unknown transport outcome must recover with the original request and key. Never silently replace that request with a new quote or budget.
+
+When a submit fails, `SubmissionNotAccepted(err)` reports whether the error proves that no Job was created and the key is still unused: a request the SDK refused before sending, or a 4xx rejection carrying a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT`. Only then is it safe to release your own reservation or refund your user. For every other error (`*SubmissionUncertainError`, network errors, 5xx) a Job may exist: resubmit the same request with the same key. The answer covers that call only: if an earlier call with the same key ended with an unknown outcome, that call may have created a Job, and a later rejection does not rule it out.
 
 For music and sound effects, use `QuoteAudio` and `SubmitAudio` (the `/v1/audio` endpoints) with the same lifecycle; `QuoteMusic` / `SubmitMusic` are their original names, call the permanent legacy `/v1/music` paths and behave identically. You can also use a `generate_music` / `generate_sound_effect` item in `QuoteBatch`. For text input, set `Input.Prompt` and, where the model takes custom lyrics, `Input.Lyrics`. Suno models also take a cover (`Input.Type` `"reference"`): exactly one `reference_audio` source song in `Input.References` (URL or File ID, up to 8 minutes) and an `Input.Prompt` describing the new style, with the same lyrics rule and the same price as basic generation; `ValidateGenerationWithCatalog` rejects it for other audio models. In both, `Parameters` are optional and each model accepts only what its contract declares (`n`, `duration`, `instrumental`, `lyrics_optimizer`). Vocal music needs a lyrics source the model supports: `Lyrics`, `lyrics_optimizer: true` (writes lyrics from the prompt; some models add a charge shown in the quote) or `instrumental: true`; these exclude each other. ElevenLabs music takes no lyrics and is priced by `duration` (30–300 s in fixed steps, default 60); ElevenLabs sound effects (`elevenlabs/sound-effects-v2`) take a description, no lyrics and `duration` 1–22 s (default 5), and their quote reports operation `generate_sound_effect`. Suno (`suno/suno-v6`, unofficial access; Suno has no official API) returns two tracks per request (`n` is always 2). The SDK checks shared conflicts before sending; `ValidateGenerationWithCatalog` also checks `n`, `duration` and the lyrics source against the model contract, and the Gateway enforces per-model text limits. Each audio file reports its measured length as `ResultFile.DurationMS`. A music quote echo has no `resolution` or `aspect_ratio`.
 
@@ -110,7 +80,7 @@ Text-to-speech models (`minimax/speech-2.8-hd`, up to 10000 characters; `elevenl
 request := yir.GenerationRequest{Model: "minimax/music-2.6", Input: yir.GenerationInput{
 	Type: "text", Prompt: "A warm acoustic folk ballad", Lyrics: "[Verse]\nWalking down a dusty road"}}
 quote, err := client.QuoteAudio(ctx, request)
-job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request, MaxCost: &maxCost}, savedKey)
+job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request}, savedKey)
 ```
 
 For 3D, use `Quote3D` and `Submit3D` (the `/v1/3d` endpoints) with the same lifecycle, or a `generate_3d` item in `QuoteBatch`. `Input.Type` is `text` (with `Prompt`), `image` (exactly one `reference_image`, empty `Prompt`) or `multiview` (one `front_view` plus at least one of `left_view`, `back_view` and `right_view`, each at most once, empty `Prompt`; only models whose contract lists the multiview input mode). `Parameters` are optional: `texture` (`none`, `standard`, `hd`), `pbr` (needs a texture; `texture: "none"` with `pbr: true` is rejected), `face_limit`, `topology` (`triangle`, `quad`) and `n` (always 1); each model accepts only the values its contract declares, and omitted ones take the model default. `ValidateGenerationWithCatalog("generate_3d", request, catalog)` checks the input mode, references and values against the model contract. The Job delivers one glb file (`model/gltf-binary`) with its measured triangle count in `ResultFile.Faces`; an over-delivered result (textures or PBR maps you did not ask for) is still delivered with a parameter notice. Demo mode has no 3D sample: `Submit3D` returns `ErrDemoOperationUnsupported` without sending.
@@ -120,7 +90,7 @@ model := yir.GenerationRequest{Model: "tripo/tripo-p2", Input: yir.GenerationInp
 	Type: "image", References: []yir.Reference{{Role: "reference_image", URL: "https://example.com/chair.png"}}},
 	Parameters: map[string]any{"texture": "standard", "pbr": false}}
 quote, err := client.Quote3D(ctx, model)
-job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model, MaxCost: &maxCost}, savedKey)
+job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model}, savedKey)
 ```
 
 See [the compile-checked example](client_example_test.go) and its [integration guide](examples/README.md). The example leaves customer authorization and durable storage to the application.
@@ -135,7 +105,9 @@ New requests use actual channel bills by default; no billing mode selection is n
 
 Persist the returned job ID. `GetJob` queries full job details; `GetJobStatus` queries lightweight `JobStatusResponse` summaries. `WaitJob` long-polls status summaries by default: `GetJobStatusWithWait` lets the Gateway hold a query until the status changes (at most 30 seconds), and `WaitOptions.StatusWait` defaults to `DefaultStatusWait` (20s, kept inside the HTTP client timeout and the context deadline; negative disables), so a terminal Job is seen about a second after Yir records it, without a Webhook. When a Gateway answers without holding, it falls back to the `PollDelay` backoff (5s for the first 30 seconds, 10s until about 90 seconds, then 20s); set `WaitOptions.PollInterval` for a fixed interval. A `429 YIR_RATE_LIMITED` status query (per-API-key requests per minute) is waited out per `Retry-After` (`APIError.RetryAfter`, default 1s, capped at 1 minute), up to 5 times in a row. It reads the full `Job` detail only once at terminal states and rejecting terminal status mismatches with `ErrJobStateInconsistent`. Cancel or time out its context to stop local waiting, which returns a zero-value `Job{}` and does not cancel the remote job or imply a refund. Resume with the saved ID. `JobError` contains the failed/cancelled terminal job; `APIError` contains HTTP status, code, message, retryable and action. Use stable codes for application logic.
 
-`CancelJob` explicitly requests cancellation. Inspect cancellation status and terminal billing instead of assuming immediate success or zero charge. Apply `Billing.TotalChargedByYir` once per job after `Billing.Status` becomes `settled`, including error paths. A terminal result can still have `pending` billing; poll `GetJob` or process the independent `job.billing_settled` webhook. Deduplicate fulfillment and billing settlement separately by Job ID; `ComputeCharges`, `GatewayFee` and `OfficialComparison` explain that total. Compare `APIError.Code` with the `ErrCode*` constants rather than string literals. `APIError.RequestID` carries the `request_id` of a failed HTTP request; include it when contacting Yir support.
+`PollJob(ctx, id, wait)` is the single step for applications that schedule their own polling (a durable workflow or job runner): one status query and, once it is terminal, the full `Job` with the same consistency check. It never retries or sleeps, and returns a failed or cancelled Job without an error; a Job still in progress carries only `ID`, `Status`, `Error` and `Cancellation`.
+
+`CancelJob` explicitly requests cancellation and returns the Job's latest state; for a Job that already succeeded or failed it returns that finished Job instead of the Gateway's 409 `YIR_JOB_NOT_CANCELLABLE`. Inspect cancellation status and terminal billing instead of assuming immediate success or zero charge. `Billing.TotalChargedMicros()` returns the total as integer millionths of a dollar. Apply `Billing.TotalChargedByYir` once per job after `Billing.Status` becomes `settled`, including error paths. A terminal result can still have `pending` billing; poll `GetJob` or process the independent `job.billing_settled` webhook. Deduplicate fulfillment and billing settlement separately by Job ID; `ComputeCharges`, `GatewayFee` and `OfficialComparison` explain that total. Compare `APIError.Code` with the `ErrCode*` constants rather than string literals. `APIError.RequestID` carries the `request_id` of a failed HTTP request; include it when contacting Yir support.
 
 `Job`, `JobStatusResponse`, `Quote`, `File` and `ModelDetail` keep the exact JSON they were decoded from: `RawJSON()` returns it, so fields newer than the SDK (including nested ones such as new billing details) can be read with `json.Unmarshal` before a release models them. Values built in code, and values passed through `json.Marshal`, return `nil` or the re-encoded form.
 

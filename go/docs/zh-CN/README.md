@@ -1,6 +1,6 @@
 # Yir Go SDK
 
-> 内测阶段（0.x）。不兼容变更只随 minor 版本发布，迁移说明写在 README 与[变更记录](CHANGELOG.md)中。比 SDK 新的字段和取值按数据读取，新增模型与选项无需升级 SDK。
+> 内测阶段（0.x）。不兼容变更只随 minor 版本发布，迁移说明写在[变更记录](CHANGELOG.md)中。比 SDK 新的字段和取值按数据读取，新增模型与选项无需升级 SDK。
 
 [English](../../README.md) | 简体中文 · [仓库总览](https://github.com/yir-ai/sdk/blob/main/spec/docs/zh-CN/README.md) · [示例](examples.md)
 
@@ -34,73 +34,43 @@ _ = client
 
 密钥保留在服务端。默认地址是 `https://gateway.yir.ai`，按需配置 `ClientOptions.BaseURL` 和 `ClientOptions.HTTPClient`。默认 HTTP 超时为 30 秒，拒绝重定向。如果你发布的应用由他人用自己或其用户的 Key 部署，把 `ClientOptions.ReferralCode` 设为你的 Yir 推广码；它作为 `Yir-Referral` 发送，Yir 为该码开通合作归因后，这些 Job 计入你的邀请返利，否则该请求头被忽略。
 
-## 升级到 0.13.0
+## 快速开始
 
-0.13.0 是 minor 版本，与 0.12.0 兼容。所依赖的网关能力均已上线。
+提交、等待、读取结果，完整流程就是这些。这段代码会从余额扣费；[Demo 模式](#demo-模式)可以免费跑通同样的流程。
 
-新增：
+```go
+request := yir.GenerationRequest{
+	Model:      "openai/gpt-image-2",
+	Input:      yir.GenerationInput{Type: "text", Prompt: "A quiet observatory"},
+	Parameters: map[string]any{"resolution": "1K", "aspect_ratio": "1:1", "n": 1},
+}
+// 幂等键由你提供并保持稳定：同一请求加同一个键不会创建第二个 Job。
+job, err := client.SubmitImage(ctx, yir.SubmitRequest{GenerationRequest: request}, "task-123")
+if err != nil {
+	return err // yir.SubmissionNotAccepted(err) 可判断是否确定没有创建 Job
+}
+job, err = client.WaitJob(ctx, job.ID, yir.WaitOptions{})
+if err != nil {
+	return err // *yir.JobError 带有失败或已取消的 Job
+}
+fmt.Println(job.Result.Files[0].URL, job.Billing.TotalChargedByYir)
+```
 
-- Demo 模式：`ClientOptions.Demo`（`DemoOptions`、`DemoScenario*`）、`IsDemoJobID` 与 `DemoAssetBaseURL`。所有 `Client` 都在本地解答 `demo_` Job ID。见 [Demo 模式](#demo-模式)。
-- `/v1/audio` 接口的 `QuoteAudio` / `SubmitAudio`（音乐、音效与语音合成；`QuoteMusic` / `SubmitMusic` 保留为别名）、`voice` 参数，以及 `generate_sound_effect` / `generate_speech` 报价与 `QuoteBatch` 项。
-- 有序中间帧的参考角色 `keyframe`；模型合同与 `ValidateGenerationWithCatalog` 支持混合主体、主体声音和视频主体。
-- 参数说明的 disposition 新增 `exceeded`，表示结果超出请求。
+结果链接短期有效，过期前把文件存到自己的存储。想在花钱前看价格，调用 `QuoteImage` 读 `ExpectedAmount`。实际花费是 `Billing.Status` 变为 `settled` 后的 `Billing.TotalChargedByYir`。本页其余部分讲恢复、预算、文件和 Webhook。
 
-## 升级到 0.12.0
+## 升级
 
-0.12.0 是包含不兼容行为变化的 minor 版本，导出 API 只有新增。0.11.2 未单独发布，其[变化](#0112-变化)随本版本一并发布。所依赖的 Gateway 功能均已上线。
-
-不兼容变化：
-
-- 报价与提交不再按 `ClientOptions.ModelContracts` 校验模型参数，只校验协议骨架，交给 Gateway 校验。参数非法时返回带 `ErrCodeInvalidRequest` 的 `*APIError`（字段见 `Details`），不再是本地的 `*ParameterError`。需要本地严格校验时调用 `ValidateGenerationWithCatalog`。
-- 提交失败返回 `*SubmissionError`，携带 `IdempotencyKey` 并包装传输或 API 错误。用 `errors.As` 取得 `*APIError`；直接对返回错误做类型断言将不再匹配。
-- `HTTPClient.Timeout`（默认 30 秒）限制整次调用，包括下文的传输重试。
-- 旧的 `BillingMode: "actual"` 请求不再要求 `Routing.Only`。
-
-新增：
-
-- 读取请求和带幂等键的生成提交遇到网络错误或 HTTP 502/503/504 时，最多重试三次，保持原请求体与幂等键；遵守不超过一分钟的 `Retry-After`。`WaitJob` 在 Gateway 短暂不可用时继续等待已受理的 Job，并等待 `429 YIR_RATE_LIMITED`（`APIError.RetryAfter`）过去。
-- `QuoteAudio`、`SubmitAudio`（旧名 `QuoteMusic` / `SubmitMusic`）、`GenerationInput.Lyrics` 与 `ResultFile.DurationMS`，见[报价与提交](#报价与提交)。
-- `ClientOptions.ReferralCode`，作为 `Yir-Referral` 发送。
-- `client.GetBalance`，以及用于 Account API 的 `NewAccountClient`，含路由配置的 `ExcludedModelProviders`。
-- `Routing.Fidelity`（`RoutingFidelity*`、`ErrCodeFidelityExcluded`）、`Routing.Accelerate`，以及每个结果文件的 `ResultFile.Fidelity`。
-- `APIError.ProviderError`、`ErrCodeInputRejected` 与 `JobBilling.Status`（`pending` 或 `settled`）。
-- 模型合同新增 `StringValues`（如 Seedance 2.5 时长 `"auto"`，报价与 Job 参数回显中保留）和 `PromptOptional`；没有在售渠道的市场规格予以保留。
-
-## 0.11.2 变化
-
-0.11.2 为兼容版本：
-
-- 新增可选的 `Quote.ExpectedAmount`（`*string`）：首选渠道的准入估价，Yir 核对余额、API Key 月度上限和 `max_cost` 都用它。与只估输出的 `estimate` 类价格不同，它包含参考图等已知输入费用，按用量计费的渠道还参考近期实收。没有匹配渠道或缺少可靠估价时不返回。`Validate` 要求它是十进制数，且没有供应时不得出现。作为成本参考时优先用它而不是 `Primary.Amount`；它不是上限。
-
-## 0.11.1 变化
-
-0.11.1 为兼容版本，跟进网关的参数回显与目录缓存变化：
-
-- `Quote.Parameters` 只回显模型合同声明的参数，按合同写法，省略的参数补默认值：图片报价和没有该参数的视频模型不再出现 `duration`、`generate_audio`。模型专属参数按合同名回显。
-- `Job.Parameters`（`map[string]any`）自创建起携带同样的回显，应用可据此核对交付结果与扣费参数。
-- 模型合同参数的 `Required` 现在表示“没有默认值、请求必须传”；带 `Default` 的参数一律 `Required: false`，可以省略。`ValidateGenerationWithCatalog` 本来就先补默认值再检查 `Required`，本地校验行为不变。
-- `GET /v1/models` 与 `view=contract` 响应带 `ETag`（即加引号的目录 `version`）和 `Cache-Control: private, max-age=300`，并对 `If-None-Match` 回 304。`GetModelContracts` 暂不发条件请求，自定义 `HTTPClient` 可以。
-
-## 升级到 0.11.0
-
-0.11.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备。从 0.9 升级请先看 [0.10.0 说明](CHANGELOG.md#0100-变化)；0.10.0 未单独发布，随本版本一起发布。
-
-- 移除内置模型目录：包级 `ListModelContracts`、`GetModelContract`、`GetModelOperationContract`、`ValidateGeneration` 与 `ValidateModelParameters` 已删除。用 `client.GetModelContracts` 获取目录，再传给 `ValidateGenerationWithCatalog` 或 `ClientOptions.ModelContracts`。新增模型和参数调整都不需要发布 SDK。
-- Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受；按字符串保存，不要解析。
-- 未配置目录时，报价可能把你传入的别名回显为 `creator/model` 形式的规范 ID，其他不同的模型会校验失败；配置目录时按解析后的 ID 比对。
-- `APIError.Details`（`[]ErrorDetail`）定位 `YIR_INVALID_REQUEST` 的无效字段：`Field`、稳定的 `Reason`（如 `unsupported`、`required`）以及合同允许值 `Allowed`。
-- Veo 3.0（`google/veo-3.0-generate-001`）与 Gemini Omni 预览版（`google/gemini-omni-video`）已下架：API 目录和早期版本内置的审阅快照中都已移除。请求它们会返回 `YIR_INVALID_REQUEST`，`details[0].reason` 为 `retired`，`allowed` 给出替代模型。
-- 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
-
-更早的版本说明见[变更记录](CHANGELOG.md)。
+各版本的发布说明与迁移步骤见[变更记录](CHANGELOG.md)。
 
 ## 报价与提交
 
 可直接调用 `SubmitImage(ctx, request)` 或 `SubmitVideo(ctx, request)`，SDK 每次调用生成随机幂等键。最后一个参数可传入一个非空且不含换行的显式键。内置传输对网络故障与 HTTP 502/503/504 最多重试 3 次，复用同一幂等键与请求体。若提交在某次结果不明的尝试（网络错误、响应中途断开或 502/503/504）之后仍失败，返回的错误含 `*SubmissionUncertainError`（用 `errors.As` 取得），即使最后一次是 429、402 等拒绝；它有意不向下 Unwrap，`errors.As(err, &apiErr)` 匹配不到那次拒绝（需要时读 `Err` 字段）。把 `*APIError` 判为“未受理”之前先检查它：先前的尝试可能已创建并计费 Job，应以其 `IdempotencyKey` 重新提交完整原请求，不能当作未受理。再次调用或跨进程恢复须复用已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖客户端传键。
 
-构造含 `Model`、`Input` 和明确 `Parameters` 的 `GenerationRequest`，使用 `QuoteImage` 或 `QuoteVideo`。要求 `Supply.Available` 且 `Primary` 有价格；该金额是估价，不是上限。审批新工作前检查过期时间。
+构造含 `Model`、`Input` 和明确 `Parameters` 的 `GenerationRequest`，使用 `QuoteImage` 或 `QuoteVideo`。要求 `Supply.Available`。展示和做预算时看 `ExpectedAmount`：按当前首选渠道估算的这个 Job 大概要花多少，已含已知的输入费用。没有可靠估价时它不存在；`Primary`（目录参考价或只含输出的估价）、`Official` 和 `PriceDifferencePercent` 用于价格展示与对比。报价里的任何金额都不是上限。审批新工作前检查过期时间。
 
-应用审批预算后，持久化包含完整生成请求和 `MaxCost` 的 `SubmitRequest`，以及稳定幂等键；同时保存路由、引用和 `WebhookURL`。之后才调用 `SubmitImage(ctx, savedRequest, savedKey)` 或 `SubmitVideo`。报价不授权或触发生成。重试不得生成新键；传输结果未知时使用原请求与键恢复，不得悄悄用新报价或预算替换请求。
+应用审批花费后，持久化完整的 `SubmitRequest` 和稳定幂等键；同时保存路由、引用和 `WebhookURL`。`MaxCost` 可选，默认建议不传：它用来防止费用失控，不是锁价（见下方警告）。之后才调用 `SubmitImage(ctx, savedRequest, savedKey)` 或 `SubmitVideo`。报价不授权或触发生成。重试不得生成新键；传输结果未知时使用原请求与键恢复，不得悄悄用新报价或预算替换请求。
+
+提交失败时，`SubmissionNotAccepted(err)` 判断这个错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。只有这时才能放心释放自己的预留或给用户退款。其余错误（`*SubmissionUncertainError`、网络错误、5xx）都可能已经创建了 Job：用同一请求和同一个键重新提交。这个判断只针对当次调用：如果同一个键此前有过结果不明的调用，那次调用可能已经创建了 Job，之后的拒绝不能排除这一点。
 
 音乐与音效使用 `QuoteAudio` 和 `SubmitAudio`（`/v1/audio` 端点），流程相同；`QuoteMusic` / `SubmitMusic` 是它们的旧名，调用永久保留的旧路径 `/v1/music`，行为相同；也可在 `QuoteBatch` 中传 `generate_music` / `generate_sound_effect` 项。文本输入设置 `Input.Prompt`，模型支持自定义歌词时可设置 `Input.Lyrics`。Suno 模型还支持上传原曲翻唱（`Input.Type` 为 `"reference"`）：`Input.References` 中恰好一段 `reference_audio` 原曲（URL 或 File ID，不超过 8 分钟），`Input.Prompt` 写新风格，歌词规则与文本输入相同，价格与基础生成相同；`ValidateGenerationWithCatalog` 对其他音频模型拒绝该输入。`Parameters` 可省略，每个模型只接受其合同声明的参数（`n`、`duration`、`instrumental`、`lyrics_optimizer`）。带人声的音乐须使用模型支持的一种歌词来源：`Lyrics`、`lyrics_optimizer: true`（按提示词自动写词，部分模型另收写词费用，以报价为准）或 `instrumental: true`，三者互斥。ElevenLabs 音乐不接受歌词，按 `duration` 计价（30–300 秒固定档位，默认 60）；ElevenLabs 音效（`elevenlabs/sound-effects-v2`）只传描述，不接受歌词，`duration` 为 1–22 秒（默认 5），报价的 operation 为 `generate_sound_effect`。Suno（`suno/suno-v6`，非官方接入，Suno 没有官方 API）每次请求返回两首（`n` 固定为 2）。SDK 在发送前检查通用冲突；`ValidateGenerationWithCatalog` 还按模型合同检查 `n`、`duration` 与歌词来源，各模型的文本长度上限由 Gateway 校验。每个音频文件的实测时长见 `ResultFile.DurationMS`。音乐报价的参数回显不含 `resolution` 与 `aspect_ratio`。
 
@@ -110,7 +80,7 @@ _ = client
 request := yir.GenerationRequest{Model: "minimax/music-2.6", Input: yir.GenerationInput{
 	Type: "text", Prompt: "A warm acoustic folk ballad", Lyrics: "[Verse]\nWalking down a dusty road"}}
 quote, err := client.QuoteAudio(ctx, request)
-job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request, MaxCost: &maxCost}, savedKey)
+job, err := client.SubmitAudio(ctx, yir.SubmitRequest{GenerationRequest: request}, savedKey)
 ```
 
 3D 使用 `Quote3D` 和 `Submit3D`（`/v1/3d` 端点），流程相同；也可在 `QuoteBatch` 中传 `generate_3d` 项。`Input.Type` 为 `text`（填 `Prompt`）、`image`（恰好一张 `reference_image`，`Prompt` 留空）或 `multiview`（一张 `front_view` 加至少一张 `left_view`、`back_view` 或 `right_view`，每个角色至多一张，`Prompt` 留空；只限合同列出 multiview 输入方式的模型）。`Parameters` 可省略：`texture`（`none`、`standard`、`hd`）、`pbr`（需要带贴图，`texture: "none"` 同时 `pbr: true` 会被拒绝）、`face_limit`、`topology`（`triangle`、`quad`）与 `n`（固定为 1）；每个模型只接受其合同声明的取值，省略即模型默认。`ValidateGenerationWithCatalog("generate_3d", request, catalog)` 按模型合同检查输入方式、参考图与取值。Job 交付一个 glb 文件（`model/gltf-binary`），实测三角面数见 `ResultFile.Faces`；超规格结果（未要求的贴图或 PBR）照常交付，并给出参数通知。Demo 模式没有 3D 样例：`Submit3D` 不发送请求，直接返回 `ErrDemoOperationUnsupported`。
@@ -120,7 +90,7 @@ model := yir.GenerationRequest{Model: "tripo/tripo-p2", Input: yir.GenerationInp
 	Type: "image", References: []yir.Reference{{Role: "reference_image", URL: "https://example.com/chair.png"}}},
 	Parameters: map[string]any{"texture": "standard", "pbr": false}}
 quote, err := client.Quote3D(ctx, model)
-job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model, MaxCost: &maxCost}, savedKey)
+job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model}, savedKey)
 ```
 
 见[编译检查示例](../../client_example_test.go)和[集成指南](examples.md)。示例将客户授权及持久化留给应用实现。
@@ -133,7 +103,9 @@ job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model, Max
 
 保存返回的任务 ID。`GetJob` 查询完整任务详情，`GetJobStatus` 查询轻量状态摘要 `JobStatusResponse`。`WaitJob` 默认长轮询状态摘要：`GetJobStatusWithWait` 让 Gateway 挂起查询直到状态变化（最长 30 秒），`WaitOptions.StatusWait` 默认 `DefaultStatusWait`（20 秒，自动收进 HTTP 客户端超时与 context 截止时间之内；负值关闭），无需 Webhook，Yir 记录终态后约 1 秒即可拿到。Gateway 未挂起直接返回时，回退到 `PollDelay` 退避（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒）；设置 `WaitOptions.PollInterval` 可改为固定间隔。状态查询遇到 `429 YIR_RATE_LIMITED`（按 API Key 的每分钟请求上限）时按 `Retry-After`（`APIError.RetryAfter`，缺省 1 秒，最长 1 分钟）等待后继续，连续最多 5 次。进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符返回 `ErrJobStateInconsistent`。取消或超时 context 只停止本地等待，返回零值 `Job{}`，不取消远端任务或表示退款；用保存的 ID 恢复。`JobError` 包含失败或取消的终态任务；`APIError` 包含 HTTP status、code、message、retryable 和 action。业务判断使用稳定错误码。
 
-`CancelJob` 显式申请取消，应检查取消状态和终态账单，不假定立即成功或零费用。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径；`ComputeCharges`、`GatewayFee` 和 `OfficialComparison` 说明该总额的构成。`APIError.Code` 应与 `ErrCode*` 常量比较，而非字符串字面量。`APIError.RequestID` 是失败 HTTP 请求的 `request_id`，联系 Yir 支持时请一并提供。
+`PollJob(ctx, id, wait)` 是给自行调度轮询的应用（持久化工作流或任务执行器）用的单步查询：查一次状态，终态时再读完整 `Job`，一致性检查相同。它不重试、不等待，失败或已取消的 Job 也不作为错误返回；仍在进行的 Job 只带 `ID`、`Status`、`Error` 和 `Cancellation`。
+
+`CancelJob` 显式申请取消并返回 Job 的最新状态；对已经成功或失败的 Job，它返回这个已结束的 Job，而不是 Gateway 的 409 `YIR_JOB_NOT_CANCELLABLE`。应检查取消状态和终态账单，不假定立即成功或零费用。`Billing.TotalChargedMicros()` 以整数（百万分之一美元）返回总额。每个任务的 `Billing.TotalChargedByYir` 只结算一次，包括错误路径；`ComputeCharges`、`GatewayFee` 和 `OfficialComparison` 说明该总额的构成。`APIError.Code` 应与 `ErrCode*` 常量比较，而非字符串字面量。`APIError.RequestID` 是失败 HTTP 请求的 `request_id`，联系 Yir 支持时请一并提供。
 
 `Job`、`JobStatusResponse`、`Quote`、`File` 和 `ModelDetail` 保留解码时的原始 JSON：`RawJSON()` 返回它，因此比 SDK 更新的字段（包括新的账单明细等嵌套字段）可以在 SDK 发版前用 `json.Unmarshal` 读取。代码中直接构造的值返回 `nil`；经过 `json.Marshal` 再解码的值返回重新编码后的内容。
 

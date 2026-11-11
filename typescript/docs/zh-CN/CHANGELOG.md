@@ -2,6 +2,18 @@
 
 0.10.0 之前的版本说明，从 README 移来。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
 
+## 未发布
+
+兼容新增：
+
+- `isSubmissionNotAccepted(error)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。释放自己的预留或给用户退款前先用它判断。
+- `pollJob(client, id, options)` 供自行调度轮询的应用查询一次，返回 `{ done: false, status }` 或 `{ done: true, job }`。
+- `usdMicros(amount)` 把 API 金额转成 `bigint`（百万分之一美元）。
+
+行为变化：
+
+- 对已经成功或失败的 Job 调用 `cancelJob`，现在返回这个已结束的 Job，不再以 `409 YIR_JOB_NOT_CANCELLABLE` 的 `YirAPIError` 拒绝。原先遇到 409 再读一次 Job 的分支可以删掉；把“调用成功”当作“已取消”的代码必须读 `status`（取消只是已申请时本来也需要这样做）。
+
 ## 0.9.0 变化
 
 0.9.0 未单独发布，内容随 0.10.0 一起发布。

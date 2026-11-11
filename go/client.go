@@ -225,6 +225,37 @@ func (e *SubmissionUncertainError) Error() string {
 	return "yir: submission outcome uncertain: " + e.Err.Error()
 }
 
+// SubmissionNotAccepted reports whether a Submit error proves that this call
+// created no Job and left the idempotency key unused, so the caller can release
+// its own reservation (refund, slot) without reading the Job. It is true for a
+// request the SDK refused before sending (*ParameterError) and for a 4xx
+// rejection the Gateway answered with a Yir error code. It is false for
+// everything else: *SubmissionUncertainError, network errors, 5xx and an
+// unreadable response (a Job may exist; resubmit with the same key), 409
+// YIR_IDEMPOTENCY_CONFLICT (the key already belongs to another request's Job)
+// and responses that carry no Yir error code.
+//
+// It describes this call only. If an earlier call with the same key ended with
+// an unknown outcome, that call may have created a Job even though this one was
+// rejected before admission (for example by a rate limit).
+func SubmissionNotAccepted(err error) bool {
+	var uncertain *SubmissionUncertainError
+	if err == nil || errors.As(err, &uncertain) {
+		return false
+	}
+	var parameterErr *ParameterError
+	if errors.As(err, &parameterErr) {
+		return true
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || !strings.HasPrefix(apiErr.Code, "YIR_") {
+		return false
+	}
+	// 408 may have reached admission; a Job-not-found answer can only follow a created Job.
+	return apiErr.Status >= 400 && apiErr.Status < 500 && apiErr.Status != http.StatusRequestTimeout &&
+		apiErr.Code != ErrCodeIdempotencyConflict && apiErr.Code != ErrCodeJobNotFound
+}
+
 func (c *Client) QuoteImage(ctx context.Context, request GenerationRequest) (Quote, error) {
 	return c.quote(ctx, "images", "generate_image", request)
 }
@@ -495,15 +526,26 @@ func (c *Client) GetJobStatusWithWait(ctx context.Context, id string, wait time.
 	return status, err
 }
 
+// CancelJob requests cancellation and returns the Job's latest state. A Job
+// that already succeeded or failed cannot be cancelled: the Gateway answers 409
+// YIR_JOB_NOT_CANCELLABLE and CancelJob returns that finished Job instead of
+// the error. A nil error therefore does not mean the Job was cancelled; read
+// Status and Cancellation, and settle a succeeded or failed Job as usual.
 func (c *Client) CancelJob(ctx context.Context, id string) (Job, error) {
 	var job Job
 	if !validJobID(id) {
 		return job, errors.New("job_id_invalid")
 	}
+	var err error
 	if IsDemoJobID(id) {
-		return cancelDemoJob(id)
+		job, err = cancelDemoJob(id)
+	} else {
+		err = c.do(ctx, http.MethodPost, "/v1/jobs/"+id+"/cancel", "", nil, &job)
 	}
-	err := c.do(ctx, http.MethodPost, "/v1/jobs/"+id+"/cancel", "", nil, &job)
+	var apiErr *APIError
+	if errors.As(err, &apiErr) && apiErr.Status == http.StatusConflict && apiErr.Code == ErrCodeJobNotCancellable {
+		return c.GetJob(ctx, id)
+	}
 	if err == nil && (job.ID != id || !validJobStatus(job.Status)) {
 		err = errors.New("response_invalid")
 	}

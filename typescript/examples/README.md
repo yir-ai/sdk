@@ -11,7 +11,7 @@ Build first with `pnpm build` from `typescript/`. These ESM files export helpers
 ## Integrate quickstart
 
 1. Create a server client as shown in the [guide](../README.md).
-2. Approve the customer's budget in your backend, then call `prepareImage(client, { model, prompt, parameters }, maxCost)`. It only quotes and returns `{ estimate, request }`, with your budget as `max_cost`.
+2. Approve the spend in your backend, then call `prepareImage(client, { model, prompt, parameters })`. It only quotes and returns `{ estimate, request }`; the estimate is the quote's `expected_amount`. Pass an approved `maxCost` as the third argument only when you want a per-Job cap: it becomes `max_cost`, a guard against runaway charges rather than a price lock.
 3. Show the estimate. In durable storage, save `{ request, idempotencyKey }` under your task/order ID. If approval or persistence fails, do not submit.
 4. Read that record and call `submitSavedImage(client, saved)`. Persist the returned job ID before waiting.
 5. After a timeout with no job ID, repeat step 4 with exactly the saved request and key. With a known ID, resume polling instead. Reconcile billing once and copy available files.

@@ -114,7 +114,7 @@ test("every client answers demo IDs locally, demo mode or not", async () => {
   assert.deepEqual(calls, ["/v1/jobs/job_1"]);
 });
 
-test("cancelJob cancels an unfinished demo Job and reports 409 once it ended", async () => {
+test("cancelJob cancels an unfinished demo Job and returns an ended one as it ended", async () => {
   const queued = fixture.cases.find(item => item.job.status === "queued");
   const done = fixture.cases.find(item => item.job.status === "succeeded");
   const client = createYirClient(async request => { throw new Error(`unexpected ${request.path}`); });
@@ -126,9 +126,7 @@ test("cancelJob cancels an unfinished demo Job and reports 409 once it ended", a
     assert.equal(job.result, undefined);
   });
   await at(done.now_ms, async () => {
-    const error = await client.cancelJob(done.id).catch(error => error);
-    assert.equal(error.status, 409);
-    assert.equal(error.code, "YIR_JOB_NOT_CANCELLABLE");
+    assert.equal((await client.cancelJob(done.id)).status, "succeeded");
   });
 });
 

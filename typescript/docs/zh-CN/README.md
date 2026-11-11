@@ -59,7 +59,7 @@ const client = createNodeYirClient();
 
 可直接调用 `client.submitImage(request)` 或 `client.submitVideo(request)`，SDK 每次调用自动生成随机幂等键。显式键去除首尾空白，必须非空且不含换行。内置 HTTP 传输对网络故障与 HTTP 502/503/504 最多重试 3 次（退避 0.5、1、2 秒），始终复用同一幂等键与编码后的请求体；读取请求采用相同策略。重试共享请求超时并响应取消，遵守不超过 60 秒的 Retry-After，更长则直接返回错误。其他写请求及终态失败任务不会自动重新提交。若提交在某次结果不明的尝试（网络错误、响应中途断开或 502/503/504）之后仍失败，会抛出 `YirSubmissionUncertainError`（最后一次的错误在 `cause`），即使最后一次是 429、402 等拒绝：先前的尝试可能已创建并计费 Job，应以 `error.idempotencyKey` 重新提交完整原请求，不能当作未受理。再次调用或跨进程恢复时，通过第二个参数传入已保存的键并复用完整请求。服务端同一 Job 内的故障转移不依赖客户端传键。
 
-[quickstart.mjs](../../examples/quickstart.mjs) 的 `prepareImage(client, input, maxCost)` 构造请求并报价。它要求供给可用且主价格有估价，返回该估价和带上已批准 `max_cost` 的请求。
+[quickstart.mjs](../../examples/quickstart.mjs) 的 `prepareImage(client, input)` 构造请求并报价。它要求供给可用且主价格有估价，返回报价的 `expected_amount`（这个 Job 大概要花多少，已含已知的输入费用）和待保存的请求。`max_cost` 可选，默认建议不传；只有需要防止费用失控时，才把已批准的上限作为第三个参数传入。
 
 计费：不冻结余额。上游实际计费的每个 Attempt 都按上游权威金额乘托管折扣收取，包括失败的 Attempt 和其后发生回退的 Attempt；上游未计费的 Attempt，以及 Yir 自身的交付失败和结果超时，不收费。`max_cost` 封顶整个 Job 的总费用，并跳过估价超过它的路线。报价的主价格是估价，不是上限。报价后价格可能变化：较便宜的渠道可能下线或冷却，路由默认值可能改变可用渠道，目录价格也可能调整。把 `max_cost` 当作在报价之上留有余量的失控兜底，而不是锁价；上限设得等于报价时，可能开始以 `YIR_BUDGET_EXCEEDED` 失败（提交时返回 422 并给出当前最低估价，或出现在 Job 上）。收到该错误时先重新报价，由应用决定是否在新请求中调高上限，不要自动调高。
 
@@ -96,6 +96,10 @@ const job = await client.submit3D({ ...model, max_cost: "1.50" }, savedKey);
 
 
 ## 任务和恢复
+
+`isSubmissionNotAccepted(error)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求（`YirSDKValidationError`），或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。只有这时才能放心释放自己的预留或给用户退款。其余错误（`YirSubmissionUncertainError`、网络错误、5xx）都可能已经创建了 Job：用同一请求和同一个键重新提交。这个判断只针对当次调用：如果同一个键此前有过结果不明的调用，那次调用可能已经创建了 Job，之后的拒绝不能排除这一点。
+
+`pollJob(client, id, { waitSeconds })` 是给自行调度轮询的应用（持久化工作流或任务执行器）用的单步查询：查一次状态，终态时再读完整 Job，一致性检查与 `waitForJob` 相同。返回 `{ done: false, status }` 或 `{ done: true, job }`，不重试、不等待，失败或已取消的 Job 也不抛错。对已经成功或失败的 Job 调用 `cancelJob`，返回这个已结束的 Job，不再以 409 `YIR_JOB_NOT_CANCELLABLE` 拒绝，所以要读 `status`，不要假定已取消。`usdMicros(job.billing.total_charged_by_yir)` 把金额转成 `bigint`（百万分之一美元），方便用整数记账。
 
 保存返回的 `job.id`。`getJob(id)` 查询完整任务详情，`getJobStatus(id)` 查询轻量状态摘要 `JobStatusResponse`。使用 `waitForJob(id, options)`（Node 客户端）或 `waitForJob(client, id, options)`（自定义传输客户端）。状态查询默认长轮询：`getJobStatus(id, { waitSeconds })` 让 Gateway 挂起查询直到状态变化（最长 30 秒），`waitForJob` 使用 `statusWaitSeconds`（默认 20，自动收进超时之内；设为 0 关闭），无需 Webhook，Yir 记录终态后约 1 秒即可拿到。Gateway 未挂起直接返回时，回退到 `pollDelayMs` 退避（前 30 秒每 5 秒，约 90 秒内每 10 秒，之后每 20 秒；设置 `pollIntervalMs` 可改为固定间隔）。状态查询遇到 `429 YIR_RATE_LIMITED`（按 API Key 的每分钟请求上限）时按 `Retry-After`（`YirAPIError.retryAfterMs`，缺省 1 秒，最长 1 分钟）等待后继续，连续最多 5 次。默认 5 分钟超时，进入终态后只读取一次完整 `Job`，若终态摘要与详情状态不符抛出 `job_state_inconsistent` 错误。`YirTimeoutError` 保留任务 ID 与 `lastStatus`；超时和 abort 只停止本地等待，不取消任务或代表退款。用保存的 ID 恢复；提交未返回 ID 时，重交完全相同的请求与键。
 

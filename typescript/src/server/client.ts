@@ -1,5 +1,5 @@
 import { PACKAGE_VERSION } from "./package-version.js";
-import { validateGeneration } from "../shared/standard.js";
+import { validateGeneration, YirSDKValidationError } from "../shared/standard.js";
 import { modelContractPath, modelDetailPath, parseModelContractCatalog, parseModelContractDetail, parseModelDetail, type ModelContractCatalog, type ModelContractDetail, type ModelDetail } from "../shared/catalog.js";
 import { validateQuoteBatchResponse, validateQuoteResponse } from "../shared/quote.js";
 import { cancelDemoJob, createDemoJob, demoJobNextChangeMs, demoScenario, getDemoJob, getDemoJobStatus, isDemoJobID, validateDemoOptions, type YirDemoOptions } from "../shared/demo.js";
@@ -115,6 +115,12 @@ export type YirClient = YirFileClient & {
   submit3D(request: Standard3DGenerationRequest, idempotencyKey?: string, options?: YirRequestOptions): Promise<Job>;
   getJob(id: string, options?: YirRequestOptions): Promise<Job>;
   getJobStatus(id: string, options?: YirJobStatusOptions): Promise<JobStatusResponse>;
+  /**
+   * Requests cancellation and resolves with the Job's latest state. A Job that
+   * already succeeded or failed cannot be cancelled (409 `YIR_JOB_NOT_CANCELLABLE`);
+   * it is returned as it ended instead of rejecting. Resolving therefore does not
+   * mean the Job was cancelled: read `status` and `cancellation`.
+   */
   cancelJob(id: string, options?: YirRequestOptions): Promise<Job>;
 };
 
@@ -373,15 +379,15 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       const normalizedID = id.trim();
       if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
       if (isDemoJobID(normalizedID)) {
-        const job = cancelDemoJob(normalizedID);
-        return job ? Promise.resolve(job) : Promise.reject(new YirAPIError({
-          message: "The demo Job has already ended.", status: 409, code: "YIR_JOB_NOT_CANCELLABLE", retryable: false,
-        }));
+        return Promise.resolve(cancelDemoJob(normalizedID) ?? getDemoJob(normalizedID));
       }
-      return transport<Job>({
-        method: "POST",
-        path: `/v1/jobs/${normalizedID}/cancel`,
-        ...(options?.signal ? { signal: options.signal } : {}),
+      const signal = options?.signal ? { signal: options.signal } : {};
+      return transport<Job>({ method: "POST", path: `/v1/jobs/${normalizedID}/cancel`, ...signal }).catch(error => {
+        // A Job that already succeeded or failed cannot be cancelled; return it as it ended.
+        if (error instanceof YirAPIError && error.status === 409 && error.code === "YIR_JOB_NOT_CANCELLABLE") {
+          return transport<Job>({ method: "GET", path: `/v1/jobs/${normalizedID}`, ...signal });
+        }
+        throw error;
       }).then(job => {
         if (typeof job !== "object" || job === null || job.id !== normalizedID || !validJobStatus(job.status)) {
           throw new Error("response_invalid");
@@ -509,6 +515,40 @@ export class YirSubmissionUncertainError extends Error {
   }
 }
 
+/**
+ * Whether a submit error proves that this call created no Job and left the
+ * idempotency key unused, so you can release your own reservation (refund, slot)
+ * without reading the Job. True for a request the SDK refused before sending
+ * (`YirSDKValidationError`) and for a 4xx rejection the Gateway answered with a
+ * Yir error code. False for everything else: `YirSubmissionUncertainError`,
+ * network errors, 5xx and an unreadable response (a Job may exist; resubmit with
+ * the same key), 409 `YIR_IDEMPOTENCY_CONFLICT` (the key already belongs to
+ * another request's Job) and responses that carry no Yir error code.
+ *
+ * It describes this call only. If an earlier call with the same key ended with
+ * an unknown outcome, that call may have created a Job even though this one was
+ * rejected before admission (for example by a rate limit).
+ */
+export function isSubmissionNotAccepted(error: unknown): boolean {
+  if (error instanceof YirSDKValidationError) return true;
+  // 408 may have reached admission; a Job-not-found answer can only follow a created Job.
+  return error instanceof YirAPIError && error.code.startsWith("YIR_") &&
+    error.status >= 400 && error.status < 500 && error.status !== 408 &&
+    error.code !== "YIR_IDEMPOTENCY_CONFLICT" && error.code !== "YIR_JOB_NOT_FOUND";
+}
+
+/**
+ * Converts a decimal USD amount from the API, such as `total_charged_by_yir`
+ * "0.0325", to millionths of a dollar for ledgers that store integers. Throws
+ * `amount_invalid` for anything but a plain decimal with at most six fraction
+ * digits, rather than rounding.
+ */
+export function usdMicros(amount: string): bigint {
+  if (typeof amount !== "string" || !/^[0-9]{1,13}(\.[0-9]{1,6})?$/.test(amount)) throw new Error("amount_invalid");
+  const [whole, fraction = ""] = amount.split(".");
+  return BigInt(whole + fraction.padEnd(6, "0"));
+}
+
 export class YirJobError extends Error {
   readonly job: Job;
   readonly code: string;
@@ -572,6 +612,33 @@ export type WaitForJobOptions = {
    */
   readonly signal?: AbortSignal;
 };
+
+/** One `pollJob` result: the light status while the Job runs, the full Job once it ended. */
+export type PolledJob =
+  | { readonly done: false; readonly status: JobStatusResponse }
+  | { readonly done: true; readonly job: Job };
+
+/**
+ * Checks a Job once, for callers that schedule their own polling (a durable
+ * workflow or job runner) instead of awaiting `waitForJob`. Reads the light
+ * status and, only when that is terminal, the full Job. `waitSeconds` long-polls
+ * like `getJobStatus`. Never retries and never throws for a failed or cancelled Job.
+ */
+export async function pollJob(
+  client: Pick<YirClient, "getJob" | "getJobStatus">,
+  jobId: string,
+  options: YirJobStatusOptions = {},
+): Promise<PolledJob> {
+  const status = await client.getJobStatus(jobId, options);
+  if (!isTerminalJobStatus(status.status)) return { done: false, status };
+  const job = await client.getJob(jobId, options.signal ? { signal: options.signal } : {});
+  if (job.status !== status.status || !isTerminalJobStatus(job.status)) {
+    throw new Error(
+      `job_state_inconsistent: status summary reported '${status.status}' but job detail returned '${job.status}'`,
+    );
+  }
+  return { done: true, job };
+}
 
 export async function waitForJob(
   client: Pick<YirClient, "getJob" | "getJobStatus">,

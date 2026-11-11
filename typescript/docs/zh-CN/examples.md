@@ -11,7 +11,7 @@
 ## 集成快速开始
 
 1. 按[指南](README.md)创建服务端客户端。
-2. 后端审批客户预算后调用 `prepareImage(client, { model, prompt, parameters }, maxCost)`，仅报价，返回 `{ estimate, request }`，预算作为 `max_cost` 写入请求。
+2. 后端审批花费后调用 `prepareImage(client, { model, prompt, parameters })`，仅报价，返回 `{ estimate, request }`；估价取报价的 `expected_amount`。只有需要单个 Job 的费用上限时才把已批准的 `maxCost` 作为第三个参数传入：它会写成 `max_cost`，用来防止费用失控，不是锁价。
 3. 展示估价，在持久化存储中按任务或订单 ID 保存 `{ request, idempotencyKey }`。审批或保存失败时不得提交。
 4. 读取该记录并调用 `submitSavedImage(client, saved)`；等待前保存返回的任务 ID。
 5. 超时且没有任务 ID 时，使用完全相同的请求和键重复第 4 步；已有 ID 时恢复轮询。账单只结算一次并复制可用文件。

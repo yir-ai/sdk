@@ -1,6 +1,76 @@
 # Go SDK 变更记录
 
-0.11.0 之前的版本说明，从 README 移来。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
+各版本说明，新版本在前。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
+
+## 未发布
+
+兼容新增：
+
+- `SubmissionNotAccepted(err)` 判断一次提交的错误是否足以证明没有创建 Job、幂等键也没有被占用：SDK 在发送前拒绝的请求，或带 Yir 错误码的 4xx 拒绝（`YIR_IDEMPOTENCY_CONFLICT` 除外）。释放自己的预留或给用户退款前先用它判断。
+- `PollJob(ctx, id, wait)` 供自行调度轮询的应用查询一次：先读轻量状态，只有终态才读完整 Job，一致性检查与 `WaitJob` 相同。
+- `JobBilling.TotalChargedMicros()` 与 `USDMicros(amount)` 把 API 金额转成整数（百万分之一美元）。
+
+行为变化：
+
+- 对已经成功或失败的 Job 调用 `CancelJob`，现在返回这个已结束的 Job，不再返回 `409 YIR_JOB_NOT_CANCELLABLE` 的 `*APIError`。原先遇到 409 再读一次 Job 的分支可以删掉；把“无错误”当作“已取消”的代码必须读 `Status`（取消只是已申请时本来也需要这样做）。
+
+## 升级到 0.13.0
+
+0.13.0 是 minor 版本，与 0.12.0 兼容。所依赖的网关能力均已上线。
+
+新增：
+
+- Demo 模式：`ClientOptions.Demo`（`DemoOptions`、`DemoScenario*`）、`IsDemoJobID` 与 `DemoAssetBaseURL`。所有 `Client` 都在本地解答 `demo_` Job ID。见 [Demo 模式](README.md#demo-模式)。
+- `/v1/audio` 接口的 `QuoteAudio` / `SubmitAudio`（音乐、音效与语音合成；`QuoteMusic` / `SubmitMusic` 保留为别名）、`voice` 参数，以及 `generate_sound_effect` / `generate_speech` 报价与 `QuoteBatch` 项。
+- 有序中间帧的参考角色 `keyframe`；模型合同与 `ValidateGenerationWithCatalog` 支持混合主体、主体声音和视频主体。
+- 参数说明的 disposition 新增 `exceeded`，表示结果超出请求。
+
+## 升级到 0.12.0
+
+0.12.0 是包含不兼容行为变化的 minor 版本，导出 API 只有新增。0.11.2 未单独发布，其[变化](#0112-变化)随本版本一并发布。所依赖的 Gateway 功能均已上线。
+
+不兼容变化：
+
+- 报价与提交不再按 `ClientOptions.ModelContracts` 校验模型参数，只校验协议骨架，交给 Gateway 校验。参数非法时返回带 `ErrCodeInvalidRequest` 的 `*APIError`（字段见 `Details`），不再是本地的 `*ParameterError`。需要本地严格校验时调用 `ValidateGenerationWithCatalog`。
+- 提交失败返回 `*SubmissionError`，携带 `IdempotencyKey` 并包装传输或 API 错误。用 `errors.As` 取得 `*APIError`；直接对返回错误做类型断言将不再匹配。
+- `HTTPClient.Timeout`（默认 30 秒）限制整次调用，包括下文的传输重试。
+- 旧的 `BillingMode: "actual"` 请求不再要求 `Routing.Only`。
+
+新增：
+
+- 读取请求和带幂等键的生成提交遇到网络错误或 HTTP 502/503/504 时，最多重试三次，保持原请求体与幂等键；遵守不超过一分钟的 `Retry-After`。`WaitJob` 在 Gateway 短暂不可用时继续等待已受理的 Job，并等待 `429 YIR_RATE_LIMITED`（`APIError.RetryAfter`）过去。
+- `QuoteAudio`、`SubmitAudio`（旧名 `QuoteMusic` / `SubmitMusic`）、`GenerationInput.Lyrics` 与 `ResultFile.DurationMS`，见[报价与提交](README.md#报价与提交)。
+- `ClientOptions.ReferralCode`，作为 `Yir-Referral` 发送。
+- `client.GetBalance`，以及用于 Account API 的 `NewAccountClient`，含路由配置的 `ExcludedModelProviders`。
+- `Routing.Fidelity`（`RoutingFidelity*`、`ErrCodeFidelityExcluded`）、`Routing.Accelerate`，以及每个结果文件的 `ResultFile.Fidelity`。
+- `APIError.ProviderError`、`ErrCodeInputRejected` 与 `JobBilling.Status`（`pending` 或 `settled`）。
+- 模型合同新增 `StringValues`（如 Seedance 2.5 时长 `"auto"`，报价与 Job 参数回显中保留）和 `PromptOptional`；没有在售渠道的市场规格予以保留。
+
+## 0.11.2 变化
+
+0.11.2 为兼容版本：
+
+- 新增可选的 `Quote.ExpectedAmount`（`*string`）：首选渠道的准入估价，Yir 核对余额、API Key 月度上限和 `max_cost` 都用它。与只估输出的 `estimate` 类价格不同，它包含参考图等已知输入费用，按用量计费的渠道还参考近期实收。没有匹配渠道或缺少可靠估价时不返回。`Validate` 要求它是十进制数，且没有供应时不得出现。作为成本参考时优先用它而不是 `Primary.Amount`；它不是上限。
+
+## 0.11.1 变化
+
+0.11.1 为兼容版本，跟进网关的参数回显与目录缓存变化：
+
+- `Quote.Parameters` 只回显模型合同声明的参数，按合同写法，省略的参数补默认值：图片报价和没有该参数的视频模型不再出现 `duration`、`generate_audio`。模型专属参数按合同名回显。
+- `Job.Parameters`（`map[string]any`）自创建起携带同样的回显，应用可据此核对交付结果与扣费参数。
+- 模型合同参数的 `Required` 现在表示“没有默认值、请求必须传”；带 `Default` 的参数一律 `Required: false`，可以省略。`ValidateGenerationWithCatalog` 本来就先补默认值再检查 `Required`，本地校验行为不变。
+- `GET /v1/models` 与 `view=contract` 响应带 `ETag`（即加引号的目录 `version`）和 `Cache-Control: private, max-age=300`，并对 `If-None-Match` 回 304。`GetModelContracts` 暂不发条件请求，自定义 `HTTPClient` 可以。
+
+## 升级到 0.11.0
+
+0.11.0 为 minor 版本，含不兼容变更，为 1.0 合同做准备。从 0.9 升级请先看 [0.10.0 说明](#0100-变化)；0.10.0 未单独发布，随本版本一起发布。
+
+- 移除内置模型目录：包级 `ListModelContracts`、`GetModelContract`、`GetModelOperationContract`、`ValidateGeneration` 与 `ValidateModelParameters` 已删除。用 `client.GetModelContracts` 获取目录，再传给 `ValidateGenerationWithCatalog` 或 `ClientOptions.ModelContracts`。新增模型和参数调整都不需要发布 SDK。
+- Job ID 是不透明字符串。任何非空、不超过 64 个字符、可安全作为一段 URL 路径的 ID 都会被接受；按字符串保存，不要解析。
+- 未配置目录时，报价可能把你传入的别名回显为 `creator/model` 形式的规范 ID，其他不同的模型会校验失败；配置目录时按解析后的 ID 比对。
+- `APIError.Details`（`[]ErrorDetail`）定位 `YIR_INVALID_REQUEST` 的无效字段：`Field`、稳定的 `Reason`（如 `unsupported`、`required`）以及合同允许值 `Allowed`。
+- Veo 3.0（`google/veo-3.0-generate-001`）与 Gemini Omni 预览版（`google/gemini-omni-video`）已下架：API 目录和早期版本内置的审阅快照中都已移除。请求它们会返回 `YIR_INVALID_REQUEST`，`details[0].reason` 为 `retired`，`allowed` 给出替代模型。
+- 与本 SDK 同批发布的 Gateway 变化：`parameters` 必填；不再接受顶层 `resolution`、`aspect_ratio`、`n`、`duration`、`generate_audio`、`input.image`，以及大小写不同的 `input.type` 或参考角色；`resolution` 与 `aspect_ratio` 必须是模型合同中的取值（不区分大小写），`1024`、`2048x2048`、`16x9` 等写法会被拒绝。模型别名精简为短名、厂商模型 ID，以及存在时的 Vercel AI Gateway ID；建议使用 `bytedance/seedance-2.0` 这类规范 ID。
 
 ## 0.10.0 变化
 

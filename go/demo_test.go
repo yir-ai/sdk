@@ -184,10 +184,10 @@ func TestDemoCancelAndLongPoll(t *testing.T) {
 		t.Fatalf("cancelled = %+v, err = %v", cancelled, err)
 	}
 	atDemoTime(t, time.Unix(job.CreatedAt+60, 0))
-	_, err = client.CancelJob(context.Background(), job.ID)
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) || apiErr.Status != 409 || apiErr.Code != ErrCodeJobNotCancellable {
-		t.Fatalf("err = %v", err)
+	// A Job that already ended is returned as it ended instead of a 409.
+	ended, err := client.CancelJob(context.Background(), job.ID)
+	if err != nil || ended.Status != "succeeded" || ended.Result == nil {
+		t.Fatalf("ended = %+v, err = %v", ended, err)
 	}
 	done, err := client.WaitJob(context.Background(), job.ID, WaitOptions{})
 	if err != nil || done.Status != "succeeded" || len(done.Result.Files) != 2 || done.Result.Files[0].URL != DemoAssetBaseURL+"image/16x9-1.jpg" ||

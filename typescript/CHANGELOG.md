@@ -2,6 +2,18 @@
 
 Release notes before 0.10.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
 
+## Unreleased
+
+Compatible additions:
+
+- `isSubmissionNotAccepted(error)` reports whether a submit error proves that the call created no Job and left the idempotency key unused: a request the SDK refused before sending, or a 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT`. Use it before releasing your own reservation or refunding your user.
+- `pollJob(client, id, options)` checks a Job once for applications that schedule their own polling and resolves with `{ done: false, status }` or `{ done: true, job }`.
+- `usdMicros(amount)` converts an API amount to a `bigint` of millionths of a dollar.
+
+Behavior change:
+
+- `cancelJob` on a Job that already succeeded or failed resolves with that finished Job instead of rejecting with the `409 YIR_JOB_NOT_CANCELLABLE` `YirAPIError`. Code that handled the 409 by reading the Job again can drop that branch; code that treated a resolved call as "cancelled" must read `status`, as it already had to for a Job whose cancellation is only requested.
+
 ## 0.9.0 changes
 
 0.9.0 was never published on its own; its changes ship with 0.10.0.

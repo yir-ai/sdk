@@ -15,9 +15,12 @@ test('快速开始先报价并带上已批准预算，保存请求和幂等键�
  await assert.rejects(()=>submitSavedImage(client,prepared),/saved_authorization_required/);
  assert.equal(calls.length,3);
 });
-test('无供应或未批准预算不得形成授权',async()=>{
+test('无供应不得形成授权；预算可省略，给了就必须有效',async()=>{
  for(const quote of [{supply:{available:false}},{supply:{available:true},primary:{kind:'unavailable',amount:null}}]){
   await assert.rejects(()=>prepareImage({quoteImage:async()=>quote},input,'0.05'),/supply_unavailable/);
  }
- await assert.rejects(()=>prepareImage({quoteImage:async()=>{throw new Error('unexpected');}},input),/approved_budget_required/);
+ const uncapped=await prepareImage({quoteImage:async()=>({supply:{available:true},expected_amount:'0.03',primary:{kind:'fixed',amount:'0.02'}})},input);
+ assert.equal(uncapped.estimate,'0.03');
+ assert.equal('max_cost' in uncapped.request,false);
+ await assert.rejects(()=>prepareImage({quoteImage:async()=>{throw new Error('unexpected');}},input,''),/max_cost_invalid/);
 });

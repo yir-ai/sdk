@@ -37,9 +37,9 @@ The SDKs fix the protocol; the API supplies the models. Models, their parameters
 
 The generation idempotency key is optional: the SDKs create a new random key per call when it is omitted. The built-in transport may retry a keyed submission up to three times after a network failure or HTTP 502/503/504, always preserving its key and encoded body. If such a submission still fails after an attempt with an unknown outcome, the SDKs return `SubmissionUncertainError` (Go) or `YirSubmissionUncertainError` (TypeScript) instead of the last rejection: resubmit with the same key rather than treating it as not accepted. Recovery across calls/processes requires the same caller-persisted key and exact request. Server fallback within an accepted Job is independent of this header.
 
-1. Build an explicit request and obtain a quote. Check supply; the primary price is an estimate, not a ceiling.
-2. Have your application approve the spend. Persist the exact submit request, including any optional `max_cost`, and a stable idempotency key before submitting.
-3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID.
+1. Build an explicit request and obtain a quote. Check supply and read `expected_amount`: what the Job will probably cost. No quote amount is a ceiling.
+2. Have your application approve the spend. Persist the exact submit request and a stable idempotency key before submitting. `max_cost` is optional and best left out by default (see the warning below).
+3. Submit the saved request. If the outcome is unknown, recover with the same request and key. Once known, persist the job ID and resume polling by that ID. A 4xx rejection with a Yir error code other than `YIR_IDEMPOTENCY_CONFLICT` created no Job and left the key unused; `SubmissionNotAccepted` (Go) and `isSubmissionNotAccepted` (TypeScript) test for it before you release a reservation or refund your user.
 4. Reconcile billing once `billing.status` is `settled` and copy available result files before their URLs expire.
 
 A quote or static price table does not authorize a purchase or guarantee current supply or final billing. Customer pricing, account authorization, balances and persistence belong to your application. Keep Yir API keys on the server; the browser entry exposes only pure helpers and types.
