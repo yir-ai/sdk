@@ -9926,6 +9926,167 @@
       ]
     },
     {
+      "id": "minimax/minimax-h3-image",
+      "aliases": [
+        "minimax-h3-image"
+      ],
+      "locales": {
+        "en": {
+          "label": "MiniMax H3 Image",
+          "description": "MiniMax open-weight image model with 4K output and editing from up to 16 reference images"
+        },
+        "zh-CN": {
+          "label": "MiniMax H3 Image",
+          "description": "MiniMax 开放权重生图模型，支持 4K 输出与最多 16 张参考图编辑"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "text",
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 16,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K",
+                "4K"
+              ],
+              "default": "4K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1:1",
+                "2:3",
+                "3:2",
+                "3:4",
+                "4:3",
+                "4:5",
+                "5:4",
+                "9:16",
+                "16:9",
+                "21:9"
+              ],
+              "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1024x1024",
+                "832x1248",
+                "1248x832",
+                "896x1184",
+                "1184x896",
+                "928x1152",
+                "1152x928",
+                "768x1376",
+                "1376x768",
+                "1568x672",
+                "2048x2048",
+                "1664x2496",
+                "2496x1664",
+                "1760x2368",
+                "2368x1760",
+                "1824x2304",
+                "2304x1824",
+                "1536x2720",
+                "2720x1536",
+                "3136x1344",
+                "4096x4096",
+                "3328x4992",
+                "4992x3328",
+                "3520x4704",
+                "4704x3520",
+                "3648x4576",
+                "4576x3648",
+                "3072x5440",
+                "5440x3072",
+                "6240x2656"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Exact size",
+                  "description": "Exact output pixels; only explicitly compatible supplies are eligible. Conflicting resolution/aspect ratio is rejected."
+                },
+                "zh-CN": {
+                  "label": "精确尺寸",
+                  "description": "精确输出像素，仅选择明确支持的渠道；与分辨率档位或画幅冲突时拒绝。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "minimax/minimax-h3-lite",
       "aliases": [
         "minimax-h3-lite"
