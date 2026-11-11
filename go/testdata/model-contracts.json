@@ -13858,6 +13858,82 @@
       ]
     },
     {
+      "id": "suno/suno-speech",
+      "aliases": [
+        "suno-speech"
+      ],
+      "locales": {
+        "en": {
+          "label": "Suno Speech",
+          "description": "Suno voice model that turns a script or scene idea into expressive narration, optionally with original background music, two takes per request. Suno has no official API; Yir accesses it unofficially through third-party channels"
+        },
+        "zh-CN": {
+          "label": "Suno Speech",
+          "description": "Suno 人声模型，按稿子或场景描述生成带情绪的旁白，可同时配原创背景音乐，每次两条。Suno 没有官方 API，Yir 经第三方渠道非官方接入"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_music",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "max_prompt_characters": 1000,
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardMusicGenerationRequest",
+          "parameters": [
+            {
+              "name": "lyrics_optimizer",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Auto lyrics",
+                  "description": "Write lyrics from the prompt. Omit input.lyrics; some models add a lyrics-writing charge (see the quote)."
+                },
+                "zh-CN": {
+                  "label": "自动写词",
+                  "description": "按提示词自动写词；不能同时传 input.lyrics，部分模型另收写词费用（以报价为准）。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                2
+              ],
+              "default": 2,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "suno/suno-v6",
       "aliases": [
         "suno-v6"
