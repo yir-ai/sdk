@@ -157,7 +157,7 @@ func (c *Client) GetFileContentURL(ctx context.Context, id string) (string, erro
 	if !fileIDPattern.MatchString(id) {
 		return "", errors.New("file_id_invalid")
 	}
-	result, raw, err := c.send(ctx, http.MethodGet, "/v1/files/"+id+"/content", "", nil)
+	result, raw, _, err := c.send(ctx, http.MethodGet, "/v1/files/"+id+"/content", "", nil)
 	if err != nil {
 		return "", err
 	}

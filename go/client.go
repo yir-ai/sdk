@@ -205,6 +205,25 @@ type SubmissionError struct {
 func (e *SubmissionError) Error() string { return e.Err.Error() }
 func (e *SubmissionError) Unwrap() error { return e.Err }
 
+// SubmissionUncertainError means a generation submit failed after at least one
+// attempt whose outcome is unknown: a network error, a response cut off while
+// reading it, or HTTP 502/503/504. That attempt may have created a Job that runs
+// and is billed, even though Err (the last attempt's error, such as a 429 or 402
+// *APIError rejecting the automatic retry) reads like a rejection. Do not treat
+// it as not accepted: resubmit the exact request with IdempotencyKey, and Yir
+// replays the original Job if one was created. Submit returns it inside a
+// *SubmissionError; find it with errors.As. Unwrap retains errors.Is/errors.As
+// behavior for Err.
+type SubmissionUncertainError struct {
+	IdempotencyKey string `json:"-"`
+	Err            error  `json:"-"`
+}
+
+func (e *SubmissionUncertainError) Error() string {
+	return "yir: submission outcome uncertain: " + e.Err.Error()
+}
+func (e *SubmissionUncertainError) Unwrap() error { return e.Err }
+
 func (c *Client) QuoteImage(ctx context.Context, request GenerationRequest) (Quote, error) {
 	return c.quote(ctx, "images", "generate_image", request)
 }
@@ -491,12 +510,9 @@ func (c *Client) CancelJob(ctx context.Context, id string) (Job, error) {
 }
 
 func (c *Client) do(ctx context.Context, method, path, key string, body, response any) error {
-	result, raw, err := c.send(ctx, method, path, key, body)
-	if err != nil {
-		return err
-	}
-	if result.StatusCode < 200 || result.StatusCode >= 300 {
-		err := responseAPIError(result.StatusCode, raw)
+	result, raw, uncertain, err := c.send(ctx, method, path, key, body)
+	if err == nil && (result.StatusCode < 200 || result.StatusCode >= 300) {
+		err = responseAPIError(result.StatusCode, raw)
 		var apiErr *APIError
 		if errors.As(err, &apiErr) {
 			if seconds, parseErr := strconv.Atoi(strings.TrimSpace(result.Header.Get("Retry-After"))); parseErr == nil && seconds > 0 {
@@ -505,6 +521,11 @@ func (c *Client) do(ctx context.Context, method, path, key string, body, respons
 				apiErr.RetryAfter = max(0, time.Until(date))
 			}
 		}
+	}
+	if err != nil && uncertain {
+		return &SubmissionUncertainError{IdempotencyKey: key, Err: err}
+	}
+	if err != nil {
 		return err
 	}
 	if json.Unmarshal(raw, response) != nil {
@@ -514,17 +535,18 @@ func (c *Client) do(ctx context.Context, method, path, key string, body, respons
 }
 
 // send retries reads and keyed generation requests without changing their identity.
-// Redirects are returned, never followed.
-func (c *Client) send(ctx context.Context, method, path, key string, body any) (*http.Response, []byte, error) {
+// Redirects are returned, never followed. uncertain reports a generation submit
+// with an attempt whose outcome is unknown (transport error or 502/503/504).
+func (c *Client) send(ctx context.Context, method, path, key string, body any) (*http.Response, []byte, bool, error) {
 	if c == nil || c.httpClient == nil {
-		return nil, nil, errors.New("client_uninitialized")
+		return nil, nil, false, errors.New("client_uninitialized")
 	}
 	var data []byte
 	var err error
 	if body != nil {
 		data, err = json.Marshal(body)
 		if err != nil {
-			return nil, nil, errors.New("request_encoding_failed")
+			return nil, nil, false, errors.New("request_encoding_failed")
 		}
 	}
 	if c.httpClient.Timeout > 0 {
@@ -534,24 +556,27 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 	}
 	canRetry := method == http.MethodGet || (method == http.MethodPost && key != "" &&
 		(path == "/v1/images/generations" || path == "/v1/videos/generations" || path == "/v1/audio/generations" || path == "/v1/music/generations" || path == "/v1/3d/generations"))
+	uncertain := false
 	for attempt := 0; ; attempt++ {
 		result, raw, err := c.sendOnce(ctx, method, path, key, data, body != nil)
 		var networkError net.Error
 		transient := errors.As(err, &networkError) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF)
-		if !canRetry || attempt >= 3 || ctx.Err() != nil || (err != nil && !transient) || (err == nil && result.StatusCode != 502 && result.StatusCode != 503 && result.StatusCode != 504) {
-			return result, raw, err
+		gatewayFailure := err == nil && (result.StatusCode == 502 || result.StatusCode == 503 || result.StatusCode == 504)
+		uncertain = uncertain || (canRetry && method == http.MethodPost && (transient || gatewayFailure))
+		if !canRetry || attempt >= 3 || ctx.Err() != nil || (err != nil && !transient) || (err == nil && !gatewayFailure) {
+			return result, raw, uncertain, err
 		}
 		delay := 500 * time.Millisecond * time.Duration(1<<attempt)
 		if result != nil {
 			hint := result.Header.Get("Retry-After")
 			if seconds, parseErr := strconv.Atoi(hint); parseErr == nil && seconds > 0 {
 				if seconds > 60 {
-					return result, raw, err
+					return result, raw, uncertain, err
 				}
 				delay = max(delay, time.Duration(seconds)*time.Second)
 			} else if date, parseErr := http.ParseTime(hint); parseErr == nil {
 				if time.Until(date) > time.Minute {
-					return result, raw, err
+					return result, raw, uncertain, err
 				}
 				delay = max(delay, time.Until(date))
 			}
@@ -560,7 +585,7 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return nil, nil, ctx.Err()
+			return nil, nil, uncertain, ctx.Err()
 		case <-timer.C:
 		}
 	}

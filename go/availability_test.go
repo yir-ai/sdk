@@ -51,6 +51,10 @@ func TestSubmissionErrorPreservesKeyAndAPIError(t *testing.T) {
 	if !errors.As(err, &api) || api.Code != ErrCodeInvalidRequest {
 		t.Fatalf("lost API error: %v", err)
 	}
+	var uncertain *SubmissionUncertainError
+	if errors.As(err, &uncertain) {
+		t.Fatalf("explicit rejection marked uncertain: %v", err)
+	}
 }
 
 func TestGetBalanceSupportsDebt(t *testing.T) {

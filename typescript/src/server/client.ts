@@ -75,6 +75,7 @@ function submissionError(cause: unknown, key: string): YirSubmissionError {
   // Preserve APIError/AbortError identity for existing callers. A frozen custom
   // transport error remains accessible through cause instead of losing the key.
   // Reused errors (for example an abort reason) must not overwrite an earlier key.
+  if (cause instanceof YirSubmissionUncertainError) return cause;
   const error = cause instanceof Error && Object.isExtensible(cause) && !("idempotencyKey" in cause)
     ? cause : new Error("job_submit_failed", { cause });
   Object.defineProperty(error, "idempotencyKey", { value: key, configurable: true });
@@ -488,6 +489,26 @@ export class YirAPIError extends Error {
   }
 }
 
+/**
+ * A generation submit failed after at least one attempt whose outcome is unknown:
+ * a network error, a response cut off while reading it, or HTTP 502/503/504.
+ * That attempt may have created a Job that runs and is billed, even though
+ * `cause` (the last attempt's error, such as a 429 or 402 `YirAPIError` rejecting
+ * the automatic retry) reads like a rejection. Do not treat it as not accepted:
+ * resubmit the exact request with `idempotencyKey`, and Yir replays the original
+ * Job if one was created.
+ */
+export class YirSubmissionUncertainError extends Error {
+  /** Not included in log/JSON serialization. */
+  declare readonly idempotencyKey: string;
+
+  constructor(idempotencyKey: string, cause: unknown) {
+    super("submission_outcome_uncertain", { cause });
+    this.name = "YirSubmissionUncertainError";
+    Object.defineProperty(this, "idempotencyKey", { value: idempotencyKey, configurable: true });
+  }
+}
+
 export class YirJobError extends Error {
   readonly job: Job;
   readonly code: string;
@@ -846,7 +867,8 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     throw new Error("timeout_invalid");
   }
 
-  return async <Response>(request: YirTransportRequest): Promise<Response> => {
+  // state.uncertain marks a generation submit with an attempt whose outcome is unknown.
+  const send = async <Response>(request: YirTransportRequest, state: { key: string; uncertain: boolean; ok: boolean }): Promise<Response> => {
     const path = request.path.startsWith("/") ? request.path : `/${request.path}`;
     const url = `${baseURL}${path}`;
 
@@ -861,9 +883,10 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
 
     const body = request.body !== undefined ? JSON.stringify(request.body) : undefined;
     const signal = requestSignal(request.signal, timeoutMs, request.holdMs);
+    state.key = new Headers(headers).get("Idempotency-Key")?.trim() ?? "";
     const canRetry = request.method === "GET" || (request.method === "POST" &&
-      /^\/v1\/(images|videos|audio|music|3d)\/generations$/.test(path) &&
-      Boolean(new Headers(headers).get("Idempotency-Key")?.trim()));
+      /^\/v1\/(images|videos|audio|music|3d)\/generations$/.test(path) && Boolean(state.key));
+    const submit = canRetry && request.method === "POST";
     let response: globalThis.Response;
     let text = "";
     for (let attempt = 0; ; attempt++) {
@@ -878,10 +901,12 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
         });
         if (response.status < 300 || response.status >= 400) text = await response.text();
       } catch (error) {
+        if (submit && error instanceof TypeError) state.uncertain = true;
         if (!canRetry || attempt >= 3 || signal?.aborted || !(error instanceof TypeError)) throw error;
         await sleep(500 * 2 ** attempt, signal);
         continue;
       }
+      if (submit && [502, 503, 504].includes(response.status)) state.uncertain = true;
       if (!canRetry || attempt >= 3 || ![502, 503, 504].includes(response.status)) break;
       const hint = response.headers.get("retry-after");
       const seconds = hint === null ? NaN : Number(hint);
@@ -890,6 +915,7 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
       if (retryAfter > 60000) break;
       await sleep(Math.max(500 * 2 ** attempt, retryAfter || 0), signal);
     }
+    state.ok = response.ok;
     if (response.status >= 300 && response.status < 400) {
       await response.body?.cancel();
       if (request.redirect === "manual") {
@@ -947,6 +973,16 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
     }
 
     return data as Response;
+  };
+
+  return async <Response>(request: YirTransportRequest): Promise<Response> => {
+    const state = { key: "", uncertain: false, ok: false };
+    try {
+      return await send<Response>(request, state);
+    } catch (error) {
+      if (state.uncertain && !state.ok) throw new YirSubmissionUncertainError(state.key, error);
+      throw error;
+    }
   };
 }
 

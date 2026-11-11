@@ -96,7 +96,7 @@ _ = client
 
 ## 报价与提交
 
-可直接调用 `SubmitImage(ctx, request)` 或 `SubmitVideo(ctx, request)`，SDK 每次调用生成随机幂等键。最后一个参数可传入一个非空且不含换行的显式键。Submit 不隐式重试；再次调用或跨进程恢复须复用已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖客户端传键。
+可直接调用 `SubmitImage(ctx, request)` 或 `SubmitVideo(ctx, request)`，SDK 每次调用生成随机幂等键。最后一个参数可传入一个非空且不含换行的显式键。内置传输对网络故障与 HTTP 502/503/504 最多重试 3 次，复用同一幂等键与请求体。若提交在某次结果不明的尝试（网络错误、响应中途断开或 502/503/504）之后仍失败，返回的错误含 `*SubmissionUncertainError`（用 `errors.As` 取得），即使最后一次是 429、402 等拒绝：先前的尝试可能已创建并计费 Job，应以其 `IdempotencyKey` 重新提交完整原请求，不能当作未受理。再次调用或跨进程恢复须复用已保存的键和完整请求。服务端同一 Job 内的故障转移不依赖客户端传键。
 
 构造含 `Model`、`Input` 和明确 `Parameters` 的 `GenerationRequest`，使用 `QuoteImage` 或 `QuoteVideo`。要求 `Supply.Available` 且 `Primary` 有价格；该金额是估价，不是上限。审批新工作前检查过期时间。
 
