@@ -172,3 +172,32 @@ func TestReadRetryFailureStaysPlainAPIError(t *testing.T) {
 		t.Fatalf("calls=%d err=%v", calls, err)
 	}
 }
+
+type streamResetBody struct{}
+
+func (streamResetBody) Read([]byte) (int, error) {
+	return 0, errors.New("http2: stream error: RST_STREAM")
+}
+func (streamResetBody) Close() error { return nil }
+
+type acceptedThenResetTransport struct{ calls int }
+
+func (t *acceptedThenResetTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	t.calls++
+	return &http.Response{StatusCode: 202, Header: http.Header{}, Body: streamResetBody{}, Request: r}, nil
+}
+
+// A body read that fails with an error outside the retry list (HTTP/2 stream
+// reset, caller cancellation) still leaves an accepted submit's outcome unknown.
+func TestSubmitBodyReadFailureIsUncertain(t *testing.T) {
+	transport := &acceptedThenResetTransport{}
+	c, _ := NewClient("fixture", ClientOptions{BaseURL: "https://gateway.example", HTTPClient: &http.Client{Transport: transport}})
+	_, err := c.SubmitImage(context.Background(), SubmitRequest{GenerationRequest: imageRequest()}, "persisted-key")
+	var uncertain *SubmissionUncertainError
+	if !errors.As(err, &uncertain) || uncertain.IdempotencyKey != "persisted-key" {
+		t.Fatalf("want uncertain error, got %v", err)
+	}
+	if transport.calls != 1 {
+		t.Fatalf("non-retryable read failure retried: calls=%d", transport.calls)
+	}
+}

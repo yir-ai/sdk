@@ -562,7 +562,11 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 		var networkError net.Error
 		transient := errors.As(err, &networkError) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF)
 		gatewayFailure := err == nil && (result.StatusCode == 502 || result.StatusCode == 503 || result.StatusCode == 504)
-		uncertain = uncertain || (canRetry && method == http.MethodPost && (transient || gatewayFailure))
+		// Once a keyed submit leaves the client, any failure to read a complete
+		// answer (cancellation, HTTP/2 stream reset, cut-off body) leaves its
+		// outcome unknown, even when the error is not one we retry.
+		sent := err == nil || !errors.Is(err, errRequestNotSent)
+		uncertain = uncertain || (canRetry && method == http.MethodPost && ((err != nil && sent) || gatewayFailure))
 		if !canRetry || attempt >= 3 || ctx.Err() != nil || (err != nil && !transient) || (err == nil && !gatewayFailure) {
 			return result, raw, uncertain, err
 		}
@@ -591,10 +595,13 @@ func (c *Client) send(ctx context.Context, method, path, key string, body any) (
 	}
 }
 
+// errRequestNotSent marks a failure before the request reached the network.
+var errRequestNotSent = errors.New("request_creation_failed")
+
 func (c *Client) sendOnce(ctx context.Context, method, path, key string, data []byte, hasBody bool) (*http.Response, []byte, error) {
 	request, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, bytes.NewReader(data))
 	if err != nil {
-		return nil, nil, errors.New("request_creation_failed")
+		return nil, nil, errRequestNotSent
 	}
 	request.Header.Set("Authorization", "Bearer "+c.apiKey)
 	request.Header.Set("User-Agent", "yir-go/"+Version)
