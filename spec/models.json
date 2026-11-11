@@ -13210,7 +13210,8 @@
               "required": false,
               "values": [
                 "480p",
-                "720p"
+                "720p",
+                "1080p"
               ],
               "default": "480p",
               "control": "select",
