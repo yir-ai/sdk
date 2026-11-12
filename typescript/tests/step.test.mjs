@@ -107,3 +107,67 @@ test("usdMicros converts API amounts without rounding", () => {
     assert.throws(() => usdMicros(amount), /amount_invalid/);
   }
 });
+
+// Another submit's failure, wrapped by the SDK as job_submit_failed around a 402,
+// reaching this submit as an abort reason or adapter error.
+const wrappedRejection = () => {
+  const wrapped = new Error("job_submit_failed", { cause: Object.freeze(api(402, "YIR_INSUFFICIENT_BALANCE")) });
+  Object.defineProperty(wrapped, "idempotencyKey", { value: "key-A", configurable: true });
+  return wrapped;
+};
+
+test("a 202 whose body read throws a plain Error is uncertain", async () => {
+  const client = createNodeYirClient({ apiKey: "fixture", fetch: async () => new Response(new ReadableStream({ start(controller) {
+    controller.enqueue(new TextEncoder().encode('{"id":"job-1",'));
+    controller.error(new Error("stream reset"));
+  } }), { status: 202, headers: { "Content-Type": "application/json" } }) });
+  const error = await client.submitImage(request, "saved-key").catch(error => error);
+  assert.ok(error instanceof YirSubmissionUncertainError);
+  assert.equal(error.idempotencyKey, "saved-key");
+  assert.equal(isSubmissionNotAccepted(error), false);
+});
+
+test("a wrapped rejection used as the abort reason of a sent submit is not a rejection", async () => {
+  const controller = new AbortController();
+  const node = createNodeYirClient({ apiKey: "fixture", fetch: (_, init) => new Promise((_, reject) => {
+    init.signal.addEventListener("abort", () => reject(init.signal.reason));
+    controller.abort(wrappedRejection());
+  }) });
+  const controller2 = new AbortController();
+  const custom = createYirClient(async ({ signal }) => { controller2.abort(wrappedRejection()); throw signal.reason; });
+  for (const [client, signal] of [[node, controller.signal], [custom, controller2.signal]]) {
+    const error = await client.submitImage(request, "key-B", { signal }).catch(error => error);
+    assert.ok(error instanceof YirSubmissionUncertainError);
+    assert.equal(error.idempotencyKey, "key-B");
+    assert.equal(isSubmissionNotAccepted(error), false);
+  }
+  // The same wrapper re-wrapped for another key does not pass as this call's rejection.
+  const rewrapped = new Error("job_submit_failed", { cause: wrappedRejection() });
+  Object.defineProperty(rewrapped, "idempotencyKey", { value: "key-B" });
+  assert.equal(isSubmissionNotAccepted(rewrapped), false);
+  const keyedElsewhere = new Error("job_submit_failed", { cause: Object.defineProperty(api(402, "YIR_INSUFFICIENT_BALANCE"), "idempotencyKey", { value: "key-A" }) });
+  Object.defineProperty(keyedElsewhere, "idempotencyKey", { value: "key-B" });
+  assert.equal(isSubmissionNotAccepted(keyedElsewhere), false);
+});
+
+test("another submit's uncertain error aborting this submit returns this submit's key", async () => {
+  const other = new YirSubmissionUncertainError("key-A", api(429, "YIR_RATE_LIMITED"));
+  const controller = new AbortController();
+  const node = createNodeYirClient({ apiKey: "fixture", fetch: (_, init) => new Promise((_, reject) => {
+    init.signal.addEventListener("abort", () => reject(init.signal.reason));
+    controller.abort(other);
+  }) });
+  const controller2 = new AbortController();
+  const custom = createYirClient(async ({ signal }) => { controller2.abort(other); throw signal.reason; });
+  for (const [client, signal] of [[node, controller.signal], [custom, controller2.signal]]) {
+    const error = await client.submitImage(request, "key-B", { signal }).catch(error => error);
+    assert.ok(error instanceof YirSubmissionUncertainError);
+    assert.equal(error.idempotencyKey, "key-B");
+    assert.equal(isSubmissionNotAccepted(error), false);
+  }
+  // The submit's own uncertain error is returned as is.
+  const own = createYirClient(async () => { throw new YirSubmissionUncertainError("key-B", api(429, "YIR_RATE_LIMITED")); });
+  const error = await own.submitImage(request, "key-B").catch(error => error);
+  assert.equal(error.idempotencyKey, "key-B");
+  assert.ok(error.cause instanceof YirAPIError);
+});

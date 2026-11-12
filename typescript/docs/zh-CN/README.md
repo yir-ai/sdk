@@ -57,7 +57,7 @@ const client = createNodeYirClient();
 
 ## 报价、授权、持久化、提交
 
-可直接调用 `client.submitImage(request)` 或 `client.submitVideo(request)`，SDK 每次调用自动生成随机幂等键。显式键去除首尾空白，必须非空且不含换行。内置 HTTP 传输对网络故障与 HTTP 502/503/504 最多重试 3 次（退避 0.5、1、2 秒），始终复用同一幂等键与编码后的请求体；读取请求采用相同策略。重试共享请求超时并响应取消，遵守不超过 60 秒的 Retry-After，更长则直接返回错误。其他写请求及终态失败任务不会自动重新提交。若提交在某次结果不明的尝试（网络错误、响应中途断开或 502/503/504）之后仍失败，会抛出 `YirSubmissionUncertainError`（最后一次的错误在 `cause`），即使最后一次是 429、402 等拒绝：先前的尝试可能已创建并计费 Job，应以 `error.idempotencyKey` 重新提交完整原请求，不能当作未受理。再次调用或跨进程恢复时，通过第二个参数传入已保存的键并复用完整请求。服务端同一 Job 内的故障转移不依赖客户端传键。
+可直接调用 `client.submitImage(request)` 或 `client.submitVideo(request)`，SDK 每次调用自动生成随机幂等键。显式键去除首尾空白，必须非空且不含换行。内置 HTTP 传输对网络故障与 HTTP 502/503/504 最多重试 3 次（退避 0.5、1、2 秒），始终复用同一幂等键与编码后的请求体；读取请求采用相同策略。重试共享请求超时并响应取消，遵守不超过 60 秒的 Retry-After，更长则直接返回错误。其他写请求及终态失败任务不会自动重新提交。若提交在某次结果不明的尝试（网络错误、响应中途断开或 502/503/504）之后仍失败，会抛出 `YirSubmissionUncertainError`（最后一次的错误在 `cause`），即使最后一次是 429、402 等拒绝：先前的尝试可能已创建并计费 Job，应以 `error.idempotencyKey` 重新提交完整原请求，不能当作未受理。请求发出后的其他任何失败（包括自定义的中止原因）同样视为结果不明；只有普通的 `AbortError` 或 `TimeoutError` 保持原样。再次调用或跨进程恢复时，通过第二个参数传入已保存的键并复用完整请求。服务端同一 Job 内的故障转移不依赖客户端传键。
 
 [quickstart.mjs](../../examples/quickstart.mjs) 的 `prepareImage(client, input)` 构造请求并报价。它要求供给可用且主价格有估价，返回报价的 `expected_amount`（这个 Job 大概要花多少，已含已知的输入费用）和待保存的请求。`max_cost` 可选，默认建议不传；只有需要防止费用失控时，才把已批准的上限作为第三个参数传入。
 

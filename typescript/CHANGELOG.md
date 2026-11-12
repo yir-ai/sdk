@@ -12,6 +12,7 @@ Compatible additions:
 
 Behavior change:
 
+- A keyed generation submit that fails after the request was sent with an unknown outcome (network error, cut-off body, 502/503/504, an adapter error or a custom abort reason) rejects with `YirSubmissionUncertainError`, holding the last error in `cause`, instead of that error; only a plain `AbortError` or `TimeoutError` keeps its identity. Resubmit with `error.idempotencyKey`.
 - `cancelJob` on a Job that already succeeded or failed resolves with that finished Job instead of rejecting with the `409 YIR_JOB_NOT_CANCELLABLE` `YirAPIError`. Code that handled the 409 by reading the Job again can drop that branch; code that treated a resolved call as "cancelled" must read `status`, as it already had to for a Job whose cancellation is only requested.
 
 ## 0.9.0 changes

@@ -75,16 +75,25 @@ function submissionError(cause: unknown, key: string, signal?: AbortSignal): Yir
   // Preserve APIError/AbortError identity for existing callers. A frozen custom
   // transport error remains accessible through cause instead of losing the key.
   // Reused errors (for example an abort reason) must not overwrite an earlier key.
-  if (cause instanceof YirSubmissionUncertainError) return cause;
+  // Another submit's uncertain error (for example used as this call's abort reason)
+  // must not hand back its key: recovering with it would replay that other request.
+  if (cause instanceof YirSubmissionUncertainError) {
+    return cause.idempotencyKey === key ? cause : new YirSubmissionUncertainError(key, cause);
+  }
   // An abort reason says nothing about the Gateway's answer: the submit may already
-  // have been sent. A reason that reads like a rejection must not look "not accepted".
-  if (signal?.aborted && cause === signal.reason && (cause instanceof YirAPIError || cause instanceof YirSDKValidationError)) {
+  // have been sent. Only the platform's own abort and timeout keep their identity.
+  if (signal?.aborted && cause === signal.reason && !isPlatformAbort(cause)) {
     return new YirSubmissionUncertainError(key, cause);
   }
   const error = cause instanceof Error && Object.isExtensible(cause) && !("idempotencyKey" in cause)
     ? cause : new Error("job_submit_failed", { cause });
   Object.defineProperty(error, "idempotencyKey", { value: key, configurable: true });
   return error as YirSubmissionError;
+}
+
+// The default reason of AbortController.abort() and AbortSignal.timeout().
+function isPlatformAbort(error: unknown): boolean {
+  return error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError");
 }
 
 export type YirJobStatusOptions = YirRequestOptions & {
@@ -540,7 +549,13 @@ export class YirSubmissionUncertainError extends Error {
  */
 export function isSubmissionNotAccepted(error: unknown): boolean {
   // Submit wraps a frozen or reused error object; the rejection is then its cause.
-  if (error instanceof Error && error.message === "job_submit_failed" && "idempotencyKey" in error) error = error.cause;
+  if (error instanceof Error && error.message === "job_submit_failed" && "idempotencyKey" in error) {
+    const key = (error as YirSubmissionError).idempotencyKey;
+    error = error.cause;
+    // A cause keyed to another submit (another call's error reused as this call's
+    // abort reason or thrown by an adapter) is not this call's answer.
+    if (error instanceof Error && "idempotencyKey" in error && (error as YirSubmissionError).idempotencyKey !== key) return false;
+  }
   if (error instanceof YirSDKValidationError) return true;
   // 408 may have reached admission; a Job-not-found answer can only follow a created Job.
   return error instanceof YirAPIError && error.code.startsWith("YIR_") &&
@@ -979,10 +994,11 @@ export function createNodeHttpTransport(options: CreateNodeYirClientOptions = {}
         });
         if (response.status < 300 || response.status >= 400) text = await response.text();
       } catch (error) {
-        // A Gateway rejection is built from a response further down, never thrown by fetch:
-        // an API or validation error raised here is an abort reason or an adapter's own
-        // error, and the submit may already have been sent.
-        if (submit && (error instanceof TypeError || error instanceof YirAPIError || error instanceof YirSDKValidationError)) state.uncertain = true;
+        // fetch was called, so the submit may have been sent: any failure from here on
+        // (network, cut-off body, an abort reason or adapter error of any class) leaves
+        // the outcome unknown. Only a platform abort or timeout keeps its own identity.
+        // Retry eligibility stays limited to TypeError below.
+        if (submit && !isPlatformAbort(error)) state.uncertain = true;
         if (!canRetry || attempt >= 3 || signal?.aborted || !(error instanceof TypeError)) throw error;
         await sleep(500 * 2 ** attempt, signal);
         continue;

@@ -69,7 +69,8 @@ const unknownClient = createNodeYirClient({ apiKey: "fixture", baseURL: "https:/
   unknownSubmits++;
   throw new Error("fixture_unknown_submit");
 } });
-await assert.rejects(() => unknownClient.submitImage(request), /fixture_unknown_submit/);
+await assert.rejects(() => unknownClient.submitImage(request), error =>
+  error.name === "YirSubmissionUncertainError" && Boolean(error.idempotencyKey) && error.cause.message === "fixture_unknown_submit");
 assert.equal(unknownSubmits, 1, "An ambiguous outcome must not cause an implicit Submit retry");
 let calls = 0;
 const client = createYirClient(async () => {

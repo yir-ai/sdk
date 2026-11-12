@@ -12,6 +12,7 @@
 
 行为变化：
 
+- 带键的生成提交在请求发出后以结果不明的方式失败（网络错误、响应体中断、502/503/504、适配器自身错误或自定义中止原因）时，抛出 `YirSubmissionUncertainError`（最后一次的错误在 `cause`），不再直接抛出该错误；只有普通的 `AbortError` 或 `TimeoutError` 保持原样。用 `error.idempotencyKey` 重新提交。
 - 对已经成功或失败的 Job 调用 `cancelJob`，现在返回这个已结束的 Job，不再以 `409 YIR_JOB_NOT_CANCELLABLE` 的 `YirAPIError` 拒绝。原先遇到 409 再读一次 Job 的分支可以删掉；把“调用成功”当作“已取消”的代码必须读 `status`（取消只是已申请时本来也需要这样做）。
 
 ## 0.9.0 变化
