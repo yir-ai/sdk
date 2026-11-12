@@ -9360,6 +9360,412 @@
       ]
     },
     {
+      "id": "microsoft/mai-image-2.6",
+      "aliases": [
+        "mai-image-2.6"
+      ],
+      "locales": {
+        "en": {
+          "label": "MAI Image 2.6",
+          "description": "Microsoft image generation and reference image editing model"
+        },
+        "zh-CN": {
+          "label": "MAI Image 2.6",
+          "description": "微软图片生成与参考图编辑模型"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K"
+              ],
+              "default": "1K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "16:9",
+                "9:16"
+              ],
+              "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio. At 2K, use 1:1, 4:3, 3:4."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。 2K 时仅支持 1:1, 4:3, 3:4。"
+                }
+              }
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1024x1024",
+                "1152x864",
+                "864x1152",
+                "1536x864",
+                "864x1536",
+                "1536x1536",
+                "1536x1152",
+                "1152x1536"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Exact size",
+                  "description": "Exact output pixels; only explicitly compatible supplies are eligible. Conflicting resolution/aspect ratio is rejected."
+                },
+                "zh-CN": {
+                  "label": "精确尺寸",
+                  "description": "精确输出像素，仅选择明确支持的渠道；与分辨率档位或画幅冲突时拒绝。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 5,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "microsoft/mai-image-2.6-flash",
+      "aliases": [
+        "mai-image-2.6-flash"
+      ],
+      "locales": {
+        "en": {
+          "label": "MAI Image 2.6 Flash",
+          "description": "Microsoft image generation and editing optimized for speed"
+        },
+        "zh-CN": {
+          "label": "MAI Image 2.6 Flash",
+          "description": "微软面向快速出图的图片生成与编辑模型"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K"
+              ],
+              "default": "1K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "16:9",
+                "9:16"
+              ],
+              "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio. At 2K, use 1:1, 4:3, 3:4."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。 2K 时仅支持 1:1, 4:3, 3:4。"
+                }
+              }
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1024x1024",
+                "1152x864",
+                "864x1152",
+                "1536x864",
+                "864x1536",
+                "1536x1536",
+                "1536x1152",
+                "1152x1536"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Exact size",
+                  "description": "Exact output pixels; only explicitly compatible supplies are eligible. Conflicting resolution/aspect ratio is rejected."
+                },
+                "zh-CN": {
+                  "label": "精确尺寸",
+                  "description": "精确输出像素，仅选择明确支持的渠道；与分辨率档位或画幅冲突时拒绝。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 5,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "midjourney/midjourney-v8.2",
       "aliases": [
         "midjourney",
