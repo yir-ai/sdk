@@ -2,7 +2,9 @@
 
 Release notes, newest first. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
 
-## Unreleased
+## Upgrading to 0.14.0
+
+0.14.0 is a minor release with incompatible behavior changes, listed below. The Gateway features it relies on are live.
 
 Compatible additions:
 
@@ -10,8 +12,9 @@ Compatible additions:
 - `PollJob(ctx, id, wait)` checks a Job once for applications that schedule their own polling: the light status, then the full Job only when it is terminal, with the same consistency check as `WaitJob`.
 - `JobBilling.TotalChargedMicros()` and `USDMicros(amount)` convert API amounts to integer millionths of a dollar.
 
-Behavior change:
+Behavior changes:
 
+- A keyed generation submit that fails after the request was sent with an unknown outcome (network error, cut-off response, 502/503/504, cancellation or any other read failure) returns `*SubmissionUncertainError` inside `*SubmissionError` instead of the last error. It deliberately does not unwrap: `errors.As(err, &apiErr)` and `errors.Is` no longer reach the last attempt's `*APIError`, network or context error; read `Err` for it. Check for it before treating an error as "not accepted", and resubmit with its `IdempotencyKey`.
 - `CancelJob` on a Job that already succeeded or failed returns that finished Job instead of the `409 YIR_JOB_NOT_CANCELLABLE` `*APIError`. Code that handled the 409 by reading the Job again can drop that branch; code that treated a nil error as "cancelled" must read `Status`, as it already had to for a Job whose cancellation is only requested.
 
 ## Upgrading to 0.13.0
