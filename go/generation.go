@@ -132,6 +132,13 @@ type Reference struct {
 	// fractions of the frame (X, Y) at second T. Requires a reference_image
 	// with a Subject (the position name).
 	Point *ReferencePoint `json:"point,omitempty"`
+	// DurationSeconds declares the length of a URL reference_video or
+	// reference_audio (seconds, up to 3 decimals) so a quote can price input
+	// media without Yir downloading the URL. Supported for Seedance 2.0, 2.0
+	// Fast, 2.0 Mini, 2.5, MiniMax H3 and H3 Max. Quotes priced this way report
+	// Quote.InputDurationSource "declared". Submission ignores it: the Job is
+	// admitted and charged by the duration measured after import.
+	DurationSeconds *float64 `json:"duration_seconds,omitempty"`
 }
 
 // ReferencePoint is a face center in the template: X and Y are fractions of

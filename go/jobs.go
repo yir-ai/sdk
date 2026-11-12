@@ -67,10 +67,14 @@ type Quote struct {
 	// ExpectedAmount is the first route's admission estimate: the amount Yir
 	// checks the balance, Key monthly limit and max_cost against. Unlike an
 	// output-only Primary estimate it includes known input charges. Optional.
-	ExpectedAmount *string    `json:"expected_amount,omitempty"`
-	Official       QuotePrice `json:"official"`
-	ExpiresAt      int64      `json:"expires_at"`
-	raw            string
+	ExpectedAmount *string `json:"expected_amount,omitempty"`
+	// InputDurationSource is "declared" when Primary and ExpectedAmount price
+	// URL reference media from Reference.DurationSeconds instead of measured
+	// files. The Job is charged by the measured duration. Empty otherwise.
+	InputDurationSource string     `json:"input_duration_source,omitempty"`
+	Official            QuotePrice `json:"official"`
+	ExpiresAt           int64      `json:"expires_at"`
+	raw                 string
 }
 
 // QuotePriceDifference is comparison metadata, never a charge or authorization.

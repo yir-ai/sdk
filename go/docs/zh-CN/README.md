@@ -111,7 +111,7 @@ job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model}, sa
 
 媒体引用二选一：`FileID`（ready 的文件）或 `URL`（公开 HTTPS 地址，Yir 在提交时导入，最大 100 MiB，拒绝 data URL）。更大或不可公开访问的媒体使用文件上传。`CompleteFile` 可能返回 `processing`，`UploadFile` 默认最多等待五分钟到 `ready`。可用 `WaitForFileReady` 继续等待已保存的文件 ID；本地等待超时不会取消服务端分析。
 
-`CreateFiles(ctx, request, key)` 创建上传计划；`UploadFile(ctx, plan, source)` 从 `io.ReaderAt` 上传并完成文件；`CreateAndUploadFile(ctx, metadata, source, key)` 合并步骤。保留稳定上传键及文件 ID。`GetFile` 查询状态，`CompleteFile` 完成手动上传。生成引用使用 ready 文件的 `FileID` 和适当角色，支持单段与分段上传计划。ready 的视频与音频文件带 `DurationSeconds`，即实测时长（向上取整到毫秒）。以 `FileID` 引用时，报价按该实测值计算参考视频等输入媒体费用；URL 引用在报价时没有实测时长，报价不给完整价格。
+`CreateFiles(ctx, request, key)` 创建上传计划；`UploadFile(ctx, plan, source)` 从 `io.ReaderAt` 上传并完成文件；`CreateAndUploadFile(ctx, metadata, source, key)` 合并步骤。保留稳定上传键及文件 ID。`GetFile` 查询状态，`CompleteFile` 完成手动上传。生成引用使用 ready 文件的 `FileID` 和适当角色，支持单段与分段上传计划。ready 的视频与音频文件带 `DurationSeconds`，即实测时长（向上取整到毫秒）。以 `FileID` 引用时，报价按该实测值计算参考视频等输入媒体费用；URL 引用在报价时没有实测时长，报价不给完整价格。若不想先上传、又要为 URL 参考视频或音频报价（Seedance 2.0、2.0 Fast、2.0 Mini、2.5，MiniMax H3、H3 Max），给 `Reference.DurationSeconds` 填上时长：报价按该值计算输入媒体费用，并返回 `Quote.InputDurationSource` 为 `"declared"`。提交时忽略该值，Job 按导入后的实测时长准入和扣费，文件实际更长时费用会高于报价。
 
 `GetFileContentURL(ctx, id)` 返回 ready 文件的短时签名 URL。SDK 从 307 响应的 `Location` 头读取该 URL，从不跟随跳转，因此 API Key 不会发给存储端。请求该 URL 时不要带 Gateway 凭据；过期后重新获取。只接受绝对 `https` URL，其余情况返回 `file_content_response_invalid`，错误中不含该 URL。文件不存在返回 `*APIError` 404 `YIR_FILE_NOT_FOUND`；尚未 ready 返回 409 `YIR_FILE_NOT_READY`（用 `WaitForFileReady` 等待后重试）；已过期返回 410 `YIR_FILE_EXPIRED`（需重新上传）。
 

@@ -69,6 +69,13 @@ export type StandardReference = {
    * Requires a reference_image with a `subject` (the position name).
    */
   readonly point?: StandardReferencePoint;
+  /**
+   * Declared length in seconds (up to 3 decimals) of a `url` reference_video or reference_audio, so a quote can
+   * price input media without Yir downloading the URL. Supported for Seedance 2.0, 2.0 Fast, 2.0 Mini, 2.5,
+   * MiniMax H3 and H3 Max. Such quotes report `input_duration_source: "declared"`. Submission ignores it: the
+   * Job is admitted and charged by the duration measured after import.
+   */
+  readonly duration_seconds?: number;
 } & StandardMediaSource;
 
 export type StandardReferencePoint = {

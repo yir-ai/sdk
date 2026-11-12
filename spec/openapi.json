@@ -1173,6 +1173,12 @@
                     "y": { "type": "number", "minimum": 0, "maximum": 1, "description": "Face center as a fraction of the frame height." },
                     "t": { "type": "number", "minimum": 0, "maximum": 60, "description": "Second of the template at which the face is at that point." }
                   }
+                },
+                "duration_seconds": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 600,
+                  "description": "Quote only: your declared length of a url reference_video or reference_audio, in seconds with up to 3 decimals. Supported for bytedance/seedance-2.0, seedance-2.0-fast, seedance-2.0-mini, seedance-2.5, minimax/minimax-h3 and minimax-h3-max; other models and file_id references reject it. Yir does not download the URL to quote: with every priced url reference declared, the quote prices input media from these values and reports input_duration_source declared. Submission ignores the value; the Job is admitted and charged by the duration measured after import."
                 }
               },
               "oneOf": [
@@ -1833,6 +1839,11 @@
             "type": "integer",
             "format": "int64",
             "minimum": 1
+          },
+          "input_duration_source": {
+            "type": "string",
+            "enum": ["declared"],
+            "description": "declared when primary and expected_amount price url reference media from the duration_seconds you declared rather than a measured file. The Job is admitted and charged by the duration Yir measures after importing the URL, so a longer actual file costs more. Omitted when the quote uses measured files or no input media duration."
           },
           "expected_amount": {
             "type": "string",

@@ -229,6 +229,8 @@ export type Quote = {
   readonly primary: QuotePrice;
   /** Admission estimate for the first channel, compared with balance, Key limit and max_cost. Unlike an output-only `estimate` price it includes known input charges. Optional. */
   readonly expected_amount?: string;
+  /** `declared` when `primary` and `expected_amount` price url reference media from your `duration_seconds`; the Job is charged by the measured duration. */
+  readonly input_duration_source?: "declared" | (string & {});
   readonly official: QuotePrice;
   readonly price_difference_percent?: {
     readonly min: number;
