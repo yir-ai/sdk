@@ -16,7 +16,7 @@ Run in your application's Go module:
 go get github.com/yir-ai/sdk/go@latest
 ```
 
-Module release tags use `go/vX.Y.Z`; this version uses `go/v0.13.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
+Module release tags use `go/vX.Y.Z`; this version uses `go/v0.14.0`. The module includes its required test vectors and works without Node or the repository's `spec/` directory.
 
 ```go
 import (

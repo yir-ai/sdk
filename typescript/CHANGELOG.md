@@ -2,7 +2,9 @@
 
 Release notes before 0.10.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
 
-## Unreleased
+## 0.14.0 changes
+
+0.14.0 is a minor release with incompatible behavior changes, listed below. The Gateway features it relies on are live.
 
 Compatible additions:
 
@@ -10,7 +12,7 @@ Compatible additions:
 - `pollJob(client, id, options)` checks a Job once for applications that schedule their own polling and resolves with `{ done: false, status }` or `{ done: true, job }`.
 - `usdMicros(amount)` converts an API amount to a `bigint` of millionths of a dollar.
 
-Behavior change:
+Behavior changes:
 
 - A keyed generation submit that fails after the request was sent with an unknown outcome (network error, cut-off body, 502/503/504, an adapter error or a custom abort reason) rejects with `YirSubmissionUncertainError`, holding the last error in `cause`, instead of that error; only a plain `AbortError` or `TimeoutError` keeps its identity. Resubmit with `error.idempotencyKey`.
 - `cancelJob` on a Job that already succeeded or failed resolves with that finished Job instead of rejecting with the `409 YIR_JOB_NOT_CANCELLABLE` `YirAPIError`. Code that handled the 409 by reading the Job again can drop that branch; code that treated a resolved call as "cancelled" must read `status`, as it already had to for a Job whose cancellation is only requested.
