@@ -2349,7 +2349,11 @@
           "channel_parameters": { "type": "array", "items": { "$ref": "#/components/schemas/ChannelParameters" } },
           "id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
           "object": { "type": "string", "const": "model" },
-          "specifications": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ModelSpecification" } }
+          "specifications": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ModelSpecification" } },
+          "released_at": { "type": "string", "format": "date", "description": "Vendor release date of the model. Display only; compare it with your own window to mark new models." },
+          "superseded_by": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$", "description": "Canonical ID of the newer model that replaces this one. Display only." },
+          "is_hot": { "type": "boolean", "description": "Highlighted by Yir as popular. Display only; omitted when false." },
+          "is_new": { "type": "boolean", "description": "Highlighted by Yir as new, beyond any date-based rule. Display only; omitted when false." }
         }
       },
       "ModelSpecification": {
