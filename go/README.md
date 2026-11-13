@@ -36,7 +36,7 @@ Keep the key on your server. The default base URL is `https://gateway.yir.ai`; c
 
 ## Quick start
 
-Submit, wait, read the result. This is the whole flow and it spends from your balance; [Demo mode](#demo-mode) runs it for free.
+Submit, wait, read the result. This is the whole flow and it spends from your balance; [Demo mode](#demo-mode) supports free parameter, polling and result-handling integration tests.
 
 ```go
 request := yir.GenerationRequest{
@@ -123,13 +123,15 @@ Set `SubmitRequest.WebhookURL` for callbacks. `VerifyWebhookSignature` takes `Se
 
 ## Demo mode
 
-Demo mode tests the whole generation flow without spending: set `ClientOptions.Demo` to `&yir.DemoOptions{}` (the Go SDK reads no environment variables; map your own flag to it). Submits run the usual local checks and then the matching quote (free), so the Gateway still validates the parameters, but the request is never submitted. The submit returns a demo Job whose ID starts with `demo_` and carries the quote's model and echoed parameters. Quotes, files, balance and model calls use the Gateway as usual, so an API Key is still required.
+Demo mode supports free integration testing of parameter validation, polling and result handling (an API Key and network are still required): set `ClientOptions.Demo` to `&yir.DemoOptions{}` (the Go SDK reads no environment variables; map your own flag to it). Submits run the usual local checks and then the matching quote (free), so the Gateway still validates the parameters, but the request is never submitted. The submit returns a demo Job whose ID starts with `demo_` and carries the quote's model and echoed parameters. Quotes, files, balance and model calls use the Gateway as usual, so an API Key is still required.
 
 A demo Job keeps no state: its ID encodes the creation time, type, aspect ratio, `n`, duration, resolution and scenario, so `GetJob`, `GetJobStatusWithWait` (holding until the next change) and `WaitJob` give the same answer in any process, without a network call, and match the TypeScript SDK. Every `Client` answers `demo_` IDs locally, also with demo mode off; `IsDemoJobID(id)` tells them apart. An image is queued for 2 seconds and succeeds after 8, a video after 25 seconds, audio after 12. The result points at fixed files under `DemoAssetBaseURL` (`https://public.yir.ai/demo/v1/`) with a DEMO badge, picked by type and the nearest aspect ratio (and 5 or 10 second video length); `Width`, `Height` and `DurationMS` describe the actual file, and the requested values stay in `Parameters`. Billing is always `"0"`.
 
-`DemoOptions.Scenario` or a `[demo:<scenario>]` marker in the prompt (which wins) picks the outcome: `DemoScenarioOK` (default); `DemoScenarioSlow`, queued for 6 minutes and succeeded after 8; `DemoScenarioFail`, failed with `YIR_EXECUTION_FAILED` and nothing charged; `DemoScenarioReject`, the submit returns `*APIError` 422 `YIR_INPUT_REJECTED` (inside a `*SubmissionError`) after the quote; `DemoScenarioCancel`, ends `cancelled`. `CancelJob` on an unfinished demo Job returns it `cancelled` and on an ended one returns it as it ended; because nothing is stored, later reads follow the original timeline, so keep the Job `CancelJob` returns.
+`DemoOptions.Scenario` or a `[demo:<scenario>]` marker in the prompt (which wins) picks the outcome: `DemoScenarioOK` (default); `DemoScenarioSlow`, queued for 6 minutes and succeeded after 8; `DemoScenarioFail`, failed with `YIR_EXECUTION_FAILED` and nothing charged; `DemoScenarioReject`, the submit returns `*APIError` 422 `YIR_INPUT_REJECTED` (inside a `*SubmissionError`) after the quote; `DemoScenarioCancel`, ends `cancelled`. `CancelJob` rejects an unfinished demo Job with `ErrDemoCancelUnsupported` (`demo_cancel_unsupported`) and leaves its timeline unchanged. Use the `cancel` scenario to test a cancelled terminal Job. Ended Jobs are returned unchanged.
 
-The submit returns the quote's full `Parameters` echo; later reads of a demo Job keep only `n`, `aspect_ratio`, `resolution` and `duration`, which fit in the ID. Demo mode does not cover idempotent replay of a submit, balance, spend-limit or `MaxCost` admission errors, Webhook delivery, partial or expired results, or fallback billing.
+The submit returns the quote's full `Parameters` echo; later reads of a demo Job keep only `n`, `aspect_ratio`, `resolution` and `duration`, which the lightweight ID format encodes. Demo mode does not cover active cancellation, idempotent replay of a submit, balance, spend-limit or `MaxCost` admission errors, Webhook delivery, partial or expired results, or fallback billing.
+
+Demo validates parameters, not real execution eligibility: even when the quote has `supply.available: false`, it simulates the selected scenario. It is neither an offline mock nor a real generation sandbox. Reusing an idempotency key creates a different demo Job. Demo IDs include the model name and can exceed the real Job ID limit of 64 characters; store them as opaque strings without truncation.
 
 ## Pricing and contracts
 

@@ -21,7 +21,6 @@ export { DEMO_ASSET_BASE_URL };
 // The code lists below are append-only.
 const PREFIX = "demo_1";
 const HEAD = PREFIX.length + 17;
-const MAX_MODEL_LENGTH = 64 - HEAD - 1;
 const KINDS = { i: "image", v: "video", m: "music", x: "sound_effect", t: "speech" } as const;
 type DemoKind = (typeof KINDS)[keyof typeof KINDS];
 const OPERATION_KINDS: Readonly<Record<string, keyof typeof KINDS>> = {
@@ -54,7 +53,7 @@ type DemoJobFields = {
 
 /** Reports whether an ID belongs to a demo-mode Job, which the SDK answers locally. */
 export function isDemoJobID(id: unknown): id is string {
-  return typeof id === "string" && id.length <= 64 && ID_PATTERN.test(id);
+  return typeof id === "string" && ID_PATTERN.test(id);
 }
 
 const code = (list: readonly string[], value: unknown) => {
@@ -76,7 +75,6 @@ export function validateDemoOptions(options: YirDemoOptions): void {
 /** Builds the queued demo Job for a successful quote of the submitted request. */
 export function createDemoJob(quote: Quote, scenario: YirDemoScenario, now = Date.now()): Job {
   const model = quote.model.replace(/\//g, "~");
-  if (model.length > MAX_MODEL_LENGTH) throw new Error("demo_model_id_too_long");
   const parameters = quote.parameters;
   const n = Math.min(Math.max(Math.trunc(parameters.n ?? 1) || 1, 1), 35);
   const duration = parameters.duration === "auto" ? AUTO_DURATION
@@ -145,10 +143,10 @@ function assets(fields: DemoJobFields): readonly DemoAsset[] {
   return matching;
 }
 
-function demoJob(fields: DemoJobFields, now: number, cancelledAt?: number): Job {
+function demoJob(fields: DemoJobFields, now: number): Job {
   const seconds = Math.floor(now / 1000);
-  const status = cancelledAt === undefined ? statusAt(fields, seconds) : "cancelled";
-  const completed = cancelledAt ?? timeline(fields)[1];
+  const status = statusAt(fields, seconds);
+  const completed = timeline(fields)[1];
   const terminal = status === "succeeded" || status === "failed" || status === "cancelled";
   const parameters: Record<string, unknown> = { n: fields.n };
   if (fields.aspectRatio !== undefined) parameters.aspect_ratio = fields.aspectRatio;
@@ -194,8 +192,8 @@ function demoJob(fields: DemoJobFields, now: number, cancelledAt?: number): Job 
 }
 
 /**
- * The demo Job as of `now`; the ID must satisfy `isDemoJobID`. The ID only has
- * room for n, aspect_ratio, resolution and duration, so `parameters` echoes just
+ * The demo Job as of `now`; the ID must satisfy `isDemoJobID`. The lightweight ID encodes only
+ * n, aspect_ratio, resolution and duration, so `parameters` echoes just
  * those; the submit's return carries the quote's full echo.
  */
 export function getDemoJob(id: string, now = Date.now()): Job {
@@ -208,13 +206,13 @@ export function getDemoJobStatus(id: string, now = Date.now()): JobStatusRespons
 }
 
 /**
- * Cancels a demo Job that has not ended, or returns undefined when it has (the
- * Gateway answers 409 YIR_JOB_NOT_CANCELLABLE). Demo Jobs keep no state: later
- * reads follow the original timeline, so keep the Job this returns.
+ * Stateless demo Jobs cannot persist cancellation. Reject active cancellation;
+ * use the cancel scenario to test a cancelled terminal Job. Ended Jobs are unchanged.
  */
 export function cancelDemoJob(id: string, now = Date.now()): Job | undefined {
   const fields = decode(id);
   const seconds = Math.floor(now / 1000);
   const status = statusAt(fields, seconds);
-  return status === "queued" || status === "running" ? demoJob(fields, now, seconds) : undefined;
+  if (status === "queued" || status === "running") throw new Error("demo_cancel_unsupported");
+  return undefined;
 }

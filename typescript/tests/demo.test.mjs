@@ -114,16 +114,13 @@ test("every client answers demo IDs locally, demo mode or not", async () => {
   assert.deepEqual(calls, ["/v1/jobs/job_1"]);
 });
 
-test("cancelJob cancels an unfinished demo Job and returns an ended one as it ended", async () => {
+test("cancelJob rejects active demo cancellation and leaves the timeline unchanged", async () => {
   const queued = fixture.cases.find(item => item.job.status === "queued");
   const done = fixture.cases.find(item => item.job.status === "succeeded");
   const client = createYirClient(async request => { throw new Error(`unexpected ${request.path}`); });
   await at(queued.now_ms, async () => {
-    const job = await client.cancelJob(queued.id);
-    assert.equal(job.status, "cancelled");
-    assert.equal(job.cancellation.status, "cancelled");
-    assert.equal(job.billing.total_charged_by_yir, "0");
-    assert.equal(job.result, undefined);
+    await assert.rejects(client.cancelJob(queued.id), /demo_cancel_unsupported/);
+    assert.equal((await client.getJob(queued.id)).status, "queued");
   });
   await at(done.now_ms, async () => {
     assert.equal((await client.cancelJob(done.id)).status, "succeeded");
@@ -172,15 +169,22 @@ test("createNodeYirClient enables demo mode from YIR_DEMO and waitForJob complet
   }
 });
 
-test("demo IDs fit the Job ID limit for the longest model and reject longer ones", async () => {
+test("demo IDs support long model names without relaxing real Job ID limits", async () => {
   const longest = "spacexai/grok-imagine-video-1.5-lite";
   const client = createYirClient(async request => ({ ...quoteFor(request.body, "generate_video", { aspect_ratio: "16:9", resolution: "720p", n: 1, duration: 5 }), model: request.body.model }), undefined, { demo: true });
   const video = { model: longest, input: { type: "text", prompt: "Waves" }, parameters: {} };
   const job = await client.submitVideo(video);
   assert.ok(job.id.length <= 64 && isValidJobID(job.id));
   assert.equal(getDemoJob(job.id).model, longest);
-  const error = await client.submitVideo({ ...video, model: "vendor/a-model-name-that-is-far-too-long-for-ids" }).catch(error => error);
-  assert.equal(error.message, "demo_model_id_too_long");
+  const model = "vendor/" + "long-model-".repeat(20);
+  const long = await client.submitVideo({ ...video, model });
+  assert.ok(long.id.length > 64 && isDemoJobID(long.id) && isValidJobID(long.id));
+  const reader = createYirClient(async () => { throw new Error("unexpected network"); });
+  assert.equal((await reader.getJob(long.id)).model, model);
+  assert.equal((await reader.getJobStatus(long.id)).status, "queued");
+  await assert.rejects(reader.cancelJob(long.id), /demo_cancel_unsupported/);
+  assert.equal(isValidJobID("job_" + "a".repeat(65)), false);
+  assert.equal(isValidJobID(long.id + "/unsafe"), false);
 });
 
 test("the SDK asset table matches the published manifest", () => {

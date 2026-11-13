@@ -36,7 +36,7 @@ _ = client
 
 ## 快速开始
 
-提交、等待、读取结果，完整流程就是这些。这段代码会从余额扣费；[Demo 模式](#demo-模式)可以免费跑通同样的流程。
+提交、等待、读取结果，完整流程就是这些。这段代码会从余额扣费；[Demo 模式](#demo-模式)可免费联调参数、轮询和结果处理。
 
 ```go
 request := yir.GenerationRequest{
@@ -121,13 +121,15 @@ job, err := client.Submit3D(ctx, yir.SubmitRequest{GenerationRequest: model}, sa
 
 ## Demo 模式
 
-Demo 模式用于不花钱地测试完整生成流程：把 `ClientOptions.Demo` 设为 `&yir.DemoOptions{}`（Go SDK 不读环境变量，请自行映射开关）。提交照常做本地校验，再调用对应的报价接口（不扣费），参数仍由网关校验，但请求不会真正提交。提交返回一个 ID 以 `demo_` 开头的 demo Job，带报价返回的模型和参数回显。报价、文件、余额和模型接口照常访问网关，因此仍需要 API Key。
+Demo 模式用于免费联调参数校验、轮询和结果处理（仍需 API Key 和网络）：把 `ClientOptions.Demo` 设为 `&yir.DemoOptions{}`（Go SDK 不读环境变量，请自行映射开关）。提交照常做本地校验，再调用对应的报价接口（不扣费），参数仍由网关校验，但请求不会真正提交。提交返回一个 ID 以 `demo_` 开头的 demo Job，带报价返回的模型和参数回显。报价、文件、余额和模型接口照常访问网关，因此仍需要 API Key。
 
 Demo Job 不保存状态：ID 里编码了创建时间、类型、画幅、`n`、时长、分辨率和场景，所以 `GetJob`、`GetJobStatusWithWait`（挂起到下一次状态变化）和 `WaitJob` 在任何进程里得到同样结果，不发网络请求，并与 TypeScript SDK 一致。所有 `Client` 都在本地解答 `demo_` ID，关闭 demo 模式后也一样；用 `IsDemoJobID(id)` 区分。图片排队 2 秒、8 秒后成功，视频 25 秒，音频 12 秒。结果指向 `DemoAssetBaseURL`（`https://public.yir.ai/demo/v1/`）下带 DEMO 徽标的固定文件，按类型和最接近的画幅（视频再按 5 或 10 秒）选取；`Width`、`Height`、`DurationMS` 是实际文件的值，请求的值保留在 `Parameters` 中。扣费恒为 `"0"`。
 
-`DemoOptions.Scenario` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`DemoScenarioOK`（默认）；`DemoScenarioSlow`，排队 6 分钟、8 分钟后成功；`DemoScenarioFail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`DemoScenarioReject`，报价后提交返回 `*APIError` 422 `YIR_INPUT_REJECTED`（包在 `*SubmissionError` 里）；`DemoScenarioCancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `CancelJob` 返回 `cancelled`，对已结束的返回该 Job 的终态；由于不保存状态，之后的读取仍按原时间线，请保留 `CancelJob` 返回的 Job。
+`DemoOptions.Scenario` 或提示词中的 `[demo:<scenario>]` 标记（标记优先）决定结果：`DemoScenarioOK`（默认）；`DemoScenarioSlow`，排队 6 分钟、8 分钟后成功；`DemoScenarioFail`，以 `YIR_EXECUTION_FAILED` 失败且不扣费；`DemoScenarioReject`，报价后提交返回 `*APIError` 422 `YIR_INPUT_REJECTED`（包在 `*SubmissionError` 里）；`DemoScenarioCancel`，以 `cancelled` 结束。对未结束的 demo Job 调用 `CancelJob` 会返回 `ErrDemoCancelUnsupported`（`demo_cancel_unsupported`），不改变任务状态；用 `cancel` 场景联调取消终态。对已结束的任务仍返回原终态。
 
-提交返回报价的完整 `Parameters` 回显；之后按 ID 读取 demo Job 只保留 `n`、`aspect_ratio`、`resolution`、`duration` 四项（ID 装不下其余参数）。Demo 模式不覆盖：提交的幂等重放、余额/消费上限/`MaxCost` 准入错误、Webhook 投递、部分或过期结果、fallback 计费。
+提交返回报价的完整 `Parameters` 回显；之后按 ID 读取 demo Job 只保留 `n`、`aspect_ratio`、`resolution`、`duration` 四项（轻量 ID 格式仅编码这四项）。Demo 模式不覆盖：主动取消、提交的幂等重放、余额/消费上限/`MaxCost` 准入错误、Webhook 投递、部分或过期结果、fallback 计费。
+
+Demo 仅校验参数，不验证真实执行资格：即使 Quote 的 `supply.available` 为 `false`，仍可按所选场景模拟任务。它不是离线 mock 或真实生成沙箱。相同幂等键重复提交会产生不同 demo Job。Demo ID 包含模型名，可能超过真实 Job ID 的 64 字符限制；存储时请按不透明字符串处理，不截断。
 
 ## 价格与合同
 

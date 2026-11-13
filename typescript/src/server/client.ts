@@ -134,6 +134,7 @@ export type YirClient = YirFileClient & {
    * already succeeded or failed cannot be cancelled (409 `YIR_JOB_NOT_CANCELLABLE`);
    * it is returned as it ended instead of rejecting. Resolving therefore does not
    * mean the Job was cancelled: read `status` and `cancellation`.
+   * Active demo Jobs reject with `demo_cancel_unsupported`; use the cancel scenario.
    */
   cancelJob(id: string, options?: YirRequestOptions): Promise<Job>;
 };
@@ -145,7 +146,7 @@ export type YirClientOptions = {
    * queued to a DEMO-badged sample result without charge. Quotes, files and
    * account calls still use the Gateway. The submit returns the quote's full
    * parameter echo; later reads keep only n, aspect_ratio, resolution and
-   * duration, which fit in the ID. Demo Job IDs start with `demo_` and are
+   * duration, which the lightweight ID format encodes. Demo Job IDs start with `demo_` and are
    * answered locally by every client, demo mode or not. When omitted,
    * `YIR_DEMO=1` or `YIR_DEMO=true` turns it on where a process environment exists.
    */
@@ -393,7 +394,7 @@ export function createYirClient(transport: YirTransport, catalog?: ModelContract
       const normalizedID = id.trim();
       if (!isValidJobID(normalizedID)) throw new Error("job_id_invalid");
       if (isDemoJobID(normalizedID)) {
-        return Promise.resolve(cancelDemoJob(normalizedID) ?? getDemoJob(normalizedID));
+        return Promise.resolve().then(() => cancelDemoJob(normalizedID) ?? getDemoJob(normalizedID));
       }
       const signal = options?.signal ? { signal: options.signal } : {};
       return transport<Job>({ method: "POST", path: `/v1/jobs/${normalizedID}/cancel`, ...signal }).catch(error => {
@@ -447,7 +448,7 @@ function validateSubmittedJob(job: Job): Job {
  * accepted, so a new server ID format needs no SDK release.
  */
 export function isValidJobID(id: unknown): id is string {
-  return typeof id === "string" && id.length > 0 && id !== "." && id !== ".." && id.length <= 64 && !/[\s/?#%\\\u0000-\u001f\u007f]/.test(id);
+  return typeof id === "string" && id.length > 0 && id !== "." && id !== ".." && (id.length <= 64 || isDemoJobID(id)) && !/[\s/?#%\\\u0000-\u001f\u007f]/.test(id);
 }
 
 export const TERMINAL_JOB_STATUSES = Object.freeze(["succeeded", "failed", "cancelled"] as const);

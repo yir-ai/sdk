@@ -16,6 +16,10 @@ import (
 // operation without a demo sample (3D); nothing is sent.
 var ErrDemoOperationUnsupported = errors.New("demo_operation_unsupported")
 
+// ErrDemoCancelUnsupported means active cancellation cannot be persisted by a
+// stateless demo Job. Use DemoScenarioCancel to test a cancelled terminal Job.
+var ErrDemoCancelUnsupported = errors.New("demo_cancel_unsupported")
+
 // DemoScenario selects how a demo Job ends. DemoScenarioOK succeeds,
 // DemoScenarioSlow stays queued for 6 minutes before succeeding,
 // DemoScenarioFail fails with nothing charged, DemoScenarioReject makes the
@@ -36,7 +40,7 @@ const (
 // that goes from queued to a DEMO-badged sample result without charge. Quotes,
 // files and account calls still use the Gateway. The submit returns the quote's
 // full Parameters echo; later reads keep only n, aspect_ratio, resolution and
-// duration, which fit in the ID. Demo Job IDs start with "demo_" and every
+// duration, which the lightweight ID format encodes. Demo Job IDs start with "demo_" and every
 // Client answers them locally, demo mode or not.
 type DemoOptions struct {
 	// Scenario defaults to DemoScenarioOK.
@@ -50,11 +54,10 @@ type DemoOptions struct {
 //
 // The code lists are append-only.
 const (
-	demoPrefix         = "demo_1"
-	demoHead           = len(demoPrefix) + 17
-	demoMaxModelLength = 64 - demoHead - 1
-	demoAutoDuration   = 36*36 - 1
-	demoResultTTL      = 7 * 24 * 3600
+	demoPrefix       = "demo_1"
+	demoHead         = len(demoPrefix) + 17
+	demoAutoDuration = 36*36 - 1
+	demoResultTTL    = 7 * 24 * 3600
 )
 
 var (
@@ -73,7 +76,7 @@ var (
 
 // IsDemoJobID reports whether id belongs to a demo-mode Job, which the SDK answers locally.
 func IsDemoJobID(id string) bool {
-	return len(id) <= 64 && demoIDPattern.MatchString(id)
+	return demoIDPattern.MatchString(id)
 }
 
 type demoFields struct {
@@ -130,9 +133,6 @@ func demoNumber(value any) (float64, bool) {
 
 func newDemoJob(quote Quote, scenario DemoScenario, now time.Time) (Job, error) {
 	model := strings.ReplaceAll(quote.Model, "/", "~")
-	if len(model) > demoMaxModelLength {
-		return Job{}, errors.New("demo_model_id_too_long")
-	}
 	n := int64(1)
 	if value, ok := demoNumber(quote.Parameters["n"]); ok {
 		n = min(max(int64(value), 1), 35)
@@ -160,7 +160,7 @@ func newDemoJob(quote Quote, scenario DemoScenario, now time.Time) (Job, error) 
 		demoCode(demoAspects, quote.Parameters["aspect_ratio"]) + strconv.FormatInt(n, 36) +
 		pad(strconv.FormatInt(duration, 36), 2) + demoCode(demoResolutions, quote.Parameters["resolution"]) +
 		string(demoScenarioCodes[scenario]) + string(nonce) + "_" + model
-	job := demoJob(decodeDemoID(id), now, nil)
+	job := demoJob(decodeDemoID(id), now)
 	job.Parameters = quote.Parameters
 	return withDemoRaw(job), nil
 }
@@ -287,12 +287,9 @@ func (f demoFields) assets() []demoAsset {
 	return matching
 }
 
-func demoJob(f demoFields, now time.Time, cancelledAt *int64) Job {
+func demoJob(f demoFields, now time.Time) Job {
 	status := f.statusAt(now.Unix())
 	completed := f.timeline()[1]
-	if cancelledAt != nil {
-		status, completed = "cancelled", *cancelledAt
-	}
 	terminal := status == "succeeded" || status == "failed" || status == "cancelled"
 	parameters := map[string]any{"n": f.n}
 	if f.aspectRatio != "" {
@@ -385,16 +382,14 @@ func demoJobStatusWithWait(ctx context.Context, id string, wait time.Duration) (
 		case <-timer.C:
 		}
 	}
-	return demoJobStatus(demoJob(decodeDemoID(id), demoNow(), nil)), nil
+	return demoJobStatus(demoJob(decodeDemoID(id), demoNow())), nil
 }
 
-// cancelDemoJob cancels an unfinished demo Job. Demo Jobs keep no state: later
-// reads follow the original timeline, so keep the Job this returns.
+// cancelDemoJob rejects active cancellation because demo Jobs keep no state.
 func cancelDemoJob(id string) (Job, error) {
 	fields, now := decodeDemoID(id), demoNow()
 	if status := fields.statusAt(now.Unix()); status != "queued" && status != "running" {
 		return Job{}, &APIError{Status: 409, Code: ErrCodeJobNotCancellable, Message: "The demo Job has already ended."}
 	}
-	at := now.Unix()
-	return withDemoRaw(demoJob(fields, now, &at)), nil
+	return Job{}, ErrDemoCancelUnsupported
 }

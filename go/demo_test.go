@@ -180,7 +180,7 @@ func TestDemoCancelAndLongPoll(t *testing.T) {
 		t.Fatalf("status = %+v, err = %v after %v", status, err, time.Since(started))
 	}
 	cancelled, err := client.CancelJob(context.Background(), job.ID)
-	if err != nil || cancelled.Status != "cancelled" || cancelled.Cancellation == nil || cancelled.Result != nil {
+	if !errors.Is(err, ErrDemoCancelUnsupported) {
 		t.Fatalf("cancelled = %+v, err = %v", cancelled, err)
 	}
 	atDemoTime(t, time.Unix(job.CreatedAt+60, 0))
@@ -203,9 +203,21 @@ func TestDemoIDLimits(t *testing.T) {
 	if err != nil || len(job.ID) > 64 || !validJobID(job.ID) || decodeDemoID(job.ID).model != longest {
 		t.Fatalf("job = %+v, err = %v", job, err)
 	}
-	quote.Model = "vendor/a-model-name-that-is-far-too-long-for-ids"
-	if _, err := newDemoJob(quote, DemoScenarioOK, time.Now()); err == nil || err.Error() != "demo_model_id_too_long" {
-		t.Fatalf("err = %v", err)
+	quote.Model = "vendor/" + strings.Repeat("long-model-", 20)
+	job, err = newDemoJob(quote, DemoScenarioOK, time.Now())
+	if err != nil || len(job.ID) <= 64 || !validJobID(job.ID) || !IsDemoJobID(job.ID) {
+		t.Fatalf("long demo ID: %v", err)
+	}
+	client := demoClient(t, "http://127.0.0.1:1", nil)
+	read, err := client.GetJob(context.Background(), job.ID)
+	if err != nil || read.Model != quote.Model {
+		t.Fatalf("long model read: %v", err)
+	}
+	if _, err := client.CancelJob(context.Background(), job.ID); !errors.Is(err, ErrDemoCancelUnsupported) {
+		t.Fatalf("cancel: %v", err)
+	}
+	if validJobID("job_"+strings.Repeat("a", 65)) || validJobID(job.ID+"/unsafe") {
+		t.Fatal("invalid real ID accepted")
 	}
 }
 

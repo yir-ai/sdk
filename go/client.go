@@ -420,7 +420,7 @@ var canonicalModelIDPattern = regexp.MustCompile(`^[a-z0-9._-]+/[a-z0-9._-]+$`)
 // validJobID accepts any opaque ID that is safe as one path segment; the
 // Gateway owns the ID format.
 func validJobID(id string) bool {
-	return id != "" && id != "." && id != ".." && len(id) <= 64 && strings.TrimSpace(id) == id && !strings.ContainsAny(id, "/?#%\\") &&
+	return id != "" && id != "." && id != ".." && (len(id) <= 64 || IsDemoJobID(id)) && strings.TrimSpace(id) == id && !strings.ContainsAny(id, "/?#%\\") &&
 		strings.IndexFunc(id, func(r rune) bool { return r < 0x21 || r == 0x7f }) < 0
 }
 
@@ -489,7 +489,7 @@ func (c *Client) GetJob(ctx context.Context, id string) (Job, error) {
 		return job, errors.New("job_id_invalid")
 	}
 	if IsDemoJobID(id) {
-		return withDemoRaw(demoJob(decodeDemoID(id), demoNow(), nil)), nil
+		return withDemoRaw(demoJob(decodeDemoID(id), demoNow())), nil
 	}
 	err := c.do(ctx, http.MethodGet, "/v1/jobs/"+id, "", nil, &job)
 	if err == nil && (job.ID != id || !validJobStatus(job.Status)) {
@@ -532,6 +532,7 @@ func (c *Client) GetJobStatusWithWait(ctx context.Context, id string, wait time.
 // YIR_JOB_NOT_CANCELLABLE and CancelJob returns that finished Job instead of
 // the error. A nil error therefore does not mean the Job was cancelled; read
 // Status and Cancellation, and settle a succeeded or failed Job as usual.
+// Active demo Jobs return ErrDemoCancelUnsupported; use DemoScenarioCancel.
 func (c *Client) CancelJob(ctx context.Context, id string) (Job, error) {
 	var job Job
 	if !validJobID(id) {
