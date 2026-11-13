@@ -788,9 +788,9 @@
       "Conflict": { "$ref": "#/components/responses/StandardError" },
       "NoExecutableRoute": { "$ref": "#/components/responses/StandardError" },
       "RateLimited": {
-        "description": "Too many Jobs in progress, or the API key exceeded its per-minute request rate for this endpoint (YIR_RATE_LIMITED).",
+        "description": "Too many Jobs are in progress, the API key exceeded its per-minute request rate, or the account is temporarily paused from submitting new Jobs after repeated content safety rejections (YIR_RATE_LIMITED).",
         "headers": {
-          "Retry-After": { "schema": { "type": "integer", "minimum": 1 }, "description": "Seconds to wait before retrying. Present when the per-minute request rate was exceeded." }
+          "Retry-After": { "schema": { "type": "integer", "minimum": 1 }, "description": "Seconds to wait when the per-minute rate was exceeded or new Job submission is temporarily paused." }
         },
         "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
       },
