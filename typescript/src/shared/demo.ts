@@ -78,7 +78,7 @@ export function createDemoJob(quote: Quote, scenario: YirDemoScenario, now = Dat
   const model = quote.model.replace(/\//g, "~");
   if (model.length > MAX_MODEL_LENGTH) throw new Error("demo_model_id_too_long");
   const parameters = quote.parameters;
-  const n = Math.min(Math.max(Math.trunc(parameters.n) || 1, 1), 35);
+  const n = Math.min(Math.max(Math.trunc(parameters.n ?? 1) || 1, 1), 35);
   const duration = parameters.duration === "auto" ? AUTO_DURATION
     : typeof parameters.duration === "number" ? Math.min(Math.max(Math.round(parameters.duration), 0), AUTO_DURATION - 1) : 0;
   const nonce = Array.from(crypto.getRandomValues(new Uint8Array(4)), byte => (byte % 36).toString(36)).join("");

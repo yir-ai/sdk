@@ -142,10 +142,11 @@ type ResultContentSafety struct {
 }
 
 type ResultFile struct {
-	URL       string `json:"url"`
-	MediaType string `json:"media_type"`
-	Width     int    `json:"width,omitempty"`
-	Height    int    `json:"height,omitempty"`
+	Layer     *ImageLayer `json:"layer,omitempty"`
+	URL       string      `json:"url"`
+	MediaType string      `json:"media_type"`
+	Width     int         `json:"width,omitempty"`
+	Height    int         `json:"height,omitempty"`
 	// DurationMS is the measured playback duration of an audio result in
 	// milliseconds; zero when not measured.
 	DurationMS int64 `json:"duration_ms,omitempty"`
@@ -179,6 +180,17 @@ type SwapCheckSlot struct {
 	ID                   string   `json:"id"`
 	SimilarityToOriginal *float64 `json:"similarity_to_original"`
 	Swapped              bool     `json:"swapped"`
+}
+
+// ImageLayer locates a decomposed image on its base canvas.
+type ImageLayer struct {
+	ZIndex      int                    `json:"z_index"`
+	BoundingBox *ImageLayerBoundingBox `json:"bounding_box,omitempty"`
+}
+
+type ImageLayerBoundingBox struct {
+	Absolute   []int `json:"absolute,omitempty"`
+	Normalized []int `json:"normalized,omitempty"`
 }
 
 // ResultFileFidelity grades a delivered file: "original" (untouched vendor API output),

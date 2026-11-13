@@ -4863,6 +4863,71 @@
               }
             }
           ]
+        },
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "layer_decomposition"
+          ],
+          "input_constraints": {
+            "layer_decomposition": {
+              "prompt_optional": true,
+              "max_prompt_characters": 2000,
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_image"
+              ],
+              "required_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "1.5K",
+                "2K",
+                "auto"
+              ],
+              "default": "auto",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "max_images",
+              "type": "integer",
+              "required": false,
+              "default": 30,
+              "minimum": 2,
+              "maximum": 100,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Maximum images",
+                  "description": "Maximum number of files, including the base image."
+                },
+                "zh-CN": {
+                  "label": "最多返回图片",
+                  "description": "底图和拆分图层合计可返回的最大张数。"
+                }
+              }
+            }
+          ]
         }
       ]
     },

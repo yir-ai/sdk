@@ -906,6 +906,27 @@
           }
         }
       },
+      "StandardImageLayerDecompositionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "references"],
+        "properties": {
+          "type": { "type": "string", "const": "layer_decomposition" },
+          "prompt": { "type": "string", "maxLength": 2000 },
+          "references": {
+            "type": "array", "minItems": 1, "maxItems": 1,
+            "items": {
+              "type": "object", "additionalProperties": false, "required": ["role"],
+              "properties": {
+                "role": { "type": "string", "const": "reference_image" },
+                "file_id": { "$ref": "#/components/schemas/FileID" },
+                "url": { "$ref": "#/components/schemas/InputURL" }
+              },
+              "oneOf": [{ "required": ["file_id"] }, { "required": ["url"] }]
+            }
+          }
+        }
+      },
       "Balance": {
         "type": "object",
         "required": ["object", "currency", "available_amount", "held_amount", "total_amount"],
@@ -948,7 +969,8 @@
               },
               {
                 "$ref": "#/components/schemas/StandardImageReferenceInput"
-              }
+              },
+              { "$ref": "#/components/schemas/StandardImageLayerDecompositionInput" }
             ]
           },
           "routing": {
@@ -975,6 +997,7 @@
                 "type": "string",
                 "minLength": 1
               },
+              "max_images": { "type": "integer", "minimum": 2, "maximum": 100, "description": "Layer decomposition only. Maximum number of files including the base image. Default 30." },
               "n": {
                 "type": "integer",
                 "enum": [
@@ -1012,7 +1035,8 @@
               },
               {
                 "$ref": "#/components/schemas/StandardImageReferenceInput"
-              }
+              },
+              { "$ref": "#/components/schemas/StandardImageLayerDecompositionInput" }
             ]
           },
           "routing": {
@@ -1033,6 +1057,7 @@
                 "type": "string",
                 "minLength": 1
               },
+              "max_images": { "type": "integer", "minimum": 2, "maximum": 100, "description": "Layer decomposition only. Maximum number of files including the base image. Default 30." },
               "n": {
                 "type": "integer",
                 "enum": [
@@ -1825,7 +1850,8 @@
               "text",
               "image",
               "reference",
-              "multiview"
+              "multiview",
+              "layer_decomposition"
             ]
           },
           "parameters": {
@@ -1972,8 +1998,8 @@
       "QuoteParameters": {
         "type": "object",
         "additionalProperties": true,
-        "required": ["n"],
-        "description": "The normalized parameters a request resolves to: every parameter the model contract declares for the operation, at its contract spelling, with omitted parameters at their published default. Parameters the model does not declare are absent, so an image echo carries no duration, a silent video model carries no generate_audio, a music echo carries instrumental and lyrics_optimizer (plus duration for length-priced models) but no resolution or aspect_ratio, a sound-effect echo carries n and duration, and a text-to-speech echo carries n and voice. Image and video echoes always include resolution and aspect_ratio. Only the common parameters are documented here; model-specific parameters are echoed under their contract names.",
+        "oneOf": [{ "required": ["n"] }, { "required": ["resolution", "max_images"] }],
+        "description": "The normalized parameters a request resolves to: every parameter the model contract declares for the operation, at its contract spelling, with omitted parameters at their published default. Parameters the model does not declare are absent, so an image echo carries no duration, a silent video model carries no generate_audio, a music echo carries instrumental and lyrics_optimizer (plus duration for length-priced models) but no resolution or aspect_ratio, a sound-effect echo carries n and duration, and a text-to-speech echo carries n and voice. Regular image and video echoes include resolution and aspect_ratio. Layer decomposition echoes resolution and max_images. Only the common parameters are documented here; model-specific parameters are echoed under their contract names.",
         "properties": {
           "size": { "type": "string", "pattern": "^[1-9][0-9]*x[1-9][0-9]*$", "description": "Optional exact output pixels (WIDTHxHEIGHT), only for models and channels that explicitly support the requested size. Omitted resolution and aspect_ratio are resolved from the declared size; explicit conflicting values are rejected. No approximate resizing or tier substitution. Omit to preserve the existing model defaults." },
           "quality": { "type": "string", "minLength": 1, "description": "Image quality tier when the request constrains one; absent when omitted, which lets any channel run." },
@@ -1985,7 +2011,8 @@
           "instrumental": { "type": "boolean", "description": "Music only: no vocals." },
           "lyrics_optimizer": { "type": "boolean", "description": "Music only: lyrics written from the prompt." },
           "voice": { "type": "string", "minLength": 1, "description": "Text-to-speech only: the resolved preset voice ID." },
-          "n": { "type": "integer", "minimum": 1 }
+          "n": { "type": "integer", "minimum": 1 },
+          "max_images": { "type": "integer", "minimum": 2, "maximum": 100 }
         }
       },
       "Error": {
@@ -2124,8 +2151,25 @@
           "duration_ms": { "type": "integer", "format": "int64", "minimum": 1, "description": "Measured playback duration of an audio result in milliseconds. Omitted when not measured." },
           "faces": { "type": "integer", "format": "int64", "minimum": 1, "description": "Measured triangle count of a 3D (glb) result. Omitted when not measured." },
           "swap_checks": { "$ref": "#/components/schemas/ResultFileSwapChecks" },
+          "layer": { "$ref": "#/components/schemas/ResultFileLayer" },
           "expires_at": { "type": "integer", "format": "int64", "minimum": 1 },
           "fidelity": { "$ref": "#/components/schemas/ResultFileFidelity" }
+        }
+      },
+      "ResultFileLayer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["z_index"],
+        "description": "Layer decomposition only. Composite in ascending z_index. Zero is the base. A layer may omit its bounding box when the provider does not return coordinates.",
+        "properties": {
+          "z_index": { "type": "integer", "minimum": 0, "maximum": 99 },
+          "bounding_box": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+              "absolute": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "integer", "minimum": 0 }, "description": "[left, top, right, bottom] in base-image pixels." },
+              "normalized": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "integer", "minimum": 0, "maximum": 1000 }, "description": "[left, top, right, bottom] mapped onto 0–1000." }
+            }
+          }
         }
       },
       "ResultFileFidelity": {
@@ -2363,7 +2407,7 @@
         "properties": {
 		  "request_model_id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
           "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech", "generate_3d"] },
-		  "input_mode": { "type": "string", "enum": ["text", "image", "reference", "multiview"] },
+		  "input_mode": { "type": "string", "enum": ["text", "image", "reference", "multiview", "layer_decomposition"] },
           "specification_label": { "type": "string", "minLength": 1 },
           "currency": { "type": "string", "const": "USD" },
           "channels": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/ModelChannelPrice" } }
@@ -2443,7 +2487,7 @@
         "required": ["operation", "input_modes", "input_constraints", "request_schema", "parameters"],
         "properties": {
           "operation": { "type": "string", "enum": ["generate_image", "generate_video", "generate_music", "generate_sound_effect", "generate_speech", "generate_3d"] },
-          "input_modes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["text", "image", "reference", "multiview"] } },
+          "input_modes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "enum": ["text", "image", "reference", "multiview", "layer_decomposition"] } },
           "input_constraints": {
             "type": "object",
             "additionalProperties": { "$ref": "#/components/schemas/StaticModelInputConstraint" }

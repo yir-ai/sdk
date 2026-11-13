@@ -53,6 +53,12 @@ export type StandardImageInput = {
   readonly references: readonly StandardReference[];
 };
 
+export type StandardImageLayerDecompositionInput = {
+  readonly type: "layer_decomposition";
+  readonly prompt?: string;
+  readonly references: readonly [{ readonly role: "reference_image" } & StandardMediaSource];
+};
+
 export type StandardReference = {
   readonly role: ReferenceRole;
   /**
@@ -90,7 +96,7 @@ export type StandardImageGenerationRequest = {
   /** Optional total Job budget. A more expensive fallback can exceed the remaining budget and fail the Job with YIR_BUDGET_EXCEEDED. Omit for delivery continuity without a per-Job cap, or allow headroom for fallback and prior billed attempts. */
   readonly max_cost?: string;
   readonly model: string;
-  readonly input: StandardTextInput | StandardImageInput;
+  readonly input: StandardTextInput | StandardImageInput | StandardImageLayerDecompositionInput;
   readonly parameters: Readonly<Record<string, unknown>>;
   readonly routing?: RoutingOverride;
 	readonly webhook_url?: string;
@@ -407,13 +413,15 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   const input = requireObject(body.input, "input");
   if (typeof input.type !== "string" || !input.type) throw new YirSDKValidationError("input_mode_invalid", "input.type");
   const operation = catalog ? resolveCatalogOperation(catalog, body.model, requestedOperation, input.type) : requestedOperation;
-  const optionalVideoPrompt = operation === "generate_video" && input.type === "image";
+  const layers = input.type === "layer_decomposition";
+  if (layers && operation !== "generate_image") throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  const optionalPrompt = layers || (operation === "generate_video" && input.type === "image");
   // 3D takes text, one image or several views; image and multiview inputs take no prompt.
   if (operation === "generate_3d" && input.type !== "text") {
     if (input.type !== "image" && input.type !== "multiview") throw new YirSDKValidationError("input_mode_invalid", "input.type");
     if (input.prompt !== undefined) throw new YirSDKValidationError("prompt_not_allowed", "input.prompt");
   } else if ((input.prompt !== undefined && typeof input.prompt !== "string") ||
-      (!optionalVideoPrompt && (typeof input.prompt !== "string" || !input.prompt.trim()))) {
+      (!optionalPrompt && (typeof input.prompt !== "string" || !input.prompt.trim()))) {
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
   // Audio and 3D parameters are optional; image and video requests send them explicitly.
@@ -424,6 +432,10 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   if (catalog && ((isAudioOperation(operation) && input.type === "reference") || operation === "generate_3d") &&
       findModelContract(catalog, body.model) && !findModelOperationContract(catalog, body.model, operation, input.type)) {
     throw new YirSDKValidationError("input_mode_invalid", "input.type");
+  }
+  if (layers && (!Array.isArray(input.references) || input.references.length !== 1 ||
+      input.references[0]?.role !== "reference_image")) {
+    throw new YirSDKValidationError("invalid_reference_count", "input.references");
   }
   if (isAudioOperation(operation)) validateMusicInput(operation, input, parameters, catalog !== undefined);
   const subjects = validateReferenceSubjects(input);
@@ -456,7 +468,7 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
   }
   // Mixed subject mode counts ungrouped references plus subjects; role counts use ungrouped references only.
   const mixed = subjects !== undefined && subjectLimits?.mixed === true;
-  if (catalog && optionalVideoPrompt && (input.prompt === undefined || !(input.prompt as string).trim()) && constraint?.prompt_optional !== true) {
+  if (catalog && optionalPrompt && (input.prompt === undefined || !(input.prompt as string).trim()) && constraint?.prompt_optional !== true) {
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
   if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");

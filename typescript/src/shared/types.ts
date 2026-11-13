@@ -87,6 +87,14 @@ export type JobResultFile = {
   readonly expires_at: number;
   /** Video person swap only: per-position check of the delivered video; absent on other results. */
   readonly swap_checks?: JobResultFileSwapChecks;
+  /** Composite layers in ascending z_index. Zero identifies the base image. */
+  readonly layer?: {
+    readonly z_index: number;
+    readonly bounding_box?: {
+      readonly absolute?: [number, number, number, number];
+      readonly normalized?: [number, number, number, number];
+    };
+  };
   /** Where the file came from and whether its specification is genuine, judged at delivery from its C2PA content signature and Yir's channel audits; absent on historical results. */
   readonly fidelity?: JobResultFileFidelity;
 };
@@ -193,9 +201,11 @@ export type QuoteParameters = {
   readonly size?: string;
   /** Always present on image and video echoes; absent on audio and 3D echoes. */
   readonly resolution?: string;
-  /** Always present on image and video echoes; absent on audio and 3D echoes. */
+  /** Present on ordinary image and video echoes. */
   readonly aspect_ratio?: string;
-  readonly n: number;
+  readonly n?: number;
+  /** Layer decomposition only: maximum files, including the base image. */
+  readonly max_images?: number;
   /** Preserves auto intent; internal measured seconds are not substituted. */
   readonly duration?: number | "auto";
   readonly generate_audio?: boolean;

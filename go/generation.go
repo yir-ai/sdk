@@ -255,6 +255,10 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	if request.Input.Type == "" {
 		return &ParameterError{"input.type", "input_mode_invalid"}
 	}
+	layers := request.Input.Type == "layer_decomposition"
+	if layers && operation != "generate_image" {
+		return &ParameterError{"input.type", "input_mode_invalid"}
+	}
 	if operation == "generate_3d" && request.Input.Type != "text" {
 		// 3D takes text, one image or several views; image and multiview inputs take no prompt.
 		if request.Input.Type != "image" && request.Input.Type != "multiview" {
@@ -263,7 +267,7 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 		if request.Input.Prompt != "" {
 			return &ParameterError{"input.prompt", "not_allowed"}
 		}
-	} else if strings.TrimSpace(request.Input.Prompt) == "" && (operation != "generate_video" || request.Input.Type != "image") {
+	} else if strings.TrimSpace(request.Input.Prompt) == "" && !layers && (operation != "generate_video" || request.Input.Type != "image") {
 		return &ParameterError{"input.prompt", "required_parameter"}
 	}
 	for key := range request.Extra {
@@ -302,6 +306,9 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 		return &ParameterError{"input.prompt", "prompt_too_long"}
 	}
 	count := len(request.Input.References)
+	if layers && (count != 1 || request.Input.References[0].Role != "reference_image") {
+		return &ParameterError{"input.references", "invalid_reference_count"}
+	}
 	// Mixed subject mode counts ungrouped references plus subjects; role counts use ungrouped references only.
 	mixed := constraint != nil && constraint.SubjectReferences != nil && constraint.SubjectReferences.Mixed
 	items := count
