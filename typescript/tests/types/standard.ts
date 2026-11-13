@@ -24,9 +24,19 @@ const image: StandardImageGenerationRequest = {
   parameters: { resolution: "1K", aspect_ratio: "1:1", n: 1 },
 };
 const video: StandardVideoGenerationRequest = {
-  model: "bytedance/seedance-2.0", input: image.input,
+  model: "bytedance/seedance-2.0", input: { type: "image", prompt: "Animate the image", references: [{ role: "reference_image", ...source }] },
   parameters: { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1 },
 };
+const layers: StandardImageGenerationRequest = {
+  model: "bytedance/seedream-5.5", input: { type: "layer_decomposition", references: [{ role: "reference_image", ...source }] },
+  parameters: { max_images: 6, resolution: "1K" },
+};
+const layersEcho: QuoteParameters = { max_images: 6, resolution: "1K" };
+void layersEcho;
+function readLayer(file: JobResultFile): readonly [number, number, number, number] | undefined {
+  return file.layer?.bounding_box?.absolute;
+}
+void readLayer;
 // An image echo carries no duration or generate_audio; a Job echoes the same shape.
 const imageEcho: QuoteParameters = { resolution: "1K", aspect_ratio: "1:1", n: 1 };
 const videoEcho: QuoteParameters = { duration: 5, resolution: "720p", aspect_ratio: "16:9", generate_audio: false, n: 1, return_last_frame: false };
@@ -72,6 +82,7 @@ const bothSources: StandardMediaSource = { url: "https://example.com/image.png",
 
 function submitWithOptionalKeys(client: YirClient) {
   void client.submitImage(image);
+  void client.submitImage(layers);
   void client.submitVideo(video);
   void client.submitImage(image, "persisted-key");
   void client.submitVideo(video, undefined, { signal: new AbortController().signal });
