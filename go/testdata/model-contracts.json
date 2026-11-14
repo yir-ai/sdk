@@ -503,20 +503,28 @@
       "locales": {
         "en": {
           "label": "Qwen Image 3.0 Pro",
-          "description": "Qwen Image 3.0 Pro; currently supports single-image 1K/2K text-to-image generation in five aspect ratios"
+          "description": "Qwen Image 3.0 Pro generates 1K and 2K images from text or edits reference images"
         },
         "zh-CN": {
           "label": "Qwen Image 3.0 Pro",
-          "description": "通义千问 Image 3.0 Pro；当前支持单张 1K/2K 五种画幅文生"
+          "description": "通义千问 Image 3.0 Pro 支持 1K／2K 文生和参考图编辑"
         }
       },
       "operations": [
         {
           "operation": "generate_image",
           "input_modes": [
-            "text"
+            "text",
+            "image"
           ],
           "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 3,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            },
             "text": {
               "min_references": 0,
               "max_references": 0,
@@ -1274,6 +1282,86 @@
               }
             }
           ]
+        },
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "max_prompt_characters": 5000,
+              "min_references": 1,
+              "max_references": 9,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K"
+              ],
+              "default": "2K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
         }
       ]
     },
@@ -1345,6 +1433,86 @@
                 "2:3"
               ],
               "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "max_prompt_characters": 5000,
+              "min_references": 1,
+              "max_references": 9,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K"
+              ],
+              "default": "2K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
@@ -1955,6 +2123,84 @@
               }
             }
           ]
+        },
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 8,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1MP"
+              ],
+              "default": "1MP",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1:1"
+              ],
+              "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
         }
       ]
     },
@@ -1977,9 +2223,17 @@
         {
           "operation": "generate_image",
           "input_modes": [
-            "text"
+            "text",
+            "image"
           ],
           "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 8,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            },
             "text": {
               "min_references": 0,
               "max_references": 0,
@@ -10276,11 +10530,11 @@
       "locales": {
         "en": {
           "label": "Muse Image 1.0",
-          "description": "Meta text-to-image model based on masked discrete tokens"
+          "description": "Meta image generation and reference editing model based on masked discrete tokens"
         },
         "zh-CN": {
           "label": "Muse Image 1.0",
-          "description": "Meta 开源前沿图像生成模型，采用离散标记预测架构"
+          "description": "Meta 图像生成与参考图编辑模型，采用掩码离散标记架构"
         }
       },
       "operations": [
@@ -10326,6 +10580,91 @@
                 "1:1"
               ],
               "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 10,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto",
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16"
+              ],
+              "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
