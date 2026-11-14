@@ -37,7 +37,8 @@ type ModelChannelPrice struct {
 	SpecificationLabel string `json:"specification_label"`
 }
 
-// GetModel reads the Market detail for a canonical creator/model ID. Aliases are not resource paths.
+// GetModel reads Market detail by creator/model ID. Previous canonical paths
+// remain valid when a model is renamed. Short aliases are for requests.
 func (c *Client) GetModel(ctx context.Context, model string) (ModelDetail, error) {
 	if !validModelContractPath(model) {
 		return ModelDetail{}, errors.New("model_request_invalid")

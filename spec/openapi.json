@@ -619,7 +619,7 @@
       "get": {
         "operationId": "getModel",
         "summary": "Get a model",
-        "description": "Without query parameters returns the model detail, which reflects live prices and availability and is never cached. view=contract requires the canonical creator/model ID and returns its public parameter contract with the same content version as the model list, without querying price or current supply; it carries the same ETag and Cache-Control as the model list and answers If-None-Match with 304. Aliases may be used in generation requests but are not resource paths.",
+        "description": "Without query parameters returns model detail with live prices and availability and is never cached. view=contract returns the public parameter contract without querying price or supply. It carries the same content version, ETag and Cache-Control as the model list and answers If-None-Match with 304. Use the canonical creator/model ID. Previous canonical IDs remain valid resource paths and are echoed in the response. Short aliases may be used in generation and quote requests.",
         "tags": ["Models"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [

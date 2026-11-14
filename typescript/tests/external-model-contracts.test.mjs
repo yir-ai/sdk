@@ -105,6 +105,34 @@ test("Quote accepts a published alias echoed by the Gateway or its canonical ID"
   await assert.rejects(wrong.quoteImage(aliasedRequest), /quote_response_invalid/);
 });
 
+test("old and current Genjutsu catalogs accept quotes for the published names", async () => {
+  const canonical = "higgsfield/genjutsu-1.0-motion-transfer";
+  const previous = "nanoapi/genjutsu-1.0";
+  const short = "genjutsu-1.0";
+  const current = getModelContract(canonical);
+  assert.equal(getModelContract(previous)?.id, canonical);
+  assert.equal(getModelContract(short)?.id, canonical);
+  const old = { ...current, id: previous, aliases: [short, canonical] };
+  for (const model of [old, current]) {
+    const catalog = parseModelContractCatalog({ ...response, models: [model] });
+    for (const name of [previous, short, canonical]) {
+      const expected = name === canonical ? canonical : previous;
+      const client = createYirClient(async call => ({
+        ...quoteFixture(call.body, "generate_video"), model: expected,
+      }), catalog);
+      const quoted = await client.quoteVideo({
+        model: name,
+        input: { type: "reference", prompt: "Transfer the motion", references: [
+          { role: "reference_image", url: "https://example.com/image.png" },
+          { role: "reference_video", url: "https://example.com/video.mp4" },
+        ] },
+        parameters: { duration: 5, resolution: "720p", aspect_ratio: "auto", n: 1 },
+      });
+      assert.equal(quoted.model, expected);
+    }
+  }
+});
+
 test("a cached contract does not block a newly published model quote", async () => {
   const staleCatalog = parseModelContractCatalog({ ...response, models: [getModelContract("openai/gpt-image-2")] });
   const client = createYirClient(async call => ({
