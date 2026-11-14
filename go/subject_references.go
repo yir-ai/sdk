@@ -119,7 +119,7 @@ func validateSubjectReferences(request GenerationRequest, constraint *ModelInput
 		return constraint, contract, nil
 	}
 	subjectConstraint := ModelInputConstraint{
-		PromptOptional: constraint.PromptOptional, MaxPromptCharacters: constraint.MaxPromptCharacters,
+		PromptOptional: constraint.PromptOptional, MinPromptCharacters: constraint.MinPromptCharacters, MaxPromptCharacters: constraint.MaxPromptCharacters,
 		MinReferences: limits.MinImagesPerSubject, MaxReferences: limits.MaxImagesPerSubject * limits.MaxSubjects,
 		AllowedReferenceRoles: []string{"reference_image"}, RequiredReferenceRoles: []string{"reference_image"},
 		SubjectReferences: cloneSubjectReferenceLimits(limits),

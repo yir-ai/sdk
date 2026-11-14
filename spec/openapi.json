@@ -2502,6 +2502,7 @@
         "required": ["min_references", "max_references", "allowed_reference_roles"],
         "properties": {
           "prompt_optional": { "type": "boolean", "description": "When true, this input mode may omit text on channels that explicitly support it. Absent means a prompt is required." },
+          "min_prompt_characters": { "type": "integer", "minimum": 1, "description": "Minimum number of Unicode characters after trimming leading and trailing whitespace. A shorter prompt is rejected with 400. Selected channels may require a higher minimum." },
           "max_prompt_characters": { "type": "integer", "minimum": 1, "description": "Maximum prompt length in Unicode characters for this input mode (text-to-speech counts billable characters). It is the widest limit among the routable channels; longer prompts are rejected with 400. Absent means no per-model limit is declared." },
           "min_references": { "type": "integer", "minimum": 0 },
           "max_references": { "type": "integer", "minimum": 0 },

@@ -26,6 +26,7 @@ export type ReferenceRole = "first_frame" | "keyframe" | "last_frame" | "referen
 export type ModelInputConstraint = {
   readonly prompt_optional?: boolean;
   /** Prompt limit in Unicode characters; absent means no limit is declared. */
+  readonly min_prompt_characters?: number;
   readonly max_prompt_characters?: number;
   readonly min_references: number;
   readonly max_references: number;

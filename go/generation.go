@@ -302,8 +302,14 @@ func validateGenerationWithContract(operation string, request GenerationRequest,
 	if constraint != nil && strings.TrimSpace(request.Input.Prompt) == "" && !constraint.PromptOptional {
 		return &ParameterError{"input.prompt", "required_parameter"}
 	}
-	if constraint != nil && constraint.MaxPromptCharacters > 0 && utf8.RuneCountInString(request.Input.Prompt) > constraint.MaxPromptCharacters {
-		return &ParameterError{"input.prompt", "prompt_too_long"}
+	if constraint != nil {
+		promptLength := utf8.RuneCountInString(strings.TrimSpace(request.Input.Prompt))
+		if promptLength < constraint.MinPromptCharacters {
+			return &ParameterError{"input.prompt", "prompt_too_short"}
+		}
+		if constraint.MaxPromptCharacters > 0 && promptLength > constraint.MaxPromptCharacters {
+			return &ParameterError{"input.prompt", "prompt_too_long"}
+		}
 	}
 	count := len(request.Input.References)
 	if layers && (count != 1 || request.Input.References[0].Role != "reference_image") {

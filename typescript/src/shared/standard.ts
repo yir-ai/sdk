@@ -472,9 +472,14 @@ export function validateGeneration(requestedOperation: GenerationOperation, requ
     throw new YirSDKValidationError("prompt_required", "input.prompt");
   }
   if (catalog && !constraint) throw new YirSDKValidationError("model_contract_unavailable", "input.type");
-  if (constraint?.max_prompt_characters !== undefined && typeof input.prompt === "string" &&
-      Array.from(input.prompt).length > constraint.max_prompt_characters) {
-    throw new YirSDKValidationError("prompt_too_long", "input.prompt", { maximum: constraint.max_prompt_characters });
+  if (constraint && typeof input.prompt === "string") {
+    const length = Array.from(input.prompt.trim()).length;
+    if (constraint.min_prompt_characters !== undefined && length < constraint.min_prompt_characters) {
+      throw new YirSDKValidationError("prompt_too_short", "input.prompt", { minimum: constraint.min_prompt_characters });
+    }
+    if (constraint.max_prompt_characters !== undefined && length > constraint.max_prompt_characters) {
+      throw new YirSDKValidationError("prompt_too_long", "input.prompt", { maximum: constraint.max_prompt_characters });
+    }
   }
   const references = input.references === undefined ? [] : input.references;
   if (!Array.isArray(references) || (input.type === "text" && references.length !== 0) ||
@@ -828,6 +833,7 @@ function subjectModeContract(contract: ModelOperationContract, inputMode: string
       ...contract.input_constraints,
       [inputMode]: {
         ...(constraint.prompt_optional !== undefined ? { prompt_optional: constraint.prompt_optional } : {}),
+        ...(constraint.min_prompt_characters !== undefined ? { min_prompt_characters: constraint.min_prompt_characters } : {}),
         ...(constraint.max_prompt_characters !== undefined ? { max_prompt_characters: constraint.max_prompt_characters } : {}),
         min_references: limits.min_images_per_subject,
         max_references: limits.max_images_per_subject * limits.max_subjects,

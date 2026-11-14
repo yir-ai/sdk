@@ -4776,6 +4776,7 @@
           ],
           "input_constraints": {
             "image": {
+              "min_prompt_characters": 3,
               "max_prompt_characters": 5000,
               "min_references": 1,
               "max_references": 10,
@@ -4784,6 +4785,7 @@
               ]
             },
             "text": {
+              "min_prompt_characters": 3,
               "max_prompt_characters": 5000,
               "min_references": 0,
               "max_references": 0,

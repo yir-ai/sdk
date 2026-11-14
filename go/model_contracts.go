@@ -25,7 +25,8 @@ type ModelParameterContract struct {
 }
 
 type ModelInputConstraint struct {
-	PromptOptional bool `json:"prompt_optional,omitempty"`
+	PromptOptional      bool `json:"prompt_optional,omitempty"`
+	MinPromptCharacters int  `json:"min_prompt_characters,omitempty"`
 	// MaxPromptCharacters is the prompt limit in Unicode characters; 0 means none is declared.
 	MaxPromptCharacters        int                            `json:"max_prompt_characters,omitempty"`
 	MinReferences              int                            `json:"min_references"`
