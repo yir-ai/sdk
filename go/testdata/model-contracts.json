@@ -2131,6 +2131,7 @@
           ],
           "input_constraints": {
             "image": {
+              "max_prompt_characters": 50000,
               "min_references": 1,
               "max_references": 8,
               "allowed_reference_roles": [
@@ -2228,6 +2229,7 @@
           ],
           "input_constraints": {
             "image": {
+              "max_prompt_characters": 50000,
               "min_references": 1,
               "max_references": 8,
               "allowed_reference_roles": [
