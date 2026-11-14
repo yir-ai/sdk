@@ -1427,7 +1427,7 @@
               }
             },
             "reference": {
-              "max_prompt_characters": 5000,
+              "max_prompt_characters": 8000,
               "min_references": 1,
               "max_references": 20,
               "allowed_reference_roles": [
@@ -1615,7 +1615,7 @@
               }
             },
             "reference": {
-              "max_prompt_characters": 5000,
+              "max_prompt_characters": 8000,
               "min_references": 1,
               "max_references": 20,
               "allowed_reference_roles": [
