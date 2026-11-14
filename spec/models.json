@@ -15809,7 +15809,6 @@
           ],
           "input_constraints": {
             "reference": {
-              "max_prompt_characters": 8000,
               "min_references": 2,
               "max_references": 7,
               "allowed_reference_roles": [
