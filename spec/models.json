@@ -10499,6 +10499,107 @@
       ]
     },
     {
+      "id": "krea/krea-3",
+      "aliases": [
+        "krea-3"
+      ],
+      "locales": {
+        "en": {
+          "label": "Krea 3",
+          "description": "Edit or combine up to eight reference images into one 1K or 2K image."
+        },
+        "zh-CN": {
+          "label": "Krea 3",
+          "description": "使用最多 8 张参考图进行编辑或合成，输出一张 1K 或 2K 图片。"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "min_references": 1,
+              "max_references": 8,
+              "allowed_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K"
+              ],
+              "default": "1K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "16:9",
+                "9:16"
+              ],
+              "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "meshy/meshy-7.1",
       "aliases": [
         "meshy-7.1"
