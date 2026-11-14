@@ -14851,6 +14851,152 @@
       ]
     },
     {
+      "id": "pixverse/pixverse-v6",
+      "aliases": [
+        "pixverse-v6"
+      ],
+      "locales": {
+        "en": {
+          "label": "PixVerse V6",
+          "description": "Generate a 720p transition between two images, with optional native audio."
+        },
+        "zh-CN": {
+          "label": "PixVerse V6",
+          "description": "从指定首帧和尾帧生成 720p 转场视频，可选原生音频。"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "max_prompt_characters": 5000,
+              "min_references": 2,
+              "max_references": 2,
+              "allowed_reference_roles": [
+                "first_frame",
+                "last_frame"
+              ],
+              "required_reference_roles": [
+                "first_frame",
+                "last_frame"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "values": [
+                5,
+                8
+              ],
+              "default": 5,
+              "minimum": 5,
+              "maximum": 8,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "720p"
+              ],
+              "default": "720p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false,
+                true
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "prodia/flux-fast-schnell",
       "aliases": [
         "flux-fast-schnell"
