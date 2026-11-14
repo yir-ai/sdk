@@ -78,7 +78,24 @@ export type ModelOperationContract = {
   readonly parameters: readonly ModelParameterContract[];
 };
 
+export type ModelLifecycle = {
+  readonly deprecated_at?: string;
+  readonly retired_at?: string;
+  readonly reason: string;
+  readonly migration_url?: string;
+};
+
+export type SpecificationLifecycle = {
+  readonly id: string;
+  readonly operation: string;
+  readonly input_modes?: readonly string[];
+  readonly parameters?: Readonly<Record<string, readonly string[]>>;
+  readonly lifecycle: ModelLifecycle;
+};
+
 export type StaticModelContract = {
+  readonly lifecycle?: ModelLifecycle;
+  readonly specification_lifecycles?: readonly SpecificationLifecycle[];
   readonly id: string;
   readonly aliases: readonly string[];
   readonly locales: Readonly<Record<string, ModelContractLocale>>;

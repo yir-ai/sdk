@@ -2454,6 +2454,8 @@
         "additionalProperties": false,
         "required": ["id", "aliases", "locales"],
         "properties": {
+          "lifecycle": { "$ref": "#/components/schemas/ModelLifecycle" },
+          "specification_lifecycles": { "type": "array", "items": { "$ref": "#/components/schemas/SpecificationLifecycle" } },
           "id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
           "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
           "locales": { "$ref": "#/components/schemas/ModelContractLocales" }
@@ -2475,10 +2477,37 @@
         "additionalProperties": false,
         "required": ["id", "aliases", "locales", "operations"],
         "properties": {
+          "lifecycle": { "$ref": "#/components/schemas/ModelLifecycle" },
+          "specification_lifecycles": { "type": "array", "items": { "$ref": "#/components/schemas/SpecificationLifecycle" } },
           "id": { "type": "string", "pattern": "^[a-z0-9._-]+/[a-z0-9._-]+$" },
           "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
           "locales": { "$ref": "#/components/schemas/ModelContractLocales" },
           "operations": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/StaticModelOperationContract" } }
+        }
+      },
+      "ModelLifecycle": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason"],
+        "description": "Lifecycle gates new jobs only. Published parameters remain valid for historical requests and idempotent replay. Retirement is exclusive at retired_at and does not cancel accepted jobs.",
+        "properties": {
+          "deprecated_at": { "type": "string", "format": "date-time" },
+          "retired_at": { "type": "string", "format": "date-time" },
+          "reason": { "type": "string", "minLength": 1 },
+          "migration_url": { "type": "string", "format": "uri" }
+        }
+      },
+      "SpecificationLifecycle": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "operation", "lifecycle"],
+        "description": "All declared scope conditions must match. Omitted axes are unrestricted. Parameter sets contain normalized values, not prices. Operation uses the model declaration name, for example text_to_image.",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "operation": { "type": "string", "minLength": 1 },
+          "input_modes": { "type": "array", "items": { "type": "string" } },
+          "parameters": { "type": "object", "additionalProperties": { "type": "array", "minItems": 1, "items": { "type": "string" } } },
+          "lifecycle": { "$ref": "#/components/schemas/ModelLifecycle" }
         }
       },
       "StaticModelOperationContract": {

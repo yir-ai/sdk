@@ -58,11 +58,28 @@ type ModelOperationContract struct {
 	Parameters       []ModelParameterContract        `json:"parameters"`
 }
 
+type ModelLifecycle struct {
+	DeprecatedAt string `json:"deprecated_at,omitempty"`
+	RetiredAt    string `json:"retired_at,omitempty"`
+	Reason       string `json:"reason"`
+	MigrationURL string `json:"migration_url,omitempty"`
+}
+
+type SpecificationLifecycle struct {
+	ID         string              `json:"id"`
+	Operation  string              `json:"operation"`
+	InputModes []string            `json:"input_modes,omitempty"`
+	Parameters map[string][]string `json:"parameters,omitempty"`
+	Lifecycle  ModelLifecycle      `json:"lifecycle"`
+}
+
 type StaticModelContract struct {
-	ID         string                         `json:"id"`
-	Aliases    []string                       `json:"aliases"`
-	Locales    map[string]ModelContractLocale `json:"locales"`
-	Operations []ModelOperationContract       `json:"operations"`
+	Lifecycle               *ModelLifecycle                `json:"lifecycle,omitempty"`
+	SpecificationLifecycles []SpecificationLifecycle       `json:"specification_lifecycles,omitempty"`
+	ID                      string                         `json:"id"`
+	Aliases                 []string                       `json:"aliases"`
+	Locales                 map[string]ModelContractLocale `json:"locales"`
+	Operations              []ModelOperationContract       `json:"operations"`
 }
 
 type ModelContractCatalog struct {
