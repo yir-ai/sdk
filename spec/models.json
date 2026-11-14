@@ -8214,7 +8214,8 @@
     {
       "id": "higgsfield/genjutsu-lite-1.0",
       "aliases": [
-        "genjutsu-lite-1.0"
+        "genjutsu-lite-1.0",
+        "higgsfield/genjutsu-light-1.0-object-swap"
       ],
       "locales": {
         "en": {
@@ -13583,7 +13584,8 @@
     {
       "id": "nanoapi/genjutsu-1.0",
       "aliases": [
-        "genjutsu-1.0"
+        "genjutsu-1.0",
+        "higgsfield/genjutsu-1.0-motion-transfer"
       ],
       "locales": {
         "en": {
