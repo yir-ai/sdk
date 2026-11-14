@@ -2,6 +2,17 @@
 
 Release notes, newest first. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
 
+## 0.15.0 changes (2026-11-13)
+
+This minor release changes demo cancellation incompatibly. Real Job cancellation is unchanged.
+
+- **Migration:** `CancelJob` on an unfinished demo Job now returns ErrDemoCancelUnsupported (`demo_cancel_unsupported`) instead of pretending cancellation succeeded. Use the `cancel` scenario to test a cancelled terminal Job. Ended Jobs are still returned unchanged.
+- Demo submissions no longer reject model names longer than 40 characters. Existing demo IDs remain compatible; new IDs may exceed 64 characters and must not be truncated. Real Job ID validation is unchanged.
+- Document demo as free integration testing, requiring a Key and network, without real admission, idempotent replay, active cancellation, Webhooks or settlement simulation.
+- Add image `layer_decomposition` input and result `layer` metadata types for Seedream 5.5 layer decomposition.
+- URL reference media may declare `duration_seconds` for quotes. Quote `input_duration_source: "declared"` identifies declared-duration estimates; actual Jobs are still billed by measured duration.
+- Refresh public model contract snapshots; snapshots do not guarantee live supply.
+
 ## Upgrading to 0.14.0
 
 0.14.0 is a minor release with incompatible behavior changes, listed below. The Gateway features it relies on are live.
