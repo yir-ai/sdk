@@ -595,6 +595,7 @@
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "include", "in": "query", "schema": { "type": "string", "const": "parameters" }, "description": "Expand public parameter contracts. Other or repeated query parameters are rejected." },
+          { "name": "view", "in": "query", "schema": { "type": "string", "const": "contract" }, "description": "Return full historical public contracts, including retired identities and aliases, for request translation and replay. Use alone, without include. The default discovery list excludes retired models. This view does not authorize new jobs." },
           { "$ref": "#/components/parameters/CatalogIfNoneMatch" }
         ],
         "responses": {
