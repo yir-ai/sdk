@@ -16379,11 +16379,11 @@
       "locales": {
         "en": {
           "label": "SkyReels V4 Fast",
-          "description": "Skywork AI's fast video model for silent 480p to 1080p text generation and 720p first-frame generation."
+          "description": "Skywork AI's fast video model for silent text-to-video from 480p to 1080p, and 720p generation from a starting image or a pair of frames."
         },
         "zh-CN": {
           "label": "SkyReels V4 Fast",
-          "description": "Skywork AI 的快速视频模型，支持 480p 至 1080p 无声文生视频和 720p 首帧图生。"
+          "description": "Skywork AI 的快速视频模型，支持 480p 至 1080p 无声文生视频，以及 720p 首帧图生和首尾帧转场。"
         }
       },
       "operations": [
@@ -16516,13 +16516,24 @@
           "input_constraints": {
             "image": {
               "min_references": 1,
-              "max_references": 1,
+              "max_references": 2,
               "allowed_reference_roles": [
-                "first_frame"
+                "first_frame",
+                "last_frame"
               ],
               "required_reference_roles": [
                 "first_frame"
-              ]
+              ],
+              "reference_counts_by_role": {
+                "first_frame": {
+                  "minimum": 1,
+                  "maximum": 1
+                },
+                "last_frame": {
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
             }
           },
           "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
