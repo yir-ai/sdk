@@ -3644,6 +3644,176 @@
       ]
     },
     {
+      "id": "bytedance/seedance-1.0-pro-fast",
+      "aliases": [
+        "seedance-1.0-pro-fast",
+        "bytedance/seedance-v1.0-pro-fast"
+      ],
+      "locales": {
+        "en": {
+          "label": "Seedance 1.0 Pro Fast",
+          "description": "ByteDance's fast video model for silent 720p generation from a prompt or a starting image."
+        },
+        "zh-CN": {
+          "label": "Seedance 1.0 Pro Fast",
+          "description": "字节跳动的快速视频生成模型，支持从提示词或首帧图生成 720p 无声视频。"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "text",
+            "image"
+          ],
+          "input_constraints": {
+            "image": {
+              "prompt_optional": true,
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "first_frame"
+              ],
+              "required_reference_roles": [
+                "first_frame"
+              ]
+            },
+            "text": {
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "duration",
+              "type": "integer",
+              "required": false,
+              "default": 5,
+              "minimum": 2,
+              "maximum": 12,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Duration",
+                  "description": "Output video duration in seconds."
+                },
+                "zh-CN": {
+                  "label": "时长",
+                  "description": "输出视频的秒数。"
+                }
+              }
+            },
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "720p"
+              ],
+              "default": "720p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "16:9",
+                "4:3",
+                "1:1",
+                "3:4",
+                "9:16",
+                "21:9"
+              ],
+              "default": "16:9",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "fps",
+              "type": "integer",
+              "required": false,
+              "values": [
+                24
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Frame rate",
+                  "description": "Optional native output frame rate. Only explicitly certified supplies are eligible; no frame interpolation or transcoding."
+                },
+                "zh-CN": {
+                  "label": "帧率",
+                  "description": "可选原生输出帧率；仅选择明确认证的渠道，不补帧或转码。"
+                }
+              }
+            },
+            {
+              "name": "generate_audio",
+              "type": "boolean",
+              "required": false,
+              "values": [
+                false
+              ],
+              "default": false,
+              "control": "toggle",
+              "locales": {
+                "en": {
+                  "label": "Generate audio",
+                  "description": "Generate native audio with the video."
+                },
+                "zh-CN": {
+                  "label": "生成音频",
+                  "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "lifecycle": {
         "retired_at": "2026-11-11T00:00:00Z",
         "reason": "This model has been retired."
