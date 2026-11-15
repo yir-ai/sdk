@@ -8935,6 +8935,156 @@
       ]
     },
     {
+      "id": "ideogram/ideogram-4.5",
+      "aliases": [
+        "ideogram-4.5"
+      ],
+      "locales": {
+        "en": {
+          "label": "Ideogram 4.5",
+          "description": "Generate posters, logos, and images with text in 1K or 2K at three quality levels."
+        },
+        "zh-CN": {
+          "label": "Ideogram 4.5",
+          "description": "生成带文字的海报、标志和图片，支持 1K、2K 与三档画质。"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_image",
+          "input_modes": [
+            "text"
+          ],
+          "input_constraints": {
+            "text": {
+              "max_prompt_characters": 10000,
+              "min_references": 0,
+              "max_references": 0,
+              "allowed_reference_roles": []
+            }
+          },
+          "request_schema": "#/components/schemas/StandardImageGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1K",
+                "2K"
+              ],
+              "default": "1K",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "16:9",
+                "9:16"
+              ],
+              "default": "1:1",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "size",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1024x1024",
+                "1152x864",
+                "864x1152",
+                "1280x720",
+                "720x1280",
+                "2048x2048",
+                "2304x1728",
+                "1728x2304",
+                "2560x1440",
+                "1440x2560"
+              ],
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Exact size",
+                  "description": "Exact output pixels; only explicitly compatible supplies are eligible. Conflicting resolution/aspect ratio is rejected."
+                },
+                "zh-CN": {
+                  "label": "精确尺寸",
+                  "description": "精确输出像素，仅选择明确支持的渠道；与分辨率档位或画幅冲突时拒绝。"
+                }
+              }
+            },
+            {
+              "name": "quality",
+              "type": "string",
+              "required": false,
+              "values": [
+                "low",
+                "medium",
+                "high"
+              ],
+              "default": "medium",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Quality",
+                  "description": "Image generation quality tier."
+                },
+                "zh-CN": {
+                  "label": "质量",
+                  "description": "图片生成质量档位。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "klingai/kling-2.6",
       "aliases": [
         "kling-2.6",
