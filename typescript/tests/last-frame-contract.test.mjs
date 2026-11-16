@@ -43,8 +43,18 @@ test("Seedance 2 last-frame intent survives quote and submit for every input mod
       assert.throws(() => validateModelParameters(model, "generate_video", mode, { return_last_frame: value }), { code: "parameter_type" });
     }
   }
+});
+
+test("Only Seedance 2.0 and Seedance 2.5 Flash accept return_last_frame", () => {
+  const supported = new Set(["bytedance/seedance-2.0", "bytedance/seedance-2.5-flash"]);
   for (const model of listModelContracts()) {
-    if (model.id === "bytedance/seedance-2.0") continue;
+    if (supported.has(model.id)) {
+      for (const op of model.operations) for (const mode of op.input_modes) {
+        assert.doesNotThrow(() => validateModelParameters(model.id, op.operation, mode, { return_last_frame: true }));
+        assert.throws(() => validateModelParameters(model.id, op.operation, mode, { return_last_frame: "true" }), { code: "parameter_type" });
+      }
+      continue;
+    }
     for (const op of model.operations) for (const mode of op.input_modes) for (const value of [false, true]) {
       assert.throws(() => validateModelParameters(model.id, op.operation, mode, { return_last_frame: value }), { code: "parameter_unknown" });
     }
