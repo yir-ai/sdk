@@ -104,15 +104,19 @@ func TestLastFrameContractAndTransport(t *testing.T) {
 	}
 }
 
-func TestLastFrameRejectsOtherModels(t *testing.T) {
+func TestLastFrameModelSupport(t *testing.T) {
 	for _, model := range ListModelContracts() {
-		if model.ID == "bytedance/seedance-2.0" {
-			continue
-		}
+		supported := model.ID == "bytedance/seedance-2.0" || model.ID == "bytedance/seedance-2.5-flash"
 		for _, op := range model.Operations {
 			for _, mode := range op.InputModes {
 				for _, value := range []bool{false, true} {
 					err := ValidateModelParameters(model.ID, op.Operation, mode, map[string]any{"return_last_frame": value})
+					if supported {
+						if err != nil {
+							t.Fatalf("%s %s rejected last frame: %v", model.ID, mode, err)
+						}
+						continue
+					}
 					var parameter *ParameterError
 					if !errors.As(err, &parameter) || parameter.Code != "unknown_parameter" {
 						t.Fatalf("%s accepts last frame: %v", model.ID, err)
