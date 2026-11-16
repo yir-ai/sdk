@@ -16485,6 +16485,105 @@
       ]
     },
     {
+      "id": "pruna/p-video-avatar",
+      "aliases": [
+        "p-video-avatar"
+      ],
+      "locales": {
+        "en": {
+          "label": "P-Video-Avatar",
+          "description": "Turn one portrait and an English script into a speaking video in the 720p tier. The model determines the video dimensions and length."
+        },
+        "zh-CN": {
+          "label": "P-Video-Avatar",
+          "description": "用一张人像照片和英文口播稿生成 720p 档有声视频。画面尺寸和时长由模型决定。"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "reference"
+          ],
+          "input_constraints": {
+            "reference": {
+              "min_references": 1,
+              "max_references": 1,
+              "allowed_reference_roles": [
+                "reference_image"
+              ],
+              "required_reference_roles": [
+                "reference_image"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "720p"
+              ],
+              "default": "720p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "pruna/p-video-replace",
       "aliases": [
         "p-video-replace"
