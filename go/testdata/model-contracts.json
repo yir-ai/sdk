@@ -8808,6 +8808,110 @@
       ]
     },
     {
+      "id": "heygen/heygen-avatar-6-turbo",
+      "aliases": [
+        "heygen-avatar-6-turbo",
+        "avatar-6-turbo"
+      ],
+      "locales": {
+        "en": {
+          "label": "HeyGen Avatar 6 Turbo",
+          "description": "Turn one portrait and a speech recording into a lip-synced 1080p video. An optional prompt directs the motion and expression."
+        },
+        "zh-CN": {
+          "label": "HeyGen Avatar 6 Turbo",
+          "description": "用一张人像照片和一段语音生成 1080p 对口型视频，可用提示词控制动作与表情。"
+        }
+      },
+      "operations": [
+        {
+          "operation": "generate_video",
+          "input_modes": [
+            "reference"
+          ],
+          "input_constraints": {
+            "reference": {
+              "prompt_optional": true,
+              "max_prompt_characters": 1200,
+              "min_references": 2,
+              "max_references": 2,
+              "allowed_reference_roles": [
+                "reference_image",
+                "reference_audio"
+              ],
+              "required_reference_roles": [
+                "reference_image",
+                "reference_audio"
+              ]
+            }
+          },
+          "request_schema": "#/components/schemas/StandardVideoGenerationRequest",
+          "parameters": [
+            {
+              "name": "resolution",
+              "type": "string",
+              "required": false,
+              "values": [
+                "1080p"
+              ],
+              "default": "1080p",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Resolution",
+                  "description": "Output resolution."
+                },
+                "zh-CN": {
+                  "label": "分辨率",
+                  "description": "输出内容的分辨率。"
+                }
+              }
+            },
+            {
+              "name": "aspect_ratio",
+              "type": "string",
+              "required": false,
+              "values": [
+                "auto"
+              ],
+              "default": "auto",
+              "control": "aspect_ratio",
+              "locales": {
+                "en": {
+                  "label": "Aspect ratio",
+                  "description": "Output aspect ratio."
+                },
+                "zh-CN": {
+                  "label": "画幅",
+                  "description": "输出内容的宽高比。"
+                }
+              }
+            },
+            {
+              "name": "n",
+              "type": "integer",
+              "required": false,
+              "values": [
+                1
+              ],
+              "default": 1,
+              "control": "number",
+              "locales": {
+                "en": {
+                  "label": "Outputs per request",
+                  "description": "Number of outputs from one API request (one Job), not the application batch size. For multiple Jobs, submit separate requests; n=1 does not prevent application-managed batching."
+                },
+                "zh-CN": {
+                  "label": "单次请求输出数量",
+                  "description": "单次 API 请求（一个 Job）的输出数量，不是应用的批量张数。应用可提交多个独立请求组成一批；n=1 不表示应用只能生成一张。"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "heygen/heygen-video-1",
       "aliases": [
         "heygen-video-1"
