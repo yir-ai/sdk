@@ -406,9 +406,12 @@ export type AccountLogInputReferenceView = {
 export type AccountInputSummary = {
   "explicit_parameters"?: Array<string>;
   "ignored_parameters"?: Array<string>;
+  "input_mode"?: AccountCanonicalTaskInputModeV2;
   "reference_count"?: number;
   "specification"?: AccountCanonicalTaskSpecificationV2;
 };
+
+export type AccountCanonicalTaskInputModeV2 = "multiview" | "text" | "image" | "layer_decomposition" | "reference";
 
 export type AccountCanonicalTaskSpecificationV2 = {
   "adaptive_duration"?: boolean;
@@ -423,17 +426,32 @@ export type AccountCanonicalTaskSpecificationV2 = {
   "image_search"?: boolean;
   "instrumental"?: boolean;
   "lyrics_optimizer"?: boolean;
+  "midjourney"?: AccountMidjourneyParameters;
   "output_count"?: number;
+  "output_format"?: string;
   "pbr"?: boolean;
   "quality_tier"?: string;
   "resolution"?: string;
   "return_last_frame"?: boolean;
   "seed"?: number;
   "size"?: string;
+  "task_type"?: string;
   "texture"?: string;
   "topology"?: string;
   "voice"?: string;
   "web_search"?: boolean;
+};
+
+export type AccountMidjourneyParameters = {
+  "chaos"?: number;
+  "image_weight"?: number;
+  "negative_prompt"?: string;
+  "raw"?: boolean;
+  "style_reference"?: string;
+  "style_weight"?: number;
+  "stylize"?: number;
+  "tile"?: boolean;
+  "weird"?: number;
 };
 
 export type AccountInputTransferView = {
@@ -479,6 +497,7 @@ export type AccountStandardV1ResultFile = {
   "faces"?: number;
   "fidelity"?: AccountStandardV1ResultFidelity;
   "height"?: number;
+  "layer"?: AccountImageLayer;
   "media_type"?: string;
   "swap_checks"?: AccountPersonSwapChecks;
   "url"?: string;
@@ -488,6 +507,16 @@ export type AccountStandardV1ResultFile = {
 export type AccountStandardV1ResultFidelity = {
   "grade"?: "original" | "app" | "equivalent" | "altered" | "unverified";
   "reason"?: string;
+};
+
+export type AccountImageLayer = {
+  "bounding_box"?: AccountImageLayerBoundingBox;
+  "z_index"?: number;
+};
+
+export type AccountImageLayerBoundingBox = {
+  "absolute"?: Array<number>;
+  "normalized"?: Array<number>;
 };
 
 export type AccountPersonSwapChecks = {

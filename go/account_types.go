@@ -302,10 +302,10 @@ type AccountLogAttemptView struct {
 type AccountLogAttemptChargeView struct {
 	Amount      *string                        `json:"amount,omitempty"`
 	AmountBasis *AccountStandardV1AmountBasis  `json:"amount_basis,omitempty"`
-	BilledBy    *AccountStandardV1BilledBy     `json:"billed_by,omitempty"`
+	BilledBy    *map[string]any                `json:"billed_by,omitempty"`
 	Currency    *string                        `json:"currency,omitempty"`
 	Status      *AccountStandardV1ChargeStatus `json:"status,omitempty"`
-	SupplyType  *AccountStandardV1SupplyType   `json:"supply_type,omitempty"`
+	SupplyType  *map[string]any                `json:"supply_type,omitempty"`
 }
 
 type AccountStandardV1AmountBasis string
@@ -408,34 +408,52 @@ type AccountLogInputReferenceView struct {
 type AccountInputSummary struct {
 	ExplicitParameters *[]string                            `json:"explicit_parameters,omitempty"`
 	IgnoredParameters  *[]string                            `json:"ignored_parameters,omitempty"`
+	InputMode          *AccountCanonicalTaskInputModeV2     `json:"input_mode,omitempty"`
 	ReferenceCount     *int64                               `json:"reference_count,omitempty"`
 	Specification      *AccountCanonicalTaskSpecificationV2 `json:"specification,omitempty"`
 }
 
+type AccountCanonicalTaskInputModeV2 string
+
 type AccountCanonicalTaskSpecificationV2 struct {
-	AdaptiveDuration *bool   `json:"adaptive_duration,omitempty"`
-	AspectRatio      *string `json:"aspect_ratio,omitempty"`
-	DurationSeconds  *int64  `json:"duration_seconds,omitempty"`
-	FaceLimit        *int64  `json:"face_limit,omitempty"`
-	Fps              *int64  `json:"fps,omitempty"`
-	FrameCount       *int64  `json:"frame_count,omitempty"`
-	FrameDurationMs  *int64  `json:"frame_duration_ms,omitempty"`
-	GenerateAudio    *bool   `json:"generate_audio,omitempty"`
-	IgnoreQuality    *bool   `json:"ignore_quality,omitempty"`
-	ImageSearch      *bool   `json:"image_search,omitempty"`
-	Instrumental     *bool   `json:"instrumental,omitempty"`
-	LyricsOptimizer  *bool   `json:"lyrics_optimizer,omitempty"`
-	OutputCount      *int64  `json:"output_count,omitempty"`
-	Pbr              *bool   `json:"pbr,omitempty"`
-	QualityTier      *string `json:"quality_tier,omitempty"`
-	Resolution       *string `json:"resolution,omitempty"`
-	ReturnLastFrame  *bool   `json:"return_last_frame,omitempty"`
-	Seed             *int64  `json:"seed,omitempty"`
-	Size             *string `json:"size,omitempty"`
-	Texture          *string `json:"texture,omitempty"`
-	Topology         *string `json:"topology,omitempty"`
-	Voice            *string `json:"voice,omitempty"`
-	WebSearch        *bool   `json:"web_search,omitempty"`
+	AdaptiveDuration *bool           `json:"adaptive_duration,omitempty"`
+	AspectRatio      *string         `json:"aspect_ratio,omitempty"`
+	DurationSeconds  *int64          `json:"duration_seconds,omitempty"`
+	FaceLimit        *int64          `json:"face_limit,omitempty"`
+	Fps              *int64          `json:"fps,omitempty"`
+	FrameCount       *int64          `json:"frame_count,omitempty"`
+	FrameDurationMs  *int64          `json:"frame_duration_ms,omitempty"`
+	GenerateAudio    *bool           `json:"generate_audio,omitempty"`
+	IgnoreQuality    *bool           `json:"ignore_quality,omitempty"`
+	ImageSearch      *bool           `json:"image_search,omitempty"`
+	Instrumental     *bool           `json:"instrumental,omitempty"`
+	LyricsOptimizer  *bool           `json:"lyrics_optimizer,omitempty"`
+	Midjourney       *map[string]any `json:"midjourney,omitempty"`
+	OutputCount      *int64          `json:"output_count,omitempty"`
+	OutputFormat     *string         `json:"output_format,omitempty"`
+	Pbr              *bool           `json:"pbr,omitempty"`
+	QualityTier      *string         `json:"quality_tier,omitempty"`
+	Resolution       *string         `json:"resolution,omitempty"`
+	ReturnLastFrame  *bool           `json:"return_last_frame,omitempty"`
+	Seed             *int64          `json:"seed,omitempty"`
+	Size             *string         `json:"size,omitempty"`
+	TaskType         *string         `json:"task_type,omitempty"`
+	Texture          *string         `json:"texture,omitempty"`
+	Topology         *string         `json:"topology,omitempty"`
+	Voice            *string         `json:"voice,omitempty"`
+	WebSearch        *bool           `json:"web_search,omitempty"`
+}
+
+type AccountMidjourneyParameters struct {
+	Chaos          *int64   `json:"chaos,omitempty"`
+	ImageWeight    *float64 `json:"image_weight,omitempty"`
+	NegativePrompt *string  `json:"negative_prompt,omitempty"`
+	Raw            *bool    `json:"raw,omitempty"`
+	StyleReference *string  `json:"style_reference,omitempty"`
+	StyleWeight    *int64   `json:"style_weight,omitempty"`
+	Stylize        *int64   `json:"stylize,omitempty"`
+	Tile           *bool    `json:"tile,omitempty"`
+	Weird          *int64   `json:"weird,omitempty"`
 }
 
 type AccountInputTransferView struct {
@@ -476,20 +494,31 @@ type AccountStandardV1ContentSafety struct {
 }
 
 type AccountStandardV1ResultFile struct {
-	DurationMs *int64          `json:"duration_ms,omitempty"`
-	ExpiresAt  *int64          `json:"expires_at,omitempty"`
-	Faces      *int64          `json:"faces,omitempty"`
-	Fidelity   *map[string]any `json:"fidelity,omitempty"`
-	Height     *int64          `json:"height,omitempty"`
-	MediaType  *string         `json:"media_type,omitempty"`
-	SwapChecks *map[string]any `json:"swap_checks,omitempty"`
-	Url        *string         `json:"url,omitempty"`
-	Width      *int64          `json:"width,omitempty"`
+	DurationMs *int64             `json:"duration_ms,omitempty"`
+	ExpiresAt  *int64             `json:"expires_at,omitempty"`
+	Faces      *int64             `json:"faces,omitempty"`
+	Fidelity   *map[string]any    `json:"fidelity,omitempty"`
+	Height     *int64             `json:"height,omitempty"`
+	Layer      *AccountImageLayer `json:"layer,omitempty"`
+	MediaType  *string            `json:"media_type,omitempty"`
+	SwapChecks *map[string]any    `json:"swap_checks,omitempty"`
+	Url        *string            `json:"url,omitempty"`
+	Width      *int64             `json:"width,omitempty"`
 }
 
 type AccountStandardV1ResultFidelity struct {
 	Grade  *string `json:"grade,omitempty"`
 	Reason *string `json:"reason,omitempty"`
+}
+
+type AccountImageLayer struct {
+	BoundingBox *AccountImageLayerBoundingBox `json:"bounding_box,omitempty"`
+	ZIndex      *int64                        `json:"z_index,omitempty"`
+}
+
+type AccountImageLayerBoundingBox struct {
+	Absolute   *[]int64 `json:"absolute,omitempty"`
+	Normalized *[]int64 `json:"normalized,omitempty"`
 }
 
 type AccountPersonSwapChecks struct {

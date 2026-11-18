@@ -1977,7 +1977,13 @@
             "$ref": "#/components/schemas/types.YIRStandardV1AmountBasis"
           },
           "billed_by": {
-            "$ref": "#/components/schemas/types.YIRStandardV1BilledBy"
+            "description": "Deprecated: charges always use the Yir wallet. Read amount and status for this attempt's charge.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/types.YIRStandardV1BilledBy"
+              }
+            ],
+            "deprecated": true
           },
           "currency": {
             "type": "string"
@@ -1986,7 +1992,13 @@
             "$ref": "#/components/schemas/types.YIRStandardV1ChargeStatus"
           },
           "supply_type": {
-            "$ref": "#/components/schemas/types.YIRStandardV1SupplyType"
+            "description": "Deprecated: Yir Cloud always uses managed supply. Retained for v1 response compatibility.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/types.YIRStandardV1SupplyType"
+              }
+            ],
+            "deprecated": true
           }
         }
       },
@@ -2343,6 +2355,9 @@
               "type": "string"
             }
           },
+          "input_mode": {
+            "$ref": "#/components/schemas/aigcprotocol.CanonicalTaskInputModeV2"
+          },
           "reference_count": {
             "type": "integer"
           },
@@ -2350,6 +2365,23 @@
             "$ref": "#/components/schemas/aigcprotocol.CanonicalTaskSpecificationV2"
           }
         }
+      },
+      "aigcprotocol.CanonicalTaskInputModeV2": {
+        "type": "string",
+        "enum": [
+          "multiview",
+          "text",
+          "image",
+          "layer_decomposition",
+          "reference"
+        ],
+        "x-enum-varnames": [
+          "CanonicalTaskInputModeMultiviewV2",
+          "CanonicalTaskInputModeTextV2",
+          "CanonicalTaskInputModeImageV2",
+          "CanonicalTaskInputModeLayerDecompositionV2",
+          "CanonicalTaskInputModeReferenceV2"
+        ]
       },
       "aigcprotocol.CanonicalTaskSpecificationV2": {
         "type": "object",
@@ -2371,7 +2403,6 @@
             "type": "integer"
           },
           "frame_count": {
-            "description": "FrameCount 与 FrameDurationMs 只回显 GIF 任务。",
             "type": "integer"
           },
           "frame_duration_ms": {
@@ -2394,8 +2425,20 @@
           "lyrics_optimizer": {
             "type": "boolean"
           },
+          "midjourney": {
+            "description": "Midjourney 只用于 Midjourney 图片：未指定时为 nil，不进入既有任务身份。",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/aigcprotocol.MidjourneyParameters"
+              }
+            ]
+          },
           "output_count": {
             "type": "integer"
+          },
+          "output_format": {
+            "description": "OutputFormat 只接受 gif 或 svg，帧参数只用于 gif；静态图不写入，保持既有任务身份。",
+            "type": "string"
           },
           "pbr": {
             "type": "boolean"
@@ -2415,6 +2458,10 @@
           "size": {
             "type": "string"
           },
+          "task_type": {
+            "description": "TaskType 是 Seedance 2.5 参考生视频的子任务类型（reference/edit/extend）；空值即 auto，不进入既有任务身份。",
+            "type": "string"
+          },
           "texture": {
             "description": "3D（generate_3d）：贴图档位、PBR、目标面数（0 为模型默认）与网格拓扑，进入任务身份。",
             "type": "string"
@@ -2428,6 +2475,39 @@
           },
           "web_search": {
             "type": "boolean"
+          }
+        }
+      },
+      "aigcprotocol.MidjourneyParameters": {
+        "type": "object",
+        "properties": {
+          "chaos": {
+            "type": "integer"
+          },
+          "image_weight": {
+            "description": "ImageWeight 是 --iw：参考图（图片提示）对结果的影响强度，只在图生图下有效。",
+            "type": "number"
+          },
+          "negative_prompt": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "boolean"
+          },
+          "style_reference": {
+            "type": "string"
+          },
+          "style_weight": {
+            "type": "integer"
+          },
+          "stylize": {
+            "type": "integer"
+          },
+          "tile": {
+            "type": "boolean"
+          },
+          "weird": {
+            "type": "integer"
           }
         }
       },
@@ -2585,6 +2665,9 @@
           "height": {
             "type": "integer"
           },
+          "layer": {
+            "$ref": "#/components/schemas/aigcprotocol.ImageLayer"
+          },
           "media_type": {
             "type": "string"
           },
@@ -2619,6 +2702,34 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "aigcprotocol.ImageLayer": {
+        "type": "object",
+        "properties": {
+          "bounding_box": {
+            "$ref": "#/components/schemas/aigcprotocol.ImageLayerBoundingBox"
+          },
+          "z_index": {
+            "type": "integer"
+          }
+        }
+      },
+      "aigcprotocol.ImageLayerBoundingBox": {
+        "type": "object",
+        "properties": {
+          "absolute": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "normalized": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
           }
         }
       },
