@@ -2,6 +2,10 @@
 
 Release notes, newest first. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
 
+## Unreleased
+
+- Fix `GetLog` decoding for charged attempts and successful jobs. `AccountStandardV1Result.Availability` is now a pointer to the string enum `AccountStandardV1ResultAvailability`. If you constructed or indexed the old map type, assign or compare the enum value directly after checking for nil.
+
 ## 0.15.0 changes (2026-11-13)
 
 This minor release changes demo cancellation incompatibly. Real Job cancellation is unchanged.

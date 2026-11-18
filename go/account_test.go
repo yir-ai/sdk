@@ -60,6 +60,34 @@ func TestAccountClientDoesNotRetryWrites(t *testing.T) {
 	}
 }
 
+func TestAccountClientGetLogDecodesCharge(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/account/v1/logs/123" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		io.WriteString(w, `{"code":200,"data":{"result":{"availability":"available"},"attempts":[{"charge":{"amount":"0.03","status":"settled","billed_by":"yir","supply_type":"managed"}}]}}`)
+	}))
+	defer server.Close()
+	client, err := NewAccountClient("yir_ak_test", ClientOptions{BaseURL: server.URL + "/account/v1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := client.GetLog(context.Background(), "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Attempts == nil || len(*result.Attempts) != 1 || (*result.Attempts)[0].Charge == nil {
+		t.Fatal("expected one attempt with a charge")
+	}
+	charge := (*result.Attempts)[0].Charge
+	if charge.BilledBy == nil || *charge.BilledBy != "yir" || charge.SupplyType == nil || *charge.SupplyType != "managed" {
+		t.Fatalf("unexpected charge fields: %+v", charge)
+	}
+	if result.Result == nil || result.Result.Availability == nil || *result.Result.Availability != "available" {
+		t.Fatalf("unexpected task result: %+v", result.Result)
+	}
+}
+
 func TestAccountClientClearsRoutingExclusions(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]json.RawMessage

@@ -302,10 +302,10 @@ type AccountLogAttemptView struct {
 type AccountLogAttemptChargeView struct {
 	Amount      *string                        `json:"amount,omitempty"`
 	AmountBasis *AccountStandardV1AmountBasis  `json:"amount_basis,omitempty"`
-	BilledBy    *map[string]any                `json:"billed_by,omitempty"`
+	BilledBy    *AccountStandardV1BilledBy     `json:"billed_by,omitempty"`
 	Currency    *string                        `json:"currency,omitempty"`
 	Status      *AccountStandardV1ChargeStatus `json:"status,omitempty"`
-	SupplyType  *map[string]any                `json:"supply_type,omitempty"`
+	SupplyType  *AccountStandardV1SupplyType   `json:"supply_type,omitempty"`
 }
 
 type AccountStandardV1AmountBasis string
@@ -480,10 +480,10 @@ type AccountLogLifecycleView struct {
 type AccountLogRawContentState string
 
 type AccountStandardV1Result struct {
-	Availability  *map[string]any                 `json:"availability,omitempty"`
-	ContentSafety *AccountStandardV1ContentSafety `json:"content_safety,omitempty"`
-	Files         *[]AccountStandardV1ResultFile  `json:"files,omitempty"`
-	Warnings      *[]string                       `json:"warnings,omitempty"`
+	Availability  *AccountStandardV1ResultAvailability `json:"availability,omitempty"`
+	ContentSafety *AccountStandardV1ContentSafety      `json:"content_safety,omitempty"`
+	Files         *[]AccountStandardV1ResultFile       `json:"files,omitempty"`
+	Warnings      *[]string                            `json:"warnings,omitempty"`
 }
 
 type AccountStandardV1ResultAvailability string

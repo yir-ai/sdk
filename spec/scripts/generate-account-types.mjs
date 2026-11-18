@@ -6,7 +6,14 @@ const name = ref => 'Account' + ref.split('/').at(-1).split('.').at(-1).replace(
 const field = key => key.split('_').map(s => s[0].toUpperCase() + s.slice(1)).join('');
 function type(s, lang) {
   if (s.$ref) return name(s.$ref);
-  if (s.allOf) return lang === 'ts' ? s.allOf.map(v => type(v, lang)).join(' & ') : 'map[string]any';
+  if (s.allOf) {
+    if (lang === 'ts') return s.allOf.map(v => type(v, lang)).join(' & ');
+    // Account OpenAPI decorates string references with a single-member allOf.
+    const [member] = s.allOf;
+    const schemaKey = member?.$ref?.split('/').at(-1);
+    if (s.allOf.length === 1 && schemas[schemaKey]?.type === 'string') return type(member, lang);
+    return 'map[string]any';
+  }
   if (s.enum && lang === 'ts') return s.enum.map(v => JSON.stringify(v)).join(' | ');
   if (s.type === 'array') return lang === 'ts' ? `Array<${type(s.items, lang)}>` : `[]${type(s.items, lang)}`;
   if (s.type === 'string') return 'string';

@@ -2,6 +2,10 @@
 
 各版本说明，新版本在前。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
 
+## 待发布
+
+- 修复 `GetLog` 读取已计费尝试和成功任务的解码错误。`AccountStandardV1Result.Availability` 改为字符串枚举 `AccountStandardV1ResultAvailability` 的指针。原先构造或索引 map 的调用方，请改为赋值枚举，读取时先判空再解引用比较。
+
 ## 0.15.0 变化（2026-11-13）
 
 此 minor 版本包含 demo 取消行为的不兼容变化；真实任务取消行为不变。
