@@ -4619,7 +4619,8 @@
               "values": [
                 "480p",
                 "720p",
-                "1080p"
+                "1080p",
+                "4K"
               ],
               "default": "720p",
               "control": "select",
@@ -4652,11 +4653,11 @@
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Output aspect ratio. At 4K, use 16:9."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "输出内容的宽高比。 4K 时仅支持 16:9。"
                 }
               }
             },
@@ -4775,7 +4776,8 @@
               "values": [
                 "480p",
                 "720p",
-                "1080p"
+                "1080p",
+                "4K"
               ],
               "default": "720p",
               "control": "select",
@@ -4802,11 +4804,11 @@
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Output aspect ratio. At 4K, use auto."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "输出内容的宽高比。 4K 时仅支持 auto。"
                 }
               }
             },
@@ -4914,7 +4916,8 @@
               "values": [
                 "480p",
                 "720p",
-                "1080p"
+                "1080p",
+                "4K"
               ],
               "default": "720p",
               "control": "select",
@@ -4947,11 +4950,11 @@
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Output aspect ratio. At 4K, use 16:9."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "输出内容的宽高比。 4K 时仅支持 16:9。"
                 }
               }
             },
