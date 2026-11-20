@@ -11015,7 +11015,8 @@
               "required": false,
               "values": [
                 "720p",
-                "1080p"
+                "1080p",
+                "4K"
               ],
               "default": "720p",
               "control": "select",
@@ -11070,6 +11071,27 @@
                 "zh-CN": {
                   "label": "生成音频",
                   "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "dynamic_range",
+              "type": "string",
+              "required": false,
+              "values": [
+                "sdr",
+                "hdr"
+              ],
+              "default": "sdr",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Dynamic range",
+                  "description": "HDR outputs 10-bit HLG video in HEVC and is available at 1080p, 4K."
+                },
+                "zh-CN": {
+                  "label": "动态范围",
+                  "description": "HDR 输出采用 HEVC 编码的 10 位 HLG 视频，仅支持 1080p, 4K。"
                 }
               }
             },
@@ -11153,7 +11175,8 @@
               "required": false,
               "values": [
                 "720p",
-                "1080p"
+                "1080p",
+                "4K"
               ],
               "default": "720p",
               "control": "select",
@@ -11205,6 +11228,27 @@
                 "zh-CN": {
                   "label": "生成音频",
                   "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "dynamic_range",
+              "type": "string",
+              "required": false,
+              "values": [
+                "sdr",
+                "hdr"
+              ],
+              "default": "sdr",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Dynamic range",
+                  "description": "HDR outputs 10-bit HLG video in HEVC and is available at 1080p, 4K."
+                },
+                "zh-CN": {
+                  "label": "动态范围",
+                  "description": "HDR 输出采用 HEVC 编码的 10 位 HLG 视频，仅支持 1080p, 4K。"
                 }
               }
             },
@@ -11298,7 +11342,8 @@
               "required": false,
               "values": [
                 "720p",
-                "1080p"
+                "1080p",
+                "4K"
               ],
               "default": "720p",
               "control": "select",
@@ -11354,6 +11399,27 @@
                 "zh-CN": {
                   "label": "生成音频",
                   "description": "随视频生成原生音频。"
+                }
+              }
+            },
+            {
+              "name": "dynamic_range",
+              "type": "string",
+              "required": false,
+              "values": [
+                "sdr",
+                "hdr"
+              ],
+              "default": "sdr",
+              "control": "select",
+              "locales": {
+                "en": {
+                  "label": "Dynamic range",
+                  "description": "HDR outputs 10-bit HLG video in HEVC and is available at 1080p, 4K."
+                },
+                "zh-CN": {
+                  "label": "动态范围",
+                  "description": "HDR 输出采用 HEVC 编码的 10 位 HLG 视频，仅支持 1080p, 4K。"
                 }
               }
             },

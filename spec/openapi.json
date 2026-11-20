@@ -1286,6 +1286,7 @@
               "generate_audio": {
                 "type": "boolean"
               },
+              "dynamic_range": { "type": "string", "enum": ["sdr", "hdr"], "description": "Video dynamic range. Defaults to SDR. HDR requires a model, resolution, and channel that declare HDR support." },
               "n": {
                 "type": "integer",
                 "enum": [
@@ -1352,6 +1353,7 @@
               "generate_audio": {
                 "type": "boolean"
               },
+              "dynamic_range": { "type": "string", "enum": ["sdr", "hdr"], "description": "Video dynamic range. Defaults to SDR. HDR requires a model, resolution, and channel that declare HDR support." },
               "n": {
                 "type": "integer",
                 "enum": [
@@ -2009,6 +2011,7 @@
           "resolution": { "type": "string", "minLength": 1 },
           "aspect_ratio": { "type": "string", "minLength": 1 },
           "generate_audio": { "type": "boolean", "description": "Present when the model declares generate_audio." },
+          "dynamic_range": { "type": "string", "enum": ["hdr"], "description": "Present for HDR video requests. Omitted for SDR." },
           "instrumental": { "type": "boolean", "description": "Music only: no vocals." },
           "lyrics_optimizer": { "type": "boolean", "description": "Music only: lyrics written from the prompt." },
           "voice": { "type": "string", "minLength": 1, "description": "Text-to-speech only: the resolved preset voice ID." },

@@ -2396,6 +2396,9 @@
           "duration_seconds": {
             "type": "integer"
           },
+          "dynamic_range": {
+            "type": "string"
+          },
           "face_limit": {
             "type": "integer"
           },

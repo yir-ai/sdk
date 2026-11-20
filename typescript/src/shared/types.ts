@@ -209,6 +209,7 @@ export type QuoteParameters = {
   /** Preserves auto intent; internal measured seconds are not substituted. */
   readonly duration?: number | "auto";
   readonly generate_audio?: boolean;
+  readonly dynamic_range?: "hdr";
   readonly quality?: string;
   readonly return_last_frame?: boolean;
   readonly web_search?: boolean;

@@ -419,6 +419,7 @@ type AccountCanonicalTaskSpecificationV2 struct {
 	AdaptiveDuration *bool           `json:"adaptive_duration,omitempty"`
 	AspectRatio      *string         `json:"aspect_ratio,omitempty"`
 	DurationSeconds  *int64          `json:"duration_seconds,omitempty"`
+	DynamicRange     *string         `json:"dynamic_range,omitempty"`
 	FaceLimit        *int64          `json:"face_limit,omitempty"`
 	Fps              *int64          `json:"fps,omitempty"`
 	FrameCount       *int64          `json:"frame_count,omitempty"`

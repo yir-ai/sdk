@@ -417,6 +417,7 @@ export type AccountCanonicalTaskSpecificationV2 = {
   "adaptive_duration"?: boolean;
   "aspect_ratio"?: string;
   "duration_seconds"?: number;
+  "dynamic_range"?: string;
   "face_limit"?: number;
   "fps"?: number;
   "frame_count"?: number;
