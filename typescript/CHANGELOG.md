@@ -2,6 +2,10 @@
 
 Release notes before 0.10.0, moved from the README. Notes describe each release as published; later releases may supersede them. Current behavior is in the [README](README.md).
 
+## Unreleased
+
+- Add the `YIR_ACCOUNT_RESTRICTED` error code (in `YIR_ERROR_CODES`; `YirAPIError.retryAfterMs`). New Job submission from an account that is temporarily paused, for example after repeated content safety rejections, now returns `403 YIR_ACCOUNT_RESTRICTED` with `retryable: false`, `action: "retry_later"` and `Retry-After` until submission resumes; it was previously `429 YIR_RATE_LIMITED`. The built-in transport never retried submit 429s and does not retry this 403 either. If your own code retries `429` or matched `YIR_RATE_LIMITED` to detect the pause, handle the new code instead and do not resubmit before `retryAfterMs`; older SDK versions surface it as an ordinary API error.
+
 ## 0.15.0 changes (2026-11-13)
 
 This minor release changes demo cancellation incompatibly. Real Job cancellation is unchanged.

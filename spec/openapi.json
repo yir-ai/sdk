@@ -101,7 +101,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/InsufficientBalance" },
-          "403": { "$ref": "#/components/responses/SpendLimitExceeded" },
+          "403": { "$ref": "#/components/responses/SubmissionForbidden" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
@@ -195,7 +195,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/InsufficientBalance" },
-          "403": { "$ref": "#/components/responses/SpendLimitExceeded" },
+          "403": { "$ref": "#/components/responses/SubmissionForbidden" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
@@ -328,7 +328,7 @@
             "$ref": "#/components/responses/InsufficientBalance"
           },
           "403": {
-            "$ref": "#/components/responses/SpendLimitExceeded"
+            "$ref": "#/components/responses/SubmissionForbidden"
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
@@ -405,7 +405,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/InsufficientBalance" },
-          "403": { "$ref": "#/components/responses/SpendLimitExceeded" },
+          "403": { "$ref": "#/components/responses/SubmissionForbidden" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
@@ -473,7 +473,7 @@
           "400": { "$ref": "#/components/responses/InvalidRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/InsufficientBalance" },
-          "403": { "$ref": "#/components/responses/SpendLimitExceeded" },
+          "403": { "$ref": "#/components/responses/SubmissionForbidden" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/NoExecutableRoute" },
           "429": { "$ref": "#/components/responses/RateLimited" },
@@ -785,13 +785,19 @@
       "InvalidRequest": { "$ref": "#/components/responses/StandardError" },
       "Unauthorized": { "$ref": "#/components/responses/StandardError" },
       "InsufficientBalance": { "$ref": "#/components/responses/StandardError" },
-      "SpendLimitExceeded": { "$ref": "#/components/responses/StandardError" },
+      "SubmissionForbidden": {
+        "description": "The API key reached its monthly spend limit (YIR_SPEND_LIMIT_EXCEEDED), or the account is restricted from submitting new Jobs (YIR_ACCOUNT_RESTRICTED), for example paused after repeated content safety rejections. Neither is retried automatically.",
+        "headers": {
+          "Retry-After": { "schema": { "type": "integer", "minimum": 1 }, "description": "Seconds until submission resumes when YIR_ACCOUNT_RESTRICTED has action retry_later." }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
       "Conflict": { "$ref": "#/components/responses/StandardError" },
       "NoExecutableRoute": { "$ref": "#/components/responses/StandardError" },
       "RateLimited": {
-        "description": "Too many Jobs are in progress, the API key exceeded its per-minute request rate, or the account is temporarily paused from submitting new Jobs after repeated content safety rejections (YIR_RATE_LIMITED).",
+        "description": "Too many Jobs are in progress, or the API key exceeded its per-minute request rate (YIR_RATE_LIMITED).",
         "headers": {
-          "Retry-After": { "schema": { "type": "integer", "minimum": 1 }, "description": "Seconds to wait when the per-minute rate was exceeded or new Job submission is temporarily paused." }
+          "Retry-After": { "schema": { "type": "integer", "minimum": 1 }, "description": "Seconds to wait when the per-minute rate was exceeded." }
         },
         "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
       },
@@ -2033,7 +2039,7 @@
               "YIR_IDEMPOTENCY_CONFLICT", "YIR_JOB_NOT_CANCELLABLE", "YIR_NO_EXECUTABLE_ROUTE",
               "YIR_RATE_LIMITED", "YIR_TEMPORARILY_UNAVAILABLE", "YIR_EXECUTION_FAILED", "YIR_INPUT_REJECTED",
               "YIR_CONTENT_REJECTED", "YIR_OUTCOME_TIMEOUT", "YIR_RESULT_DELIVERY_FAILED",
-              "YIR_JOB_TIMEOUT", "YIR_FIDELITY_EXCLUDED"
+              "YIR_JOB_TIMEOUT", "YIR_FIDELITY_EXCLUDED", "YIR_ACCOUNT_RESTRICTED"
             ]
           },
           "message": { "type": "string", "minLength": 1 },

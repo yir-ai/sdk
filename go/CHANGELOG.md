@@ -4,6 +4,7 @@ Release notes, newest first. Notes describe each release as published; later rel
 
 ## Unreleased
 
+- Add the `YIR_ACCOUNT_RESTRICTED` error code (`ErrCodeAccountRestricted`; `APIError.RetryAfter`). New Job submission from an account that is temporarily paused, for example after repeated content safety rejections, now returns `403 YIR_ACCOUNT_RESTRICTED` with `retryable: false`, `action: "retry_later"` and `Retry-After` until submission resumes; it was previously `429 YIR_RATE_LIMITED`. The built-in transport never retried submit 429s and does not retry this 403 either. If your own code retries `429` or matched `YIR_RATE_LIMITED` to detect the pause, handle the new code instead and do not resubmit before `RetryAfter`; older SDK versions surface it as an ordinary API error.
 - Fix `GetLog` decoding for charged attempts and successful jobs. `AccountStandardV1Result.Availability` is now a pointer to the string enum `AccountStandardV1ResultAvailability`. If you constructed or indexed the old map type, assign or compare the enum value directly after checking for nil.
 
 ## 0.15.0 changes (2026-11-13)

@@ -4,6 +4,7 @@
 
 ## 待发布
 
+- 新增错误码 `YIR_ACCOUNT_RESTRICTED`（`ErrCodeAccountRestricted`，等待时长见 `APIError.RetryAfter`）。账户被暂停提交新任务时（如内容多次未通过安全审核），提交改为返回 `403 YIR_ACCOUNT_RESTRICTED`，`retryable: false`、`action: "retry_later"`，`Retry-After` 给出恢复前的秒数；此前返回 `429 YIR_RATE_LIMITED`。SDK 内置传输此前就不重试提交的 429，也不会重试这个 403。调用方如果自己重试 `429`，或靠 `YIR_RATE_LIMITED` 判断暂停，请改为处理新错误码，`RetryAfter` 到期前不要重新提交；旧版 SDK 会把它当作普通 API 错误抛出。
 - 修复 `GetLog` 读取已计费尝试和成功任务的解码错误。`AccountStandardV1Result.Availability` 改为字符串枚举 `AccountStandardV1ResultAvailability` 的指针。原先构造或索引 map 的调用方，请改为赋值枚举，读取时先判空再解引用比较。
 
 ## 0.15.0 变化（2026-11-13）

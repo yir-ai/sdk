@@ -151,6 +151,9 @@ const (
 	ErrCodeResultDeliveryFailed      = "YIR_RESULT_DELIVERY_FAILED"
 	ErrCodeJobTimeout                = "YIR_JOB_TIMEOUT"
 	ErrCodeFidelityExcluded          = "YIR_FIDELITY_EXCLUDED"
+	// ErrCodeAccountRestricted: the account may not submit new Jobs for now (403, not retryable).
+	// With action retry_later, APIError.RetryAfter tells when submission resumes.
+	ErrCodeAccountRestricted = "YIR_ACCOUNT_RESTRICTED"
 )
 
 type APIError struct {
@@ -168,7 +171,8 @@ type APIError struct {
 	// RequestID identifies a failed HTTP request for Yir support. It comes from
 	// the error response envelope and is empty for Job and quote batch item errors.
 	RequestID string `json:"-"`
-	// RetryAfter is the Retry-After delay of a 429 YIR_RATE_LIMITED response,
+	// RetryAfter is the Retry-After delay of a 429 YIR_RATE_LIMITED response or
+	// of a 403 YIR_ACCOUNT_RESTRICTED response (time until submission resumes),
 	// or zero when the response carried none.
 	RetryAfter time.Duration `json:"-"`
 }

@@ -484,7 +484,7 @@ export class YirAPIError extends Error {
   readonly action?: YirErrorAction;
   readonly requestId?: string;
   readonly details?: unknown;
-  /** Retry-After delay of a 429 `YIR_RATE_LIMITED` response, when present. */
+  /** Retry-After delay of a 429 `YIR_RATE_LIMITED` response, or the time until a 403 `YIR_ACCOUNT_RESTRICTED` account may submit again, when present. */
   readonly retryAfterMs?: number;
 
   constructor(params: {

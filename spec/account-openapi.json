@@ -2189,7 +2189,8 @@
           "YIR_OUTCOME_TIMEOUT",
           "YIR_RESULT_DELIVERY_FAILED",
           "YIR_JOB_TIMEOUT",
-          "YIR_FIDELITY_EXCLUDED"
+          "YIR_FIDELITY_EXCLUDED",
+          "YIR_ACCOUNT_RESTRICTED"
         ],
         "x-enum-varnames": [
           "YIRStandardV1ErrorCodeInvalidRequest",
@@ -2215,7 +2216,8 @@
           "YIRStandardV1ErrorCodeOutcomeTimeout",
           "YIRStandardV1ErrorCodeResultDeliveryFailed",
           "YIRStandardV1ErrorCodeJobTimeout",
-          "YIRStandardV1ErrorCodeFidelityExcluded"
+          "YIRStandardV1ErrorCodeFidelityExcluded",
+          "YIRStandardV1ErrorCodeAccountRestricted"
         ]
       },
       "types.YIRStandardV1ErrorDetail": {

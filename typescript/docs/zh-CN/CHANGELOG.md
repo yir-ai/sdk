@@ -2,6 +2,10 @@
 
 0.10.0 之前的版本说明，从 README 移来。各条按发布当时的行为记录，可能已被后续版本取代；当前行为见 [README](README.md)。
 
+## 待发布
+
+- 新增错误码 `YIR_ACCOUNT_RESTRICTED`（已加入 `YIR_ERROR_CODES`，等待时长见 `YirAPIError.retryAfterMs`）。账户被暂停提交新任务时（如内容多次未通过安全审核），提交改为返回 `403 YIR_ACCOUNT_RESTRICTED`，`retryable: false`、`action: "retry_later"`，`Retry-After` 给出恢复前的秒数；此前返回 `429 YIR_RATE_LIMITED`。SDK 内置传输此前就不重试提交的 429，也不会重试这个 403。调用方如果自己重试 `429`，或靠 `YIR_RATE_LIMITED` 判断暂停，请改为处理新错误码，`retryAfterMs` 到期前不要重新提交；旧版 SDK 会把它当作普通 API 错误抛出。
+
 ## 0.15.0 变化（2026-11-13）
 
 此 minor 版本包含 demo 取消行为的不兼容变化；真实任务取消行为不变。
