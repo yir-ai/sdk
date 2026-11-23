@@ -78,7 +78,11 @@
               "type": "string",
               "required": false,
               "values": [
-                "16:9"
+                "16:9",
+                "9:16",
+                "1:1",
+                "4:3",
+                "3:4"
               ],
               "default": "16:9",
               "control": "aspect_ratio",
