@@ -283,11 +283,11 @@ export type ModelParameterOption = {
   readonly disabled?: "reference_duration_limit";
 };
 
-/** Published defaults for prefilling controls; omitted parameters already resolve to them on the Gateway. */
+/** Published defaults for prefilling controls; omitted parameters already resolve to them on the Gateway. Ignored parameters are left out. */
 export function defaultModelParameters(operation: ModelOperationContract): Record<string, ModelParameterValue> {
   const defaults: Record<string, ModelParameterValue> = {};
   for (const parameter of operation.parameters) {
-    if (parameter.default !== undefined) defaults[parameter.name] = parameter.default;
+    if (parameter.default !== undefined && !parameter.ignored) defaults[parameter.name] = parameter.default;
   }
   return defaults;
 }
@@ -295,6 +295,7 @@ export function defaultModelParameters(operation: ModelOperationContract): Recor
 /**
  * Describes each parameter for the given input mode, current values and reference roles.
  * Only conditions the contract declares are applied; the current values are never changed.
+ * Ignored parameters (no effect because the output follows the input media) are not described.
  */
 export function describeModelParameters(
   operation: ModelOperationContract,
@@ -305,7 +306,7 @@ export function describeModelParameters(
   const durationLimits = Object.entries(operation.input_constraints[inputMode]?.max_duration_by_reference_role ?? {})
     .filter(([role]) => referenceRoles.includes(role)).map(([, limit]) => limit);
   const durationLimit = durationLimits.length ? Math.min(...durationLimits) : undefined;
-  return operation.parameters.map(parameter => {
+  return operation.parameters.filter(parameter => !parameter.ignored).map(parameter => {
     const limit = parameter.name === "duration" && durationLimit !== undefined &&
       (parameter.maximum === undefined || durationLimit < parameter.maximum) ? durationLimit : undefined;
     const value = Object.hasOwn(current, parameter.name) ? current[parameter.name] : parameter.default;

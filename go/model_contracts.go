@@ -16,12 +16,15 @@ type ModelParameterContract struct {
 	Values   []any  `json:"values,omitempty"`
 	// StringValues lists extra string values a numeric parameter accepts, such as duration "auto";
 	// the Gateway enforces their conditions.
-	StringValues []string                       `json:"string_values,omitempty"`
-	Default      any                            `json:"default,omitempty"`
-	Minimum      *float64                       `json:"minimum,omitempty"`
-	Maximum      *float64                       `json:"maximum,omitempty"`
-	Control      string                         `json:"control"`
-	Locales      map[string]ModelContractLocale `json:"locales"`
+	StringValues []string `json:"string_values,omitempty"`
+	// Ignored is true when the Gateway still accepts and validates the parameter for older
+	// requests but it has no effect, because the output follows the input media.
+	Ignored bool                           `json:"ignored,omitempty"`
+	Default any                            `json:"default,omitempty"`
+	Minimum *float64                       `json:"minimum,omitempty"`
+	Maximum *float64                       `json:"maximum,omitempty"`
+	Control string                         `json:"control"`
+	Locales map[string]ModelContractLocale `json:"locales"`
 }
 
 type ModelInputConstraint struct {

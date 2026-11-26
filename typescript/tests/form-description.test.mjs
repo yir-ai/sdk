@@ -4,7 +4,7 @@ import test from "node:test";
 import * as browser from "@yir-ai/sdk/browser";
 import * as frontend from "@yir-ai/sdk/frontend";
 import { defaultModelParameters, describeModelParameters, describeReferences } from "../dist/shared/catalog.js";
-import { getModelOperationContract } from "./catalog-fixture.mjs";
+import { getModelOperationContract, validateModelParameters } from "./catalog-fixture.mjs";
 
 test("frontend and browser expose the same form helpers", () => {
   for (const name of ["defaultModelParameters", "describeModelParameters", "describeReferences"]) {
@@ -96,4 +96,15 @@ test("reference slots combine role and total limits", () => {
   const kling = getModelOperationContract("klingai/kling-3.0", "generate_video", "reference").input_constraints.reference;
   assert.deepEqual(describeReferences(kling).roles.map(({ required }) => required), [true, true]);
   assert.equal("required_any" in describeReferences(kling), false);
+});
+
+test("ignored parameters are neither prefilled nor described but still pass validation", () => {
+  const operation = getModelOperationContract("higgsfield/genjutsu-1.0-motion-transfer", "generate_video", "reference");
+  const ignored = operation.parameters.filter(({ ignored }) => ignored).map(({ name }) => name).sort();
+  assert.deepEqual(ignored, ["aspect_ratio", "duration", "generate_audio"]);
+  assert.deepEqual(defaultModelParameters(operation), { resolution: "720p", n: 1 });
+  assert.deepEqual(describeModelParameters(operation, "reference").map(({ name }) => name), ["resolution", "n"]);
+  // Older requests that still send them stay valid.
+  assert.doesNotThrow(() => validateModelParameters("higgsfield/genjutsu-1.0-motion-transfer", "generate_video", "reference",
+    { duration: 5, aspect_ratio: "auto", generate_audio: false, resolution: "720p", n: 1 }));
 });

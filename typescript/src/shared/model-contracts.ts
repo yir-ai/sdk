@@ -13,6 +13,11 @@ export type ModelParameterContract = {
   readonly values?: readonly ModelParameterValue[];
   /** Extra string values a numeric parameter accepts, such as duration "auto"; the Gateway enforces their conditions. */
   readonly string_values?: readonly string[];
+  /**
+   * True when the Gateway still accepts and validates the parameter for older requests but it has
+   * no effect, because the output follows the input media. Omit it from new requests and UIs.
+   */
+  readonly ignored?: boolean;
   readonly default?: ModelParameterValue;
   readonly minimum?: number;
   readonly maximum?: number;

@@ -3548,6 +3548,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 5,
               "minimum": 4,
               "maximum": 300,
@@ -3555,11 +3556,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -3590,16 +3591,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -3610,16 +3612,17 @@
               "values": [
                 true
               ],
+              "ignored": true,
               "default": true,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -6322,6 +6325,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 5,
               "minimum": 1,
               "maximum": 60,
@@ -6329,11 +6333,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -6366,16 +6370,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -6386,16 +6391,17 @@
               "values": [
                 true
               ],
+              "ignored": true,
               "default": true,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -8882,16 +8888,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9240,6 +9247,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 5,
               "minimum": 1,
               "maximum": 30,
@@ -9247,11 +9255,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9284,16 +9292,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9304,16 +9313,17 @@
               "values": [
                 false
               ],
+              "ignored": true,
               "default": false,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9394,6 +9404,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 5,
               "minimum": 4,
               "maximum": 30,
@@ -9401,11 +9412,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9438,16 +9449,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9458,16 +9470,17 @@
               "values": [
                 false
               ],
+              "ignored": true,
               "default": false,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9549,6 +9562,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 5,
               "minimum": 4,
               "maximum": 30,
@@ -9556,11 +9570,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9592,16 +9606,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -9612,16 +9627,17 @@
               "values": [
                 false
               ],
+              "ignored": true,
               "default": false,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -10267,6 +10283,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 5,
               "minimum": 3,
               "maximum": 30,
@@ -10274,11 +10291,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -10310,16 +10327,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -10330,16 +10348,17 @@
               "values": [
                 false
               ],
+              "ignored": true,
               "default": false,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -17879,16 +17898,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -17968,6 +17988,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 5,
               "minimum": 1,
               "maximum": 30,
@@ -17975,11 +17996,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -18011,16 +18032,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -18049,16 +18071,17 @@
               "values": [
                 true
               ],
+              "ignored": true,
               "default": true,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -21025,6 +21048,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 10,
               "minimum": 1,
               "maximum": 60,
@@ -21032,11 +21056,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -21069,16 +21093,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -21089,16 +21114,17 @@
               "values": [
                 true
               ],
+              "ignored": true,
               "default": true,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -21173,6 +21199,7 @@
               "name": "duration",
               "type": "integer",
               "required": false,
+              "ignored": true,
               "default": 10,
               "minimum": 1,
               "maximum": 60,
@@ -21180,11 +21207,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Ignored: output length follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不起作用：成片时长跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -21216,16 +21243,17 @@
               "values": [
                 "auto"
               ],
+              "ignored": true,
               "default": "auto",
               "control": "aspect_ratio",
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Ignored: output aspect ratio follows the input media. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不起作用：成片画幅跟随输入素材，仅为兼容旧请求保留。"
                 }
               }
             },
@@ -21236,16 +21264,17 @@
               "values": [
                 true
               ],
+              "ignored": true,
               "default": true,
               "control": "toggle",
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Ignored: the audio track is decided by the input media and the model. Accepted only for compatibility."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不起作用：音轨由输入素材和模型决定，仅为兼容旧请求保留。"
                 }
               }
             },
