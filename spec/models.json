@@ -6141,7 +6141,8 @@
               "required": false,
               "values": [
                 "1K",
-                "2K"
+                "2K",
+                "3K"
               ],
               "default": "1K",
               "control": "select",
@@ -6177,11 +6178,11 @@
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Output aspect ratio. At 3K, use 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3, 21:9."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "输出内容的宽高比。 3K 时仅支持 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3, 21:9。"
                 }
               }
             },
