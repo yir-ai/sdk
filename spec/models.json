@@ -18436,7 +18436,7 @@
           ],
           "input_constraints": {
             "image": {
-              "max_prompt_characters": 15000,
+              "max_prompt_characters": 8000,
               "min_references": 1,
               "max_references": 2,
               "allowed_reference_roles": [
@@ -18458,7 +18458,7 @@
               }
             },
             "reference": {
-              "max_prompt_characters": 15000,
+              "max_prompt_characters": 8000,
               "min_references": 1,
               "max_references": 20,
               "allowed_reference_roles": [
@@ -18482,7 +18482,7 @@
               }
             },
             "text": {
-              "max_prompt_characters": 15000,
+              "max_prompt_characters": 8000,
               "min_references": 0,
               "max_references": 0,
               "allowed_reference_roles": []
