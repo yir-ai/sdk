@@ -10596,11 +10596,11 @@
               "locales": {
                 "en": {
                   "label": "Duration",
-                  "description": "Output video duration in seconds."
+                  "description": "Without subjects (motion control), this has no effect: output length follows the reference video. With subjects, output duration in seconds within the subject reference limits."
                 },
                 "zh-CN": {
                   "label": "时长",
-                  "description": "输出视频的秒数。"
+                  "description": "不使用主体（动作控制）时不起作用，成片时长跟随参考视频；使用主体时为输出秒数，范围见主体参考。"
                 }
               }
             },
@@ -10637,11 +10637,11 @@
               "locales": {
                 "en": {
                   "label": "Aspect ratio",
-                  "description": "Output aspect ratio."
+                  "description": "Without subjects (motion control), only auto: aspect ratio follows the reference media. With subjects, values from the subject references."
                 },
                 "zh-CN": {
                   "label": "画幅",
-                  "description": "输出内容的宽高比。"
+                  "description": "不使用主体（动作控制）时只能为 auto，画幅跟随参考素材；使用主体时取值见主体参考。"
                 }
               }
             },
@@ -10657,11 +10657,11 @@
               "locales": {
                 "en": {
                   "label": "Generate audio",
-                  "description": "Generate native audio with the video."
+                  "description": "Without subjects (motion control), only false. With subjects, values from the subject references."
                 },
                 "zh-CN": {
                   "label": "生成音频",
-                  "description": "随视频生成原生音频。"
+                  "description": "不使用主体（动作控制）时只能为 false；使用主体时取值见主体参考。"
                 }
               }
             },
